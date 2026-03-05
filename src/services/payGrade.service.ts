@@ -32,7 +32,7 @@ export const payGradeService = {
     }
 
     if (filters?.status) {
-      query = query.eq('status', filters.status)
+      query = query.eq('status', filters.status as any)
     }
 
     if (filters?.level) {
@@ -47,7 +47,7 @@ export const payGradeService = {
     }
     
     console.log('Fetched pay grades:', data)
-    return data || []
+    return (data || []) as any
   },
 
   async getById(id: string): Promise<PayGrade | null> {
@@ -64,7 +64,7 @@ export const payGradeService = {
       throw error
     }
     
-    return data
+    return data as any
   },
 
   async create(data: PayGradeInsert): Promise<PayGrade> {

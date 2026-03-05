@@ -44,7 +44,7 @@ export default function DashboardLayout({
             const { data: employee } = await supabase
               .from('employees')
               .select('id, avatar_url, first_name, last_name')
-              .eq('email', user.email)
+              .eq('email', user.email ?? '')
               .maybeSingle()
 
             if (employee) {

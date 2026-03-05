@@ -73,7 +73,7 @@ export const employeeAssetService = {
       throw error
     }
 
-    return (data as EmployeeAsset[]) || []
+    return (data as unknown as EmployeeAsset[]) || []
   },
 
   /**
@@ -100,7 +100,7 @@ export const employeeAssetService = {
       throw error
     }
 
-    return (data as EmployeeAsset[]) || []
+    return (data as unknown as EmployeeAsset[]) || []
   },
 
   /**
@@ -110,7 +110,7 @@ export const employeeAssetService = {
     const supabase = createClient()
     const { data, error } = await supabase
       .from('employee_assets')
-      .insert(asset)
+      .insert(asset as any)
       .select()
       .single()
 
@@ -119,7 +119,7 @@ export const employeeAssetService = {
       throw error
     }
 
-    return data as EmployeeAsset
+    return data as unknown as EmployeeAsset
   },
 
   /**
@@ -142,7 +142,7 @@ export const employeeAssetService = {
       throw error
     }
 
-    return data as EmployeeAsset
+    return data as unknown as EmployeeAsset
   },
 
   /**
@@ -169,7 +169,7 @@ export const employeeAssetService = {
       throw error
     }
 
-    return data as EmployeeAsset
+    return data as unknown as EmployeeAsset
   },
 
   /**

@@ -21,14 +21,13 @@ export default function MyPublicationRequestsPage() {
 
   const myRequests = useMemo(() => {
     if (!currentEmployeeId) return []
-    return publicationRequests.filter(req => req.requested_by === currentEmployeeId)
+    return publicationRequests.filter(req => req.employee_id === currentEmployeeId)
   }, [publicationRequests, currentEmployeeId])
 
   const handleCreateRequest = async () => {
     if (!currentEmployeeId) return
 
     const title = (document.getElementById('pub-title') as HTMLInputElement).value
-    const author = (document.getElementById('pub-author') as HTMLInputElement).value
     const publicationType = (document.getElementById('pub-type') as HTMLSelectElement).value
     const publisher = (document.getElementById('pub-publisher') as HTMLInputElement).value
     const cost = parseFloat((document.getElementById('pub-cost') as HTMLInputElement).value || '0')
@@ -37,14 +36,15 @@ export default function MyPublicationRequestsPage() {
 
     try {
       await createPublicationMutation.mutateAsync({
-        requested_by: currentEmployeeId,
-        title,
-        author,
+        employee_id: currentEmployeeId,
+        publication_title: title,
         publication_type: publicationType,
         publisher,
         estimated_cost: cost,
         justification,
-        urgency: urgency as any,
+        priority: urgency,
+        purpose: justification,
+        request_type: 'purchase',
         status: 'submitted'
       })
       setShowCreateModal(false)
@@ -176,8 +176,7 @@ export default function MyPublicationRequestsPage() {
                     </td>
                     <td className="px-6 py-4">
                       <div>
-                        <div className="text-sm font-medium text-gray-900">{request.title}</div>
-                        {request.author && <div className="text-sm text-gray-500">by {request.author}</div>}
+                        <div className="text-sm font-medium text-gray-900">{request.publication_title}</div>
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
@@ -190,12 +189,12 @@ export default function MyPublicationRequestsPage() {
                       ${request.estimated_cost?.toLocaleString() || '0'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <Badge className={getUrgencyBadge(request.urgency)}>
-                        {request.urgency}
+                      <Badge className={getUrgencyBadge(request.priority ?? '')}>
+                        {request.priority}
                       </Badge>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <Badge className={getStatusBadge(request.status)}>
+                      <Badge className={getStatusBadge(request.status ?? '')}>
                         {request.status?.replace(/_/g, ' ')}
                       </Badge>
                     </td>
@@ -326,12 +325,12 @@ export default function MyPublicationRequestsPage() {
               </div>
               <div>
                 <label className="text-sm font-medium text-gray-600">Title</label>
-                <p className="text-gray-900">{selectedRequest.title}</p>
+                <p className="text-gray-900">{selectedRequest.publication_title}</p>
               </div>
-              {selectedRequest.author && (
+              {selectedRequest.publisher && (
                 <div>
                   <label className="text-sm font-medium text-gray-600">Author</label>
-                  <p className="text-gray-900">{selectedRequest.author}</p>
+                  <p className="text-gray-900">{selectedRequest.publisher}</p>
                 </div>
               )}
               <div className="grid grid-cols-2 gap-4">
@@ -351,8 +350,8 @@ export default function MyPublicationRequestsPage() {
                 </div>
                 <div>
                   <label className="text-sm font-medium text-gray-600">Urgency</label>
-                  <Badge className={getUrgencyBadge(selectedRequest.urgency)}>
-                    {selectedRequest.urgency}
+                  <Badge className={getUrgencyBadge(selectedRequest.priority)}>
+                    {selectedRequest.priority}
                   </Badge>
                 </div>
               </div>

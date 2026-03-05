@@ -77,7 +77,7 @@ export const orgRelationshipService = {
     }
 
     if (filters?.status) {
-      query = query.eq('status', filters.status)
+      query = query.eq('status', filters.status as any)
     }
 
     const { data, error } = await query
@@ -87,7 +87,7 @@ export const orgRelationshipService = {
       throw error
     }
 
-    return data as OrgRelationshipWithRelations[]
+    return data as unknown as OrgRelationshipWithRelations[]
   },
 
   async getById(id: string): Promise<OrgRelationshipWithRelations | null> {
@@ -108,7 +108,7 @@ export const orgRelationshipService = {
       throw error
     }
 
-    return data as OrgRelationshipWithRelations
+    return data as unknown as OrgRelationshipWithRelations
   },
 
   async getDirectReports(employeeId: string): Promise<OrgRelationshipWithRelations[]> {
@@ -186,7 +186,7 @@ export const orgRelationshipService = {
         title: employee.job_title?.title || 'No Title',
         department: employee.department?.name || 'No Department',
         email: employee.email,
-        children: children.filter(Boolean) as OrgChartNode[],
+        children: children.filter(Boolean) as unknown as OrgChartNode[],
       }
     }
 
@@ -197,7 +197,7 @@ export const orgRelationshipService = {
     const supabase = createClient()
     const { data: newRelationship, error } = await supabase
       .from('org_relationships')
-      .insert(data)
+      .insert(data as any)
       .select()
       .single()
 
@@ -253,7 +253,8 @@ export const orgRelationshipService = {
     ])
 
     const typeDistribution = byType?.reduce((acc, item) => {
-      acc[item.relationship_type] = (acc[item.relationship_type] || 0) + 1
+      const key = item.relationship_type ?? 'unknown'
+      acc[key] = (acc[key] || 0) + 1
       return acc
     }, {} as Record<string, number>) || {}
 

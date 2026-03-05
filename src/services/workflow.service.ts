@@ -436,7 +436,7 @@ export const workflowService = {
     if (!table) return
 
     await supabase
-      .from(table)
+      .from(table as any)
       .update({ status, updated_at: new Date().toISOString() } as any)
       .eq('id', requestId)
   },

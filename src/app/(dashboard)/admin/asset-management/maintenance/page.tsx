@@ -214,7 +214,7 @@ export default function MaintenancePage() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                        {typeLabels[record.maintenance_type]}
+                        {typeLabels[record.maintenance_type ?? 'repair']}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
@@ -227,8 +227,8 @@ export default function MaintenancePage() {
                       {record.cost ? `₱${record.cost.toLocaleString()}` : <span className="text-gray-400">—</span>}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusColors[record.status]}`}>
-                        {record.status.replace('_', ' ')}
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusColors[record.status ?? 'scheduled']}`}>
+                        {(record.status ?? '').replace('_', ' ')}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -274,7 +274,7 @@ export default function MaintenancePage() {
               <div className="grid grid-cols-2 gap-4">
                 <Select
                   label="Maintenance Type"
-                  value={formData.maintenance_type}
+                  value={formData.maintenance_type ?? ''}
                   onChange={(e) => setFormData({ ...formData, maintenance_type: e.target.value as AssetMaintenance['maintenance_type'] })}
                   required
                 >
@@ -287,7 +287,7 @@ export default function MaintenancePage() {
 
                 <Select
                   label="Status"
-                  value={formData.status}
+                  value={formData.status ?? ''}
                   onChange={(e) => setFormData({ ...formData, status: e.target.value as AssetMaintenance['status'] })}
                   required
                 >
@@ -301,21 +301,21 @@ export default function MaintenancePage() {
               <Input
                 label="Scheduled Date"
                 type="date"
-                value={formData.scheduled_date}
+                value={formData.scheduled_date ?? ''}
                 onChange={(e) => setFormData({ ...formData, scheduled_date: e.target.value })}
               />
 
               <div className="grid grid-cols-2 gap-4">
                 <Input
                   label="Performed By"
-                  value={formData.performed_by}
+                  value={formData.performed_by ?? ''}
                   onChange={(e) => setFormData({ ...formData, performed_by: e.target.value })}
                   placeholder="Technician name"
                 />
 
                 <Select
                   label="Vendor (Optional)"
-                  value={formData.vendor_id}
+                  value={formData.vendor_id ?? ''}
                   onChange={(e) => setFormData({ ...formData, vendor_id: e.target.value })}
                 >
                   <option value="">Select Vendor</option>
@@ -329,7 +329,7 @@ export default function MaintenancePage() {
                 label="Cost"
                 type="number"
                 step="0.01"
-                value={formData.cost}
+                value={formData.cost ?? ''}
                 onChange={(e) => setFormData({ ...formData, cost: e.target.value })}
                 placeholder="0.00"
               />
@@ -351,7 +351,7 @@ export default function MaintenancePage() {
                 <textarea
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
                   rows={2}
-                  value={formData.notes}
+                  value={formData.notes ?? ''}
                   onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
                 />
               </div>

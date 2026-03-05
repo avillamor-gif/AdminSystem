@@ -154,7 +154,7 @@ export default function LocationTypesPage() {
         <Card className="p-4">
           <p className="text-sm text-gray-600">Total Locations</p>
           <p className="text-2xl font-bold text-blue-600 mt-1">
-            {locationTypes.reduce((sum, t) => sum + t.locationCount, 0)}
+            {locations.length}
           </p>
         </Card>
       </div>

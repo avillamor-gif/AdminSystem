@@ -36,7 +36,7 @@ export const securityPolicyService = {
         .order('name')
 
       if (error) throw error
-      return data || []
+      return (data || []) as any
     } catch (error) {
       console.error('Error fetching security policies:', error)
       return []
@@ -68,7 +68,7 @@ export const securityPolicyService = {
       .single()
 
     if (error) throw error
-    return data
+    return data as any
   },
 
   async markAsReviewed(id: string): Promise<SecurityPolicy> {

@@ -1,7 +1,7 @@
 import { createClient } from '@/lib/supabase/client'
 import type { Database } from '@/lib/supabase/database.types'
 
-type UserRole = Database['public']['Enums']['user_role']
+type UserRole = 'admin' | 'hr' | 'manager' | 'employee' | 'board_member'
 
 export interface SystemUser {
   id: string
@@ -116,19 +116,20 @@ async function getById(id: string): Promise<SystemUserWithRelations | null> {
     if (error) throw error
     if (!userRole) return null
     
-    const employee = (userRole as any).employees
-    const email = (userRole as any).email || employee?.email || 'unknown@example.com'
+    const ur = userRole as any
+    const employee = ur.employees
+    const email = ur.email || employee?.email || 'unknown@example.com'
     
     return {
-      id: userRole.id,
+      id: ur.id,
       email: email,
       name: employee ? `${employee.first_name} ${employee.last_name}` : email.split('@')[0],
-      role: userRole.role,
+      role: ur.role,
       status: 'active',
-      employee_id: userRole.employee_id,
+      employee_id: ur.employee_id,
       last_login: null,
-      created_at: userRole.created_at,
-      updated_at: userRole.updated_at,
+      created_at: ur.created_at,
+      updated_at: ur.updated_at,
       employee: employee ? {
         id: employee.id,
         first_name: employee.first_name,
@@ -191,8 +192,8 @@ async function create(userData: SystemUserInsert): Promise<SystemUserWithRelatio
       status: 'active',
       employee_id: userRole.employee_id,
       last_login: null,
-      created_at: userRole.created_at,
-      updated_at: userRole.updated_at,
+      created_at: userRole.created_at ?? '',
+      updated_at: userRole.updated_at ?? '',
       employee: null
     }
   } catch (error) {
@@ -278,8 +279,8 @@ async function update(id: string, userData: SystemUserUpdate): Promise<SystemUse
       status: 'active',
       employee_id: userRole.employee_id,
       last_login: null,
-      created_at: userRole.created_at,
-      updated_at: userRole.updated_at,
+      created_at: userRole.created_at ?? '',
+      updated_at: userRole.updated_at ?? '',
       employee: employee ? {
         id: employee.id,
         first_name: employee.first_name,

@@ -20,7 +20,7 @@ export default function BreakPoliciesPage() {
     const matchesSearch = !searchQuery || 
       policy.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       (policy.description && policy.description.toLowerCase().includes(searchQuery.toLowerCase()))
-    const matchesType = !policyTypeFilter || policy.policy_type === policyTypeFilter
+    const matchesType = !policyTypeFilter || policy.break_type === policyTypeFilter
     return matchesSearch && matchesType
   })
 
@@ -99,7 +99,7 @@ export default function BreakPoliciesPage() {
               placeholder="Search policies..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              icon={<Search className="w-4 h-4" />}
+
             />
           </div>
           <div>
@@ -108,10 +108,12 @@ export default function BreakPoliciesPage() {
               onChange={(e) => setPolicyTypeFilter(e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
             >
-              <option value="">All Policy Types</option>
-              <option value="lunch">Lunch Break</option>
-              <option value="short">Short Break</option>
-              <option value="rest">Rest Period</option>
+              <option value="">All Break Types</option>
+              <option value="meal">Meal Break</option>
+              <option value="rest">Rest Break</option>
+              <option value="prayer">Prayer Break</option>
+              <option value="smoking">Smoking Break</option>
+              <option value="custom">Custom</option>
             </select>
           </div>
         </div>
@@ -143,8 +145,8 @@ export default function BreakPoliciesPage() {
                     </div>
                   </td>
                   <td className="px-6 py-4">
-                    <Badge className={getPolicyTypeColor(policy.policy_type)}>
-                      {policy.policy_type}
+                    <Badge className={getPolicyTypeColor(policy.break_type)}>
+                      {policy.break_type}
                     </Badge>
                   </td>
                   <td className="px-6 py-4">
@@ -154,7 +156,7 @@ export default function BreakPoliciesPage() {
                     </div>
                   </td>
                   <td className="px-6 py-4">
-                    <span className="text-gray-900">{policy.min_shift_duration_hours} hrs</span>
+                    <span className="text-gray-900">{policy.minimum_shift_hours ?? '—'} hrs</span>
                   </td>
                   <td className="px-6 py-4">
                     <div className="flex gap-2">

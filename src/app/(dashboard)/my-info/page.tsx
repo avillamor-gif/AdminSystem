@@ -1,7 +1,7 @@
 'use client'
 
 import { useCurrentEmployee } from '@/hooks/useEmployees'
-import { EmployeeDetailContent } from '@/app/(dashboard)/employees/[id]/page'
+import { EmployeeDetailContent } from '@/app/(dashboard)/employees/[id]/components/EmployeeDetailContent'
 
 export default function MyInfoPage() {
   const { data: currentEmployee, isLoading } = useCurrentEmployee()

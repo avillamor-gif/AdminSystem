@@ -45,7 +45,7 @@ const TravelRequestsPage = () => {
       const matchesStatus = statusFilter === '' || request.status === statusFilter
       
       const matchesDepartment = departmentFilter === '' || 
-        request.employee?.department?.name === departmentFilter
+        request.employee?.department_id === departmentFilter
 
       return matchesSearch && matchesStatus && matchesDepartment
     })
@@ -64,20 +64,22 @@ const TravelRequestsPage = () => {
   }, [travelRequests])
 
   const handleApprove = async (requestId: string) => {
-    const approverNotes = prompt('Enter approval notes (optional):')
+    const comments = prompt('Enter approval notes (optional):') || undefined
     await approveMutation.mutateAsync({
-      requestId,
-      approverNotes: approverNotes || undefined
+      id: requestId,
+      approverId: '',
+      comments,
     })
   }
 
   const handleReject = async (requestId: string) => {
-    const rejectionReason = prompt('Enter rejection reason:')
-    if (!rejectionReason) return
+    const reason = prompt('Enter rejection reason:')
+    if (!reason) return
     
     await rejectMutation.mutateAsync({
-      requestId,
-      rejectionReason
+      id: requestId,
+      approverId: '',
+      reason,
     })
   }
 
@@ -160,13 +162,12 @@ const TravelRequestsPage = () => {
                 <div>
                   <div className="flex items-center gap-2 mb-1">
                     <h4 className="font-semibold text-gray-900">{request.request_number}</h4>
-                    <Badge variant={getStatusColor(request.status)} className="text-xs">
+                    <Badge variant={getStatusColor(request.status ?? '')} className="text-xs">
                       {request.status?.replace('_', ' ').toUpperCase()}
                     </Badge>
                   </div>
                   <p className="text-sm text-gray-600">
-                    {request.employee?.first_name} {request.employee?.last_name} • {request.employee?.department?.name} • {request.employee?.job_title?.title}
-                  </p>
+                    {request.employee?.first_name} {request.employee?.last_name}</p>
                   <div className="flex items-center gap-4 mt-1 text-sm text-gray-500">
                     <span className="flex items-center gap-1">
                       <MapPin className="w-3 h-3" />
@@ -215,9 +216,7 @@ const TravelRequestsPage = () => {
                     Approved {request.approved_date && `on ${new Date(request.approved_date).toLocaleDateString()}`}
                   </span>
                 </div>
-                {request.approver_notes && (
-                  <p className="text-sm text-green-700 mt-1">{request.approver_notes}</p>
-                )}
+                
               </div>
             )}
 

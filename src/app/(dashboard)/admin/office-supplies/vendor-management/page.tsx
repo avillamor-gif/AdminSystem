@@ -9,7 +9,7 @@ import toast from 'react-hot-toast'
 interface Vendor {
   id: string; name: string; contact_person: string | null; email: string | null
   phone: string | null; address: string | null; payment_terms: string | null
-  is_active: boolean; notes: string | null
+  is_active: boolean | null; notes: string | null
 }
 
 const empty = { name: '', contact_person: '', email: '', phone: '', address: '', payment_terms: '', is_active: true, notes: '' }
@@ -36,7 +36,7 @@ export default function VendorManagementPage() {
   const openCreate = () => { setSelected(null); setForm(empty); setModalOpen(true) }
   const openEdit = (v: Vendor) => {
     setSelected(v)
-    setForm({ name: v.name, contact_person: v.contact_person ?? '', email: v.email ?? '', phone: v.phone ?? '', address: v.address ?? '', payment_terms: v.payment_terms ?? '', is_active: v.is_active, notes: v.notes ?? '' })
+    setForm({ name: v.name, contact_person: v.contact_person ?? '', email: v.email ?? '', phone: v.phone ?? '', address: v.address ?? '', payment_terms: v.payment_terms ?? '', is_active: v.is_active ?? true, notes: v.notes ?? '' })
     setModalOpen(true)
   }
 

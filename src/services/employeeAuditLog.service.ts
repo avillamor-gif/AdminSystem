@@ -30,17 +30,22 @@ export const employeeAuditLogService = {
       .limit(20)
 
     if (error) throw error
-    return data || []
+    return (data || []) as unknown as EmployeeAuditLog[]
   },
 
   async create(log: EmployeeAuditLogInsert): Promise<EmployeeAuditLog> {
+    const payload = {
+      ...log,
+      details: log.details ? JSON.stringify(log.details) : null
+    }
+    
     const { data, error } = await supabase
       .from('employee_audit_logs')
-      .insert(log)
+      .insert(payload as any)
       .select('*')
       .single()
 
     if (error) throw error
-    return data
+    return data as unknown as EmployeeAuditLog
   },
 }

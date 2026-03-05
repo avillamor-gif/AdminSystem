@@ -51,7 +51,7 @@ export const passwordPolicyService = {
       .order('rule_name', { ascending: true })
 
     if (error) throw error
-    return data || []
+    return (data || []) as any
   },
 
   async update(id: string, updates: PasswordPolicyUpdate): Promise<PasswordPolicy> {
@@ -67,7 +67,7 @@ export const passwordPolicyService = {
       .single()
 
     if (error) throw error
-    return data
+    return data as any
   },
 
   async getUserPasswordStatuses(): Promise<UserPasswordStatus[]> {
@@ -112,7 +112,7 @@ export const passwordPolicyService = {
       const user = users?.find(u => u.user_id === meta.user_id)
       const employee = (user as any)?.employee
       
-      const lastChanged = new Date(meta.last_changed_at)
+      const lastChanged = new Date(meta.last_changed_at ?? new Date())
       const expiryDate = meta.expiry_date ? new Date(meta.expiry_date) : new Date(lastChanged.getTime() + expiryDays * 24 * 60 * 60 * 1000)
       const daysUntilExpiry = Math.ceil((expiryDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24))
       
@@ -124,7 +124,7 @@ export const passwordPolicyService = {
         user_id: meta.user_id,
         user_name: employee ? `${employee.first_name} ${employee.last_name}` : 'Unknown User',
         email: employee?.email || 'unknown@system.local',
-        last_changed: meta.last_changed_at,
+        last_changed: meta.last_changed_at ?? '',
         strength: meta.strength as any,
         days_until_expiry: daysUntilExpiry,
         status

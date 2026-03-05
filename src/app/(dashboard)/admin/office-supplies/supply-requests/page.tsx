@@ -8,12 +8,12 @@ import { notifyRequesterOfDecision } from '@/services/requestNotification.helper
 import toast from 'react-hot-toast'
 
 interface Request {
-  id: string; request_number: string; employee_id: string; item_name: string
-  quantity: number; purpose: string | null; priority: string; status: string
-  rejection_reason: string | null; notes: string | null; created_at: string
+  id: string; request_number: string; employee_id: string | null; item_name: string
+  quantity: number; purpose: string | null; priority: string | null; status: string | null
+  rejection_reason: string | null; notes: string | null; created_at: string | null
   approved_at: string | null; fulfilled_at: string | null
   employee?: { first_name: string; last_name: string } | null
-  item?: { name: string; unit: string; quantity_on_hand: number } | null
+  item?: { name: string; unit: string | null; quantity_on_hand: number | null } | null
 }
 
 const STATUS_COLORS: Record<string, string> = {
@@ -44,8 +44,8 @@ export default function SupplyRequestsPage() {
     const { data: reqs, error } = await supabase
       .from('supply_requests').select('*').order('created_at', { ascending: false })
     if (error) { toast.error(error.message || 'Failed to load requests'); return }
-    const empIds = [...new Set((reqs ?? []).map((r: Request) => r.employee_id).filter(Boolean))]
-    const itemIds = [...new Set((reqs ?? []).map((r: any) => r.item_id).filter(Boolean))]
+    const empIds = [...new Set((reqs ?? []).map((r: Request) => r.employee_id).filter((id): id is string => Boolean(id)))]
+    const itemIds = [...new Set((reqs ?? []).map((r: any) => r.item_id).filter((id): id is string => Boolean(id)))]
     const [empRes, itemRes] = await Promise.all([
       empIds.length ? supabase.from('employees').select('id, first_name, last_name').in('id', empIds) : Promise.resolve({ data: [] }),
       itemIds.length ? supabase.from('supply_items').select('id, name, unit, quantity_on_hand').in('id', itemIds) : Promise.resolve({ data: [] }),
@@ -76,8 +76,8 @@ export default function SupplyRequestsPage() {
         if (stockErr) { toast.error('Failed to update stock: ' + stockErr.message); setActionLoading(false); return }
         // Warn if stock hit reorder point
         const itemRes = await supabase.from('supply_items').select('quantity_on_hand, reorder_point, name').eq('id', (selected as any).item_id).single()
-        if (itemRes.data && itemRes.data.quantity_on_hand <= itemRes.data.reorder_point) {
-          toast(`⚠️ ${itemRes.data.name} is now low on stock (${itemRes.data.quantity_on_hand} remaining)`, { icon: '🔴', duration: 5000 })
+        if (itemRes.data && (itemRes.data.quantity_on_hand ?? 0) <= (itemRes.data.reorder_point ?? 0)) {
+          toast(`⚠️ ${itemRes.data.name} is now low on stock (${itemRes.data.quantity_on_hand ?? 0} remaining)`, { icon: '🔴', duration: 5000 })
         }
       }
     }
@@ -161,9 +161,9 @@ export default function SupplyRequestsPage() {
                     <td className="px-6 py-4 text-sm font-medium text-gray-900">{r.employee ? r.employee.first_name + ' ' + r.employee.last_name : '—'}</td>
                     <td className="px-6 py-4 text-sm text-gray-700">{r.item_name}</td>
                     <td className="px-6 py-4 text-sm text-gray-600">{r.quantity}</td>
-                    <td className="px-6 py-4"><Badge className={PRIORITY_COLORS[r.priority] ?? 'bg-gray-100 text-gray-600'}>{r.priority}</Badge></td>
-                    <td className="px-6 py-4"><Badge className={STATUS_COLORS[r.status] ?? 'bg-gray-100 text-gray-600'}>{r.status}</Badge></td>
-                    <td className="px-6 py-4 text-sm text-gray-500">{new Date(r.created_at).toLocaleDateString()}</td>
+                    <td className="px-6 py-4"><Badge className={PRIORITY_COLORS[r.priority ?? ''] ?? 'bg-gray-100 text-gray-600'}>{r.priority}</Badge></td>
+                    <td className="px-6 py-4"><Badge className={STATUS_COLORS[r.status ?? ''] ?? 'bg-gray-100 text-gray-600'}>{r.status}</Badge></td>
+                    <td className="px-6 py-4 text-sm text-gray-500">{r.created_at ? new Date(r.created_at).toLocaleDateString() : '—'}</td>
                     <td className="px-6 py-4">
                       <Button variant="ghost" size="sm" onClick={() => { setSelected(r); setRejectReason(''); setDetailOpen(true) }}>View</Button>
                     </td>
@@ -182,11 +182,11 @@ export default function SupplyRequestsPage() {
             <div className="space-y-3 text-sm">
               <div className="grid grid-cols-2 gap-3">
                 <div><span className="text-gray-500">Employee:</span> <span className="font-medium">{selected.employee ? selected.employee.first_name + ' ' + selected.employee.last_name : '—'}</span></div>
-                <div><span className="text-gray-500">Status:</span> <Badge className={STATUS_COLORS[selected.status] ?? ''}>{selected.status}</Badge></div>
+                <div><span className="text-gray-500">Status:</span> <Badge className={STATUS_COLORS[selected.status ?? ''] ?? ''}>{selected.status}</Badge></div>
                 <div><span className="text-gray-500">Item:</span> <span className="font-medium">{selected.item_name}</span></div>
                 <div><span className="text-gray-500">Quantity:</span> <span className="font-medium">{selected.quantity}</span></div>
-                <div><span className="text-gray-500">Priority:</span> <Badge className={PRIORITY_COLORS[selected.priority] ?? ''}>{selected.priority}</Badge></div>
-                {selected.item && <div><span className="text-gray-500">Stock available:</span> <span className="font-medium">{selected.item.quantity_on_hand} {selected.item.unit}</span></div>}
+                <div><span className="text-gray-500">Priority:</span> <Badge className={PRIORITY_COLORS[selected.priority ?? ''] ?? ''}>{selected.priority}</Badge></div>
+                {selected.item && <div><span className="text-gray-500">Stock available:</span> <span className="font-medium">{selected.item.quantity_on_hand ?? 0} {selected.item.unit ?? ''}</span></div>}
               </div>
               {selected.purpose && <div><span className="text-gray-500">Purpose:</span><p className="mt-1 text-gray-700">{selected.purpose}</p></div>}
               {selected.rejection_reason && <div className="bg-red-50 p-3 rounded"><span className="text-red-600 font-medium">Rejection reason:</span><p className="mt-1 text-red-700">{selected.rejection_reason}</p></div>}

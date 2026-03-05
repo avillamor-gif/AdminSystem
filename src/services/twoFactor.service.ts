@@ -89,7 +89,7 @@ export const twoFactorService = {
       throw error
     }
     
-    return data
+    return data as any
   },
 
   async enable(userId: string, method: 'app' | 'sms' | 'email'): Promise<TwoFactorAuth> {
@@ -113,7 +113,7 @@ export const twoFactorService = {
         .single()
 
       if (error) throw error
-      return data
+      return data as any
     } else {
       // Create new
       const { data, error } = await supabase
@@ -128,7 +128,7 @@ export const twoFactorService = {
         .single()
 
       if (error) throw error
-      return data
+      return data as any
     }
   },
 
@@ -157,7 +157,7 @@ export const twoFactorService = {
       .single()
 
     if (error) throw error
-    return data
+    return data as any
   },
 
   async resetBackupCodes(userId: string): Promise<string[]> {

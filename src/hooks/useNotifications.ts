@@ -68,16 +68,16 @@ export function useNotifications() {
       queryFn: async () => {
         const supabase = createClient()
         const { data, error } = await supabase
-          .from(table)
+          .from(table as any)
           .select('*')
           .eq('is_read', false)
           .order('created_at', { ascending: false })
           .limit(20)
         if (error) {
           console.warn(`[notifications] ${table} fetch error:`, error.message)
-          return [] // Don't throw — return empty so other queries still render
+          return [] as Record<string, any>[] // Don't throw — return empty so other queries still render
         }
-        return data ?? []
+        return (data ?? []) as Record<string, any>[]
       },
       enabled: !!authUserId,
       staleTime: 0,

@@ -46,7 +46,7 @@ export const publicationService = {
 
     // Apply filters
     if (filters.status) {
-      query = query.eq('status', filters.status)
+      query = query.eq('status', filters.status as any)
     }
     if (filters.publication_type) {
       query = query.eq('publication_type', filters.publication_type)
@@ -117,7 +117,7 @@ export const publicationService = {
         employee: r.employee_id ? employeeMap[r.employee_id] : undefined,
         approver: r.approved_by ? employeeMap[r.approved_by] : undefined,
       }
-    }) as PublicationRequestWithEmployee[]
+    }) as unknown as PublicationRequestWithEmployee[]
   },
 
   // Get publication request by ID
@@ -174,7 +174,7 @@ export const publicationService = {
       throw new Error(`Failed to create publication request: ${error.message}`)
     }
 
-    return data
+    return data as any
   },
 
   // Update publication request
@@ -195,7 +195,7 @@ export const publicationService = {
       throw new Error('Failed to update publication request')
     }
 
-    return data
+    return data as any
   },
 
   // Submit publication request (trigger workflow)
@@ -225,13 +225,13 @@ export const publicationService = {
       requestId: id,
       requestType: 'publication',
       employeeId,
-      employeeName,
-      department,
-      amount: request.estimated_cost,
-      currency: request.currency || 'USD',
-      businessJustification: request.purpose,
-      priority: request.priority || 'medium',
       metadata: {
+        employeeName,
+        department,
+        amount: request.estimated_cost,
+        currency: request.currency || 'USD',
+        businessJustification: request.purpose,
+        priority: request.priority || 'medium',
         publication_id: request.publication_id,
         publication_title: request.publication_title,
         publication_type: request.publication_type,
@@ -459,7 +459,7 @@ export const publicationService = {
       ...r,
       employee: r.employee_id ? employeeMap[r.employee_id] : undefined,
       approver: r.approved_by ? employeeMap[r.approved_by] : undefined,
-    })) as PublicationRequestWithEmployee[]
+    })) as unknown as PublicationRequestWithEmployee[]
   }
 }
 

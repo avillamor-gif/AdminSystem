@@ -117,6 +117,7 @@ export type AttendancePolicy = {
   min_hours_for_half_day: number
   auto_mark_absent_if_no_punch: boolean
   is_active: boolean
+  is_default: boolean
   effective_from: string | null
   effective_to: string | null
   created_at: string
@@ -152,7 +153,7 @@ export const workScheduleService = {
       .order('name')
     
     if (error) throw error
-    return data || []
+    return (data || []) as any
   },
 
   async getById(id: string): Promise<WorkSchedule | null> {
@@ -163,40 +164,40 @@ export const workScheduleService = {
       .single()
     
     if (error) throw error
-    return data
+    return data as any
   },
 
   async getDays(scheduleId: string): Promise<WorkScheduleDay[]> {
     const { data, error } = await supabase
-      .from('work_schedule_days')
+      .from('work_schedule_days' as any)
       .select('*')
       .eq('schedule_id', scheduleId)
       .order('day_of_week')
     
     if (error) throw error
-    return data || []
+    return (data || []) as any
   },
 
   async create(schedule: Partial<WorkSchedule>): Promise<WorkSchedule> {
     const { data, error } = await supabase
       .from('work_schedules')
-      .insert(schedule)
+      .insert(schedule as any)
       .select()
       .single()
     
     if (error) throw error
-    return data
+    return data as any
   },
 
   async createDay(day: Partial<WorkScheduleDay>): Promise<WorkScheduleDay> {
     const { data, error } = await supabase
-      .from('work_schedule_days')
-      .insert(day)
+      .from('work_schedule_days' as any)
+      .insert(day as any)
       .select()
       .single()
     
     if (error) throw error
-    return data
+    return data as any
   },
 
   async update(id: string, updates: Partial<WorkSchedule>): Promise<WorkSchedule> {
@@ -208,7 +209,7 @@ export const workScheduleService = {
       .single()
     
     if (error) throw error
-    return data
+    return data as any
   },
 
   async delete(id: string): Promise<void> {
@@ -236,12 +237,12 @@ export const workScheduleService = {
       .single()
 
     if (error) throw error
-    return data
+    return data as any
   },
 
   async getEmployeeSchedules(employeeId: string): Promise<EmployeeSchedule[]> {
     const { data, error } = await supabase
-      .from('employee_schedules')
+      .from('employee_schedules' as any)
       .select(`
         *,
         schedule:work_schedules(*),
@@ -251,18 +252,18 @@ export const workScheduleService = {
       .order('effective_from', { ascending: false })
     
     if (error) throw error
-    return data || []
+    return (data || []) as any
   },
 
   async assignToEmployee(assignment: Partial<EmployeeSchedule>): Promise<EmployeeSchedule> {
     const { data, error } = await supabase
-      .from('employee_schedules')
-      .insert(assignment)
+      .from('employee_schedules' as any)
+      .insert(assignment as any)
       .select()
       .single()
     
     if (error) throw error
-    return data
+    return data as any
   }
 }
 
@@ -278,7 +279,7 @@ export const shiftPatternService = {
       .order('name')
     
     if (error) throw error
-    return data || []
+    return (data || []) as any
   },
 
   async getById(id: string): Promise<ShiftPattern | null> {
@@ -289,18 +290,18 @@ export const shiftPatternService = {
       .single()
     
     if (error) throw error
-    return data
+    return data as any
   },
 
   async create(shift: Partial<ShiftPattern>): Promise<ShiftPattern> {
     const { data, error } = await supabase
       .from('shift_patterns')
-      .insert(shift)
+      .insert(shift as any)
       .select()
       .single()
     
     if (error) throw error
-    return data
+    return data as any
   },
 
   async update(id: string, updates: Partial<ShiftPattern>): Promise<ShiftPattern> {
@@ -312,7 +313,7 @@ export const shiftPatternService = {
       .single()
     
     if (error) throw error
-    return data
+    return data as any
   },
 
   async delete(id: string): Promise<void> {
@@ -337,7 +338,7 @@ export const overtimeRuleService = {
       .order('priority', { ascending: false })
     
     if (error) throw error
-    return data || []
+    return (data || []) as any
   },
 
   async getById(id: string): Promise<OvertimeRule | null> {
@@ -348,18 +349,18 @@ export const overtimeRuleService = {
       .single()
     
     if (error) throw error
-    return data
+    return data as any
   },
 
   async create(rule: Partial<OvertimeRule>): Promise<OvertimeRule> {
     const { data, error } = await supabase
       .from('overtime_rules')
-      .insert(rule)
+      .insert(rule as any)
       .select()
       .single()
     
     if (error) throw error
-    return data
+    return data as any
   },
 
   async update(id: string, updates: Partial<OvertimeRule>): Promise<OvertimeRule> {
@@ -371,7 +372,7 @@ export const overtimeRuleService = {
       .single()
     
     if (error) throw error
-    return data
+    return data as any
   },
 
   async delete(id: string): Promise<void> {
@@ -396,7 +397,7 @@ export const breakPolicyService = {
       .order('name')
     
     if (error) throw error
-    return data || []
+    return (data || []) as any
   },
 
   async getById(id: string): Promise<BreakPolicy | null> {
@@ -407,18 +408,18 @@ export const breakPolicyService = {
       .single()
     
     if (error) throw error
-    return data
+    return data as any
   },
 
   async create(policy: Partial<BreakPolicy>): Promise<BreakPolicy> {
     const { data, error } = await supabase
       .from('break_policies')
-      .insert(policy)
+      .insert(policy as any)
       .select()
       .single()
     
     if (error) throw error
-    return data
+    return data as any
   },
 
   async update(id: string, updates: Partial<BreakPolicy>): Promise<BreakPolicy> {
@@ -430,7 +431,7 @@ export const breakPolicyService = {
       .single()
     
     if (error) throw error
-    return data
+    return data as any
   },
 
   async delete(id: string): Promise<void> {
@@ -455,7 +456,7 @@ export const timeTrackingMethodService = {
       .order('priority', { ascending: false })
     
     if (error) throw error
-    return data || []
+    return (data || []) as any
   },
 
   async getById(id: string): Promise<TimeTrackingMethod | null> {
@@ -466,18 +467,18 @@ export const timeTrackingMethodService = {
       .single()
     
     if (error) throw error
-    return data
+    return data as any
   },
 
   async create(method: Partial<TimeTrackingMethod>): Promise<TimeTrackingMethod> {
     const { data, error } = await supabase
       .from('time_tracking_methods')
-      .insert(method)
+      .insert(method as any)
       .select()
       .single()
     
     if (error) throw error
-    return data
+    return data as any
   },
 
   async update(id: string, updates: Partial<TimeTrackingMethod>): Promise<TimeTrackingMethod> {
@@ -489,7 +490,7 @@ export const timeTrackingMethodService = {
       .single()
     
     if (error) throw error
-    return data
+    return data as any
   },
 
   async delete(id: string): Promise<void> {
@@ -517,7 +518,7 @@ export const timeTrackingMethodService = {
       .single()
     
     if (error) throw error
-    return data
+    return data as any
   }
 }
 
@@ -533,7 +534,7 @@ export const attendancePolicyService = {
       .order('name')
     
     if (error) throw error
-    return data || []
+    return (data || []) as any
   },
 
   async getById(id: string): Promise<AttendancePolicy | null> {
@@ -544,18 +545,18 @@ export const attendancePolicyService = {
       .single()
     
     if (error) throw error
-    return data
+    return data as any
   },
 
   async create(policy: Partial<AttendancePolicy>): Promise<AttendancePolicy> {
     const { data, error } = await supabase
       .from('attendance_policies')
-      .insert(policy)
+      .insert(policy as any)
       .select()
       .single()
     
     if (error) throw error
-    return data
+    return data as any
   },
 
   async update(id: string, updates: Partial<AttendancePolicy>): Promise<AttendancePolicy> {
@@ -567,7 +568,7 @@ export const attendancePolicyService = {
       .single()
     
     if (error) throw error
-    return data
+    return data as any
   },
 
   async delete(id: string): Promise<void> {
@@ -595,17 +596,17 @@ export const attendancePolicyService = {
       .single()
     
     if (error) throw error
-    return data
+    return data as any
   },
 
   async assignToEmployee(assignment: { employee_id: string; policy_id: string; effective_from: string }) {
     const { data, error } = await supabase
-      .from('employee_attendance_policies')
-      .insert(assignment)
+      .from('employee_attendance_policies' as any)
+      .insert(assignment as any)
       .select()
       .single()
     
     if (error) throw error
-    return data
+    return data as any
   }
 }

@@ -35,7 +35,7 @@ export const salaryStructureService = {
       }
 
       if (filters?.status) {
-        query = query.eq('status', filters.status)
+        query = query.eq('status', filters.status as any)
       }
 
       if (filters?.pay_grade_id) {
@@ -54,7 +54,7 @@ export const salaryStructureService = {
       }
       
       console.log('Fetched salary structures:', data)
-      return (data || []) as SalaryStructureWithRelations[]
+      return (data || []) as unknown as SalaryStructureWithRelations[]
     } catch (error) {
       console.error('Error in salary structures service:', error)
       return []
@@ -82,7 +82,7 @@ export const salaryStructureService = {
         throw error
       }
       
-      return data as SalaryStructureWithRelations
+      return data as unknown as SalaryStructureWithRelations
     } catch (error) {
       console.error('Error in getById salary structure:', error)
       return null

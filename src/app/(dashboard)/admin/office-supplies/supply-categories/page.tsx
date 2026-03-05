@@ -25,7 +25,7 @@ export default function SupplyCategoriesPage() {
   useEffect(() => { load() }, [])
 
   const openCreate = () => { setSelected(null); setForm({ name: '', description: '', is_active: true }); setModalOpen(true) }
-  const openEdit = (c: Category) => { setSelected(c); setForm({ name: c.name, description: c.description ?? '', is_active: c.is_active }); setModalOpen(true) }
+  const openEdit = (c: Category) => { setSelected(c); setForm({ name: c.name, description: c.description ?? '', is_active: c.is_active ?? true }); setModalOpen(true) }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()

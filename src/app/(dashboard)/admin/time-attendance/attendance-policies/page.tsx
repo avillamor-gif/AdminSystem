@@ -46,7 +46,7 @@ export default function AttendancePoliciesPage() {
 
   const stats = {
     total: filteredPolicies.length,
-    comprehensive: filteredPolicies.filter(p => p.policy_type === 'comprehensive').length,
+    comprehensive: filteredPolicies.filter(p => (p.policy_type as string) === 'comprehensive').length,
     defaultPolicy: filteredPolicies.find(p => p.is_default)?.name || 'None',
   }
 
@@ -102,13 +102,14 @@ export default function AttendancePoliciesPage() {
       {/* Filters */}
       <Card className="p-4">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div>
+          <div className="relative">
+            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
             <Input
               type="text"
               placeholder="Search policies..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              icon={<Search className="w-4 h-4" />}
+              className="pl-9"
             />
           </div>
           <div>
@@ -167,20 +168,20 @@ export default function AttendancePoliciesPage() {
                   <td className="px-6 py-4">
                     <div className="text-sm">
                       <div className="text-gray-900">
-                        Grace: {formatMinutes(policy.tardiness_grace_period_minutes)}
+                        Grace: {formatMinutes(policy.grace_period_minutes)}
                       </div>
-                      {policy.max_tardiness_per_month && (
+                      {policy.max_consecutive_absences > 0 && (
                         <div className="text-gray-500">
-                          Max: {policy.max_tardiness_per_month}/mo
+                          Max consec: {policy.max_consecutive_absences}
                         </div>
                       )}
                     </div>
                   </td>
                   <td className="px-6 py-4">
-                    {policy.max_absences_per_month ? (
+                    {policy.max_consecutive_absences > 0 ? (
                       <div className="flex items-center gap-1">
                         <AlertCircle className="w-4 h-4 text-red-500" />
-                        <span className="text-gray-900">{policy.max_absences_per_month}/month</span>
+                        <span className="text-gray-900">Max {policy.max_consecutive_absences} consecutive</span>
                       </div>
                     ) : (
                       <span className="text-gray-400">No limit</span>
@@ -188,16 +189,16 @@ export default function AttendancePoliciesPage() {
                   </td>
                   <td className="px-6 py-4">
                     <div className="flex flex-wrap gap-1">
-                      {policy.penalty_type === 'warning' && (
+                      {policy.late_action === 'warning' && (
                         <Badge className="bg-yellow-100 text-yellow-700">Warning</Badge>
                       )}
-                      {policy.penalty_type === 'deduction' && (
+                      {policy.late_action === 'deduction' && (
                         <Badge className="bg-red-100 text-red-700">Deduction</Badge>
                       )}
-                      {policy.penalty_type === 'suspension' && (
-                        <Badge className="bg-purple-100 text-purple-700">Suspension</Badge>
+                      {policy.late_action === 'half_day' && (
+                        <Badge className="bg-purple-100 text-purple-700">Half Day</Badge>
                       )}
-                      {policy.notify_supervisor && (
+                      {policy.requires_manager_approval && (
                         <Badge className="bg-blue-100 text-blue-700">Notify</Badge>
                       )}
                     </div>

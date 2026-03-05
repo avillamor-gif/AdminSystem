@@ -23,7 +23,7 @@ export const employeeComplianceService = {
       .order('created_at', { ascending: true })
 
     if (error) throw error
-    return data || []
+    return (data || []) as unknown as EmployeeComplianceItem[]
   },
 
   async toggle(id: string, isComplete: boolean, completedBy?: string): Promise<EmployeeComplianceItem> {
@@ -40,7 +40,7 @@ export const employeeComplianceService = {
       .single()
 
     if (error) throw error
-    return data
+    return data as unknown as EmployeeComplianceItem
   },
 
   async createDefaultItems(employeeId: string): Promise<void> {

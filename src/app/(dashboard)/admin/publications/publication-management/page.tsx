@@ -30,7 +30,7 @@ export default function PublicationManagementPage() {
   const [returnQty, setReturnQty] = useState(1)
   const [isReturning, setIsReturning] = useState(false)
   const [formData, setFormData] = useState({
-    title: '', publication_type: 'book', request_type: 'new',
+    publication_title: '', publication_type: 'book', request_type: 'new',
     publisher: '', isbn: '', purpose: '', notes: '',
     quantity: 1, priority: 'normal', delivery_method: 'pickup',
     estimated_cost: '', deadline: '',
@@ -48,7 +48,7 @@ export default function PublicationManagementPage() {
   const submitMutation = useSubmitPublicationRequest()
 
   const filtered = requests.filter(r =>
-    !search || r.title?.toLowerCase().includes(search.toLowerCase())
+    !search || r.publication_title?.toLowerCase().includes(search.toLowerCase())
   )
 
   const openReturn = (req: any) => {
@@ -95,14 +95,14 @@ export default function PublicationManagementPage() {
 
   const openCreate = () => {
     setSelectedItem(null)
-    setFormData({ title: '', publication_type: 'book', request_type: 'new', publisher: '', isbn: '', purpose: '', notes: '', quantity: 1, priority: 'normal', delivery_method: 'pickup', estimated_cost: '', deadline: '' })
+    setFormData({ publication_title: '', publication_type: 'book', request_type: 'new', publisher: '', isbn: '', purpose: '', notes: '', quantity: 1, priority: 'normal', delivery_method: 'pickup', estimated_cost: '', deadline: '' })
     setIsModalOpen(true)
   }
 
   const openEdit = (item: any) => {
     setSelectedItem(item)
     setFormData({
-      title: item.title || '', publication_type: item.publication_type || 'book',
+      publication_title: item.publication_title || '', publication_type: item.publication_type || 'book',
       request_type: item.request_type || 'new', publisher: item.publisher || '',
       isbn: item.isbn || '', purpose: item.purpose || '', notes: item.notes || '',
       quantity: item.quantity || 1, priority: item.priority || 'normal',
@@ -256,7 +256,7 @@ export default function PublicationManagementPage() {
                 {filtered.map(item => (
                   <tr key={item.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4">
-                      <div className="text-sm font-medium text-gray-900">{item.title}</div>
+                      <div className="text-sm font-medium text-gray-900">{item.publication_title}</div>
                       {item.request_number && <div className="text-xs text-gray-500">{item.request_number}</div>}
                     </td>
                     <td className="px-6 py-4 text-sm text-gray-700 capitalize">{item.publication_type}</td>
@@ -303,7 +303,7 @@ export default function PublicationManagementPage() {
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Title *</label>
-                <Input required value={formData.title} onChange={e => setFormData(p => ({ ...p, title: e.target.value }))} placeholder="Publication title" />
+                <Input required value={formData.publication_title} onChange={e => setFormData(p => ({ ...p, publication_title: e.target.value }))} placeholder="Publication title" />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
@@ -393,7 +393,7 @@ export default function PublicationManagementPage() {
         <ModalBody>
           <div className="space-y-4">
             <p className="text-sm text-gray-600">
-              Returning copies of <span className="font-semibold text-gray-900">{returnModal.req?.title}</span> back to the library inventory.
+              Returning copies of <span className="font-semibold text-gray-900">{returnModal.req?.publication_title}</span> back to the library inventory.
             </p>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">

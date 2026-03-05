@@ -58,7 +58,7 @@ export const locationTypeService = {
     }
     
     if (filters?.status) {
-      query = query.eq('status', filters.status)
+      query = query.eq('status', filters.status as any)
     }
     
     const { data, error } = await query
@@ -69,7 +69,7 @@ export const locationTypeService = {
     }
     
     console.log('Fetched location types from Supabase:', data)
-    return data as LocationType[]
+    return data as unknown as LocationType[]
   },
 
   async getById(id: string): Promise<LocationType | null> {
@@ -92,7 +92,7 @@ export const locationTypeService = {
     }
     
     console.log('Fetched location type from Supabase:', data)
-    return data as LocationType
+    return data as unknown as LocationType
   },
 
   async create(locationTypeData: LocationTypeInsert): Promise<LocationType> {
@@ -111,7 +111,7 @@ export const locationTypeService = {
     }
     
     console.log('Created location type in Supabase:', data)
-    return data as LocationType
+    return data as unknown as LocationType
   },
 
   async update(id: string, locationTypeData: LocationTypeUpdate): Promise<LocationType> {
@@ -131,7 +131,7 @@ export const locationTypeService = {
     }
     
     console.log('Updated location type in Supabase:', data)
-    return data as LocationType
+    return data as unknown as LocationType
   },
 
   async delete(id: string): Promise<void> {

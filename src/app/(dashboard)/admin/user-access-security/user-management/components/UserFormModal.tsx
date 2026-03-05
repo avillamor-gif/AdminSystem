@@ -9,7 +9,7 @@ import { Modal, Button, Input, Card, Badge } from '@/components/ui'
 import { useCreateUser, useUpdateUser } from '@/hooks/useUsers'
 import { useEmployees, useDepartments, useRoles } from '@/hooks'
 import { passwordPolicyService } from '@/services'
-import type { SystemUserWithRelations } from '@/services/user.service'
+import type { SystemUserWithRelations } from '@/services'
 
 const userSchema = z.object({
   email: z.string().email('Invalid email format'),

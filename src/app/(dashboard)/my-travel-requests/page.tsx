@@ -175,7 +175,7 @@ export default function MyTravelRequestsPage() {
                       ${request.estimated_cost?.toLocaleString() || '0'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <Badge className={getStatusBadge(request.status)}>
+                      <Badge className={getStatusBadge(request.status ?? "")}>
                         {request.status?.replace(/_/g, ' ')}
                       </Badge>
                     </td>
@@ -286,7 +286,7 @@ export default function MyTravelRequestsPage() {
                 </div>
                 <div>
                   <label className="text-sm font-medium text-gray-600">Status</label>
-                  <Badge className={getStatusBadge(selectedRequest.status)}>
+                  <Badge className={getStatusBadge(selectedRequest.status ?? "")}>
                     {selectedRequest.status?.replace(/_/g, ' ')}
                   </Badge>
                 </div>

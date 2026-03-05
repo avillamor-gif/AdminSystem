@@ -122,7 +122,7 @@ export const leaveTypeService = {
 
     const { data, error } = await query
     if (error) throw error
-    return data as LeaveType[]
+    return data as unknown as LeaveType[]
   },
 
   async getById(id: string) {
@@ -134,19 +134,19 @@ export const leaveTypeService = {
       .single()
 
     if (error) throw error
-    return data as LeaveType
+    return data as unknown as LeaveType
   },
 
   async create(leaveType: Omit<LeaveType, 'id' | 'created_at' | 'updated_at'>) {
     const supabase = createClient()
     const { data, error } = await supabase
       .from('leave_types')
-      .insert(leaveType)
+      .insert(leaveType as any)
       .select()
       .single()
 
     if (error) throw error
-    return data as LeaveType
+    return data as unknown as LeaveType
   },
 
   async update(id: string, leaveType: Partial<LeaveType>) {
@@ -159,7 +159,7 @@ export const leaveTypeService = {
       .single()
 
     if (error) throw error
-    return data as LeaveType
+    return data as unknown as LeaveType
   },
 
   async delete(id: string) {
@@ -193,7 +193,7 @@ export const accrualRuleService = {
 
     const { data, error } = await query
     if (error) throw error
-    return data as (AccrualRule & { leave_type: LeaveType })[]
+    return data as unknown as (AccrualRule & { leave_type: LeaveType })[]
   },
 
   async getById(id: string) {
@@ -205,19 +205,19 @@ export const accrualRuleService = {
       .single()
 
     if (error) throw error
-    return data as AccrualRule & { leave_type: LeaveType }
+    return data as unknown as AccrualRule & { leave_type: LeaveType }
   },
 
   async create(rule: Omit<AccrualRule, 'id' | 'created_at' | 'updated_at'>) {
     const supabase = createClient()
     const { data, error } = await supabase
       .from('accrual_rules')
-      .insert(rule)
+      .insert(rule as any)
       .select('*, leave_type:leave_types(*)')
       .single()
 
     if (error) throw error
-    return data as AccrualRule & { leave_type: LeaveType }
+    return data as unknown as AccrualRule & { leave_type: LeaveType }
   },
 
   async update(id: string, rule: Partial<AccrualRule>) {
@@ -230,7 +230,7 @@ export const accrualRuleService = {
       .single()
 
     if (error) throw error
-    return data as AccrualRule & { leave_type: LeaveType }
+    return data as unknown as AccrualRule & { leave_type: LeaveType }
   },
 
   async delete(id: string) {
@@ -264,7 +264,7 @@ export const leavePolicyConfigService = {
 
     const { data, error } = await query
     if (error) throw error
-    return data as (LeavePolicyConfig & { leave_type: LeaveType })[]
+    return data as unknown as (LeavePolicyConfig & { leave_type: LeaveType })[]
   },
 
   async getById(id: string) {
@@ -276,19 +276,19 @@ export const leavePolicyConfigService = {
       .single()
 
     if (error) throw error
-    return data as LeavePolicyConfig & { leave_type: LeaveType }
+    return data as unknown as LeavePolicyConfig & { leave_type: LeaveType }
   },
 
   async create(policy: Omit<LeavePolicyConfig, 'id' | 'created_at' | 'updated_at'>) {
     const supabase = createClient()
     const { data, error } = await supabase
       .from('leave_policy_configs')
-      .insert(policy)
+      .insert(policy as any)
       .select('*, leave_type:leave_types(*)')
       .single()
 
     if (error) throw error
-    return data as LeavePolicyConfig & { leave_type: LeaveType }
+    return data as unknown as LeavePolicyConfig & { leave_type: LeaveType }
   },
 
   async update(id: string, policy: Partial<LeavePolicyConfig>) {
@@ -301,7 +301,7 @@ export const leavePolicyConfigService = {
       .single()
 
     if (error) throw error
-    return data as LeavePolicyConfig & { leave_type: LeaveType }
+    return data as unknown as LeavePolicyConfig & { leave_type: LeaveType }
   },
 
   async delete(id: string) {
@@ -332,7 +332,7 @@ export const leavePolicyConfigService = {
       .single()
 
     if (error) throw error
-    return data as LeavePolicyConfig & { leave_type: LeaveType }
+    return data as unknown as LeavePolicyConfig & { leave_type: LeaveType }
   },
 }
 
@@ -359,7 +359,7 @@ export const holidayService = {
 
     const { data, error } = await query
     if (error) throw error
-    return data as Holiday[]
+    return data as unknown as Holiday[]
   },
 
   async getById(id: string) {
@@ -371,19 +371,19 @@ export const holidayService = {
       .single()
 
     if (error) throw error
-    return data as Holiday
+    return data as unknown as Holiday
   },
 
   async create(holiday: Omit<Holiday, 'id' | 'created_at' | 'updated_at'>) {
     const supabase = createClient()
     const { data, error } = await supabase
       .from('holidays')
-      .insert(holiday)
+      .insert(holiday as any)
       .select()
       .single()
 
     if (error) throw error
-    return data as Holiday
+    return data as unknown as Holiday
   },
 
   async update(id: string, holiday: Partial<Holiday>) {
@@ -396,7 +396,7 @@ export const holidayService = {
       .single()
 
     if (error) throw error
-    return data as Holiday
+    return data as unknown as Holiday
   },
 
   async delete(id: string) {
@@ -430,7 +430,7 @@ export const absenceCategoryService = {
 
     const { data, error } = await query
     if (error) throw error
-    return data as AbsenceCategory[]
+    return data as unknown as AbsenceCategory[]
   },
 
   async getById(id: string) {
@@ -442,19 +442,19 @@ export const absenceCategoryService = {
       .single()
 
     if (error) throw error
-    return data as AbsenceCategory
+    return data as unknown as AbsenceCategory
   },
 
   async create(category: Omit<AbsenceCategory, 'id' | 'created_at' | 'updated_at'>) {
     const supabase = createClient()
     const { data, error } = await supabase
       .from('absence_categories')
-      .insert(category)
+      .insert(category as any)
       .select()
       .single()
 
     if (error) throw error
-    return data as AbsenceCategory
+    return data as unknown as AbsenceCategory
   },
 
   async update(id: string, category: Partial<AbsenceCategory>) {
@@ -467,7 +467,7 @@ export const absenceCategoryService = {
       .single()
 
     if (error) throw error
-    return data as AbsenceCategory
+    return data as unknown as AbsenceCategory
   },
 
   async delete(id: string) {
@@ -501,7 +501,7 @@ export const approvalWorkflowService = {
 
     const { data, error } = await query
     if (error) throw error
-    return data as (ApprovalWorkflow & { leave_type?: LeaveType })[]
+    return data as unknown as (ApprovalWorkflow & { leave_type?: LeaveType })[]
   },
 
   async getById(id: string) {
@@ -513,32 +513,32 @@ export const approvalWorkflowService = {
       .single()
 
     if (error) throw error
-    return data as ApprovalWorkflow & { leave_type?: LeaveType }
+    return data as unknown as ApprovalWorkflow & { leave_type?: LeaveType }
   },
 
   async create(workflow: Omit<ApprovalWorkflow, 'id' | 'created_at' | 'updated_at'>) {
     const supabase = createClient()
     const { data, error } = await supabase
       .from('leave_approval_workflows')
-      .insert(workflow)
+      .insert(workflow as any)
       .select('*, leave_type:leave_types(*)')
       .single()
 
     if (error) throw error
-    return data as ApprovalWorkflow & { leave_type?: LeaveType }
+    return data as unknown as ApprovalWorkflow & { leave_type?: LeaveType }
   },
 
   async update(id: string, workflow: Partial<ApprovalWorkflow>) {
     const supabase = createClient()
     const { data, error } = await supabase
       .from('leave_approval_workflows')
-      .update(workflow)
+      .update(workflow as any)
       .eq('id', id)
       .select('*, leave_type:leave_types(*)')
       .single()
 
     if (error) throw error
-    return data as ApprovalWorkflow & { leave_type?: LeaveType }
+    return data as unknown as ApprovalWorkflow & { leave_type?: LeaveType }
   },
 
   async delete(id: string) {
@@ -569,6 +569,6 @@ export const approvalWorkflowService = {
       .single()
 
     if (error) throw error
-    return data as ApprovalWorkflow & { leave_type?: LeaveType }
+    return data as unknown as ApprovalWorkflow & { leave_type?: LeaveType }
   },
 }

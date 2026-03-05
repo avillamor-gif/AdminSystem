@@ -26,7 +26,7 @@ export const employeeAttachmentService = {
       throw new Error('Failed to fetch employee attachments')
     }
 
-    return data as EmployeeAttachmentWithUploader[]
+    return data as unknown as EmployeeAttachmentWithUploader[]
   },
 
   // Create new attachment record
@@ -34,7 +34,7 @@ export const employeeAttachmentService = {
     const supabase = createClient()
     const { data, error } = await supabase
       .from('employee_attachments')
-      .insert(attachmentData)
+      .insert(attachmentData as any)
       .select()
       .single()
 
@@ -43,7 +43,7 @@ export const employeeAttachmentService = {
       throw new Error(error.message || 'Failed to create attachment record')
     }
 
-    return data
+    return data as any
   },
 
   // Delete attachment record and file
@@ -104,6 +104,6 @@ export const employeeAttachmentService = {
       throw new Error('Failed to download file')
     }
 
-    return data
+    return data as any
   },
 }

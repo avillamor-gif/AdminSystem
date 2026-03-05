@@ -75,7 +75,7 @@ export const userService = {
         .order('created_at', { ascending: false })
 
       if (filters?.role) {
-        query = query.eq('role', filters.role)
+        query = query.eq('role', filters.role as any)
       }
 
       const { data: userRoles, error } = await query
@@ -250,7 +250,7 @@ export const userService = {
         return null
       }
 
-      const employee = data.employee
+      const employee = (data as any).employee
       const name = employee ? `${employee.first_name} ${employee.last_name}` : 'Unknown User'
       
       return {
@@ -260,8 +260,8 @@ export const userService = {
         role: data.role,
         status: employee?.status === 'active' ? 'active' : 'inactive',
         employee_id: employee?.employee_id,
-        created_at: data.created_at,
-        updated_at: data.updated_at,
+        created_at: data.created_at ?? '',
+        updated_at: data.updated_at ?? '',
         employee: employee ? {
           id: employee.id,
           first_name: employee.first_name,

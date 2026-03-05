@@ -12,7 +12,7 @@ import { format } from 'date-fns'
 
 export default function DashboardPage() {
   const { data: currentEmployee } = useCurrentEmployee()
-  const { data: pendingRequests = [], isLoading: pendingLoading } = useTeamPendingRequests(currentEmployee?.id)
+  const { data: pendingRequests = [], isLoading: pendingLoading } = useTeamPendingRequests(currentEmployee?.id ?? '')
   const approveMutation = useApproveLeaveRequest()
   const rejectMutation = useRejectLeaveRequest()
   const { data: employeesOnLeave = [], isLoading: leaveLoading } = useEmployeesOnLeaveToday()
@@ -352,7 +352,7 @@ export default function DashboardPage() {
                         <td className="py-3">
                           <div className="flex gap-2">
                             <button
-                              onClick={() => approveMutation.mutate(request.id)}
+                              onClick={() => approveMutation.mutate({ approval_id: request.id, comments: '' })}
                               disabled={approveMutation.isPending || rejectMutation.isPending}
                               className="px-3 py-1 bg-green-50 text-green-600 text-xs font-medium rounded hover:bg-green-100 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
                             >
@@ -360,7 +360,7 @@ export default function DashboardPage() {
                               Approve
                             </button>
                             <button
-                              onClick={() => rejectMutation.mutate(request.id)}
+                              onClick={() => rejectMutation.mutate({ approval_id: request.id, comments: '' })}
                               disabled={approveMutation.isPending || rejectMutation.isPending}
                               className="px-3 py-1 bg-red-50 text-red-600 text-xs font-medium rounded hover:bg-red-100 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
                             >

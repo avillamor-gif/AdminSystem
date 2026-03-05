@@ -50,7 +50,7 @@ export const terminationService = {
 
     // Apply filters
     if (filters.status) {
-      query = query.eq('status', filters.status)
+      query = query.eq('status', filters.status as any)
     }
     if (filters.termination_type) {
       query = query.eq('termination_type', filters.termination_type)
@@ -84,7 +84,7 @@ export const terminationService = {
       throw new Error('Failed to fetch termination requests')
     }
 
-    return data as TerminationRequestWithEmployee[]
+    return data as unknown as TerminationRequestWithEmployee[]
   },
 
   // Get termination request by ID
@@ -105,7 +105,7 @@ export const terminationService = {
       return null
     }
 
-    return data as TerminationRequestWithEmployee
+    return data as unknown as TerminationRequestWithEmployee
   },
 
   // Create new termination request
@@ -127,7 +127,7 @@ export const terminationService = {
       throw new Error('Failed to create termination request')
     }
 
-    return data
+    return data as any
   },
 
   // Update termination request
@@ -147,7 +147,7 @@ export const terminationService = {
       throw new Error('Failed to update termination request')
     }
 
-    return data
+    return data as any
   },
 
   // Submit termination request (trigger workflow)
@@ -166,11 +166,11 @@ export const terminationService = {
       requestId: id,
       requestType: 'termination',
       employeeId,
-      employeeName,
-      department,
-      businessJustification: request.business_justification || `Termination request: ${request.termination_type}`,
-      priority: request.urgency || 'medium',
       metadata: {
+        employeeName,
+        department,
+        businessJustification: request.business_justification || `Termination request: ${request.termination_type}`,
+        priority: request.urgency || 'medium',
         termination_type: request.termination_type,
         termination_reason: request.termination_reason,
         proposed_last_working_date: request.proposed_last_working_date,
@@ -232,7 +232,7 @@ export const terminationService = {
         status: 'terminated',
         updated_at: new Date().toISOString()
       })
-      .eq('id', request.employee_id)
+      .eq('id', request.employee_id ?? '')
 
     if (employeeError) {
       console.error('Error updating employee status:', employeeError)

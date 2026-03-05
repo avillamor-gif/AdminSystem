@@ -47,12 +47,12 @@ export const recruitmentService = {
     }
 
     if (filters?.status) {
-      query = query.eq('status', filters.status)
+      query = query.eq('status', filters.status as any)
     }
 
     const { data, error } = await query
     if (error) throw error
-    return (data || []) as VacancyWithRelations[]
+    return (data || []) as unknown as VacancyWithRelations[]
   },
 
   async getVacancyById(id: string): Promise<VacancyWithRelations | null> {
@@ -68,7 +68,7 @@ export const recruitmentService = {
       .single()
 
     if (error) throw error
-    return data as VacancyWithRelations | null
+    return data as unknown as VacancyWithRelations | null
   },
 
   async createVacancy(vacancy: VacancyInsert): Promise<Vacancy> {
@@ -80,7 +80,7 @@ export const recruitmentService = {
       .single()
 
     if (error) throw error
-    return data as Vacancy
+    return data as unknown as Vacancy
   },
 
   async updateVacancy(id: string, vacancy: VacancyUpdate): Promise<Vacancy> {
@@ -93,7 +93,7 @@ export const recruitmentService = {
       .single()
 
     if (error) throw error
-    return data as Vacancy
+    return data as unknown as Vacancy
   },
 
   async deleteVacancy(id: string): Promise<void> {
@@ -125,12 +125,12 @@ export const recruitmentService = {
     }
 
     if (filters?.status) {
-      query = query.eq('status', filters.status)
+      query = query.eq('status', filters.status as any)
     }
 
     const { data, error } = await query
     if (error) throw error
-    return (data || []) as CandidateWithRelations[]
+    return (data || []) as unknown as CandidateWithRelations[]
   },
 
   async getCandidateById(id: string): Promise<CandidateWithRelations | null> {
@@ -148,7 +148,7 @@ export const recruitmentService = {
       .single()
 
     if (error) throw error
-    return data as CandidateWithRelations | null
+    return data as unknown as CandidateWithRelations | null
   },
 
   async createCandidate(candidate: CandidateInsert): Promise<Candidate> {
@@ -160,7 +160,7 @@ export const recruitmentService = {
       .single()
 
     if (error) throw error
-    return data as Candidate
+    return data as unknown as Candidate
   },
 
   async updateCandidate(id: string, candidate: CandidateUpdate): Promise<Candidate> {
@@ -173,7 +173,7 @@ export const recruitmentService = {
       .single()
 
     if (error) throw error
-    return data as Candidate
+    return data as unknown as Candidate
   },
 
   async deleteCandidate(id: string): Promise<void> {

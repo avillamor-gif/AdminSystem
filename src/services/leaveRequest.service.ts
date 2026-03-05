@@ -80,7 +80,7 @@ export const leaveRequestService = {
       query = query.eq('employee_id', filters.employee_id)
     }
     if (filters?.status) {
-      query = query.eq('status', filters.status)
+      query = query.eq('status', filters.status as any)
     }
     if (filters?.leave_type_id) {
       query = query.eq('leave_type_id', filters.leave_type_id)
@@ -117,7 +117,7 @@ export const leaveRequestService = {
       employee:   empMap[r.employee_id]   ?? null,
       leave_type: ltMap[r.leave_type_id]  ?? null,
       workflow:   wfMap[r.workflow_id]    ?? null,
-    })) as LeaveRequest[]
+    })) as unknown as LeaveRequest[]
   },
 
   async getById(id: string) {
@@ -198,7 +198,7 @@ export const leaveRequestService = {
 
     const { data, error } = await supabase
       .from('leave_requests')
-      .insert({ ...request, workflow_id })
+      .insert({ ...request, workflow_id } as any)
       .select()
       .single()
 
@@ -225,20 +225,20 @@ export const leaveRequestService = {
     }
     // ─────────────────────────────────────────────────────────────────────────
 
-    return data as LeaveRequest
+    return data as unknown as LeaveRequest
   },
 
   async update(id: string, request: Partial<LeaveRequest>) {
     const supabase = createClient()
     const { data, error } = await supabase
       .from('leave_requests')
-      .update(request)
+      .update(request as any)
       .eq('id', id)
       .select()
       .single()
 
     if (error) throw error
-    return data as LeaveRequest
+    return data as unknown as LeaveRequest
   },
 
   async cancel(id: string, cancelled_by: string) {
@@ -255,7 +255,7 @@ export const leaveRequestService = {
       .single()
 
     if (error) throw error
-    return data as LeaveRequest
+    return data as unknown as LeaveRequest
   },
 
   async delete(id: string) {
@@ -307,7 +307,7 @@ export const leaveRequestService = {
     return approvals.map((a: any) => ({
       ...a,
       leave_request: lrMap[a.leave_request_id] ?? null,
-    })) as LeaveApproval[]
+    })) as unknown as LeaveApproval[]
   },
 
   // Get all pending leave requests from direct reports (team members)
@@ -319,7 +319,7 @@ export const leaveRequestService = {
     })
     const json = await res.json()
     if (!res.ok) throw new Error(json.error || 'Failed to fetch team pending requests')
-    return (json.data ?? []) as LeaveRequest[]
+    return (json.data ?? []) as unknown as LeaveRequest[]
   },
 
   // Directly approve a leave request (no workflow)
@@ -376,7 +376,7 @@ export const leaveApprovalService = {
       .single()
 
     if (workflow) {
-      const totalSteps = (workflow.workflow_steps as any[]).length
+      const totalSteps = (workflow.workflow_steps as unknown as any[]).length
       const currentStep = (approval as any).step_number
 
       if (workflow.is_sequential) {
@@ -472,7 +472,7 @@ export const leaveApprovalService = {
       comments
     )
 
-    return data
+    return data as any
   },
 }
 
@@ -540,7 +540,7 @@ export const leaveBalanceService = {
     return balances.map((b) => ({
       ...b,
       leave_type: typeMap.get(b.leave_type_id) || null,
-    })) as LeaveBalance[]
+    })) as unknown as LeaveBalance[]
   },
 
   async getByEmployee(employee_id: string, year?: number) {
@@ -568,7 +568,7 @@ export const leaveBalanceService = {
     return balances.map((b) => ({
       ...b,
       leave_type: typeMap.get(b.leave_type_id) || null,
-    })) as LeaveBalance[]
+    })) as unknown as LeaveBalance[]
   },
 
   async allocate(employee_id: string, leave_type_id: string, year: number, days: number) {
@@ -594,7 +594,7 @@ export const leaveBalanceService = {
         .single()
 
       if (error) throw error
-      return data as LeaveBalance
+      return data as unknown as LeaveBalance
     } else {
       // Create new with available_days = days (no used/pending yet)
       const { data, error } = await supabase
@@ -613,7 +613,7 @@ export const leaveBalanceService = {
         .single()
 
       if (error) throw error
-      return data as LeaveBalance
+      return data as unknown as LeaveBalance
     }
   },
 
@@ -654,7 +654,7 @@ export const leaveBalanceService = {
 
     if (inserts.length === 0) return 0
 
-    const { error } = await supabase.from('leave_balances').insert(inserts)
+    const { error } = await supabase.from('leave_balances').insert(inserts as any)
     if (error) throw error
     return inserts.length
   },

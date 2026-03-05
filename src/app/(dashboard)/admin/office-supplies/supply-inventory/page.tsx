@@ -10,8 +10,8 @@ interface Category { id: string; name: string }
 interface Vendor { id: string; name: string }
 interface Item {
   id: string; name: string; description: string | null; category_id: string | null
-  unit: string; unit_cost: number; quantity_on_hand: number; reorder_point: number
-  max_stock: number; location: string | null; vendor_id: string | null; is_active: boolean; notes: string | null
+  unit: string | null; unit_cost: number | null; quantity_on_hand: number | null; reorder_point: number | null
+  max_stock: number | null; location: string | null; vendor_id: string | null; is_active: boolean | null; notes: string | null
   category?: Category; vendor?: Vendor
 }
 
@@ -46,7 +46,7 @@ export default function SupplyInventoryPage() {
   useEffect(() => { load() }, [])
 
   const openCreate = () => { setSelected(null); setForm(empty); setModalOpen(true) }
-  const openEdit = (i: Item) => { setSelected(i); setForm({ name: i.name, description: i.description ?? '', category_id: i.category_id ?? '', unit: i.unit, unit_cost: i.unit_cost, quantity_on_hand: i.quantity_on_hand, reorder_point: i.reorder_point, max_stock: i.max_stock, location: i.location ?? '', vendor_id: i.vendor_id ?? '', is_active: i.is_active, notes: i.notes ?? '' }); setModalOpen(true) }
+  const openEdit = (i: Item) => { setSelected(i); setForm({ name: i.name, description: i.description ?? '', category_id: i.category_id ?? '', unit: i.unit ?? 'piece', unit_cost: i.unit_cost ?? 0, quantity_on_hand: i.quantity_on_hand ?? 0, reorder_point: i.reorder_point ?? 5, max_stock: i.max_stock ?? 100, location: i.location ?? '', vendor_id: i.vendor_id ?? '', is_active: i.is_active ?? true, notes: i.notes ?? '' }); setModalOpen(true) }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -74,8 +74,8 @@ export default function SupplyInventoryPage() {
   }
 
   const filtered = items.filter(i => !search || i.name.toLowerCase().includes(search.toLowerCase()) || (i.category?.name ?? '').toLowerCase().includes(search.toLowerCase()))
-  const lowStock = items.filter(i => i.quantity_on_hand <= i.reorder_point && i.is_active).length
-  const totalValue = items.reduce((sum, i) => sum + (i.unit_cost * i.quantity_on_hand), 0)
+  const lowStock = items.filter(i => (i.quantity_on_hand ?? 0) <= (i.reorder_point ?? 0) && i.is_active).length
+  const totalValue = items.reduce((sum, i) => sum + ((i.unit_cost ?? 0) * (i.quantity_on_hand ?? 0)), 0)
 
   return (
     <div className="space-y-6">
@@ -90,7 +90,7 @@ export default function SupplyInventoryPage() {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <Card className="p-5 flex flex-col items-center text-center"><Package className="w-6 h-6 text-blue-600 mb-2" /><p className="text-2xl font-bold">{items.length}</p><p className="text-xs text-gray-500">Total Items</p></Card>
         <Card className="p-5 flex flex-col items-center text-center"><AlertTriangle className="w-6 h-6 text-red-500 mb-2" /><p className="text-2xl font-bold text-red-600">{lowStock}</p><p className="text-xs text-gray-500">Low Stock</p></Card>
-        <Card className="p-5 flex flex-col items-center text-center"><Package className="w-6 h-6 text-green-600 mb-2" /><p className="text-2xl font-bold">{items.reduce((s, i) => s + i.quantity_on_hand, 0)}</p><p className="text-xs text-gray-500">Total Units</p></Card>
+        <Card className="p-5 flex flex-col items-center text-center"><Package className="w-6 h-6 text-green-600 mb-2" /><p className="text-2xl font-bold">{items.reduce((s, i) => s + (i.quantity_on_hand ?? 0), 0)}</p><p className="text-xs text-gray-500">Total Units</p></Card>
         <Card className="p-5 flex flex-col items-center text-center"><Package className="w-6 h-6 text-purple-600 mb-2" /><p className="text-2xl font-bold">₱{totalValue.toLocaleString()}</p><p className="text-xs text-gray-500">Total Value</p></Card>
       </div>
 
@@ -107,14 +107,14 @@ export default function SupplyInventoryPage() {
               </thead>
               <tbody className="divide-y divide-gray-200">
                 {filtered.map(item => {
-                  const isLow = item.quantity_on_hand <= item.reorder_point
+                  const isLow = (item.quantity_on_hand ?? 0) <= (item.reorder_point ?? 0)
                   return (
                     <tr key={item.id} className="hover:bg-gray-50">
                       <td className="px-6 py-4"><div className="font-medium text-gray-900 text-sm">{item.name}</div>{item.location && <div className="text-xs text-gray-400">{item.location}</div>}</td>
                       <td className="px-6 py-4 text-sm text-gray-500">{item.category?.name ?? '—'}</td>
-                      <td className="px-6 py-4 text-sm text-gray-700">₱{item.unit_cost.toFixed(2)}</td>
-                      <td className="px-6 py-4"><span className={`text-sm font-semibold ${isLow ? 'text-red-600' : 'text-gray-700'}`}>{item.quantity_on_hand} {item.unit}{isLow && <span className="ml-1 text-xs text-red-400">(low)</span>}</span></td>
-                      <td className="px-6 py-4 text-sm text-gray-500">{item.reorder_point}</td>
+                      <td className="px-6 py-4 text-sm text-gray-700">₱{(item.unit_cost ?? 0).toFixed(2)}</td>
+                      <td className="px-6 py-4"><span className={`text-sm font-semibold ${isLow ? 'text-red-600' : 'text-gray-700'}`}>{item.quantity_on_hand ?? 0} {item.unit ?? ''}{isLow && <span className="ml-1 text-xs text-red-400">(low)</span>}</span></td>
+                      <td className="px-6 py-4 text-sm text-gray-500">{item.reorder_point ?? 0}</td>
                       <td className="px-6 py-4"><Badge className={item.is_active ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}>{item.is_active ? 'Active' : 'Inactive'}</Badge></td>
                       <td className="px-6 py-4">
                         <div className="flex gap-1">

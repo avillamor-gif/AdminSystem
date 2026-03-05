@@ -39,7 +39,7 @@ export const employeeService = {
     }
 
     if (filters?.status) {
-      query = query.eq('status', filters.status as Employee['status'])
+      query = query.eq('status', filters.status as 'active' | 'inactive' | 'terminated')
     }
 
     const { data: employees, error } = await query
@@ -144,27 +144,24 @@ export const employeeService = {
         : Promise.resolve({ data: null })
     ])
     
+    // Fetch manager separately if manager_id exists
+    let managerData = null
+    if (employee && employee.manager_id) {
+      const { data: mgr } = await supabase
+        .from('employees')
+        .select('id, first_name, last_name')
+        .eq('id', employee.manager_id)
+        .single()
+      
+      managerData = mgr
+    }
+    
     return {
       ...employee,
       department: departmentResult.data,
       job_title: jobTitleResult.data,
-      manager: null
+      manager: managerData
     } as EmployeeWithRelations
-    
-    // Fetch manager separately if manager_id exists
-    if (data && data.manager_id) {
-      const { data: managerData } = await supabase
-        .from('employees')
-        .select('id, first_name, last_name')
-        .eq('id', data.manager_id)
-        .single()
-      
-      if (managerData) {
-        return { ...data, manager: managerData } as EmployeeWithRelations
-      }
-    }
-    
-    return data as EmployeeWithRelations | null
   },
 
   async create(employee: EmployeeInsert): Promise<Employee> {
@@ -183,7 +180,7 @@ export const employeeService = {
     }
     
     console.log('Employee created successfully:', data)
-    return data as Employee
+    return data as unknown as Employee
   },
 
   async update(id: string, employee: EmployeeUpdate): Promise<Employee> {
@@ -240,7 +237,7 @@ export const employeeService = {
       const { data: employeeByEmail, error: emailError } = await supabase
         .from('employees')
         .select('id')
-        .eq('email', user.email)
+        .eq('email', user.email ?? '')
         .maybeSingle()
 
       if (emailError || !employeeByEmail) {

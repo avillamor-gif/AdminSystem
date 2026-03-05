@@ -75,7 +75,7 @@ export const employmentTypeService = {
       }
       
       console.log('Fetched employment types from database:', data)
-      return data || []
+      return (data || []) as any
     } catch (error) {
       console.error('Error in getAll employment types:', error)
       return []
@@ -98,7 +98,7 @@ export const employmentTypeService = {
       }
       
       console.log('Fetched employment type:', data)
-      return data
+      return data as any
     } catch (error) {
       console.error('Error in getById employment type:', error)
       return null
@@ -125,7 +125,7 @@ export const employmentTypeService = {
       }
       
       console.log('Created employment type:', data)
-      return data
+      return data as any
     } catch (error) {
       console.error('Catch block error:', error)
       throw error
@@ -148,7 +148,7 @@ export const employmentTypeService = {
     }
     
     console.log('Updated employment type:', data)
-    return data
+    return data as any
   },
 
   async delete(id: string): Promise<void> {

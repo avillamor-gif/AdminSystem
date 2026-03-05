@@ -13,11 +13,7 @@ export default function WorkSchedulesPage() {
   const [isFormOpen, setIsFormOpen] = useState(false)
   const [selectedSchedule, setSelectedSchedule] = useState<WorkSchedule | null>(null)
 
-  const { data: schedules = [], isLoading } = useWorkSchedules({ 
-    search: searchQuery,
-    schedule_type: scheduleTypeFilter || undefined,
-    is_active: true,
-  })
+  const { data: schedules = [], isLoading } = useWorkSchedules()
   const deleteMutation = useDeleteWorkSchedule()
   const setDefaultMutation = useSetDefaultWorkSchedule()
 
@@ -44,7 +40,7 @@ export default function WorkSchedulesPage() {
     total: schedules.length,
     fixed: schedules.filter(s => s.schedule_type === 'fixed').length,
     flexible: schedules.filter(s => s.schedule_type === 'flexible').length,
-    default: schedules.find(s => s.is_default)?.schedule_name || 'None',
+    default: schedules.find(s => s.is_default)?.name || 'None',
   }
 
   const getScheduleTypeColor = (type: string) => {
@@ -102,7 +98,6 @@ export default function WorkSchedulesPage() {
               placeholder="Search schedules..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              icon={<Search className="w-4 h-4" />}
             />
           </div>
           <div>
@@ -138,13 +133,11 @@ export default function WorkSchedulesPage() {
             </thead>
             <tbody className="divide-y divide-gray-200">
               {schedules.map((schedule) => {
-                const workDays = Array.isArray(schedule.work_days) ? schedule.work_days : []
                 return (
                   <tr key={schedule.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4">
                       <div>
-                        <div className="font-medium text-gray-900">{schedule.schedule_name}</div>
-                        <div className="text-sm text-gray-500">{schedule.schedule_code}</div>
+                        <div className="font-medium text-gray-900">{schedule.name}</div>
                       </div>
                     </td>
                     <td className="px-6 py-4">
@@ -155,11 +148,11 @@ export default function WorkSchedulesPage() {
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-2">
                         <Clock className="w-4 h-4 text-gray-400" />
-                        <span className="text-gray-900">{Number(schedule.weekly_hours).toFixed(1)} hrs</span>
+                        <span className="text-gray-900">{schedule.hours_per_week} hrs</span>
                       </div>
                     </td>
                     <td className="px-6 py-4">
-                      <span className="text-gray-900">{workDays.length} days</span>
+                      <span className="text-gray-900">{schedule.days_per_week} days</span>
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-2">

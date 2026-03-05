@@ -48,7 +48,7 @@ export const emergencyContactService = {
       }
       
       console.log('Fetched emergency contacts:', data)
-      return data || []
+      return (data || []) as unknown as EmergencyContact[]
     } catch (error) {
       console.error('Error in getAllByEmployee:', error)
       return []
@@ -71,7 +71,7 @@ export const emergencyContactService = {
       }
       
       console.log('Fetched emergency contact:', data)
-      return data
+      return data as unknown as EmergencyContact | null
     } catch (error) {
       console.error('Error in getById:', error)
       return null
@@ -93,7 +93,7 @@ export const emergencyContactService = {
     }
     
     console.log('Created emergency contact:', data)
-    return data
+    return data as unknown as EmergencyContact
   },
 
   async update(id: string, contactData: EmergencyContactUpdate): Promise<EmergencyContact> {
@@ -112,7 +112,7 @@ export const emergencyContactService = {
     }
     
     console.log('Updated emergency contact:', data)
-    return data
+    return data as unknown as EmergencyContact
   },
 
   async delete(id: string): Promise<void> {

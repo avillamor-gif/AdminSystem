@@ -107,6 +107,6 @@ export const auditLogService = {
       throw error
     }
 
-    return data || []
+    return (data || []) as any
   }
 }

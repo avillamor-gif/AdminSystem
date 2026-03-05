@@ -68,16 +68,17 @@ export const permissionService = {
 
       // Try to get user permissions from view first
       const { data, error } = await supabase
-        .from('user_permissions')
+        .from('user_permissions' as any)
         .select('*')
         .eq('user_id', user.id)
 
       // If view exists and has data, use it
       if (!error && data && data.length > 0) {
+        const row = data[0] as any
         const roleInfo: UserRoleInfo = {
-          role_id: data[0].role_id,
-          role_name: data[0].role_name,
-          role_description: data[0].role_description,
+          role_id: row.role_id,
+          role_name: row.role_name,
+          role_description: row.role_description,
           permissions: data.map((p: any) => p.permission_code)
         }
         return roleInfo
@@ -100,7 +101,7 @@ export const permissionService = {
       const permissions = this.getDefaultPermissionsByRole(userRole.role)
       
       // Normalize role name with proper casing
-      let roleName = userRole.role
+      let roleName: string = userRole.role
       if (roleName.toLowerCase() === 'admin') {
         roleName = 'Admin'
       } else {

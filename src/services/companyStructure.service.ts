@@ -47,7 +47,7 @@ export const companyStructureService = {
     }
 
     if (filters?.status) {
-      query = query.eq('status', filters.status)
+      query = query.eq('status', filters.status as any)
     }
 
     if (filters?.parent_id !== undefined) {
@@ -69,7 +69,7 @@ export const companyStructureService = {
       throw error
     }
 
-    return data as CompanyStructureWithRelations[]
+    return data as unknown as CompanyStructureWithRelations[]
   },
 
   async getById(id: string): Promise<CompanyStructureWithRelations | null> {
@@ -90,7 +90,7 @@ export const companyStructureService = {
       throw error
     }
 
-    return data as CompanyStructureWithRelations
+    return data as unknown as CompanyStructureWithRelations
   },
 
   async getHierarchy(): Promise<CompanyStructureWithRelations[]> {
@@ -121,7 +121,7 @@ export const companyStructureService = {
     const supabase = createClient()
     const { data: newStructure, error } = await supabase
       .from('company_structures')
-      .insert(data)
+      .insert(data as any)
       .select()
       .single()
 

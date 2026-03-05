@@ -75,7 +75,7 @@ export const leavePolicyService = {
       throw error
     }
     
-    return data || []
+    return (data || []) as any
   },
 
   async getById(id: string): Promise<LeavePolicyWithRelations> {
@@ -96,7 +96,7 @@ export const leavePolicyService = {
       throw error
     }
     
-    return data
+    return data as any
   },
 
   async create(policy: LeavePolicyInsert): Promise<LeavePolicy> {
@@ -104,7 +104,7 @@ export const leavePolicyService = {
     
     const { data, error } = await supabase
       .from('leave_policies')
-      .insert(policy)
+      .insert(policy as any)
       .select()
     
     if (error) {
@@ -188,7 +188,7 @@ export const leavePolicyService = {
       throw error
     }
     
-    return data || []
+    return (data || []) as any
   },
 
   async getBalanceById(id: string): Promise<LeaveBalanceWithRelations> {
@@ -210,7 +210,7 @@ export const leavePolicyService = {
       throw error
     }
     
-    return data
+    return data as any
   },
 
   async getEmployeeBalance(
@@ -245,7 +245,7 @@ export const leavePolicyService = {
       throw error
     }
     
-    return data
+    return data as any
   },
 
   async createBalance(balance: LeaveBalanceInsert): Promise<LeaveBalance> {
@@ -253,7 +253,7 @@ export const leavePolicyService = {
     
     const { data, error } = await supabase
       .from('leave_balances')
-      .insert(balance)
+      .insert(balance as any)
       .select()
     
     if (error) {
@@ -318,7 +318,7 @@ export const leavePolicyService = {
     // Get all leave types
     const { data: leaveTypes, error: typesError } = await supabase
       .from('leave_types')
-      .select('id, name')
+      .select('id, leave_type_name')
     
     if (typesError) throw typesError
     
@@ -329,30 +329,30 @@ export const leavePolicyService = {
       let allocatedDays = 0
       
       // Map leave type to policy days
-      if (leaveType.name.toLowerCase().includes('annual') || leaveType.name.toLowerCase().includes('vacation')) {
+      const ltName = (leaveType.leave_type_name ?? '').toLowerCase()
+      if (ltName.includes('annual') || ltName.includes('vacation')) {
         allocatedDays = policy.annual_leave_days || 0
-      } else if (leaveType.name.toLowerCase().includes('sick')) {
+      } else if (ltName.includes('sick')) {
         allocatedDays = policy.sick_leave_days || 0
-      } else if (leaveType.name.toLowerCase().includes('personal')) {
+      } else if (ltName.includes('personal')) {
         allocatedDays = policy.personal_leave_days || 0
       }
       
       balances.push({
         employee_id: employeeId,
         leave_type_id: leaveType.id,
-        leave_policy_id: policyId,
-        allocated_days: allocatedDays,
+        year: new Date(periodStart).getFullYear(),
+        total_allocated: allocatedDays,
         used_days: 0,
         pending_days: 0,
-        carried_over_days: 0,
-        period_start: periodStart,
-        period_end: periodEnd,
+        available_days: allocatedDays,
+        carried_over: 0,
       })
     }
     
     const { error } = await supabase
       .from('leave_balances')
-      .insert(balances)
+      .insert(balances as any)
     
     if (error) {
       console.error('Error initializing employee balances:', error)

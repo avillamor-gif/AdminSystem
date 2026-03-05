@@ -111,7 +111,7 @@ export default function DepartmentHierarchyPage() {
     while (currentId) {
       depth++
       const parent = departments.find(p => p.id === currentId)
-      currentId = parent?.parent_id
+      currentId = parent?.parent_id ?? null
       if (depth > 10) break // Safety limit
     }
     return depth

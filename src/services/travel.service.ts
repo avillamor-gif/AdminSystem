@@ -47,7 +47,7 @@ export const travelService = {
 
     // Apply filters
     if (filters.status) {
-      query = query.eq('status', filters.status)
+      query = query.eq('status', filters.status as any)
     }
     if (filters.employee_id) {
       query = query.eq('employee_id', filters.employee_id)
@@ -72,7 +72,7 @@ export const travelService = {
       throw new Error('Failed to fetch travel requests')
     }
 
-    return data as TravelRequestWithEmployee[]
+    return data as unknown as TravelRequestWithEmployee[]
   },
 
   // Get travel request by ID
@@ -92,7 +92,7 @@ export const travelService = {
       return null
     }
 
-    return data as TravelRequestWithEmployee
+    return data as unknown as TravelRequestWithEmployee
   },
 
   // Create new travel request
@@ -114,7 +114,7 @@ export const travelService = {
       throw new Error('Failed to create travel request')
     }
 
-    return data
+    return data as any
   },
 
   // Update travel request
@@ -134,7 +134,7 @@ export const travelService = {
       throw new Error('Failed to update travel request')
     }
 
-    return data
+    return data as any
   },
 
   // Submit travel request (trigger workflow)
@@ -164,13 +164,13 @@ export const travelService = {
       requestId: id,
       requestType: 'travel',
       employeeId,
-      employeeName,
-      department,
-      amount: travelRequest.estimated_cost,
-      currency: travelRequest.currency || 'USD',
-      businessJustification: travelRequest.business_justification,
-      priority: travelRequest.urgency || 'medium',
       metadata: {
+        employeeName,
+        department,
+        amount: travelRequest.estimated_cost,
+        currency: travelRequest.currency || 'USD',
+        businessJustification: travelRequest.business_justification,
+        priority: travelRequest.urgency || 'medium',
         destination: travelRequest.destination,
         duration: travelRequest.duration,
         purpose: travelRequest.purpose

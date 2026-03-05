@@ -484,7 +484,7 @@ export default function TimePage() {
       csvContent = 'Date,Punch In,Punch Out,Duration,Status,Notes\n'
       filteredRecords.forEach(record => {
         const duration = formatDuration(record.clock_in, record.clock_out)
-        csvContent += `${record.date},${formatTimeOnly(record.clock_in)},${formatTimeOnly(record.clock_out)},${duration},${getAttendanceTypeInfo(record.status).label},"${record.notes || ''}"\n`
+        csvContent += `${record.date},${formatTimeOnly(record.clock_in)},${formatTimeOnly(record.clock_out)},${duration},${getAttendanceTypeInfo(record.status ?? '').label},"${record.notes || ''}"\n`
       })
     } else if (selectedReport === 'timesheet') {
       csvContent = 'Date,Day,Hours Worked,Status,Notes\n'
@@ -493,7 +493,7 @@ export default function TimePage() {
           ? ((new Date(record.clock_out).getTime() - new Date(record.clock_in).getTime()) / 3600000).toFixed(2)
           : '0'
         const day = new Date(record.date).toLocaleDateString('en-US', { weekday: 'short' })
-        csvContent += `${record.date},${day},${hours},${getAttendanceTypeInfo(record.status).label},"${record.notes || ''}"\n`
+        csvContent += `${record.date},${day},${hours},${getAttendanceTypeInfo(record.status ?? "").label},"${record.notes || ''}"\n`
       })
     } else if (selectedReport === 'project') {
       csvContent = 'Date,Hours,Project,Status,Notes\n'
@@ -501,7 +501,7 @@ export default function TimePage() {
         const hours = record.clock_in && record.clock_out 
           ? ((new Date(record.clock_out).getTime() - new Date(record.clock_in).getTime()) / 3600000).toFixed(2)
           : '0'
-        csvContent += `${record.date},${hours},General Work,${getAttendanceTypeInfo(record.status).label},"${record.notes || ''}"\n`
+        csvContent += `${record.date},${hours},General Work,${getAttendanceTypeInfo(record.status ?? "").label},"${record.notes || ''}"\n`
       })
     }
     
@@ -843,8 +843,8 @@ export default function TimePage() {
                     displayInfo = {
                       label: leaveRequest.leave_type?.name || 'Leave',
                       textColor: leaveRequest.status === 'approved' ? 'text-blue-600' : 'text-yellow-600',
-                      badge: leaveRequest.status.charAt(0).toUpperCase() + leaveRequest.status.slice(1),
-                      badgeVariant: (leaveRequest.status === 'approved' ? 'success' : 'warning') as const
+                      badge: (leaveRequest.status ?? '').charAt(0).toUpperCase() + (leaveRequest.status ?? '').slice(1),
+                      badgeVariant: (leaveRequest.status === 'approved' ? 'success' : 'warning') as 'success' | 'warning'
                     }
                   } else if (attendanceInfo) {
                     // Show attendance
@@ -973,7 +973,7 @@ export default function TimePage() {
                   </tr>
                 ) : attendanceRecords && attendanceRecords.length > 0 ? (
                   attendanceRecords.map((record) => {
-                    const uiType = record.notes ? record.notes.split(':')[0].trim() : record.status
+                    const uiType = record.notes ? record.notes.split(':')[0].trim() : (record.status ?? '')
                     const attendanceInfo = getAttendanceTypeInfo(uiType)
                     return (
                       <tr key={record.id} className="hover:bg-gray-50">
@@ -1293,7 +1293,7 @@ export default function TimePage() {
                       {attendanceRecords
                         .filter(r => r.date >= reportStartDate && r.date <= reportEndDate)
                         .map(record => {
-                          const info = getAttendanceTypeInfo(record.status)
+                          const info = getAttendanceTypeInfo(record.status ?? "")
                           return (
                             <div key={record.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                               <div>

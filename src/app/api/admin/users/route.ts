@@ -26,7 +26,7 @@ export async function GET(request: NextRequest) {
       .select('id, user_id, role, employee_id, created_at, updated_at')
     
     if (role) {
-      rolesQuery = rolesQuery.eq('role', role)
+      rolesQuery = rolesQuery.eq('role', role as 'admin' | 'hr' | 'manager' | 'employee' | 'board_member')
     }
     
     const { data: userRoles, error: rolesError } = await rolesQuery

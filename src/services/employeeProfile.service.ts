@@ -111,7 +111,7 @@ export const employeeProfileService = {
       }
 
       if (filters?.status) {
-        query = query.eq('status', filters.status)
+        query = query.eq('status', filters.status as 'active' | 'inactive' | 'terminated')
       }
 
       const { data: employees, error } = await query as { data: any[] | null, error: any }

@@ -16,7 +16,7 @@ export async function POST(req: NextRequest) {
       .from(requestTable as any)
       .select('employee_id')
       .eq('id', requestId)
-      .single()
+      .single() as { data: { employee_id: string } | null }
 
     if (!reqRow?.employee_id) {
       return NextResponse.json({ error: 'Request or employee not found' }, { status: 404 })

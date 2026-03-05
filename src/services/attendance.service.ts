@@ -17,10 +17,7 @@ export const attendanceService = {
     const supabase = createClient()
     let query = supabase
       .from('attendance_records')
-      .select(`
-        *,
-        employee:employees(id, first_name, last_name, email, avatar_url)
-      `)
+      .select('*')
       .order('date', { ascending: false })
 
     if (params.employeeId) {
@@ -37,7 +34,7 @@ export const attendanceService = {
 
     const { data, error } = await query
     if (error) throw error
-    return (data || []) as AttendanceRecordWithRelations[]
+    return (data || []) as unknown as AttendanceRecordWithRelations[]
   },
 
   async clockIn(employeeId: string): Promise<AttendanceRecord> {
@@ -69,7 +66,7 @@ export const attendanceService = {
       .single()
 
     if (error) throw error
-    return data as AttendanceRecord
+    return data as unknown as AttendanceRecord
   },
 
   async clockOut(recordId: string): Promise<AttendanceRecord> {
@@ -86,6 +83,6 @@ export const attendanceService = {
       .single()
 
     if (error) throw error
-    return data as AttendanceRecord
+    return data as unknown as AttendanceRecord
   },
 }

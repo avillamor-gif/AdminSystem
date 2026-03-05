@@ -240,7 +240,7 @@ export default function AssetsPage() {
     const nonAssignmentStatuses = ['maintenance', 'retired', 'lost', 'damaged']
     let resolvedStatus = formData.status
     if (selectedAsset) {
-      if (formData.assigned_to && !nonAssignmentStatuses.includes(formData.status)) {
+      if (formData.assigned_to && !nonAssignmentStatuses.includes(formData.status ?? '')) {
         // Has an employee → must be in-use
         resolvedStatus = 'assigned'
       } else if (!formData.assigned_to && formData.status === 'assigned') {
@@ -506,8 +506,8 @@ export default function AssetsPage() {
                         {asset.model && <div className="text-sm text-gray-500">{asset.model}</div>}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusColors[asset.status]}`}>
-                          {asset.status === 'assigned' ? 'In-use' : asset.status === 'maintenance' ? 'Under Maintenance' : asset.status.charAt(0).toUpperCase() + asset.status.slice(1)}
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusColors[asset.status ?? 'available']}`}>
+                          {asset.status === 'assigned' ? 'In-use' : asset.status === 'maintenance' ? 'Under Maintenance' : (asset.status ?? '').charAt(0).toUpperCase() + (asset.status ?? '').slice(1)}
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
@@ -941,7 +941,7 @@ export default function AssetsPage() {
                       <div className="grid grid-cols-3 gap-3">
                         <Select
                           label="Status"
-                          value={formData.status}
+                          value={formData.status ?? ''}
                           onChange={(e) => setFormData({ ...formData, status: e.target.value as Asset['status'] })}
                         >
                           <option value="available">Available</option>

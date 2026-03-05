@@ -35,7 +35,7 @@ export const jobDescriptionService = {
       }
 
       if (filters?.status) {
-        query = query.eq('status', filters.status)
+        query = query.eq('status', filters.status as any)
       }
 
       if (filters?.department_id) {
@@ -59,7 +59,7 @@ export const jobDescriptionService = {
       }
       
       console.log('Fetched job descriptions:', data)
-      return (data || []) as JobDescriptionWithRelations[]
+      return (data || []) as unknown as JobDescriptionWithRelations[]
     } catch (error) {
       console.error('Error in job descriptions service:', error)
       // Return empty array if there's any error to prevent page crashes
@@ -85,7 +85,7 @@ export const jobDescriptionService = {
         throw error
       }
       
-      return data as JobDescriptionWithRelations
+      return data as unknown as JobDescriptionWithRelations
     } catch (error) {
       console.error('Error in getById job description:', error)
       return null
@@ -114,7 +114,7 @@ export const jobDescriptionService = {
       }
       
       console.log('Job description created successfully:', data)
-      return data as JobDescriptionWithRelations
+      return data as unknown as JobDescriptionWithRelations
     } catch (error: any) {
       console.error('Error in create job description — message:', error?.message, '| full:', error)
       throw error
@@ -143,7 +143,7 @@ export const jobDescriptionService = {
         throw error
       }
       
-      return data as JobDescriptionWithRelations
+      return data as unknown as JobDescriptionWithRelations
     } catch (error) {
       console.error('Error in update job description:', error)
       throw error

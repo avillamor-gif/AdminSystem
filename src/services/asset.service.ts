@@ -10,63 +10,63 @@ const supabase = createClient()
 export interface AssetCategory {
   id: string
   name: string
-  description?: string
-  icon?: string
-  is_active: boolean
-  created_at: string
-  updated_at: string
+  description?: string | null
+  icon?: string | null
+  is_active: boolean | null
+  created_at: string | null
+  updated_at: string | null
 }
 
 export interface AssetBrand {
   id: string
   name: string
-  description?: string
-  is_active: boolean
-  created_at: string
-  updated_at: string
+  description?: string | null
+  is_active: boolean | null
+  created_at: string | null
+  updated_at: string | null
 }
 
 export interface AssetVendor {
   id: string
   name: string
-  contact_person?: string
-  email?: string
-  phone?: string
-  address?: string
-  is_active: boolean
-  created_at: string
-  updated_at: string
+  contact_person?: string | null
+  email?: string | null
+  phone?: string | null
+  address?: string | null
+  is_active: boolean | null
+  created_at: string | null
+  updated_at: string | null
 }
 
 export interface Asset {
   id: string
-  asset_tag: string
+  asset_tag: string | null
   name: string
-  category_id?: string
-  brand_id?: string
-  model?: string
-  serial_number?: string
-  vendor_id?: string
-  purchase_date?: string
-  purchase_price?: number
-  purchase_order_number?: string
-  warranty_start_date?: string
-  warranty_end_date?: string
-  warranty_details?: string
-  useful_life_years?: number
-  salvage_value?: number
-  depreciation_method?: 'straight_line' | 'declining_balance' | 'none'
-  status: 'available' | 'assigned' | 'maintenance' | 'retired' | 'lost' | 'damaged'
-  condition?: 'excellent' | 'good' | 'fair' | 'poor'
-  location?: string
-  assigned_to?: string
-  assigned_date?: string
+  category_id?: string | null
+  brand_id?: string | null
+  model?: string | null
+  serial_number?: string | null
+  vendor_id?: string | null
+  purchase_date?: string | null
+  purchase_price?: number | null
+  purchase_order_number?: string | null
+  warranty_start_date?: string | null
+  warranty_end_date?: string | null
+  warranty_details?: string | null
+  useful_life_years?: number | null
+  salvage_value?: number | null
+  depreciation_method?: 'straight_line' | 'declining_balance' | 'none' | null
+  status: 'available' | 'assigned' | 'maintenance' | 'retired' | 'lost' | 'damaged' | null
+  condition?: 'excellent' | 'good' | 'fair' | 'poor' | null
+  location?: string | null
+  assigned_to?: string | null
+  assigned_date?: string | null
   specifications?: any
-  qr_code?: string
-  image_url?: string
-  notes?: string
-  created_at: string
-  updated_at: string
+  qr_code?: string | null
+  image_url?: string | null
+  notes?: string | null
+  created_at: string | null
+  updated_at: string | null
   // Relations
   category?: AssetCategory
   brand?: AssetBrand
@@ -78,14 +78,14 @@ export interface AssetAssignment {
   id: string
   asset_id: string
   employee_id: string
-  assigned_by?: string
+  assigned_by?: string | null
   assigned_date: string
-  returned_date?: string
-  returned_by?: string
-  condition_on_assignment?: string
-  condition_on_return?: string
-  notes?: string
-  created_at: string
+  returned_date?: string | null
+  returned_by?: string | null
+  condition_on_assignment?: string | null
+  condition_on_return?: string | null
+  notes?: string | null
+  created_at: string | null
   // Relations
   asset?: Asset
   employee?: any
@@ -94,17 +94,17 @@ export interface AssetAssignment {
 export interface AssetMaintenance {
   id: string
   asset_id: string
-  maintenance_type: 'repair' | 'inspection' | 'upgrade' | 'cleaning' | 'calibration'
-  scheduled_date?: string
-  completed_date?: string
-  performed_by?: string
-  vendor_id?: string
-  cost?: number
+  maintenance_type: 'repair' | 'inspection' | 'upgrade' | 'cleaning' | 'calibration' | null
+  scheduled_date?: string | null
+  completed_date?: string | null
+  performed_by?: string | null
+  vendor_id?: string | null
+  cost?: number | null
   description: string
-  notes?: string
-  status: 'scheduled' | 'in_progress' | 'completed' | 'cancelled'
-  created_at: string
-  updated_at: string
+  notes?: string | null
+  status: 'scheduled' | 'in_progress' | 'completed' | 'cancelled' | null
+  created_at: string | null
+  updated_at: string | null
   // Relations
   asset?: Asset
   vendor?: AssetVendor
@@ -113,20 +113,20 @@ export interface AssetMaintenance {
 export interface AssetRequest {
   id: string
   employee_id: string
-  category_id?: string
+  category_id?: string | null
   item_description: string
-  justification?: string
-  priority: 'low' | 'normal' | 'high' | 'urgent'
-  status: 'pending' | 'approved' | 'rejected' | 'fulfilled'
+  justification?: string | null
+  priority: 'low' | 'normal' | 'high' | 'urgent' | null
+  status: 'pending' | 'approved' | 'rejected' | 'fulfilled' | null
   requested_date: string
-  approved_by?: string
-  approved_date?: string
-  fulfilled_date?: string
-  assigned_asset_id?: string
-  rejection_reason?: string
-  notes?: string
-  created_at: string
-  updated_at: string
+  approved_by?: string | null
+  approved_date?: string | null
+  fulfilled_date?: string | null
+  assigned_asset_id?: string | null
+  rejection_reason?: string | null
+  notes?: string | null
+  created_at: string | null
+  updated_at: string | null
   // Relations
   employee?: any
   category?: AssetCategory
@@ -146,7 +146,7 @@ export const assetCategoryService = {
       .order('name')
     
     if (error) throw error
-    return data || []
+    return (data || []) as any
   },
 
   async getById(id: string): Promise<AssetCategory | null> {
@@ -157,18 +157,18 @@ export const assetCategoryService = {
       .single()
     
     if (error) throw error
-    return data
+    return data as any
   },
 
   async create(category: Partial<AssetCategory>): Promise<AssetCategory> {
     const { data, error } = await supabase
       .from('asset_categories')
-      .insert(category)
+      .insert(category as any)
       .select()
       .single()
     
     if (error) throw error
-    return data
+    return data as any
   },
 
   async update(id: string, updates: Partial<AssetCategory>): Promise<AssetCategory> {
@@ -180,7 +180,7 @@ export const assetCategoryService = {
       .single()
     
     if (error) throw error
-    return data
+    return data as any
   },
 
   async delete(id: string): Promise<void> {
@@ -205,7 +205,7 @@ export const assetBrandService = {
       .order('name')
     
     if (error) throw error
-    return data || []
+    return (data || []) as any
   },
 
   async getById(id: string): Promise<AssetBrand | null> {
@@ -216,18 +216,18 @@ export const assetBrandService = {
       .single()
     
     if (error) throw error
-    return data
+    return data as any
   },
 
   async create(brand: Partial<AssetBrand>): Promise<AssetBrand> {
     const { data, error } = await supabase
       .from('asset_brands')
-      .insert(brand)
+      .insert(brand as any)
       .select()
       .single()
     
     if (error) throw error
-    return data
+    return data as any
   },
 
   async update(id: string, updates: Partial<AssetBrand>): Promise<AssetBrand> {
@@ -239,7 +239,7 @@ export const assetBrandService = {
       .single()
     
     if (error) throw error
-    return data
+    return data as any
   },
 
   async delete(id: string): Promise<void> {
@@ -264,7 +264,7 @@ export const assetVendorService = {
       .order('name')
     
     if (error) throw error
-    return data || []
+    return (data || []) as any
   },
 
   async getById(id: string): Promise<AssetVendor | null> {
@@ -275,18 +275,18 @@ export const assetVendorService = {
       .single()
     
     if (error) throw error
-    return data
+    return data as any
   },
 
   async create(vendor: Partial<AssetVendor>): Promise<AssetVendor> {
     const { data, error } = await supabase
       .from('asset_vendors')
-      .insert(vendor)
+      .insert(vendor as any)
       .select()
       .single()
     
     if (error) throw error
-    return data
+    return data as any
   },
 
   async update(id: string, updates: Partial<AssetVendor>): Promise<AssetVendor> {
@@ -298,7 +298,7 @@ export const assetVendorService = {
       .single()
     
     if (error) throw error
-    return data
+    return data as any
   },
 
   async delete(id: string): Promise<void> {
@@ -324,13 +324,7 @@ export const assetService = {
   }): Promise<Asset[]> {
     let query = supabase
       .from('assets')
-      .select(`
-        *,
-        category:asset_categories(*),
-        brand:asset_brands(*),
-        vendor:asset_vendors(*),
-        employee:employees(id, first_name, last_name, email)
-      `)
+      .select('*')
       .order('created_at', { ascending: false })
 
     if (filters?.category_id) {
@@ -338,7 +332,7 @@ export const assetService = {
     }
 
     if (filters?.status) {
-      query = query.eq('status', filters.status)
+      query = query.eq('status', filters.status as any)
     }
 
     if (filters?.assigned_to) {
@@ -352,35 +346,29 @@ export const assetService = {
     const { data, error } = await query
     
     if (error) throw error
-    return data || []
+    return (data || []) as unknown as Asset[]
   },
 
   async getById(id: string): Promise<Asset | null> {
     const { data, error } = await supabase
       .from('assets')
-      .select(`
-        *,
-        category:asset_categories(*),
-        brand:asset_brands(*),
-        vendor:asset_vendors(*),
-        employee:employees(id, first_name, last_name, email)
-      `)
+      .select('*')
       .eq('id', id)
       .single()
     
     if (error) throw error
-    return data
+    return data as unknown as Asset | null
   },
 
   async create(asset: Partial<Asset>): Promise<Asset> {
     const { data, error } = await supabase
       .from('assets')
-      .insert(asset)
+      .insert(asset as any)
       .select()
       .single()
     
     if (error) throw error
-    return data
+    return data as unknown as Asset
   },
 
   async update(id: string, updates: Partial<Asset>): Promise<Asset> {
@@ -392,7 +380,7 @@ export const assetService = {
       .single()
     
     if (error) throw error
-    return data
+    return data as unknown as Asset
   },
 
   async delete(id: string): Promise<void> {
@@ -454,7 +442,7 @@ export const assetService = {
       })
       .eq('id', assetId)
 
-    return data
+    return data as any
   },
 
   async return(assignmentId: string, returnedBy: string, condition?: string, notes?: string): Promise<AssetAssignment> {
@@ -482,7 +470,7 @@ export const assetService = {
       })
       .eq('id', data.asset_id)
 
-    return data
+    return data as any
   }
 }
 
@@ -498,11 +486,7 @@ export const assetAssignmentService = {
   }): Promise<AssetAssignment[]> {
     let query = supabase
       .from('asset_assignments')
-      .select(`
-        *,
-        asset:assets(*),
-        employee:employees!employee_id(id, first_name, last_name, email)
-      `)
+      .select('*')
       .order('assigned_date', { ascending: false })
 
     if (filters?.asset_id) {
@@ -524,7 +508,7 @@ export const assetAssignmentService = {
     const { data, error } = await query
     
     if (error) throw error
-    return data || []
+    return (data || []) as any
   }
 }
 
@@ -539,11 +523,7 @@ export const assetMaintenanceService = {
   }): Promise<AssetMaintenance[]> {
     let query = supabase
       .from('asset_maintenance')
-      .select(`
-        *,
-        asset:assets(*),
-        vendor:asset_vendors(*)
-      `)
+      .select('*')
       .order('scheduled_date', { ascending: false })
 
     if (filters?.asset_id) {
@@ -551,39 +531,35 @@ export const assetMaintenanceService = {
     }
 
     if (filters?.status) {
-      query = query.eq('status', filters.status)
+      query = query.eq('status', filters.status as any)
     }
 
     const { data, error } = await query
     
     if (error) throw error
-    return data || []
+    return (data || []) as unknown as AssetMaintenance[]
   },
 
   async getById(id: string): Promise<AssetMaintenance | null> {
     const { data, error } = await supabase
       .from('asset_maintenance')
-      .select(`
-        *,
-        asset:assets(*),
-        vendor:asset_vendors(*)
-      `)
+      .select('*')
       .eq('id', id)
       .single()
     
     if (error) throw error
-    return data
+    return data as unknown as AssetMaintenance | null
   },
 
   async create(maintenance: Partial<AssetMaintenance>): Promise<AssetMaintenance> {
     const { data, error } = await supabase
       .from('asset_maintenance')
-      .insert(maintenance)
+      .insert(maintenance as any)
       .select()
       .single()
     
     if (error) throw error
-    return data
+    return data as unknown as AssetMaintenance
   },
 
   async update(id: string, updates: Partial<AssetMaintenance>): Promise<AssetMaintenance> {
@@ -595,7 +571,7 @@ export const assetMaintenanceService = {
       .single()
     
     if (error) throw error
-    return data
+    return data as unknown as AssetMaintenance
   },
 
   async delete(id: string): Promise<void> {
@@ -620,13 +596,7 @@ export const assetRequestService = {
   }): Promise<AssetRequest[]> {
     let query = supabase
       .from('asset_requests')
-      .select(`
-        *,
-        employee:employees!asset_requests_employee_id_fkey(id, first_name, last_name, email),
-        category:asset_categories(*),
-        approver:employees!asset_requests_approved_by_fkey(id, first_name, last_name),
-        assigned_asset:assets(*)
-      `)
+      .select('*')
       .order('requested_date', { ascending: false })
 
     if (filters?.employee_id) {
@@ -634,7 +604,7 @@ export const assetRequestService = {
     }
 
     if (filters?.status) {
-      query = query.eq('status', filters.status)
+      query = query.eq('status', filters.status as any)
     }
 
     if (filters?.priority) {
@@ -644,30 +614,24 @@ export const assetRequestService = {
     const { data, error } = await query
     
     if (error) throw error
-    return data || []
+    return (data || []) as unknown as AssetRequest[]
   },
 
   async getById(id: string): Promise<AssetRequest | null> {
     const { data, error } = await supabase
       .from('asset_requests')
-      .select(`
-        *,
-        employee:employees!asset_requests_employee_id_fkey(id, first_name, last_name, email),
-        category:asset_categories(*),
-        approver:employees!asset_requests_approved_by_fkey(id, first_name, last_name),
-        assigned_asset:assets(*)
-      `)
+      .select('*')
       .eq('id', id)
       .single()
     
     if (error) throw error
-    return data
+    return data as unknown as AssetRequest | null
   },
 
   async create(request: Partial<AssetRequest>): Promise<AssetRequest> {
     const { data, error } = await supabase
       .from('asset_requests')
-      .insert(request)
+      .insert(request as any)
       .select()
       .single()
     
@@ -686,7 +650,7 @@ export const assetRequestService = {
       )
     }
 
-    return data
+    return data as any
   },
 
   async update(id: string, updates: Partial<AssetRequest>): Promise<AssetRequest> {
@@ -698,7 +662,7 @@ export const assetRequestService = {
       .single()
     
     if (error) throw error
-    return data
+    return data as any
   },
 
   async approve(id: string, approvedBy: string | null): Promise<AssetRequest> {
@@ -722,7 +686,7 @@ export const assetRequestService = {
       'Your equipment request has been approved.'
     )
 
-    return data
+    return data as any
   },
 
   async reject(id: string, approvedBy: string | null, reason: string): Promise<AssetRequest> {
@@ -747,7 +711,7 @@ export const assetRequestService = {
       `Your equipment request has been rejected: ${reason}`
     )
 
-    return data
+    return data as any
   },
 
   async fulfill(id: string, assetId: string): Promise<AssetRequest> {
@@ -764,7 +728,7 @@ export const assetRequestService = {
       .single()
     
     if (error) throw error
-    return data
+    return data as any
   },
 
   async delete(id: string): Promise<void> {

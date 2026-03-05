@@ -111,7 +111,7 @@ export const exitInterviewService = {
       throw error
     }
 
-    return (data as ExitInterview) || null
+    return (data as unknown as ExitInterview) || null
   },
 
   /**
@@ -143,7 +143,7 @@ export const exitInterviewService = {
       throw error
     }
 
-    return (data as ExitInterview[]) || []
+    return (data as unknown as ExitInterview[]) || []
   },
 
   /**
@@ -153,7 +153,7 @@ export const exitInterviewService = {
     const supabase = createClient()
     const { data, error} = await supabase
       .from('exit_interviews')
-      .insert(interview)
+      .insert(interview as any)
       .select()
       .single()
 
@@ -162,7 +162,7 @@ export const exitInterviewService = {
       throw error
     }
 
-    return data as ExitInterview
+    return data as unknown as ExitInterview
   },
 
   /**
@@ -182,7 +182,7 @@ export const exitInterviewService = {
       throw error
     }
 
-    return data as ExitInterview
+    return data as unknown as ExitInterview
   },
 
   /**
@@ -206,7 +206,7 @@ export const exitInterviewService = {
       throw error
     }
 
-    return data as ExitInterview
+    return data as unknown as ExitInterview
   },
 
   /**
@@ -226,7 +226,7 @@ export const exitInterviewService = {
       throw error
     }
 
-    return data as ExitInterview
+    return data as unknown as ExitInterview
   },
 
   /**

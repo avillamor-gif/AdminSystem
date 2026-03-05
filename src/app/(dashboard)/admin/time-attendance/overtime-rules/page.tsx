@@ -100,7 +100,6 @@ export default function OvertimeRulesPage() {
               placeholder="Search rules..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              icon={<Search className="w-4 h-4" />}
             />
           </div>
           <div>

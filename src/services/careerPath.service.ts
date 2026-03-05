@@ -28,7 +28,7 @@ export const careerPathService = {
       }
 
       if (filters?.status) {
-        query = query.eq('status', filters.status)
+        query = query.eq('status', filters.status as any)
       }
 
       if (filters?.category) {
@@ -47,7 +47,7 @@ export const careerPathService = {
       }
       
       console.log('Fetched career paths:', data)
-      return data || []
+      return (data || []) as any
     } catch (error) {
       console.error('Error in career paths service:', error)
       return []
@@ -72,7 +72,7 @@ export const careerPathService = {
         throw error
       }
       
-      return data
+      return data as any
     } catch (error) {
       console.error('Error in getById career path:', error)
       return null

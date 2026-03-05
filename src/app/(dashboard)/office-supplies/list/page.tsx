@@ -8,9 +8,9 @@ import toast from 'react-hot-toast'
 
 interface Category { id: string; name: string }
 interface Item {
-  id: string; name: string; description: string | null; unit: string
-  quantity_on_hand: number; reorder_point: number; location: string | null
-  category_id: string | null; is_active: boolean; category?: Category
+  id: string; name: string; description: string | null; unit: string | null
+  quantity_on_hand: number | null; reorder_point: number | null; location: string | null
+  category_id: string | null; is_active: boolean | null; category?: Category
 }
 
 export default function SuppliesListPage() {
@@ -42,8 +42,8 @@ export default function SuppliesListPage() {
     return true
   })
 
-  const availableCount = items.filter(i => i.quantity_on_hand > i.reorder_point).length
-  const lowCount = items.filter(i => i.quantity_on_hand > 0 && i.quantity_on_hand <= i.reorder_point).length
+  const availableCount = items.filter(i => (i.quantity_on_hand ?? 0) > (i.reorder_point ?? 0)).length
+  const lowCount = items.filter(i => (i.quantity_on_hand ?? 0) > 0 && (i.quantity_on_hand ?? 0) <= (i.reorder_point ?? 0)).length
 
   return (
     <div className="space-y-6">
@@ -109,8 +109,8 @@ export default function SuppliesListPage() {
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
                 {filtered.map(item => {
-                  const isEmpty = item.quantity_on_hand === 0
-                  const isLow = item.quantity_on_hand > 0 && item.quantity_on_hand <= item.reorder_point
+                  const isEmpty = (item.quantity_on_hand ?? 0) === 0
+                  const isLow = (item.quantity_on_hand ?? 0) > 0 && (item.quantity_on_hand ?? 0) <= (item.reorder_point ?? 0)
                   return (
                     <tr key={item.id} className="hover:bg-gray-50 transition-colors">
                       <td className="px-6 py-4 whitespace-nowrap">
@@ -118,10 +118,10 @@ export default function SuppliesListPage() {
                         {item.description && <div className="text-xs text-gray-400 truncate max-w-xs">{item.description}</div>}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{item.category?.name ?? '—'}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 capitalize">{item.unit}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 capitalize">{item.unit ?? '—'}</td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold">
                         <span className={isEmpty ? 'text-red-600' : isLow ? 'text-yellow-600' : 'text-gray-900'}>
-                          {item.quantity_on_hand}
+                          {item.quantity_on_hand ?? 0}
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{item.location ?? '—'}</td>

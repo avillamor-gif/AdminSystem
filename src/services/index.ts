@@ -161,10 +161,6 @@ export type {
 } from './expense.service'
 export type {
   AssetAssignment,
-  AssetAssignmentInsert,
-  AssetAssignmentUpdate,
-  AssetAssignmentWithEmployee,
-  AssetAssignmentFilters
 } from './asset.service'
 export type {
   PublicationRequest,

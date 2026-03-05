@@ -13,11 +13,7 @@ export default function ShiftPatternsPage() {
   const [isFormOpen, setIsFormOpen] = useState(false)
   const [selectedShift, setSelectedShift] = useState<ShiftPattern | null>(null)
 
-  const { data: shifts = [], isLoading } = useShiftPatterns({ 
-    search: searchQuery,
-    shift_type: shiftTypeFilter || undefined,
-    is_active: true,
-  })
+  const { data: shifts = [], isLoading } = useShiftPatterns()
   const deleteMutation = useDeleteShiftPattern()
 
   const handleEdit = (shift: ShiftPattern) => {
@@ -116,7 +112,6 @@ export default function ShiftPatternsPage() {
               placeholder="Search shifts..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              icon={<Search className="w-4 h-4" />}
             />
           </div>
           <div>
@@ -145,7 +140,7 @@ export default function ShiftPatternsPage() {
               <div className="flex items-center gap-2">
                 {getShiftTypeIcon(shift.shift_type)}
                 <div>
-                  <h3 className="font-semibold text-gray-900">{shift.shift_name}</h3>
+                  <h3 className="font-semibold text-gray-900">{shift.name}</h3>
                   <p className="text-sm text-gray-500">{shift.shift_code}</p>
                 </div>
               </div>
@@ -167,24 +162,14 @@ export default function ShiftPatternsPage() {
               </div>
               <div className="flex items-center justify-between text-sm">
                 <span className="text-gray-600">Duration:</span>
-                <span className="font-medium text-gray-900">{shift.duration_minutes} min</span>
+                <span className="font-medium text-gray-900">{shift.duration_hours != null ? `${shift.duration_hours} hrs` : '—'}</span>
               </div>
-              {shift.break_duration_minutes > 0 && (
+              {shift.break_minutes > 0 && (
                 <div className="flex items-center justify-between text-sm">
                   <span className="text-gray-600">Break:</span>
-                  <span className="font-medium text-gray-900">{shift.break_duration_minutes} min</span>
+                  <span className="font-medium text-gray-900">{shift.break_minutes} min</span>
                 </div>
               )}
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-gray-600">Premium Rate:</span>
-                <span className="font-medium text-gray-900">{Number(shift.premium_rate).toFixed(2)}x</span>
-              </div>
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-gray-600">Staff Required:</span>
-                <span className="font-medium text-gray-900">
-                  {shift.min_staff_required}{shift.max_staff_allowed ? ` - ${shift.max_staff_allowed}` : '+'}
-                </span>
-              </div>
             </div>
 
             <div className="flex items-center gap-2 pt-4 border-t border-gray-200">

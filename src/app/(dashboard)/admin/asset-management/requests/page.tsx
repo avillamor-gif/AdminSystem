@@ -244,7 +244,7 @@ export default function RequestsPage() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{request.category?.name || '—'}</td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${priorityColors[request.priority]}`}>
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${priorityColors[request.priority ?? 'low']}`}>
                         {request.priority}
                       </span>
                     </td>
@@ -252,7 +252,7 @@ export default function RequestsPage() {
                       {new Date(request.requested_date).toLocaleDateString()}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusColors[request.status]}`}>
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusColors[request.status ?? 'pending']}`}>
                         {request.status}
                       </span>
                     </td>
@@ -333,7 +333,7 @@ export default function RequestsPage() {
 
               <Select
                 label="Priority"
-                value={formData.priority}
+                value={formData.priority ?? ''}
                 onChange={(e) => setFormData({ ...formData, priority: e.target.value as AssetRequest['priority'] })}
                 required
               >

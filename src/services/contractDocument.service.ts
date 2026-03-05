@@ -46,7 +46,7 @@ export const contractDocumentService = {
       throw error
     }
 
-    return (data as ContractDocument[]) || []
+    return (data as unknown as ContractDocument[]) || []
   },
 
   /**
@@ -59,7 +59,7 @@ export const contractDocumentService = {
     
     const { data, error } = await supabase
       .from('contract_documents')
-      .insert(document)
+      .insert(document as any)
       .select()
       .single()
 
@@ -70,7 +70,7 @@ export const contractDocumentService = {
     }
 
     console.log('Contract document record created:', data)
-    return data as ContractDocument
+    return data as unknown as ContractDocument
   },
 
   /**
@@ -158,7 +158,7 @@ export const contractDocumentService = {
       throw error
     }
 
-    return data
+    return data as any
   },
 
   /**

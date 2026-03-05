@@ -3,9 +3,8 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
 
 const ADMIN_ROLES = [
-  'admin', 'Admin', 'super_admin', 'Super Admin',
-  'hr', 'HR Manager', 'Manager/Department Head', 'manager',
-]
+  'admin', 'hr', 'manager',
+] as const
 
 export async function POST(req: NextRequest) {
   try {

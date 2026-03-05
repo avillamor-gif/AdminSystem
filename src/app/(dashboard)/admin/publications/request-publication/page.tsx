@@ -19,7 +19,7 @@ export default function RequestPublicationPage() {
   const { data: recentRequests = [] } = usePublicationRequests({})
   const [submitted, setSubmitted] = useState(false)
   const [formData, setFormData] = useState({
-    title: '', publication_type: 'book', request_type: 'new',
+    publication_title: '', publication_type: 'book', request_type: 'new',
     publisher: '', purpose: '', notes: '',
     quantity: 1, priority: 'normal', delivery_method: 'pickup', deadline: '',
   })
@@ -59,7 +59,7 @@ export default function RequestPublicationPage() {
           <h2 className="text-2xl font-bold text-gray-900 mb-2">Request Submitted!</h2>
           <p className="text-gray-600 mb-6">Your publication request has been submitted for approval.</p>
           <div className="flex justify-center gap-3">
-            <Button className="bg-orange-600 hover:bg-orange-700" onClick={() => { setSubmitted(false); setFormData({ title: '', publication_type: 'book', request_type: 'new', publisher: '', purpose: '', notes: '', quantity: 1, priority: 'normal', delivery_method: 'pickup', deadline: '' }) }}>
+            <Button className="bg-orange-600 hover:bg-orange-700" onClick={() => { setSubmitted(false); setFormData({ publication_title: '', publication_type: 'book', request_type: 'new', publisher: '', purpose: '', notes: '', quantity: 1, priority: 'normal', delivery_method: 'pickup', deadline: '' }) }}>
               Submit Another
             </Button>
             <Button variant="secondary" onClick={() => router.push('/admin/publications/publication-library')}>
@@ -91,7 +91,7 @@ export default function RequestPublicationPage() {
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Publication Title *</label>
-                  <Input required value={formData.title} onChange={e => setFormData(p => ({ ...p, title: e.target.value }))} placeholder="Enter publication title" />
+                  <Input required value={formData.publication_title} onChange={e => setFormData(p => ({ ...p, title: e.target.value }))} placeholder="Enter publication title" />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
@@ -165,7 +165,7 @@ export default function RequestPublicationPage() {
                   {recentRequests.slice(0, 5).map(r => (
                     <div key={r.id} className="flex items-start justify-between gap-2">
                       <div className="min-w-0">
-                        <p className="text-sm font-medium text-gray-900 truncate">{r.title}</p>
+                        <p className="text-sm font-medium text-gray-900 truncate">{r.publication_title}</p>
                         <p className="text-xs text-gray-500 capitalize">{r.publication_type}</p>
                       </div>
                       <Badge className={`shrink-0 text-xs ${statusColor[r.status ?? 'draft'] ?? 'bg-gray-100 text-gray-700'}`}>

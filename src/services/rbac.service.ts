@@ -109,12 +109,12 @@ export const rbacService = {
     
     const { data: role, error } = await supabase
       .from('roles')
-      .insert(data)
+      .insert(data as any)
       .select()
       .single()
 
     if (error) throw error
-    return role
+    return role as unknown as Role
   },
 
   async updateRole(id: string, data: RoleUpdate): Promise<Role> {
@@ -128,7 +128,7 @@ export const rbacService = {
       .single()
 
     if (error) throw error
-    return role
+    return role as unknown as Role
   },
 
   async deleteRole(id: string): Promise<void> {
@@ -153,7 +153,7 @@ export const rbacService = {
       .order('name')
 
     if (error) throw error
-    return data || []
+    return (data || []) as any
   },
 
   async getPermissionsByCategory(): Promise<{ [key: string]: Permission[] }> {
@@ -189,7 +189,7 @@ export const rbacService = {
 
       const { error } = await supabase
         .from('role_permissions')
-        .insert(rolePermissions)
+        .insert(rolePermissions as any)
 
       if (error) throw error
     }

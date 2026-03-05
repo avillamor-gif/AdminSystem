@@ -16,7 +16,8 @@ interface WorkflowStatusProps {
 }
 
 export function WorkflowStatus({ requestId, requestType, currentStatus }: WorkflowStatusProps) {
-  const { data: workflow, isLoading } = useWorkflowHistory(requestId, requestType)
+  const { data: workflowData, isLoading } = useWorkflowHistory(requestId, requestType)
+  const workflow = Array.isArray(workflowData) ? workflowData[0] : workflowData
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -79,12 +80,12 @@ export function WorkflowStatus({ requestId, requestType, currentStatus }: Workfl
       <div className="px-4 py-3 border-b border-gray-200">
         <div className="flex items-center justify-between">
           <h3 className="text-sm font-medium text-gray-900">Approval Workflow</h3>
-          <Badge className={getStatusBadge(Array.isArray(workflow) ? 'pending' : workflow.status)}>
-            {Array.isArray(workflow) ? 'pending' : workflow.status}
+          <Badge className={getStatusBadge(workflow.status)}>
+            {workflow.status}
           </Badge>
         </div>
         <p className="text-xs text-gray-500 mt-1">
-          Step {workflow.current_level} of {workflow.total_levels}
+          Step {workflow.currentLevel} of {workflow.totalLevels}
         </p>
       </div>
 
@@ -93,12 +94,12 @@ export function WorkflowStatus({ requestId, requestType, currentStatus }: Workfl
         <div className="mb-6">
           <div className="flex justify-between text-xs text-gray-500 mb-2">
             <span>Progress</span>
-            <span>{Math.round((workflow.current_level / workflow.total_levels) * 100)}%</span>
+            <span>{Math.round((workflow.currentLevel / workflow.totalLevels) * 100)}%</span>
           </div>
           <div className="w-full bg-gray-200 rounded-full h-2">
             <div 
               className="bg-orange-500 h-2 rounded-full transition-all duration-500" 
-              style={{ width: `${(workflow.current_level / workflow.total_levels) * 100}%` }}
+              style={{ width: `${(workflow.currentLevel / workflow.totalLevels) * 100}%` }}
             />
           </div>
         </div>
@@ -115,12 +116,12 @@ export function WorkflowStatus({ requestId, requestType, currentStatus }: Workfl
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-gray-900">
-                      {getRoleLabel(step.approver_role)}
+                      {getRoleLabel(step.approverRole)}
                     </p>
-                    {step.approver_name && (
+                    {step.approverName && (
                       <p className="text-xs text-gray-500 flex items-center">
                         <UserIcon className="h-3 w-3 mr-1" />
-                        {step.approver_name}
+                        {step.approverName}
                       </p>
                     )}
                   </div>
@@ -129,9 +130,9 @@ export function WorkflowStatus({ requestId, requestType, currentStatus }: Workfl
                     <Badge className={getStatusBadge(step.status)}>
                       {step.status}
                     </Badge>
-                    {step.action_date && (
+                    {step.actionDate && (
                       <p className="text-xs text-gray-500 mt-1">
-                        {new Date(step.action_date).toLocaleDateString()}
+                        {new Date(step.actionDate).toLocaleDateString()}
                       </p>
                     )}
                   </div>
@@ -146,7 +147,7 @@ export function WorkflowStatus({ requestId, requestType, currentStatus }: Workfl
                   </div>
                 )}
                 
-                {step.is_current_level && step.status === 'pending' && (
+                {step.isCurrentLevel && step.status === 'pending' && (
                   <div className="mt-2">
                     <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                       Current Step
@@ -162,21 +163,21 @@ export function WorkflowStatus({ requestId, requestType, currentStatus }: Workfl
         <div className="mt-6 pt-4 border-t border-gray-200">
           <div className="flex justify-between text-xs text-gray-500">
             <span>
-              Submitted: {new Date(workflow.submitted_date || workflow.created_at).toLocaleDateString()}
+              Submitted: {new Date(workflow.submittedDate).toLocaleDateString()}
             </span>
-            {workflow.completed_date && (
+            {workflow.completedDate && (
               <span>
-                Completed: {new Date(workflow.completed_date).toLocaleDateString()}
+                Completed: {new Date(workflow.completedDate).toLocaleDateString()}
               </span>
             )}
           </div>
         </div>
 
         {/* Business Justification */}
-        {workflow.business_justification && (
+        {workflow.businessJustification && (
           <div className="mt-4 pt-4 border-t border-gray-200">
             <h4 className="text-xs font-medium text-gray-900 mb-2">Business Justification</h4>
-            <p className="text-xs text-gray-600">{workflow.business_justification}</p>
+            <p className="text-xs text-gray-600">{workflow.businessJustification}</p>
           </div>
         )}
       </div>

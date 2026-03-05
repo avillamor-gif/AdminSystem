@@ -9,18 +9,18 @@ import toast from 'react-hot-toast'
 interface PrintingPress {
   id: string
   name: string
-  contact_person: string
-  email: string
-  phone: string
-  website: string
-  address: string
-  city: string
-  country: string
-  specialties: string[]
-  is_active: boolean
-  min_order_qty: number
-  turnaround_days: number
-  notes: string
+  contact_person: string | null
+  email: string | null
+  phone: string | null
+  website: string | null
+  address: string | null
+  city: string | null
+  country: string | null
+  specialties: string[] | null
+  is_active: boolean | null
+  min_order_qty: number | null
+  turnaround_days: number | null
+  notes: string | null
 }
 
 const SPECIALTY_OPTIONS = ['Books', 'Journals', 'Magazines', 'Newspapers', 'Newsletters', 'Reports', 'Manuals', 'Brochures', 'Posters', 'Large Format']
@@ -42,7 +42,7 @@ export default function PrintingPressesPage() {
       .select('*')
       .order('name', { ascending: true })
     if (error) { toast.error('Failed to load printing presses'); return }
-    setPresses(data ?? [])
+    setPresses((data ?? []) as unknown as PrintingPress[])
     setLoading(false)
   }
 
@@ -95,7 +95,7 @@ export default function PrintingPressesPage() {
   const toggleSpecialty = (s: string) => {
     setFormData(p => ({
       ...p,
-      specialties: p.specialties.includes(s) ? p.specialties.filter(x => x !== s) : [...p.specialties, s],
+      specialties: (p.specialties ?? []).includes(s) ? (p.specialties ?? []).filter(x => x !== s) : [...(p.specialties ?? []), s],
     }))
   }
 
@@ -192,8 +192,8 @@ export default function PrintingPressesPage() {
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex flex-wrap gap-1">
-                        {press.specialties.slice(0, 2).map(s => <Badge key={s} className="bg-blue-100 text-blue-800 text-xs">{s}</Badge>)}
-                        {press.specialties.length > 2 && <Badge className="bg-gray-100 text-gray-600 text-xs">+{press.specialties.length - 2}</Badge>}
+                        {(press.specialties ?? []).slice(0, 2).map(s => <Badge key={s} className="bg-blue-100 text-blue-800 text-xs">{s}</Badge>)}
+                        {(press.specialties ?? []).length > 2 && <Badge className="bg-gray-100 text-gray-600 text-xs">+{(press.specialties ?? []).length - 2}</Badge>}
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{press.turnaround_days} day{press.turnaround_days !== 1 ? 's' : ''}</td>
@@ -229,45 +229,45 @@ export default function PrintingPressesPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Contact Person</label>
-                  <Input value={formData.contact_person} onChange={e => setFormData(p => ({ ...p, contact_person: e.target.value }))} placeholder="Primary contact name" />
+                  <Input value={formData.contact_person ?? ''} onChange={e => setFormData(p => ({ ...p, contact_person: e.target.value }))} placeholder="Primary contact name" />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                  <Input type="email" value={formData.email} onChange={e => setFormData(p => ({ ...p, email: e.target.value }))} placeholder="contact@vendor.com" />
+                  <Input type="email" value={formData.email ?? ''} onChange={e => setFormData(p => ({ ...p, email: e.target.value }))} placeholder="contact@vendor.com" />
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
-                  <Input value={formData.phone} onChange={e => setFormData(p => ({ ...p, phone: e.target.value }))} placeholder="+63 2 8xxx xxxx" />
+                  <Input value={formData.phone ?? ''} onChange={e => setFormData(p => ({ ...p, phone: e.target.value }))} placeholder="+63 2 8xxx xxxx" />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Website</label>
-                  <Input value={formData.website} onChange={e => setFormData(p => ({ ...p, website: e.target.value }))} placeholder="www.vendor.com" />
+                  <Input value={formData.website ?? ''} onChange={e => setFormData(p => ({ ...p, website: e.target.value }))} placeholder="www.vendor.com" />
                 </div>
               </div>
               <div className="grid grid-cols-3 gap-4">
                 <div className="col-span-2">
                   <label className="block text-sm font-medium text-gray-700 mb-1">Address</label>
-                  <Input value={formData.address} onChange={e => setFormData(p => ({ ...p, address: e.target.value }))} placeholder="Street address" />
+                  <Input value={formData.address ?? ''} onChange={e => setFormData(p => ({ ...p, address: e.target.value }))} placeholder="Street address" />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">City</label>
-                  <Input value={formData.city} onChange={e => setFormData(p => ({ ...p, city: e.target.value }))} placeholder="City" />
+                  <Input value={formData.city ?? ''} onChange={e => setFormData(p => ({ ...p, city: e.target.value }))} placeholder="City" />
                 </div>
               </div>
               <div className="grid grid-cols-3 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Country</label>
-                  <Input value={formData.country} onChange={e => setFormData(p => ({ ...p, country: e.target.value }))} placeholder="Country" />
+                  <Input value={formData.country ?? ''} onChange={e => setFormData(p => ({ ...p, country: e.target.value }))} placeholder="Country" />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Min. Order Qty</label>
-                  <Input type="number" min={1} value={formData.min_order_qty} onChange={e => setFormData(p => ({ ...p, min_order_qty: Number(e.target.value) }))} />
+                  <Input type="number" min={1} value={formData.min_order_qty ?? 1} onChange={e => setFormData(p => ({ ...p, min_order_qty: Number(e.target.value) }))} />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Turnaround (days)</label>
-                  <Input type="number" min={1} value={formData.turnaround_days} onChange={e => setFormData(p => ({ ...p, turnaround_days: Number(e.target.value) }))} />
+                  <Input type="number" min={1} value={formData.turnaround_days ?? 5} onChange={e => setFormData(p => ({ ...p, turnaround_days: Number(e.target.value) }))} />
                 </div>
               </div>
               <div>
@@ -275,7 +275,7 @@ export default function PrintingPressesPage() {
                 <div className="flex flex-wrap gap-2">
                   {SPECIALTY_OPTIONS.map(s => (
                     <button key={s} type="button" onClick={() => toggleSpecialty(s)}
-                      className={`px-3 py-1 rounded-full text-xs font-medium border transition-colors ${formData.specialties.includes(s) ? 'bg-orange-600 text-white border-orange-600' : 'bg-white text-gray-600 border-gray-300 hover:border-orange-400'}`}>
+                      className={`px-3 py-1 rounded-full text-xs font-medium border transition-colors ${(formData.specialties ?? []).includes(s) ? 'bg-orange-600 text-white border-orange-600' : 'bg-white text-gray-600 border-gray-300 hover:border-orange-400'}`}>
                       {s}
                     </button>
                   ))}
@@ -283,10 +283,10 @@ export default function PrintingPressesPage() {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Notes</label>
-                <textarea className="w-full p-2 border border-gray-300 rounded-md text-sm resize-none" rows={2} value={formData.notes} onChange={e => setFormData(p => ({ ...p, notes: e.target.value }))} placeholder="Additional notes about this vendor..." />
+                <textarea className="w-full p-2 border border-gray-300 rounded-md text-sm resize-none" rows={2} value={formData.notes ?? ''} onChange={e => setFormData(p => ({ ...p, notes: e.target.value }))} placeholder="Additional notes about this vendor..." />
               </div>
               <div className="flex items-center gap-3">
-                <input type="checkbox" id="isActive" checked={formData.is_active} onChange={e => setFormData(p => ({ ...p, is_active: e.target.checked }))} className="w-4 h-4 text-orange-600 rounded" />
+                <input type="checkbox" id="isActive" checked={formData.is_active ?? true} onChange={e => setFormData(p => ({ ...p, is_active: e.target.checked }))} className="w-4 h-4 text-orange-600 rounded" />
                 <label htmlFor="isActive" className="text-sm font-medium text-gray-700">Active vendor</label>
               </div>
             </div>

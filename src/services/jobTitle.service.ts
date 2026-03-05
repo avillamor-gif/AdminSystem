@@ -80,7 +80,7 @@ export const jobTitleService = {
     }
     
     console.log('Fetched job titles from Supabase:', data)
-    return data as JobTitle[]
+    return data as unknown as JobTitle[]
   },
 
   async getById(id: string): Promise<JobTitle | null> {
@@ -103,7 +103,7 @@ export const jobTitleService = {
     }
     
     console.log('Fetched job title from Supabase:', data)
-    return data as JobTitle
+    return data as unknown as JobTitle
   },
 
   async create(jobTitleData: JobTitleInsert): Promise<JobTitle> {
@@ -122,7 +122,7 @@ export const jobTitleService = {
     }
     
     console.log('Created job title in Supabase:', data)
-    return data as JobTitle
+    return data as unknown as JobTitle
   },
 
   async update(id: string, jobTitleData: JobTitleUpdate): Promise<JobTitle> {
@@ -142,7 +142,7 @@ export const jobTitleService = {
     }
     
     console.log('Updated job title in Supabase:', data)
-    return data as JobTitle
+    return data as unknown as JobTitle
   },
 
   async delete(id: string): Promise<void> {

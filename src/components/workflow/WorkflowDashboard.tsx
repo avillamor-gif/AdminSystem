@@ -128,9 +128,9 @@ export function WorkflowDashboard({ userId, userRole }: WorkflowDashboardProps) 
                       <p className="text-sm text-gray-500">
                         {workflow.employeeName} • {workflow.department}
                       </p>
-                      {workflow.business_justification && (
+                      {workflow.businessJustification && (
                         <p className="text-xs text-gray-400 mt-1 line-clamp-2">
-                          {workflow.business_justification}
+                          {workflow.businessJustification}
                         </p>
                       )}
                     </div>

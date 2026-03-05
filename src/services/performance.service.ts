@@ -47,12 +47,12 @@ export const performanceService = {
     }
 
     if (filters?.status) {
-      query = query.eq('status', filters.status)
+      query = query.eq('status', filters.status as any)
     }
 
     const { data, error } = await query
     if (error) throw error
-    return (data || []) as PerformanceReviewWithRelations[]
+    return (data || []) as unknown as PerformanceReviewWithRelations[]
   },
 
   async getReviewById(id: string): Promise<PerformanceReviewWithRelations | null> {
@@ -68,7 +68,7 @@ export const performanceService = {
       .single()
 
     if (error) throw error
-    return data as PerformanceReviewWithRelations | null
+    return data as unknown as PerformanceReviewWithRelations | null
   },
 
   async createReview(review: PerformanceReviewInsert): Promise<PerformanceReview> {
@@ -80,7 +80,7 @@ export const performanceService = {
       .single()
 
     if (error) throw error
-    return data as PerformanceReview
+    return data as unknown as PerformanceReview
   },
 
   async updateReview(id: string, review: PerformanceReviewUpdate): Promise<PerformanceReview> {
@@ -93,7 +93,7 @@ export const performanceService = {
       .single()
 
     if (error) throw error
-    return data as PerformanceReview
+    return data as unknown as PerformanceReview
   },
 
   async deleteReview(id: string): Promise<void> {
@@ -118,12 +118,12 @@ export const performanceService = {
     }
 
     if (filters?.status) {
-      query = query.eq('status', filters.status)
+      query = query.eq('status', filters.status as any)
     }
 
     const { data, error } = await query
     if (error) throw error
-    return (data || []) as GoalWithRelations[]
+    return (data || []) as unknown as GoalWithRelations[]
   },
 
   async createGoal(goal: GoalInsert): Promise<Goal> {
@@ -135,7 +135,7 @@ export const performanceService = {
       .single()
 
     if (error) throw error
-    return data as Goal
+    return data as unknown as Goal
   },
 
   async updateGoal(id: string, goal: GoalUpdate): Promise<Goal> {
@@ -148,7 +148,7 @@ export const performanceService = {
       .single()
 
     if (error) throw error
-    return data as Goal
+    return data as unknown as Goal
   },
 
   async deleteGoal(id: string): Promise<void> {

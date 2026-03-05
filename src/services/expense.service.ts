@@ -51,7 +51,7 @@ export const expenseService = {
 
     // Apply filters
     if (filters.status) {
-      query = query.eq('status', filters.status)
+      query = query.eq('status', filters.status as any)
     }
     if (filters.category) {
       query = query.eq('category', filters.category)
@@ -88,7 +88,7 @@ export const expenseService = {
       throw new Error('Failed to fetch expense requests')
     }
 
-    return data as ExpenseRequestWithEmployee[]
+    return data as unknown as ExpenseRequestWithEmployee[]
   },
 
   // Get expense request by ID
@@ -109,7 +109,7 @@ export const expenseService = {
       return null
     }
 
-    return data as ExpenseRequestWithEmployee
+    return data as unknown as ExpenseRequestWithEmployee
   },
 
   // Create new expense request
@@ -131,7 +131,7 @@ export const expenseService = {
       throw new Error('Failed to create expense request')
     }
 
-    return data
+    return data as any
   },
 
   // Update expense request
@@ -151,7 +151,7 @@ export const expenseService = {
       throw new Error('Failed to update expense request')
     }
 
-    return data
+    return data as any
   },
 
   // Submit expense request (trigger workflow)
@@ -170,13 +170,13 @@ export const expenseService = {
       requestId: id,
       requestType: 'expense',
       employeeId,
-      employeeName,
-      department,
-      amount: expenseRequest.amount,
-      currency: expenseRequest.currency || 'USD',
-      businessJustification: `${expenseRequest.category} expense: ${expenseRequest.description}`,
-      priority: 'medium',
       metadata: {
+        employeeName,
+        department,
+        amount: expenseRequest.amount,
+        currency: expenseRequest.currency || 'USD',
+        businessJustification: `${expenseRequest.category} expense: ${expenseRequest.description}`,
+        priority: 'medium',
         category: expenseRequest.category,
         merchant: expenseRequest.merchant,
         expense_date: expenseRequest.expense_date,

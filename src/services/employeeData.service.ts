@@ -81,12 +81,12 @@ export const customFieldsService = {
       query = query.eq('category', filters.category)
     }
     if (filters?.status) {
-      query = query.eq('status', filters.status)
+      query = query.eq('status', filters.status as any)
     }
 
     const { data, error } = await query
     if (error) throw error
-    return data || []
+    return (data || []) as any
   },
 
   async getById(id: string): Promise<CustomField> {
@@ -98,19 +98,19 @@ export const customFieldsService = {
       .single()
 
     if (error) throw error
-    return data
+    return data as any
   },
 
   async create(field: Omit<CustomField, 'id' | 'created_at' | 'updated_at'>): Promise<CustomField> {
     const supabase = createClient()
     const { data, error } = await supabase
       .from('employee_custom_fields')
-      .insert(field)
+      .insert(field as any)
       .select()
       .single()
 
     if (error) throw error
-    return data
+    return data as any
   },
 
   async update(id: string, updates: Partial<CustomField>): Promise<CustomField> {
@@ -123,7 +123,7 @@ export const customFieldsService = {
       .single()
 
     if (error) throw error
-    return data
+    return data as any
   },
 
   async delete(id: string): Promise<void> {
@@ -162,7 +162,7 @@ export const customFieldValuesService = {
       .eq('employee_id', employeeId)
 
     if (error) throw error
-    return data || []
+    return (data || []) as any
   },
 
   async upsert(employeeId: string, fieldId: string, value: string | string[]): Promise<CustomFieldValue> {
@@ -182,7 +182,7 @@ export const customFieldValuesService = {
       .single()
 
     if (error) throw error
-    return data
+    return data as any
   },
 
   async delete(employeeId: string, fieldId: string): Promise<void> {
@@ -212,7 +212,7 @@ export const pimConfigService = {
 
     const { data, error } = await query
     if (error) throw error
-    return data || []
+    return (data || []) as any
   },
 
   async update(id: string, updates: Partial<PIMFieldConfig>): Promise<PIMFieldConfig> {
@@ -225,7 +225,7 @@ export const pimConfigService = {
       .single()
 
     if (error) throw error
-    return data
+    return data as any
   },
 
   async bulkUpdate(configs: Array<{ id: string; updates: Partial<PIMFieldConfig> }>): Promise<void> {
@@ -250,7 +250,7 @@ export const dataImportService = {
       .order('created_at', { ascending: false })
 
     if (filters?.status) {
-      query = query.eq('status', filters.status)
+      query = query.eq('status', filters.status as any)
     }
     if (filters?.limit) {
       query = query.limit(filters.limit)
@@ -258,19 +258,19 @@ export const dataImportService = {
 
     const { data, error } = await query
     if (error) throw error
-    return data || []
+    return (data || []) as any
   },
 
   async create(importLog: Omit<DataImportLog, 'id' | 'created_at'>): Promise<DataImportLog> {
     const supabase = createClient()
     const { data, error } = await supabase
       .from('employee_data_imports')
-      .insert(importLog)
+      .insert(importLog as any)
       .select()
       .single()
 
     if (error) throw error
-    return data
+    return data as any
   },
 
   async updateStatus(id: string, status: DataImportLog['status'], updates?: Partial<DataImportLog>): Promise<void> {

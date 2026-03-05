@@ -59,7 +59,7 @@ export function EmployeeFormModal({ open, onClose, employee }: EmployeeFormModal
           department_id: employee.department_id || '',
           job_title_id: employee.job_title_id || '',
           location_id: employee.location_id || '',
-          status: employee.status,
+          status: (employee.status ?? 'active') as 'active' | 'inactive' | 'terminated',
         }
       : {
           status: 'active',
@@ -100,7 +100,7 @@ export function EmployeeFormModal({ open, onClose, employee }: EmployeeFormModal
           department_id: employee.department_id || '',
           job_title_id: employee.job_title_id || '',
           location_id: employee.location_id || '',
-          status: employee.status,
+          status: (employee.status ?? 'active') as 'active' | 'inactive' | 'terminated',
         })
       } else {
         reset({

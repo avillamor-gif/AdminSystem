@@ -14,7 +14,7 @@ export const departmentService = {
       .order('name')
 
     if (error) throw error
-    return (data || []) as Department[]
+    return (data || []) as unknown as Department[]
   },
 
   async create(department: DepartmentInsert): Promise<Department> {
@@ -26,7 +26,7 @@ export const departmentService = {
       .single()
 
     if (error) throw error
-    return data as Department
+    return data as unknown as Department
   },
 
   async update(id: string, department: DepartmentUpdate): Promise<Department> {
@@ -39,7 +39,7 @@ export const departmentService = {
       .single()
 
     if (error) throw error
-    return data as Department
+    return data as unknown as Department
   },
 
   async delete(id: string): Promise<void> {

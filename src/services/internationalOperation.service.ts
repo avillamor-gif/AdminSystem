@@ -59,7 +59,7 @@ export const internationalOperationService = {
     }
 
     if (filters?.status) {
-      query = query.eq('status', filters.status)
+      query = query.eq('status', filters.status as any)
     }
 
     if (filters?.search) {
@@ -73,7 +73,7 @@ export const internationalOperationService = {
       throw error
     }
 
-    return data as InternationalOperationWithRelations[]
+    return data as unknown as InternationalOperationWithRelations[]
   },
 
   async getById(id: string): Promise<InternationalOperationWithRelations | null> {
@@ -94,13 +94,13 @@ export const internationalOperationService = {
       throw error
     }
 
-    return data as InternationalOperationWithRelations
+    return data as unknown as InternationalOperationWithRelations
   },
 
   async getSummary(): Promise<any[]> {
     const supabase = createClient()
     const { data, error } = await supabase
-      .from('intl_operations_summary')
+      .from('intl_operations_summary' as any)
       .select('*')
       .order('country', { ascending: true })
 
@@ -109,7 +109,7 @@ export const internationalOperationService = {
       throw error
     }
 
-    return data || []
+    return (data || []) as any
   },
 
   async getByCountry(country: string): Promise<InternationalOperationWithRelations[]> {
@@ -124,7 +124,7 @@ export const internationalOperationService = {
     const supabase = createClient()
     const { data: newOperation, error } = await supabase
       .from('international_operations')
-      .insert(data)
+      .insert(data as any)
       .select()
       .single()
 

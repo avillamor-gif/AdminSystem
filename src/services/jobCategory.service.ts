@@ -53,7 +53,7 @@ export const jobCategoryService = {
       throw error
     }
 
-    return data as JobCategory[]
+    return data as unknown as JobCategory[]
   },
 
   async getById(id: string): Promise<JobCategory> {
@@ -70,7 +70,7 @@ export const jobCategoryService = {
       throw error
     }
 
-    return data as JobCategory
+    return data as unknown as JobCategory
   },
 
   async create(data: JobCategoryInsert): Promise<JobCategory> {

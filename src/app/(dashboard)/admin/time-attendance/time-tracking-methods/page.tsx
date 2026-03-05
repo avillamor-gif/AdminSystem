@@ -21,7 +21,7 @@ export default function TimeTrackingMethodsPage() {
     const matchesSearch = !searchQuery || 
       method.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       (method.description && method.description.toLowerCase().includes(searchQuery.toLowerCase()))
-    const matchesType = !trackingTypeFilter || method.tracking_type === trackingTypeFilter
+    const matchesType = !trackingTypeFilter || method.method_type === trackingTypeFilter
     return matchesSearch && matchesType
   })
 
@@ -46,8 +46,8 @@ export default function TimeTrackingMethodsPage() {
 
   const stats = {
     total: filteredMethods.length,
-    remoteEnabled: filteredMethods.filter(m => m.allow_remote_access).length,
-    defaultMethod: filteredMethods.find(m => m.is_default)?.name || 'None',
+    remoteEnabled: filteredMethods.filter(m => m.requires_location).length,
+    defaultMethod: [...filteredMethods].sort((a, b) => a.priority - b.priority)[0]?.name || 'None',
   }
 
   const getTrackingTypeColor = (type: string) => {
@@ -117,7 +117,6 @@ export default function TimeTrackingMethodsPage() {
               placeholder="Search methods..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              icon={<Search className="w-4 h-4" />}
             />
           </div>
           <div>
@@ -145,10 +144,10 @@ export default function TimeTrackingMethodsPage() {
           <Card key={method.id} className="p-4 hover:shadow-md transition-shadow">
             <div className="flex items-start justify-between mb-3">
               <div className="flex items-center gap-2">
-                {getTrackingTypeIcon(method.tracking_type)}
+                {getTrackingTypeIcon(method.method_type)}
                 <h3 className="font-semibold text-gray-900">{method.name}</h3>
               </div>
-              {method.is_default && (
+              {method.priority === 1 && (
                 <Badge className="bg-orange-100 text-orange-700">
                   <Star className="w-3 h-3 mr-1" />
                   Default
@@ -163,40 +162,28 @@ export default function TimeTrackingMethodsPage() {
             <div className="space-y-2 mb-4">
               <div className="flex items-center justify-between text-sm">
                 <span className="text-gray-600">Type</span>
-                <Badge className={getTrackingTypeColor(method.tracking_type)}>
-                  {method.tracking_type.replace('_', ' ')}
+                <Badge className={getTrackingTypeColor(method.method_type)}>
+                  {method.method_type.replace('_', ' ')}
                 </Badge>
               </div>
 
               <div className="flex items-center justify-between text-sm">
                 <span className="text-gray-600">Remote Access</span>
-                <Badge className={method.allow_remote_access ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'}>
-                  {method.allow_remote_access ? 'Enabled' : 'Disabled'}
+                <Badge className={method.requires_location ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'}>
+                  {method.requires_location ? 'Enabled' : 'Disabled'}
                 </Badge>
               </div>
 
-              {method.requires_geofence && (
+              {method.geofence_radius_meters != null && (
                 <div className="flex items-center gap-1 text-sm text-blue-600">
                   <MapPin className="w-3 h-3" />
-                  <span>Geofence Required</span>
-                </div>
-              )}
-
-              {method.device_requirements && (
-                <div className="text-sm text-gray-600">
-                  <span className="font-medium">Devices:</span> {method.device_requirements}
-                </div>
-              )}
-
-              {method.integration_cost && (
-                <div className="text-sm font-medium text-gray-900">
-                  Cost: ${method.integration_cost}
+                  <span>Geofence: {method.geofence_radius_meters}m radius</span>
                 </div>
               )}
             </div>
 
             <div className="flex items-center gap-2 pt-3 border-t">
-              {!method.is_default && (
+              {method.priority !== 1 && (
                 <Button
                   variant="secondary"
                   size="sm"

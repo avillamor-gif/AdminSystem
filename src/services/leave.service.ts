@@ -54,7 +54,7 @@ export const leaveService = {
       .in('id', employeeIds)
 
     // Fetch related leave types
-    const leaveTypeIds = [...new Set(requests.map(r => r.leave_type_id).filter(Boolean))]
+    const leaveTypeIds = [...new Set(requests.map(r => r.leave_type_id).filter((x): x is string => !!x))]
     const { data: leaveTypes } = await supabase
       .from('leave_types')
       .select('id, leave_type_name')
@@ -68,7 +68,7 @@ export const leaveService = {
       ...request,
       employee: employeeMap.get(request.employee_id) || null,
       leave_type: leaveTypeMap.get(request.leave_type_id) || null
-    }))
+    })) as unknown as LeaveRequestWithRelations[]
   },
 
   async getEmployeesOnLeaveToday(): Promise<LeaveRequestWithRelations[]> {
@@ -96,7 +96,7 @@ export const leaveService = {
       .select('id, first_name, last_name, email, avatar_url, department_id')
       .in('id', employeeIds)
 
-    const deptIds = [...new Set((employees || []).map(e => e.department_id).filter(Boolean))]
+    const deptIds = [...new Set((employees || []).map(e => e.department_id).filter((x): x is string => !!x))]
     const { data: departments } = deptIds.length
       ? await supabase.from('departments').select('id, name').in('id', deptIds)
       : { data: [] }
@@ -120,7 +120,7 @@ export const leaveService = {
       ...request,
       employee: employeeMap.get(request.employee_id) || null,
       leave_type: leaveTypeMap.get(request.leave_type_id) || null
-    }))
+    })) as unknown as LeaveRequestWithRelations[]
   },
 
   async getLeaveTypes(): Promise<LeaveType[]> {
@@ -131,7 +131,7 @@ export const leaveService = {
       .order('name')
 
     if (error) throw error
-    return (data || []) as LeaveType[]
+    return (data || []) as unknown as LeaveType[]
   },
 
   async createLeaveType(leaveType: LeaveTypeInsert): Promise<LeaveType> {
@@ -143,7 +143,7 @@ export const leaveService = {
       .single()
 
     if (error) throw error
-    return data as LeaveType
+    return data as unknown as LeaveType
   },
 
   async updateLeaveType(id: string, leaveType: LeaveTypeUpdate): Promise<LeaveType> {
@@ -178,8 +178,8 @@ export const leaveService = {
     const supabase = createClient()
     
     // Calculate total_days (inclusive of both start and end dates)
-    const startDate = new Date(request.start_date)
-    const endDate = new Date(request.end_date)
+    const startDate = new Date(request.start_date ?? new Date())
+    const endDate = new Date(request.end_date ?? new Date())
     const diffTime = Math.abs(endDate.getTime() - startDate.getTime())
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1 // +1 to include both start and end dates
     
@@ -195,7 +195,7 @@ export const leaveService = {
           job_title:job_titles(id, title),
           manager:employees!employees_manager_id_fkey(id, first_name, last_name)
         `)
-        .eq('id', request.employee_id)
+        .eq('id', request.employee_id ?? '')
         .single()
 
       if (employeeError) {
@@ -246,7 +246,7 @@ export const leaveService = {
         : 'An employee'
       await notifySupervisorsAndAdmins(
         'leave_request_notifications',
-        request.employee_id,
+        request.employee_id ?? '',
         (data as any).id,
         'New Leave Request',
         `{name} has submitted a leave request.`,
@@ -256,7 +256,7 @@ export const leaveService = {
       console.warn('Leave notification error (leave.service):', notifErr)
     }
 
-    return data as LeaveRequest
+    return data as unknown as LeaveRequest
   },
 
   async updateStatus(
@@ -295,7 +295,7 @@ export const leaveService = {
       console.warn('Workflow update failed:', workflowError)
     }
 
-    return data as LeaveRequest
+    return data as unknown as LeaveRequest
   },
 
   async updateRequestStatus(
@@ -317,7 +317,7 @@ export const leaveService = {
       .single()
 
     if (error) throw error
-    return data as LeaveRequest
+    return data as unknown as LeaveRequest
   },
 
   async withdrawRequest(id: string, employeeId: string): Promise<LeaveRequest> {
@@ -357,6 +357,6 @@ export const leaveService = {
       console.warn('Workflow cancellation failed:', workflowError)
     }
 
-    return data as LeaveRequest
+    return data as unknown as LeaveRequest
   },
 }

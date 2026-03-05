@@ -8,7 +8,7 @@ import { notifySupervisorsAndAdmins } from '@/services/requestNotification.helpe
 import toast from 'react-hot-toast'
 
 interface Category { id: string; name: string }
-interface Item { id: string; name: string; unit: string; quantity_on_hand: number; category_id: string | null }
+interface Item { id: string; name: string; unit: string | null; quantity_on_hand: number | null; category_id: string | null }
 
 const empty = { item_id: '', item_name: '', category_id: '', quantity: 1, purpose: '', priority: 'normal', notes: '' }
 
@@ -123,7 +123,7 @@ export default function RequestSuppliesPage() {
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Quantity *</label>
-              <Input type="number" min={1} max={selectedItem ? selectedItem.quantity_on_hand : 9999} value={form.quantity} onChange={e => set('quantity', Number(e.target.value))} />
+              <Input type="number" min={1} max={selectedItem ? (selectedItem.quantity_on_hand ?? 9999) : 9999} value={form.quantity} onChange={e => set('quantity', Number(e.target.value))} />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Priority</label>

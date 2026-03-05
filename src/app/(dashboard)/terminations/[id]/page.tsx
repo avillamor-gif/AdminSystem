@@ -60,7 +60,7 @@ export default function TerminationDetailPage() {
             <p className="text-gray-600 mt-1">Request #{termination.request_number}</p>
           </div>
         </div>
-        <Badge className={getStatusColor(termination.status)}>
+        <Badge className={getStatusColor(termination.status ?? '')}>
           {termination.status}
         </Badge>
       </div>
@@ -129,7 +129,7 @@ export default function TerminationDetailPage() {
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Process Status</h3>
           <div className="space-y-4">
             <div className="flex items-center gap-3">
-              {termination.exit_interview_scheduled ? (
+              {termination.exit_interview_required ? (
                 <CheckCircle className="w-5 h-5 text-green-600" />
               ) : (
                 <Clock className="w-5 h-5 text-gray-400" />
@@ -137,34 +137,34 @@ export default function TerminationDetailPage() {
               <div>
                 <p className="font-medium text-gray-900">Exit Interview</p>
                 <p className="text-sm text-gray-600">
-                  {termination.exit_interview_completed ? 'Completed' : 
-                   termination.exit_interview_scheduled ? 'Scheduled' : 'Not scheduled'}
+                  {termination.exit_interview_date ? 'Completed' : 
+                   termination.exit_interview_required ? 'Scheduled' : 'Not scheduled'}
                 </p>
               </div>
             </div>
             <div className="flex items-center gap-3">
-              {termination.clearance_completed ? (
+              {termination.asset_return_required ? (
                 <CheckCircle className="w-5 h-5 text-green-600" />
               ) : (
                 <Clock className="w-5 h-5 text-gray-400" />
               )}
               <div>
-                <p className="font-medium text-gray-900">Clearance</p>
+                <p className="font-medium text-gray-900">Asset Return</p>
                 <p className="text-sm text-gray-600">
-                  {termination.clearance_completed ? 'Completed' : 'Pending'}
+                  {termination.asset_return_required ? 'Required' : 'Not required'}
                 </p>
               </div>
             </div>
             <div className="flex items-center gap-3">
-              {termination.final_settlement_completed ? (
+              {termination.severance_applicable ? (
                 <CheckCircle className="w-5 h-5 text-green-600" />
               ) : (
                 <Clock className="w-5 h-5 text-gray-400" />
               )}
               <div>
-                <p className="font-medium text-gray-900">Final Settlement</p>
+                <p className="font-medium text-gray-900">Severance</p>
                 <p className="text-sm text-gray-600">
-                  {termination.final_settlement_completed ? 'Completed' : 'Pending'}
+                  {termination.severance_applicable ? 'Applicable' : 'Not applicable'}
                 </p>
               </div>
             </div>
@@ -173,10 +173,10 @@ export default function TerminationDetailPage() {
       </div>
 
       {/* Additional Notes */}
-      {termination.notes && (
+      {termination.hr_notes && (
         <Card className="p-6">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Additional Notes</h3>
-          <p className="text-gray-700 whitespace-pre-wrap">{termination.notes}</p>
+          <p className="text-gray-700 whitespace-pre-wrap">{termination.hr_notes}</p>
         </Card>
       )}
 
@@ -187,9 +187,9 @@ export default function TerminationDetailPage() {
             {termination.status === 'approved' ? 'Approval' : 'Rejection'} Information
           </h3>
           <div className="space-y-2">
-            {termination.approved_at && (
+            {termination.approved_date && (
               <p className="text-gray-700">
-                Date: {new Date(termination.approved_at).toLocaleString()}
+                Date: {new Date(termination.approved_date).toLocaleString()}
               </p>
             )}
             {termination.rejection_reason && (

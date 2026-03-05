@@ -8,8 +8,8 @@ import toast from 'react-hot-toast'
 
 interface Request {
   id: string; request_number: string; item_name: string; quantity: number
-  purpose: string | null; priority: string; status: string
-  rejection_reason: string | null; created_at: string
+  purpose: string | null; priority: string | null; status: string | null
+  rejection_reason: string | null; created_at: string | null
   approved_at: string | null; fulfilled_at: string | null
 }
 
@@ -90,9 +90,9 @@ export default function MySupplyRequestsPage() {
                     <td className="px-6 py-4 text-sm font-mono text-gray-600">{r.request_number}</td>
                     <td className="px-6 py-4"><div className="text-sm font-medium text-gray-900">{r.item_name}</div>{r.purpose && <div className="text-xs text-gray-400 truncate max-w-xs">{r.purpose}</div>}</td>
                     <td className="px-6 py-4 text-sm text-gray-600">{r.quantity}</td>
-                    <td className="px-6 py-4"><Badge className={PRIORITY_COLORS[r.priority] ?? 'bg-gray-100 text-gray-600'}>{r.priority}</Badge></td>
-                    <td className="px-6 py-4"><Badge className={STATUS_COLORS[r.status] ?? 'bg-gray-100 text-gray-600'}>{r.status}</Badge></td>
-                    <td className="px-6 py-4 text-sm text-gray-500">{new Date(r.created_at).toLocaleDateString()}</td>
+                    <td className="px-6 py-4"><Badge className={PRIORITY_COLORS[r.priority ?? ''] ?? 'bg-gray-100 text-gray-600'}>{r.priority}</Badge></td>
+                    <td className="px-6 py-4"><Badge className={STATUS_COLORS[r.status ?? ''] ?? 'bg-gray-100 text-gray-600'}>{r.status}</Badge></td>
+                    <td className="px-6 py-4 text-sm text-gray-500">{r.created_at ? new Date(r.created_at).toLocaleDateString() : '—'}</td>
                     <td className="px-6 py-4 text-sm text-gray-500">
                       {r.status === 'rejected' && r.rejection_reason && (
                         <span className="text-red-500 text-xs">{r.rejection_reason}</span>

@@ -212,7 +212,7 @@ export default function AttendancePage() {
                         {record.clock_out ? formatTime(record.clock_out) : '-'}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        {getStatusBadge(record.status)}
+                        {getStatusBadge(record.status ?? '')}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                         {record.notes || '-'}

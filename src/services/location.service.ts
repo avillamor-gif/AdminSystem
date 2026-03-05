@@ -40,7 +40,7 @@ export const locationService = {
     }
 
     if (filters?.status) {
-      query = query.eq('status', filters.status)
+      query = query.eq('status', filters.status as any)
     }
 
     if (filters?.country) {
@@ -62,7 +62,7 @@ export const locationService = {
       throw error
     }
 
-    return data as LocationWithRelations[]
+    return data as unknown as LocationWithRelations[]
   },
 
   async getById(id: string): Promise<LocationWithRelations | null> {
@@ -83,13 +83,13 @@ export const locationService = {
       throw error
     }
 
-    return data as LocationWithRelations
+    return data as unknown as LocationWithRelations
   },
 
   async getWithDetails(): Promise<any[]> {
     const supabase = createClient()
     const { data, error } = await supabase
-      .from('locations_with_details')
+      .from('locations_with_details' as any)
       .select('*')
       .order('name', { ascending: true })
 
@@ -98,7 +98,7 @@ export const locationService = {
       throw error
     }
 
-    return data || []
+    return (data || []) as any
   },
 
   async getByCountry(country: string): Promise<LocationWithRelations[]> {
@@ -117,7 +117,7 @@ export const locationService = {
     const supabase = createClient()
     const { data: newLocation, error } = await supabase
       .from('locations')
-      .insert(data)
+      .insert(data as any)
       .select()
       .single()
 
