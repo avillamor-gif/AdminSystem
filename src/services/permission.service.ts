@@ -1,0 +1,176 @@
+import { createClient } from '@/lib/supabase/client'
+
+export type UserPermission = {
+  user_id: string
+  employee_id: string | null
+  role_id: string
+  role_name: string
+  role_description: string
+  permission_id: string
+  permission_name: string
+  permission_code: string
+  permission_category: string
+}
+
+export type UserRoleInfo = {
+  role_id: string
+  role_name: string
+  role_description: string
+  permissions: string[] // Array of permission codes
+}
+
+export const permissionService = {
+  /**
+   * Default permissions by role
+   */
+  getDefaultPermissionsByRole(role: string): string[] {
+    const rolePermissions: Record<string, string[]> = {
+      'admin': [
+        'user.view', 'user.create', 'user.edit', 'user.delete',
+        'users.view', 'users.create', 'users.edit', 'users.delete',
+        'employee.view', 'employee.create', 'employee.edit', 'employee.delete',
+        'employees.view', 'employees.create', 'employees.edit', 'employees.delete',
+        'departments.view', 'departments.create', 'departments.edit', 'departments.delete',
+        'leave.view', 'leave.approve', 'leave.reject',
+        'attendance.view', 'attendance.edit',
+        'reports.view', 'reports.export',
+        'settings.view', 'settings.edit'
+      ],
+      'manager': [
+        'employees.view', 'employees.edit',
+        'leave.view', 'leave.approve', 'leave.reject',
+        'attendance.view',
+        'reports.view'
+      ],
+      'employee': [
+        'leave.view', 'leave.create',
+        'attendance.view'
+      ]
+    }
+    
+    return rolePermissions[role.toLowerCase()] || rolePermissions['employee']
+  },
+
+  /**
+   * Get current user's permissions
+   */
+  async getCurrentUserPermissions(): Promise<UserRoleInfo | null> {
+    const supabase = createClient()
+    
+    try {
+      // Get current user
+      const { data: { user }, error: userError } = await supabase.auth.getUser()
+      
+      if (userError || !user) {
+        console.error('Error getting current user:', userError)
+        return null
+      }
+
+      // Try to get user permissions from view first
+      const { data, error } = await supabase
+        .from('user_permissions')
+        .select('*')
+        .eq('user_id', user.id)
+
+      // If view exists and has data, use it
+      if (!error && data && data.length > 0) {
+        const roleInfo: UserRoleInfo = {
+          role_id: data[0].role_id,
+          role_name: data[0].role_name,
+          role_description: data[0].role_description,
+          permissions: data.map((p: any) => p.permission_code)
+        }
+        return roleInfo
+      }
+
+      // Fallback: Get role from user_roles table and use default permissions
+      console.log('Using fallback: fetching role from user_roles table')
+      const { data: userRole, error: roleError } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', user.id)
+        .single()
+
+      if (roleError || !userRole) {
+        console.warn('No role found for user:', user.id)
+        return null
+      }
+
+      // Return default permissions based on role
+      const permissions = this.getDefaultPermissionsByRole(userRole.role)
+      
+      // Normalize role name with proper casing
+      let roleName = userRole.role
+      if (roleName.toLowerCase() === 'admin') {
+        roleName = 'Admin'
+      } else {
+        roleName = roleName.charAt(0).toUpperCase() + roleName.slice(1).toLowerCase()
+      }
+      
+      return {
+        role_id: userRole.role, // Use role string as ID
+        role_name: roleName,
+        role_description: `${roleName} role with default permissions`,
+        permissions
+      }
+    } catch (error) {
+      console.error('Error in getCurrentUserPermissions:', error)
+      return null
+    }
+  },
+
+  /**
+   * Check if current user has a specific permission
+   */
+  async hasPermission(permissionCode: string): Promise<boolean> {
+    const roleInfo = await this.getCurrentUserPermissions()
+    
+    if (!roleInfo) return false
+    
+    return roleInfo.permissions.includes(permissionCode)
+  },
+
+  /**
+   * Check if current user has any of the specified permissions
+   */
+  async hasAnyPermission(permissionCodes: string[]): Promise<boolean> {
+    const roleInfo = await this.getCurrentUserPermissions()
+    
+    if (!roleInfo) return false
+    
+    return permissionCodes.some(code => roleInfo.permissions.includes(code))
+  },
+
+  /**
+   * Check if current user has all of the specified permissions
+   */
+  async hasAllPermissions(permissionCodes: string[]): Promise<boolean> {
+    const roleInfo = await this.getCurrentUserPermissions()
+    
+    if (!roleInfo) return false
+    
+    return permissionCodes.every(code => roleInfo.permissions.includes(code))
+  },
+
+  /**
+   * Check if current user has a specific role
+   */
+  async hasRole(roleName: string): Promise<boolean> {
+    const roleInfo = await this.getCurrentUserPermissions()
+    
+    if (!roleInfo) return false
+    
+    return roleInfo.role_name.toLowerCase() === roleName.toLowerCase()
+  },
+
+  /**
+   * Check if current user is admin
+   */
+  async isAdmin(): Promise<boolean> {
+    const roleInfo = await this.getCurrentUserPermissions()
+    
+    if (!roleInfo) return false
+    
+    return roleInfo.role_name === 'Admin'
+  }
+}

@@ -1,0 +1,41 @@
+{
+  "name": "II Admin System",
+  "short_name": "II Admin",
+  "description": "HR Management System",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#ea580c",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/icons/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Clock In/Out",
+      "url": "/attendance",
+      "description": "Record your attendance"
+    },
+    {
+      "name": "Request Supplies",
+      "url": "/office-supplies/request",
+      "description": "Request office supplies"
+    },
+    {
+      "name": "My Leave",
+      "url": "/leave",
+      "description": "View and apply for leave"
+    }
+  ]
+}
