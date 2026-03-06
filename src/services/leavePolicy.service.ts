@@ -345,7 +345,6 @@ export const leavePolicyService = {
         total_allocated: allocatedDays,
         used_days: 0,
         pending_days: 0,
-        available_days: allocatedDays,
         carried_over: 0,
       })
     }

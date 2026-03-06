@@ -584,11 +584,10 @@ export const leaveBalanceService = {
       .single()
 
     if (existing) {
-      // Recalculate available_days when changing allocation
-      const newAvailable = days - (existing.used_days ?? 0) - (existing.pending_days ?? 0)
+      // available_days is a GENERATED column (total_allocated - used_days - pending_days) — do not write it
       const { data, error } = await supabase
         .from('leave_balances')
-        .update({ total_allocated: days, available_days: newAvailable })
+        .update({ total_allocated: days })
         .eq('id', existing.id)
         .select('*')
         .single()
@@ -596,7 +595,7 @@ export const leaveBalanceService = {
       if (error) throw error
       return data as unknown as LeaveBalance
     } else {
-      // Create new with available_days = days (no used/pending yet)
+      // available_days is a GENERATED column — do not include it in insert
       const { data, error } = await supabase
         .from('leave_balances')
         .insert({
@@ -606,7 +605,6 @@ export const leaveBalanceService = {
           total_allocated: days,
           used_days: 0,
           pending_days: 0,
-          available_days: days,
           carried_over: 0,
         })
         .select('*')
@@ -645,7 +643,6 @@ export const leaveBalanceService = {
             total_allocated: days,
             used_days: 0,
             pending_days: 0,
-            available_days: days,
             carried_over: 0,
           })
         }
