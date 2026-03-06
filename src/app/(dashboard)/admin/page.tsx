@@ -76,7 +76,7 @@ export default function AdminPage() {
       description: 'Configure leave types and policies',
       icon: Calendar,
       color: 'bg-indigo-500',
-      items: ['Leave Types', 'Accrual Rules', 'Leave Policies', 'Leave Balances', 'Holiday Calendar', 'Absence Categories', 'Approval Workflows'],
+      items: ['Leave Types', 'Accrual Rules', 'Leave Policies', 'Leave Balances', 'Holiday Calendar', 'Absence Categories', 'Approval Workflows', 'Leave Credit Approvals'],
     },
     {
       id: 'payroll-benefits',
@@ -350,6 +350,7 @@ export default function AdminPage() {
                           'Holiday Calendar': '/admin/leave-policies/holiday-calendar',
                           'Absence Categories': '/admin/leave-policies/absence-categories',
                           'Approval Workflows': '/admin/leave-policies/approval-workflows',
+                          'Leave Credit Approvals': '/admin/leave-management/credit-approvals',
                           
                           // Payroll & Benefits routes
                           'Pay Components': '/admin/payroll-benefits',

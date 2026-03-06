@@ -12,6 +12,7 @@ export type RequestNotifTable =
   | 'equipment_request_notifications'
   | 'supply_request_notifications'
   | 'leave_request_notifications'
+  | 'leave_credit_notifications'
 
 export type RequestNotifType =
   | 'new_request'
