@@ -12,6 +12,7 @@ import {
   useDeletePublicationRequest,
   useSubmitPublicationRequest,
 } from '@/hooks/usePublications'
+import { notifyRequesterOfDecision } from '@/services/requestNotification.helper'
 import { createClient } from '@/lib/supabase/client'
 import toast from 'react-hot-toast'
 
@@ -131,6 +132,58 @@ export default function PublicationManagementPage() {
   const handleSendForApproval = async (item: any) => {
     try {
       await submitMutation.mutateAsync({ id: item.id, employeeId: 'admin', employeeName: 'Admin' })
+    } catch {}
+  }
+
+  const handleApprove = async (item: any) => {
+    if (!confirm(`Approve request for "${item.publication_title}"?`)) return
+    try {
+      await updateMutation.mutateAsync({ id: item.id, updates: { status: 'approved' } })
+      notifyRequesterOfDecision(
+        'publication_request_notifications',
+        'publication_requests',
+        item.id,
+        'approved',
+        'Publication Request Approved',
+        `Your publication request for "${item.publication_title}" has been approved.`,
+        item.request_number
+      ).catch(() => {})
+      toast.success('Request approved')
+    } catch {}
+  }
+
+  const handleReject = async (item: any) => {
+    const reason = prompt(`Reason for rejecting "${item.publication_title}":`)
+    if (reason === null) return // cancelled
+    try {
+      await updateMutation.mutateAsync({ id: item.id, updates: { status: 'rejected', notes: reason ? `Rejected: ${reason}` : 'Rejected by admin' } })
+      notifyRequesterOfDecision(
+        'publication_request_notifications',
+        'publication_requests',
+        item.id,
+        'rejected',
+        'Publication Request Rejected',
+        `Your publication request for "${item.publication_title}" has been rejected.${reason ? ` Reason: ${reason}` : ''}`,
+        item.request_number
+      ).catch(() => {})
+      toast.success('Request rejected')
+    } catch {}
+  }
+
+  const handleFulfill = async (item: any) => {
+    if (!confirm(`Mark "${item.publication_title}" as fulfilled?`)) return
+    try {
+      await updateMutation.mutateAsync({ id: item.id, updates: { status: 'fulfilled' } })
+      notifyRequesterOfDecision(
+        'publication_request_notifications',
+        'publication_requests',
+        item.id,
+        'approved',
+        'Publication Request Fulfilled',
+        `Your publication request for "${item.publication_title}" has been fulfilled and is ready for pickup.`,
+        item.request_number
+      ).catch(() => {})
+      toast.success('Request marked as fulfilled')
     } catch {}
   }
 
@@ -273,6 +326,21 @@ export default function PublicationManagementPage() {
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex space-x-1">
+                        {(item.status === 'submitted' || item.status === 'draft') && (
+                          <Button variant="ghost" size="sm" title="Approve" onClick={() => handleApprove(item)}>
+                            <CheckCircle className="w-4 h-4 text-green-600" />
+                          </Button>
+                        )}
+                        {(item.status === 'submitted' || item.status === 'draft') && (
+                          <Button variant="ghost" size="sm" title="Reject" onClick={() => handleReject(item)}>
+                            <XCircle className="w-4 h-4 text-red-500" />
+                          </Button>
+                        )}
+                        {item.status === 'approved' && (
+                          <Button variant="ghost" size="sm" title="Mark Fulfilled" onClick={() => handleFulfill(item)}>
+                            <Send className="w-4 h-4 text-purple-500" />
+                          </Button>
+                        )}
                         {item.status === 'fulfilled' && (
                           <Button variant="ghost" size="sm" title="Return to Library" onClick={() => openReturn(item)}>
                             <Undo2 className="w-4 h-4 text-purple-500" />

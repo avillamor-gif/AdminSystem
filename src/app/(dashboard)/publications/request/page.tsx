@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { Card, Button, Input } from '@/components/ui'
 import { createClient } from '@/lib/supabase/client'
 import { useCurrentEmployee } from '@/hooks/useEmployees'
+import { notifySupervisorsAndAdmins } from '@/services/requestNotification.helper'
 import toast from 'react-hot-toast'
 
 const URGENCY_OPTIONS = [
@@ -118,7 +119,7 @@ export default function RequestPublicationPage() {
 
     const requestNumber = `REQ-${new Date().getFullYear()}${String(new Date().getMonth() + 1).padStart(2, '0')}-${Date.now().toString().slice(-6)}`
 
-    const { error: createError } = await supabase
+    const { data: insertedReq, error: createError } = await supabase
       .from('publication_requests')
       .insert({
         request_number: requestNumber,
@@ -136,12 +137,28 @@ export default function RequestPublicationPage() {
         request_type: 'copy',
         status: 'submitted',
       })
+      .select('id')
+      .single()
 
     if (createError) {
       console.error('Create request error:', createError)
       toast.error(`Failed to submit: ${createError.message}`)
       setSubmitting(false)
       return
+    }
+
+    // Notify supervisors and admins
+    if (insertedReq?.id) {
+      const requesterName = `${currentEmployee.first_name} ${currentEmployee.last_name}`
+      notifySupervisorsAndAdmins(
+        'publication_request_notifications',
+        currentEmployee.id,
+        insertedReq.id,
+        'New Publication Request',
+        `{name} has submitted a publication request for "${selectedPub.publication_title}".`,
+        requesterName,
+        requestNumber
+      ).catch(() => {})
     }
 
     // Deduct from catalogue inventory
