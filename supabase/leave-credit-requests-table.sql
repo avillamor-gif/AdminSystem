@@ -64,7 +64,7 @@ CREATE POLICY "lcr_select_own" ON leave_credit_requests
     OR EXISTS (
       SELECT 1 FROM user_roles
       WHERE user_id = auth.uid()
-      AND role IN ('admin', 'hr', 'manager', 'Admin', 'HR Manager', 'Manager/Department Head', 'super_admin', 'Super Admin')
+      AND role IN ('admin', 'hr', 'manager')
     )
   );
 
@@ -90,7 +90,7 @@ CREATE POLICY "lcr_update" ON leave_credit_requests
     OR EXISTS (
       SELECT 1 FROM user_roles
       WHERE user_id = auth.uid()
-      AND role IN ('admin', 'hr', 'manager', 'Admin', 'HR Manager', 'Manager/Department Head', 'super_admin', 'Super Admin')
+      AND role IN ('admin', 'hr', 'manager')
     )
   );
 
@@ -101,7 +101,7 @@ CREATE POLICY "lcr_delete" ON leave_credit_requests
     EXISTS (
       SELECT 1 FROM user_roles
       WHERE user_id = auth.uid()
-      AND role IN ('admin', 'hr', 'Admin', 'HR Manager', 'super_admin', 'Super Admin')
+      AND role IN ('admin', 'hr')
     )
   );
 
