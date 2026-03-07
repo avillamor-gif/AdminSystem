@@ -82,7 +82,7 @@ export function useNotifications() {
       },
       enabled: !!authUserId,
       staleTime: 0,
-      refetchInterval: 30 * 1000,
+      refetchInterval: 5 * 1000,
       retry: false, // Don't retry on table-not-found errors
     })
   }

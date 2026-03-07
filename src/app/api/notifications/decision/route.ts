@@ -11,7 +11,16 @@ export async function POST(req: NextRequest) {
 
     const admin = createAdminClient()
 
-    // Look up employee_id on the request row
+    // Always dismiss the original 'new_request' notifications for this request
+    // regardless of whether the employee lookup succeeds below.
+    const requestIdField = table === 'leave_request_notifications' ? 'leave_request_id' : 'request_id'
+    await admin
+      .from(table as any)
+      .update({ is_read: true })
+      .eq(requestIdField, requestId)
+      .eq('type', 'new_request')
+
+    // Look up employee_id on the request row to send decision notification to requester
     const { data: reqRow } = await admin
       .from(requestTable as any)
       .select('employee_id')
@@ -19,7 +28,7 @@ export async function POST(req: NextRequest) {
       .single() as { data: { employee_id: string } | null }
 
     if (!reqRow?.employee_id) {
-      return NextResponse.json({ error: 'Request or employee not found' }, { status: 404 })
+      return NextResponse.json({ inserted: 0 })
     }
 
     // Look up the employee's user_id from user_roles
@@ -33,7 +42,6 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ inserted: 0 })
     }
 
-    const requestIdField = table === 'leave_request_notifications' ? 'leave_request_id' : 'request_id'
     const row: Record<string, unknown> = {
       recipient_user_id: ur.user_id,
       type: decision,
@@ -42,7 +50,7 @@ export async function POST(req: NextRequest) {
       [requestIdField]: requestId,
       requester_name: '',
     }
-    if (table !== 'leave_request_notifications') {
+    if (table !== 'leave_request_notifications' && table !== 'leave_credit_notifications') {
       row.request_number = requestNumber ?? null
     }
 
@@ -52,18 +60,10 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: insertErr.message }, { status: 500 })
     }
 
-    // Auto-dismiss the original 'new_request' notification for this request
-    // so it disappears from the bell once the action has been taken.
-    const requestIdField2 = table === 'leave_request_notifications' ? 'leave_request_id' : 'request_id'
-    await admin
-      .from(table as any)
-      .update({ is_read: true })
-      .eq(requestIdField2, requestId)
-      .eq('type', 'new_request')
-
     return NextResponse.json({ inserted: 1 })
   } catch (err: any) {
     console.error('[notifications/decision] Error:', err)
     return NextResponse.json({ error: err.message }, { status: 500 })
   }
 }
+
