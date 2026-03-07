@@ -194,72 +194,71 @@ export default function RequestPublicationPage() {
         <Card className="p-6">
           <h2 className="text-base font-semibold text-gray-900 mb-5">Publication Information</h2>
 
-          {/* Employee Name */}
-          <div className="mb-5">
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">Employee Name</label>
-            <input
-              type="text"
-              value={currentEmployee ? `${currentEmployee.first_name} ${currentEmployee.last_name}` : '—'}
-              disabled
-              className="w-full sm:w-1/2 px-3 py-2.5 text-sm border border-gray-200 rounded-lg bg-gray-100 text-gray-500 cursor-not-allowed"
-            />
-          </div>
-
-          <div className="flex flex-col sm:flex-row gap-4">
-
-            {/* Select Publication 60% */}
-            <div className="sm:w-[60%]" ref={dropdownRef}>
+          {/* Row 1: Employee Name + Select Publication */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 mb-5">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">Employee Name</label>
+              <input
+                type="text"
+                value={currentEmployee ? `${currentEmployee.first_name} ${currentEmployee.last_name}` : '—'}
+                disabled
+                className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-lg bg-gray-100 text-gray-500 cursor-not-allowed"
+              />
+            </div>
+            <div ref={dropdownRef}>
               <label className="block text-sm font-medium text-gray-700 mb-1">Select Publication *</label>
-              <div className="relative">
-                <input
-                  type="text"
-                  value={pubSearch}
-                  onChange={e => { setPubSearch(e.target.value); setSelectedPub(null); setDropdownOpen(true); setQuantity(1) }}
-                  onFocus={() => setDropdownOpen(true)}
-                  placeholder={loadingCatalogue ? 'Loading publications...' : 'Type to search...'}
-                  disabled={loadingCatalogue}
-                  autoComplete="off"
-                  className="w-full border border-gray-300 rounded-md px-3 py-2.5 pr-8 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 bg-white"
-                />
-                {selectedPub
-                  ? <button type="button" onClick={clearPub} className="absolute right-2.5 top-2.5 text-gray-400 hover:text-gray-600 text-xs">✕</button>
-                  : <svg className="w-4 h-4 absolute right-2.5 top-3 text-gray-400 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
-                }
-                {dropdownOpen && !loadingCatalogue && (
-                  <ul className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-64 overflow-y-auto">
-                    {filteredCatalogue.length === 0
-                      ? <li className="px-3 py-3 text-sm text-gray-400">No publications found</li>
-                      : filteredCatalogue.map(pub => (
-                          <li
-                            key={pub.id}
-                            onMouseDown={() => selectPub(pub)}
-                            className={`px-3 py-2.5 text-sm cursor-pointer flex items-center justify-between gap-2 ${
-                              selectedPub?.id === pub.id ? 'bg-orange-50 text-orange-800 font-medium' : 'hover:bg-gray-50 text-gray-800'
-                            }`}
-                          >
-                            <span>
-                              {pub.publication_title}
-                              <span className="ml-2 text-xs text-gray-400 capitalize">({pub.publication_type})</span>
-                            </span>
-                            <span className={`text-xs font-medium shrink-0 ${pub.quantity === 0 ? 'text-red-500' : 'text-green-600'}`}>
-                              {pub.quantity === 0 ? 'Out of stock' : `${pub.quantity} avail.`}
-                            </span>
-                          </li>
-                        ))
-                    }
-                  </ul>
-                )}
-              </div>
-              {selectedPub && (
-                <div className="mt-2 flex flex-wrap gap-3 text-xs text-gray-500">
-                  {selectedPub.publisher && <span>Publisher: <strong>{selectedPub.publisher}</strong></span>}
-                  {selectedPub.isbn && <span>ISBN: <strong>{selectedPub.isbn}</strong></span>}
-                </div>
+            <div className="relative">
+              <input
+                type="text"
+                value={pubSearch}
+                onChange={e => { setPubSearch(e.target.value); setSelectedPub(null); setDropdownOpen(true); setQuantity(1) }}
+                onFocus={() => setDropdownOpen(true)}
+                placeholder={loadingCatalogue ? 'Loading publications...' : 'Type to search...'}
+                disabled={loadingCatalogue}
+                autoComplete="off"
+                className="w-full border border-gray-300 rounded-md px-3 py-2.5 pr-8 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 bg-white"
+              />
+              {selectedPub
+                ? <button type="button" onClick={clearPub} className="absolute right-2.5 top-2.5 text-gray-400 hover:text-gray-600 text-xs">✕</button>
+                : <svg className="w-4 h-4 absolute right-2.5 top-3 text-gray-400 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+              }
+              {dropdownOpen && !loadingCatalogue && (
+                <ul className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-64 overflow-y-auto">
+                  {filteredCatalogue.length === 0
+                    ? <li className="px-3 py-3 text-sm text-gray-400">No publications found</li>
+                    : filteredCatalogue.map(pub => (
+                        <li
+                          key={pub.id}
+                          onMouseDown={() => selectPub(pub)}
+                          className={`px-3 py-2.5 text-sm cursor-pointer flex items-center justify-between gap-2 ${
+                            selectedPub?.id === pub.id ? 'bg-orange-50 text-orange-800 font-medium' : 'hover:bg-gray-50 text-gray-800'
+                          }`}
+                        >
+                          <span>
+                            {pub.publication_title}
+                            <span className="ml-2 text-xs text-gray-400 capitalize">({pub.publication_type})</span>
+                          </span>
+                          <span className={`text-xs font-medium shrink-0 ${pub.quantity === 0 ? 'text-red-500' : 'text-green-600'}`}>
+                            {pub.quantity === 0 ? 'Out of stock' : `${pub.quantity} avail.`}
+                          </span>
+                        </li>
+                      ))
+                  }
+                </ul>
               )}
             </div>
+            {selectedPub && (
+              <div className="mt-2 flex flex-wrap gap-3 text-xs text-gray-500">
+                {selectedPub.publisher && <span>Publisher: <strong>{selectedPub.publisher}</strong></span>}
+                {selectedPub.isbn && <span>ISBN: <strong>{selectedPub.isbn}</strong></span>}
+              </div>
+            )}
+            </div>
+          </div>
 
-            {/* Qty Available 20% */}
-            <div className="sm:w-[20%]">
+          {/* Row 2: Available Copy + Request Copy */}
+          <div className="grid grid-cols-2 gap-4">
+            <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Available Copy</label>
               <input
                 readOnly
@@ -274,9 +273,7 @@ export default function RequestPublicationPage() {
               />
               {selectedPub && remainingQty === 0 && quantity > 0 && <p className="text-xs text-red-500 mt-1">Will empty stock</p>}
             </div>
-
-            {/* Request Copy 20% */}
-            <div className="sm:w-[20%]">
+            <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Request Copy *</label>
               <input
                 type="number"
