@@ -76,7 +76,7 @@ INSERT INTO permissions (name, code, category, description) VALUES
 ('Manage Security',      'system.security',       'System',               'Manage security policies and 2FA'),
 ('Manage Admin',         'admin.manage',          'System',               'Access all admin sections')
 
-ON CONFLICT (code) DO NOTHING;
+ON CONFLICT DO NOTHING;
 
 
 -- ── Re-assign Super Admin: all permissions ────────────────────────────────
