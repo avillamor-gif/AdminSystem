@@ -5,6 +5,7 @@ import { CheckCircle, XCircle, Package, Clock, Filter } from 'lucide-react'
 import { Card, Button, Badge, Modal, ModalHeader, ModalBody, ModalFooter } from '@/components/ui'
 import { createClient } from '@/lib/supabase/client'
 import { notifyRequesterOfDecision } from '@/services/requestNotification.helper'
+import { logAction } from '@/services/auditLog.service'
 import toast from 'react-hot-toast'
 
 interface Request {
@@ -94,6 +95,16 @@ export default function SupplyRequestsPage() {
 
     const { error } = await supabase.from('supply_requests').update(updates).eq('id', selected.id)
     if (error) { toast.error(error.message); setActionLoading(false); return }
+    // Log the admin action
+    if (selected.employee_id) {
+      const actionLabel = action === 'approved' ? 'Supply Request Approved'
+        : action === 'rejected' ? 'Supply Request Rejected'
+        : 'Supply Request Fulfilled'
+      const detail = action === 'rejected'
+        ? `${actionLabel}: ${selected.item_name} (ref: ${selected.request_number}) — reason: ${rejectReason}`
+        : `${actionLabel}: ${selected.item_name} (qty: ${selected.quantity}, ref: ${selected.request_number})`
+      logAction({ employee_id: selected.employee_id, action: actionLabel, details: detail })
+    }
     // Notify the requester of the decision
     if (action === 'approved' || action === 'rejected' || action === 'fulfilled') {
       const decisionTitle = action === 'approved' ? 'Supply Request Approved' : action === 'rejected' ? 'Supply Request Rejected' : 'Supply Request Fulfilled'

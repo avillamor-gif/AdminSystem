@@ -5,6 +5,7 @@ import { Send } from 'lucide-react'
 import { Card, Button, Input, Modal, ModalHeader, ModalBody, ModalFooter } from '@/components/ui'
 import { createClient } from '@/lib/supabase/client'
 import { notifySupervisorsAndAdmins } from '@/services/requestNotification.helper'
+import { logAction } from '@/services/auditLog.service'
 import toast from 'react-hot-toast'
 
 interface Category { id: string; name: string }
@@ -79,6 +80,11 @@ export default function RequestSuppliesPage() {
         requesterName,
         reqNum
       ).catch(() => {})
+      logAction({
+        employee_id: empRes.data.id,
+        action: 'Supply Request Submitted',
+        details: `Requested ${form.quantity}x ${item?.name ?? form.item_name} (priority: ${form.priority}, ref: ${reqNum})`,
+      })
     }
     setLastReqNum(reqNum)
     setForm(empty)
