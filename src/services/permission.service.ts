@@ -201,7 +201,6 @@ export const permissionService = {
       }
 
       // Fallback: Get role from user_roles table and use default permissions
-      console.log('Using fallback: fetching role from user_roles table')
       const { data: userRole, error: roleError } = await supabase
         .from('user_roles')
         .select('role')
@@ -216,13 +215,19 @@ export const permissionService = {
       // Return default permissions based on role
       const permissions = this.getDefaultPermissionsByRole(userRole.role)
       
-      // Normalize role name with proper casing
-      let roleName: string = userRole.role
-      if (roleName.toLowerCase() === 'admin') {
-        roleName = 'Admin'
-      } else {
-        roleName = roleName.charAt(0).toUpperCase() + roleName.slice(1).toLowerCase()
+      // Normalize role display name
+      const roleDisplayNames: Record<string, string> = {
+        'admin': 'Admin',
+        'hr': 'HR Manager',
+        'hr manager': 'HR Manager',
+        'manager': 'Manager',
+        'employee': 'Employee',
+        'ed': 'Executive Director',
+        'executive director': 'Executive Director',
+        'super admin': 'Super Admin',
+        'board_member': 'Board Member',
       }
+      const roleName = roleDisplayNames[userRole.role.toLowerCase()] || userRole.role
       
       return {
         role_id: userRole.role, // Use role string as ID
