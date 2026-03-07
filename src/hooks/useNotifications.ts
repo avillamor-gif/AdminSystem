@@ -257,7 +257,7 @@ export function useNotifications() {
     })
   }, [roleLoaded, isAdmin, expiringContracts, equipmentNotifs, leaveNotifs, leaveCreditNotifs, travelNotifs, pubNotifs, supplyNotifs])
 
-  // Realtime subscriptions — invalidate queries instantly when new rows arrive
+  // Realtime subscriptions — invalidate queries instantly when rows are inserted or updated
   useEffect(() => {
     if (!authUserId) return
     const supabase = createClient()
@@ -275,6 +275,16 @@ export function useNotifications() {
         .on(
           'postgres_changes',
           { event: 'INSERT', schema: 'public', table, filter: `recipient_user_id=eq.${authUserId}` },
+          () => {
+            queryClient.invalidateQueries({ queryKey: [table, 'unread', authUserId] })
+            if (table === 'leave_request_notifications') {
+              queryClient.invalidateQueries({ queryKey: ['leave_request_notifications', 'pending_actions', authUserId] })
+            }
+          }
+        )
+        .on(
+          'postgres_changes',
+          { event: 'UPDATE', schema: 'public', table, filter: `recipient_user_id=eq.${authUserId}` },
           () => {
             queryClient.invalidateQueries({ queryKey: [table, 'unread', authUserId] })
             if (table === 'leave_request_notifications') {
