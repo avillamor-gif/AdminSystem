@@ -22,8 +22,6 @@ export const employeeService = {
   async getAll(filters?: EmployeeFilters): Promise<EmployeeWithRelations[]> {
     const supabase = createClient()
     
-    console.log('Fetching employees with filters:', filters)
-    
     // Fetch employees without nested joins to avoid relationship ambiguity
     let query = supabase
       .from('employees')
@@ -43,8 +41,6 @@ export const employeeService = {
     }
 
     const { data: employees, error } = await query
-
-    console.log('Employee query result:', { count: employees?.length, error })
 
     if (error) {
       console.error('Error fetching employees:', error)
@@ -166,8 +162,6 @@ export const employeeService = {
 
   async create(employee: EmployeeInsert): Promise<Employee> {
     const supabase = createClient()
-    console.log('Creating employee with data:', employee)
-    
     const { data, error } = await supabase
       .from('employees')
       .insert(employee as never)
@@ -179,7 +173,6 @@ export const employeeService = {
       throw error
     }
     
-    console.log('Employee created successfully:', data)
     return data as unknown as Employee
   },
 
@@ -213,15 +206,9 @@ export const employeeService = {
   async getCurrentEmployee(): Promise<EmployeeWithRelations | null> {
     const supabase = createClient()
     
-    console.log('getCurrentEmployee: Starting...')
-    
     // Get current user
     const { data: { user } } = await supabase.auth.getUser()
-    console.log('getCurrentEmployee: User:', user?.id, user?.email)
-    if (!user) {
-      console.log('getCurrentEmployee: No user found')
-      return null
-    }
+    if (!user) return null
 
     // Get employee_id from user_roles
     const { data: userRole, error: roleError } = await supabase
@@ -229,8 +216,6 @@ export const employeeService = {
       .select('employee_id')
       .eq('user_id', user.id)
       .maybeSingle()
-
-    console.log('getCurrentEmployee: User role:', userRole, 'Error:', roleError)
 
     if (roleError || !userRole?.employee_id) {
       // Try to find employee by email as fallback
@@ -257,8 +242,6 @@ export const employeeService = {
       if (createRoleError) {
         console.error('Error creating user_role:', createRoleError)
         // Continue anyway, we have the employee data
-      } else {
-        console.log('Created user_role entry for employee:', employeeByEmail.id)
       }
 
       // Use employee found by email
@@ -303,8 +286,6 @@ export const employeeService = {
       .eq('id', userRole.employee_id)
       .single()
 
-    console.log('getCurrentEmployee: Employee data:', employee, 'Error:', error)
-
     if (error) {
       console.error('Error fetching employee details:', error)
       return null
@@ -334,7 +315,6 @@ export const employeeService = {
       manager: managerResult.data
     } as EmployeeWithRelations
 
-    console.log('getCurrentEmployee: Success, returning:', employeeWithRelations)
     return employeeWithRelations
   },
 }

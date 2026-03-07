@@ -5,6 +5,7 @@ DO $$
 DECLARE
   tables TEXT[] := ARRAY[
     'leave_request_notifications',
+    'leave_credit_notifications',
     'travel_request_notifications',
     'publication_request_notifications',
     'equipment_request_notifications',
