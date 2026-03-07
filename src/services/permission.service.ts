@@ -44,6 +44,25 @@ export const permissionService = {
         'system.config', 'system.logs', 'system.security', 'admin.manage',
         'settings.view', 'settings.edit'
       ],
+      'executive director': [
+        'user.view', 'user.create', 'user.edit', 'user.delete', 'role.manage',
+        'users.view', 'users.create', 'users.edit', 'users.delete',
+        'employees.view', 'employees.create', 'employees.edit', 'employees.delete',
+        'employee.view', 'employee.create', 'employee.edit', 'employee.delete',
+        'departments.view', 'departments.create', 'departments.edit', 'departments.delete',
+        'leave.view', 'leave.apply', 'leave.approve', 'leave.reject', 'leave.manage_types', 'leave.manage_balance',
+        'leave.credits.view', 'leave.credits.apply', 'leave.credits.approve',
+        'attendance.view', 'attendance.edit', 'attendance.view_all', 'attendance.export',
+        'travel.view', 'travel.apply', 'travel.approve', 'travel.manage',
+        'equipment.view', 'equipment.request', 'equipment.approve', 'assets.manage',
+        'supplies.view', 'supplies.request', 'supplies.approve', 'supplies.manage',
+        'publications.view', 'publications.request', 'publications.manage',
+        'performance.view', 'performance.conduct', 'performance.manage_goals',
+        'recruitment.view', 'recruitment.manage',
+        'reports.view', 'reports.export',
+        'system.config', 'system.logs', 'system.security', 'admin.manage',
+        'settings.view', 'settings.edit'
+      ],
       'super admin': [
         'user.view', 'user.create', 'user.edit', 'user.delete', 'role.manage',
         'users.view', 'users.create', 'users.edit', 'users.delete',

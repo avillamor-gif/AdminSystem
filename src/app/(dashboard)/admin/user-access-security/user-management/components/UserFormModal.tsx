@@ -75,16 +75,42 @@ export function UserFormModal({ open, onClose, user }: UserFormModalProps) {
     ? passwordPolicyService.calculatePasswordStrength(watchedPassword)
     : { score: 0, issues: [] }
 
-  // Map database enum values to RBAC role names
+  // Map database enum values to RBAC role display names.
+  // First tries a direct lookup in loaded roles (so renames work automatically),
+  // then falls back to a static map for the built-in enum values.
   const mapEnumToRole = (enumValue: string): string => {
+    // Try to find a matching RBAC role by its slug (lower-cased, spaces→underscore/dash stripped)
+    const slug = enumValue.toLowerCase().replace(/[^a-z0-9]/g, '')
+    const matched = roles.find(r => r.name.toLowerCase().replace(/[^a-z0-9]/g, '') === slug)
+    if (matched) return matched.name
+
+    // Static fallback for core enum values
     const enumMap: Record<string, string> = {
       'admin': 'Admin',
       'hr': 'HR Manager',
       'manager': 'Manager',
       'employee': 'Employee',
-      'ed': 'ED'
+      'ed': 'Executive Director',
+      'board_member': 'Board Member',
     }
-    return enumMap[enumValue] || 'Employee'
+    return enumMap[enumValue] || enumValue
+  }
+
+  // Map RBAC role display names back to the database enum value.
+  // Uses the same slug logic so renames don't break this.
+  const mapRoleToEnum = (roleName: string): string => {
+    const slug = roleName.toLowerCase().replace(/[^a-z0-9]/g, '')
+    const staticMap: Record<string, string> = {
+      'admin': 'admin',
+      'hrmanager': 'hr',
+      'hr': 'hr',
+      'manager': 'manager',
+      'employee': 'employee',
+      'ed': 'ed',
+      'executivedirector': 'ed',
+      'boardmember': 'board_member',
+    }
+    return staticMap[slug] || slug
   }
 
   // Update form when editing
@@ -117,18 +143,6 @@ export function UserFormModal({ open, onClose, user }: UserFormModalProps) {
   useEffect(() => {
     setSelectedEmployee(watchedEmployeeId || '')
   }, [watchedEmployeeId])
-
-  // Map RBAC role names to database enum values
-  const mapRoleToEnum = (roleName: string): string => {
-    const roleMap: Record<string, string> = {
-      'Admin': 'admin',
-      'HR Manager': 'hr',
-      'Manager': 'manager',
-      'Employee': 'employee',
-      'ED': 'ed'
-    }
-    return roleMap[roleName] || 'employee'
-  }
 
   const [passwordError, setPasswordError] = useState<string | null>(null)
 
