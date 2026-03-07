@@ -18,6 +18,7 @@ import { useContractDocuments, useUploadContractDocument, useDeleteContractDocum
 import { useEmployeeAttachments, useUploadEmployeeAttachment, useDeleteEmployeeAttachment, useDownloadEmployeeAttachment } from '@/hooks/useEmployeeAttachments'
 import { EmergencyContactFormModal } from './EmergencyContactFormModal'
 import { uploadEmployeePhoto, deleteEmployeePhoto } from '@/lib/supabase/storage'
+import { logAction } from '@/services/auditLog.service'
 import { toast } from 'sonner'
 
 type TabKey = 'personal' | 'contact' | 'employment' | 'emergency' | 'dependents' | 'banking' | 'benefits' | 'immigration' | 'assets' | 'qualifications' | 'security'
@@ -237,6 +238,11 @@ export function EmployeeDetailContent({
         } as any
       })
       setIsEditMode(false)
+      await logAction({
+        employee_id: employee.id,
+        action: 'Personal Info Updated',
+        details: `Updated personal information for ${employee.first_name} ${employee.last_name}`,
+      })
       toast.success('Employee details updated successfully')
     } catch (error) {
       console.error('Error updating employee:', error)
@@ -266,6 +272,11 @@ export function EmployeeDetailContent({
         } as any
       })
       setIsEditMode(false)
+      await logAction({
+        employee_id: employee.id,
+        action: 'Contact Info Updated',
+        details: `Updated contact information for ${employee.first_name} ${employee.last_name}`,
+      })
       toast.success('Contact information updated successfully')
     } catch (error) {
       console.error('Error updating contact information:', error)
@@ -298,6 +309,11 @@ export function EmployeeDetailContent({
         data: cleanData
       })
       setIsEditMode(false)
+      await logAction({
+        employee_id: employee.id,
+        action: 'Employment Details Updated',
+        details: `Updated employment details for ${employee.first_name} ${employee.last_name}`,
+      })
       toast.success('Employment details updated successfully')
     } catch (error) {
       console.error('Error updating employment details:', error)

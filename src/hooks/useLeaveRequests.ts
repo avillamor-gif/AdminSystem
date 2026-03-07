@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'react-hot-toast'
+import { logAction } from '@/services/auditLog.service'
 import {
   leaveRequestService,
   leaveApprovalService,
@@ -47,9 +48,14 @@ export function useCreateLeaveRequest() {
   return useMutation({
     mutationFn: (data: Parameters<typeof leaveRequestService.create>[0]) =>
       leaveRequestService.create(data),
-    onSuccess: () => {
+    onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: leaveRequestKeys.lists() })
       queryClient.invalidateQueries({ queryKey: ['leaveBalances'] })
+      logAction({
+        employee_id: result.employee_id,
+        action: 'Leave Request Submitted',
+        details: `Submitted a leave request (status: pending)`,
+      })
       toast.success('Leave request submitted successfully')
     },
     onError: (error: any) => {
@@ -81,10 +87,15 @@ export function useCancelLeaveRequest() {
   return useMutation({
     mutationFn: ({ id, cancelled_by }: { id: string; cancelled_by: string }) =>
       leaveRequestService.cancel(id, cancelled_by),
-    onSuccess: () => {
+    onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: leaveRequestKeys.lists() })
       queryClient.invalidateQueries({ queryKey: leaveRequestKeys.details() })
       queryClient.invalidateQueries({ queryKey: ['leaveBalances'] })
+      logAction({
+        employee_id: result.employee_id,
+        action: 'Leave Request Cancelled',
+        details: `Leave request cancelled`,
+      })
       toast.success('Leave request cancelled')
     },
     onError: (error: any) => {
@@ -133,9 +144,17 @@ export function useApproveLeaveRequest() {
   return useMutation({
     mutationFn: ({ approval_id, comments }: { approval_id: string; comments?: string }) =>
       leaveApprovalService.approve(approval_id, comments),
-    onSuccess: () => {
+    onSuccess: (result: any) => {
       queryClient.invalidateQueries({ queryKey: leaveRequestKeys.all })
       queryClient.invalidateQueries({ queryKey: ['leaveBalances'] })
+      const employeeId = result?.leave_request?.employee_id ?? result?.employee_id
+      if (employeeId) {
+        logAction({
+          employee_id: employeeId,
+          action: 'Leave Request Approved',
+          details: `Leave request approved`,
+        })
+      }
       toast.success('Leave request approved')
     },
     onError: (error: any) => {
@@ -150,9 +169,17 @@ export function useRejectLeaveRequest() {
   return useMutation({
     mutationFn: ({ approval_id, comments }: { approval_id: string; comments: string }) =>
       leaveApprovalService.reject(approval_id, comments),
-    onSuccess: () => {
+    onSuccess: (result: any) => {
       queryClient.invalidateQueries({ queryKey: leaveRequestKeys.all })
       queryClient.invalidateQueries({ queryKey: ['leaveBalances'] })
+      const employeeId = result?.leave_request?.employee_id ?? result?.employee_id
+      if (employeeId) {
+        logAction({
+          employee_id: employeeId,
+          action: 'Leave Request Rejected',
+          details: `Leave request rejected`,
+        })
+      }
       toast.success('Leave request rejected')
     },
     onError: (error: any) => {
@@ -167,9 +194,14 @@ export function useApproveDirectLeaveRequest() {
   return useMutation({
     mutationFn: ({ leave_request_id, comments }: { leave_request_id: string; comments?: string }) =>
       leaveRequestService.approveRequest(leave_request_id, comments),
-    onSuccess: () => {
+    onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: leaveRequestKeys.all })
       queryClient.invalidateQueries({ queryKey: ['leaveBalances'] })
+      logAction({
+        employee_id: result.employee_id,
+        action: 'Leave Request Approved',
+        details: `Leave request approved directly`,
+      })
       toast.success('Leave request approved')
     },
     onError: (error: any) => {
@@ -184,9 +216,14 @@ export function useRejectDirectLeaveRequest() {
   return useMutation({
     mutationFn: ({ leave_request_id, comments }: { leave_request_id: string; comments: string }) =>
       leaveRequestService.rejectRequest(leave_request_id, comments),
-    onSuccess: () => {
+    onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: leaveRequestKeys.all })
       queryClient.invalidateQueries({ queryKey: ['leaveBalances'] })
+      logAction({
+        employee_id: result.employee_id,
+        action: 'Leave Request Rejected',
+        details: `Leave request rejected directly`,
+      })
       toast.success('Leave request rejected')
     },
     onError: (error: any) => {

@@ -8,6 +8,7 @@ import { z } from 'zod'
 import { Modal, ModalHeader, ModalBody, ModalFooter, Button, Input, Select } from '@/components/ui'
 import { useCreateEmployee, useUpdateEmployee, useDepartments, useJobTitles, useLocations } from '@/hooks'
 import { generateEmployeeId } from '@/lib/utils'
+import { logAction } from '@/services/auditLog.service'
 import type { Employee, Department, JobTitle, Location } from '@/services'
 
 const employeeSchema = z.object({
@@ -129,6 +130,11 @@ export function EmployeeFormModal({ open, onClose, employee }: EmployeeFormModal
       
       if (isEdit && employee) {
         await updateEmployee.mutateAsync({ id: employee.id, data: cleanedData })
+        await logAction({
+          employee_id: employee.id,
+          action: 'Employee Record Updated',
+          details: `Updated employee record for ${cleanedData.first_name} ${cleanedData.last_name}`,
+        })
         reset()
         onClose()
       } else {
@@ -137,6 +143,11 @@ export function EmployeeFormModal({ open, onClose, employee }: EmployeeFormModal
         const newEmployee = await createEmployee.mutateAsync({
           ...cleanedData,
           employee_id: employeeId,
+        })
+        await logAction({
+          employee_id: newEmployee.id,
+          action: 'Employee Created',
+          details: `New employee created: ${cleanedData.first_name} ${cleanedData.last_name} (${employeeId})`,
         })
         reset()
         onClose()

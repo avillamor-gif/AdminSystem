@@ -9,6 +9,7 @@ import { Modal, Button, Input, Card, Badge } from '@/components/ui'
 import { useCreateUser, useUpdateUser } from '@/hooks/useUsers'
 import { useEmployees, useDepartments, useRoles } from '@/hooks'
 import { passwordPolicyService } from '@/services'
+import { logAction } from '@/services/auditLog.service'
 import type { SystemUserWithRelations } from '@/services'
 
 const userSchema = z.object({
@@ -182,11 +183,25 @@ export function UserFormModal({ open, onClose, user }: UserFormModalProps) {
 
       if (user) {
         await updateUser.mutateAsync({ id: user.id, data: submitData })
+        if (submitData.employee_id) {
+          await logAction({
+            employee_id: submitData.employee_id,
+            action: 'System User Updated',
+            details: `User account updated: ${submitData.email} (role: ${submitData.role})`,
+          })
+        }
         if (user.role !== submitData.role) {
           alert('Role updated successfully! The user must log out and log back in for the new role to take effect.')
         }
       } else {
         await createUser.mutateAsync(submitData)
+        if (submitData.employee_id) {
+          await logAction({
+            employee_id: submitData.employee_id,
+            action: 'System User Created',
+            details: `New user account created: ${submitData.email} (role: ${submitData.role})`,
+          })
+        }
       }
 
       onClose()

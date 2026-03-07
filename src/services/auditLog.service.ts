@@ -4,6 +4,44 @@ import type { Tables, InsertTables } from '@/lib/supabase'
 export type AuditLog = Tables<'employee_audit_logs'>
 export type AuditLogInsert = InsertTables<'employee_audit_logs'>
 
+/**
+ * Fire-and-forget audit log helper.
+ * Safe to call from any async context — swallows errors so it never
+ * breaks the main action that triggered it.
+ */
+export async function logAction(params: {
+  employee_id: string
+  action: string
+  details?: string
+  changed_by?: string
+  changed_by_user_id?: string
+}): Promise<void> {
+  try {
+    const supabase = createClient()
+
+    let changedBy = params.changed_by
+    let changedByUserId = params.changed_by_user_id
+
+    if (!changedBy) {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user) {
+        changedByUserId = changedByUserId ?? user.id
+        changedBy = user.email ?? user.id
+      }
+    }
+
+    await supabase.from('employee_audit_logs').insert({
+      employee_id: params.employee_id,
+      action: params.action,
+      changed_by: changedBy ?? 'System',
+      changed_by_user_id: changedByUserId ?? null,
+      details: params.details ?? null,
+    })
+  } catch {
+    // Never throw — audit logging must not break the main flow
+  }
+}
+
 export interface AuditLogWithEmployee extends AuditLog {
   employee?: {
     id: string
