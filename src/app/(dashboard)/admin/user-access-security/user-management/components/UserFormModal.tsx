@@ -81,7 +81,8 @@ export function UserFormModal({ open, onClose, user }: UserFormModalProps) {
       'admin': 'Admin',
       'hr': 'HR Manager',
       'manager': 'Manager',
-      'employee': 'Employee'
+      'employee': 'Employee',
+      'ed': 'ED'
     }
     return enumMap[enumValue] || 'Employee'
   }
@@ -123,7 +124,8 @@ export function UserFormModal({ open, onClose, user }: UserFormModalProps) {
       'Admin': 'admin',
       'HR Manager': 'hr',
       'Manager': 'manager',
-      'Employee': 'employee'
+      'Employee': 'employee',
+      'ED': 'ed'
     }
     return roleMap[roleName] || 'employee'
   }

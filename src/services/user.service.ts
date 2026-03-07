@@ -1,7 +1,7 @@
 import { createClient } from '@/lib/supabase/client'
 import type { Database } from '@/lib/supabase/database.types'
 
-type UserRole = 'admin' | 'hr' | 'manager' | 'employee' | 'board_member'
+type UserRole = 'admin' | 'hr' | 'manager' | 'employee' | 'board_member' | 'ed'
 
 export interface SystemUser {
   id: string
@@ -171,7 +171,7 @@ async function create(userData: SystemUserInsert): Promise<SystemUserWithRelatio
         user_id: authData.user.id,
         role: userData.role,
         employee_id: userData.employee_id || null
-      })
+      } as any)
       .select(`
         id,
         user_id,
@@ -229,7 +229,7 @@ async function update(id: string, userData: SystemUserUpdate): Promise<SystemUse
     // Update user_role — use select('*') to avoid PGRST200 join errors
     const { data: userRole, error } = await supabase
       .from('user_roles')
-      .update(updateFields)
+      .update(updateFields as any)
       .eq('id', id)
       .select('*')
       .single()
