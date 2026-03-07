@@ -193,6 +193,18 @@ export default function RequestPublicationPage() {
       <form onSubmit={handleSubmit} className="space-y-5">
         <Card className="p-6">
           <h2 className="text-base font-semibold text-gray-900 mb-5">Publication Information</h2>
+
+          {/* Employee Name */}
+          <div className="mb-5">
+            <label className="block text-sm font-medium text-gray-700 mb-1.5">Employee Name</label>
+            <input
+              type="text"
+              value={currentEmployee ? `${currentEmployee.first_name} ${currentEmployee.last_name}` : '—'}
+              disabled
+              className="w-full sm:w-1/2 px-3 py-2.5 text-sm border border-gray-200 rounded-lg bg-gray-100 text-gray-500 cursor-not-allowed"
+            />
+          </div>
+
           <div className="flex flex-col sm:flex-row gap-4">
 
             {/* Select Publication 60% */}
@@ -326,7 +338,6 @@ export default function RequestPublicationPage() {
           <Button type="button" variant="secondary" onClick={() => router.back()}>Cancel</Button>
           <Button
             type="submit"
-            className="bg-orange-600 hover:bg-orange-700"
             disabled={submitting || !selectedPub || availableQty === 0}
           >
             {submitting ? 'Submitting...' : 'Submit Request'}

@@ -6,18 +6,20 @@ import {
 } from 'lucide-react'
 import { Card, Button, Badge, Input } from '@/components/ui'
 import { usePublicationRequests, useCreatePublicationRequest } from '@/hooks/usePublications'
-import { useEmployees } from '@/hooks/useEmployees'
+import { useCurrentEmployee } from '@/hooks/useEmployees'
 
 export default function MyPublicationRequestsPage() {
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [selectedRequest, setSelectedRequest] = useState<any>(null)
 
   const { data: publicationRequests = [], isLoading } = usePublicationRequests()
-  const { data: employees = [] } = useEmployees()
+  const { data: currentEmployee } = useCurrentEmployee()
   const createPublicationMutation = useCreatePublicationRequest()
 
-  // TODO: Get from auth context
-  const currentEmployeeId = employees[0]?.id || null
+  const currentEmployeeId = currentEmployee?.id ?? null
+  const employeeName = currentEmployee
+    ? `${currentEmployee.first_name} ${currentEmployee.last_name}`
+    : '—'
 
   const myRequests = useMemo(() => {
     if (!currentEmployeeId) return []
@@ -222,6 +224,15 @@ export default function MyPublicationRequestsPage() {
           <div className="bg-white rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
             <h2 className="text-xl font-bold text-gray-900 mb-4">New Publication Request</h2>
             <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Employee Name</label>
+                <input
+                  type="text"
+                  value={employeeName}
+                  disabled
+                  className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-lg bg-gray-100 text-gray-500 cursor-not-allowed"
+                />
+              </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Publication Title *</label>
                 <Input id="pub-title" type="text" placeholder="Enter title" />

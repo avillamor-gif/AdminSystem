@@ -6,18 +6,20 @@ import {
 } from 'lucide-react'
 import { Card, Button, Badge, Input } from '@/components/ui'
 import { useTravelRequests, useCreateTravelRequest } from '@/hooks/useTravel'
-import { useEmployees } from '@/hooks/useEmployees'
+import { useCurrentEmployee } from '@/hooks/useEmployees'
 
 export default function MyTravelRequestsPage() {
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [selectedRequest, setSelectedRequest] = useState<any>(null)
 
   const { data: travelRequests = [], isLoading } = useTravelRequests()
-  const { data: employees = [] } = useEmployees()
+  const { data: currentEmployee } = useCurrentEmployee()
   const createTravelMutation = useCreateTravelRequest()
 
-  // TODO: Get from auth context
-  const currentEmployeeId = employees[0]?.id || null
+  const currentEmployeeId = currentEmployee?.id ?? null
+  const employeeName = currentEmployee
+    ? `${currentEmployee.first_name} ${currentEmployee.last_name}`
+    : '—'
 
   const myRequests = useMemo(() => {
     if (!currentEmployeeId) return []
@@ -70,7 +72,7 @@ export default function MyTravelRequestsPage() {
           <h1 className="text-2xl font-bold text-gray-900">My Travel Requests</h1>
           <p className="text-gray-600 mt-1">Submit and track your business travel requests</p>
         </div>
-        <Button onClick={() => setShowCreateModal(true)} className="bg-orange-600 hover:bg-orange-700">
+        <Button onClick={() => setShowCreateModal(true)}>
           <Plus className="w-4 h-4 mr-2" />
           New Travel Request
         </Button>
@@ -203,6 +205,15 @@ export default function MyTravelRequestsPage() {
           <div className="bg-white rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
             <h2 className="text-xl font-bold text-gray-900 mb-4">New Travel Request</h2>
             <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Employee Name</label>
+                <input
+                  type="text"
+                  value={employeeName}
+                  disabled
+                  className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-lg bg-gray-100 text-gray-500 cursor-not-allowed"
+                />
+              </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Destination *</label>
