@@ -70,6 +70,54 @@ export async function POST(req: NextRequest) {
           }
         }
       }
+    } else if (targetGroup === 'travel_approval') {
+      // ── Travel Request path: notify ED + admin manager + finance manager ──
+
+      // A. All users with the Executive Director (ed) role
+      const { data: edUsers } = await admin
+        .from('user_roles')
+        .select('user_id')
+        .eq('role', 'ed')
+      for (const u of edUsers ?? []) {
+        if (u.user_id) recipientUserIds.add(u.user_id)
+      }
+
+      // B. All users with the 'admin' role (admin managers)
+      const { data: adminUsers } = await admin
+        .from('user_roles')
+        .select('user_id')
+        .eq('role', 'admin')
+      for (const u of adminUsers ?? []) {
+        if (u.user_id) recipientUserIds.add(u.user_id)
+      }
+
+      // C. All employees in the Finance Department
+      const { data: financeDept } = await admin
+        .from('departments')
+        .select('id')
+        .ilike('name', '%finance%')
+        .maybeSingle()
+
+      if (financeDept?.id) {
+        const { data: financeEmpIds } = await admin
+          .from('employees')
+          .select('id')
+          .eq('department_id', financeDept.id)
+
+        const empIds = (financeEmpIds ?? []).map((e: any) => e.id).filter(Boolean)
+        if (empIds.length > 0) {
+          const { data: financeUsers } = await admin
+            .from('user_roles')
+            .select('user_id')
+            .in('employee_id', empIds)
+          for (const u of financeUsers ?? []) {
+            if (u.user_id) recipientUserIds.add(u.user_id)
+          }
+        }
+      }
+
+      // Exclude the requester themselves from notifications
+      // (they'll get a decision notification when approved/rejected)
     } else {
       // ── Default path: notify direct supervisor + all admin/hr/manager role users ──
 

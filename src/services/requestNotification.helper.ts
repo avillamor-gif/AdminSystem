@@ -52,6 +52,7 @@ export async function notifySupervisorsAndAdmins(
 
 /**
  * Notify the requesting employee of an approval decision.
+ * Pass notifyManagers: 'travel_managers' to also CC admin + finance managers.
  */
 export async function notifyRequesterOfDecision(
   table: RequestNotifTable,
@@ -60,13 +61,14 @@ export async function notifyRequesterOfDecision(
   decision: 'approved' | 'rejected' | 'fulfilled',
   title: string,
   message: string,
-  requestNumber?: string
+  requestNumber?: string,
+  notifyManagers?: 'travel_managers'
 ): Promise<void> {
   try {
     await fetch('/api/notifications/decision', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ table, requestTable: requestTableName, requestId, decision, title, message, requestNumber }),
+      body: JSON.stringify({ table, requestTable: requestTableName, requestId, decision, title, message, requestNumber, notifyManagers }),
     })
   } catch (err) {
     console.warn(`[notification] notifyRequesterOfDecision failed:`, err)

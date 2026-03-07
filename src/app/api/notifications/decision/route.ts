@@ -3,7 +3,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 
 export async function POST(req: NextRequest) {
   try {
-    const { table, requestTable, requestId, decision, title, message, requestNumber } = await req.json()
+    const { table, requestTable, requestId, decision, title, message, requestNumber, notifyManagers } = await req.json()
 
     if (!table || !requestTable || !requestId || !decision || !title || !message) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
@@ -42,25 +42,68 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ inserted: 0 })
     }
 
-    const row: Record<string, unknown> = {
-      recipient_user_id: ur.user_id,
-      type: decision,
-      title,
-      message,
-      [requestIdField]: requestId,
-      requester_name: '',
-    }
-    if (table !== 'leave_request_notifications' && table !== 'leave_credit_notifications') {
-      row.request_number = requestNumber ?? null
+    // Build list of recipients: always the requester
+    const recipientUserIds = new Set<string>([ur.user_id])
+
+    // For travel decisions: also notify admin managers + finance managers
+    if (notifyManagers === 'travel_managers') {
+      // All users with admin role
+      const { data: adminUsers } = await admin
+        .from('user_roles')
+        .select('user_id')
+        .eq('role', 'admin')
+      for (const u of adminUsers ?? []) {
+        if (u.user_id) recipientUserIds.add(u.user_id)
+      }
+
+      // All employees in Finance Department
+      const { data: financeDept } = await admin
+        .from('departments')
+        .select('id')
+        .ilike('name', '%finance%')
+        .maybeSingle()
+
+      if (financeDept?.id) {
+        const { data: financeEmpIds } = await admin
+          .from('employees')
+          .select('id')
+          .eq('department_id', financeDept.id)
+
+        const empIds = (financeEmpIds ?? []).map((e: any) => e.id).filter(Boolean)
+        if (empIds.length > 0) {
+          const { data: financeUsers } = await admin
+            .from('user_roles')
+            .select('user_id')
+            .in('employee_id', empIds)
+          for (const u of financeUsers ?? []) {
+            if (u.user_id) recipientUserIds.add(u.user_id)
+          }
+        }
+      }
     }
 
-    const { error: insertErr } = await admin.from(table as any).insert(row)
+    const rows = [...recipientUserIds].map((userId) => {
+      const row: Record<string, unknown> = {
+        recipient_user_id: userId,
+        type: decision,
+        title,
+        message,
+        [requestIdField]: requestId,
+        requester_name: '',
+      }
+      if (table !== 'leave_request_notifications' && table !== 'leave_credit_notifications') {
+        row.request_number = requestNumber ?? null
+      }
+      return row
+    })
+
+    const { error: insertErr } = await admin.from(table as any).insert(rows)
     if (insertErr) {
       console.error('[notifications/decision] Insert error:', insertErr)
       return NextResponse.json({ error: insertErr.message }, { status: 500 })
     }
 
-    return NextResponse.json({ inserted: 1 })
+    return NextResponse.json({ inserted: rows.length })
   } catch (err: any) {
     console.error('[notifications/decision] Error:', err)
     return NextResponse.json({ error: err.message }, { status: 500 })

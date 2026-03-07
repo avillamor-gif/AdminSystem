@@ -148,7 +148,7 @@ export const travelService = {
       throw new Error('Travel request not found')
     }
 
-    // Notify supervisor + admins
+    // Notify ED + admin manager + finance manager
     await notifySupervisorsAndAdmins(
       'travel_request_notifications',
       employeeId,
@@ -156,7 +156,8 @@ export const travelService = {
       'New Travel Request',
       '{name} has submitted a travel request to ' + (travelRequest.destination ?? 'an unknown destination') + '.',
       employeeName,
-      (travelRequest as any).request_number
+      (travelRequest as any).request_number,
+      'travel_approval'
     )
 
     // Create workflow request
@@ -189,7 +190,9 @@ export const travelService = {
     await notifyRequesterOfDecision(
       'travel_request_notifications', 'travel_requests', id,
       'approved', 'Travel Request Approved',
-      'Your travel request has been approved.'
+      'Your travel request has been approved.',
+      undefined,
+      'travel_managers'
     )
 
     // Update workflow
@@ -208,7 +211,9 @@ export const travelService = {
     await notifyRequesterOfDecision(
       'travel_request_notifications', 'travel_requests', id,
       'rejected', 'Travel Request Rejected',
-      `Your travel request has been rejected: ${reason}`
+      `Your travel request has been rejected: ${reason}`,
+      undefined,
+      'travel_managers'
     )
 
     // Update workflow

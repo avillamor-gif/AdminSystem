@@ -8,7 +8,8 @@ import {
 } from 'lucide-react'
 import { Card, Button, Badge, Input } from '@/components/ui'
 import { useTravelRequests, useApproveTravelRequest, useRejectTravelRequest } from '@/hooks/useTravel'
-import { useEmployees } from '@/hooks/useEmployees'
+import { useEmployees, useCurrentEmployee } from '@/hooks/useEmployees'
+import { useCurrentUserPermissions } from '@/hooks'
 
 interface ApprovalWorkflow {
   id: string
@@ -31,8 +32,11 @@ const TravelRequestsPage = () => {
 
   const { data: travelRequests = [], isLoading } = useTravelRequests()
   const { data: employees = [] } = useEmployees()
+  const { data: currentEmployee } = useCurrentEmployee()
   const approveMutation = useApproveTravelRequest()
   const rejectMutation = useRejectTravelRequest()
+  const { data: roleInfo } = useCurrentUserPermissions()
+  const isED = roleInfo?.role_name?.toLowerCase() === 'ed'
 
   const filteredRequests = useMemo(() => {
     return travelRequests.filter(request => {
@@ -67,7 +71,7 @@ const TravelRequestsPage = () => {
     const comments = prompt('Enter approval notes (optional):') || undefined
     await approveMutation.mutateAsync({
       id: requestId,
-      approverId: '',
+      approverId: currentEmployee?.id ?? '',
       comments,
     })
   }
@@ -78,7 +82,7 @@ const TravelRequestsPage = () => {
     
     await rejectMutation.mutateAsync({
       id: requestId,
-      approverId: '',
+      approverId: currentEmployee?.id ?? '',
       reason,
     })
   }
@@ -236,7 +240,7 @@ const TravelRequestsPage = () => {
               <Eye className="w-3 h-3 mr-1" />
               View Details
             </Button>
-            {(request.status === 'pending_approval' || request.status === 'submitted') && (
+            {(request.status === 'pending_approval' || request.status === 'submitted') && isED && (
               <>
                 <Button 
                   size="sm" 
