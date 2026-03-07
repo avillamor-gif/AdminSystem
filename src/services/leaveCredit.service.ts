@@ -1,7 +1,7 @@
+// @ts-nocheck
+// leave_credit_requests table is not yet in database.types.ts
+// Run `npm run db:types` after migration to regenerate types and remove this directive
 import { createClient } from '@/lib/supabase/client'
-
-// leave_credit_requests is not yet in database.types.ts — cast to any until types are regenerated
-const db = () => createClient() as any
 
 export type CreditType = 'travel' | 'weekend_work' | 'holiday_work' | 'other'
 export type CreditStatus = 'pending' | 'approved' | 'rejected'
@@ -46,7 +46,7 @@ export interface LeaveCreditRequestInsert {
 
 export const leaveCreditService = {
   async getAll(): Promise<LeaveCreditRequest[]> {
-    const supabase = db()
+    const supabase = createClient()
     const { data, error } = await supabase
       .from('leave_credit_requests')
       .select('*')
@@ -83,7 +83,7 @@ export const leaveCreditService = {
   },
 
   async getByEmployee(employee_id: string): Promise<LeaveCreditRequest[]> {
-    const supabase = db()
+    const supabase = createClient()
     const { data, error } = await supabase
       .from('leave_credit_requests')
       .select('*')
@@ -104,7 +104,7 @@ export const leaveCreditService = {
   },
 
   async create(payload: LeaveCreditRequestInsert): Promise<LeaveCreditRequest> {
-    const supabase = db()
+    const supabase = createClient()
     const { data, error } = await supabase
       .from('leave_credit_requests')
       .insert(payload)
@@ -126,7 +126,7 @@ export const leaveCreditService = {
     reviewed_by: string,
     reviewer_notes?: string
   ): Promise<LeaveCreditRequest> {
-    const supabase = db()
+    const supabase = createClient()
 
     // 1. Fetch the full request
     const { data: req, error: fetchErr } = await supabase
@@ -195,7 +195,7 @@ export const leaveCreditService = {
     reviewed_by: string,
     reviewer_notes: string
   ): Promise<LeaveCreditRequest> {
-    const supabase = db()
+    const supabase = createClient()
     const { data, error } = await supabase
       .from('leave_credit_requests')
       .update({
@@ -212,7 +212,7 @@ export const leaveCreditService = {
   },
 
   async delete(id: string): Promise<void> {
-    const supabase = db()
+    const supabase = createClient()
     const { error } = await supabase.from('leave_credit_requests').delete().eq('id', id)
     if (error) throw error
   },
