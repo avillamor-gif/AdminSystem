@@ -1,11 +1,12 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
-import { Send } from 'lucide-react'
-import { Card, Button, Input, Modal, ModalHeader, ModalBody, ModalFooter } from '@/components/ui'
+import { CheckCircle } from 'lucide-react'
+import { Card, Button } from '@/components/ui'
 import { createClient } from '@/lib/supabase/client'
 import { notifySupervisorsAndAdmins } from '@/services/requestNotification.helper'
 import { logAction } from '@/services/auditLog.service'
+import { useCurrentEmployee } from '@/hooks/useEmployees'
 import toast from 'react-hot-toast'
 
 interface Category { id: string; name: string }
@@ -18,9 +19,14 @@ export default function RequestSuppliesPage() {
   const [categories, setCategories] = useState<Category[]>([])
   const [form, setForm] = useState(empty)
   const [submitting, setSubmitting] = useState(false)
-  const [successOpen, setSuccessOpen] = useState(false)
+  const [submitted, setSubmitted] = useState(false)
   const [lastReqNum, setLastReqNum] = useState('')
   const set = (f: string, v: any) => setForm(p => ({ ...p, [f]: v }))
+
+  const { data: currentEmployee } = useCurrentEmployee()
+  const employeeName = currentEmployee
+    ? `${currentEmployee.first_name} ${currentEmployee.last_name}`
+    : '—'
 
   useEffect(() => {
     const load = async () => {
@@ -34,12 +40,6 @@ export default function RequestSuppliesPage() {
     }
     load()
   }, [])
-
-  const selectItem = (itemId: string) => {
-    const item = items.find(i => i.id === itemId)
-    if (item) set('item_id', itemId)
-    else set('item_id', '')
-  }
 
   const selectedItem = items.find(i => i.id === form.item_id)
 
@@ -68,7 +68,6 @@ export default function RequestSuppliesPage() {
       notes: form.notes || null,
     }).select('id').single()
     if (error) { toast.error(error.message); setSubmitting(false); return }
-    // Notify supervisors and admins
     if (insertedReq?.id) {
       const requesterName = `${empRes.data.first_name} ${empRes.data.last_name}`
       notifySupervisorsAndAdmins(
@@ -89,86 +88,163 @@ export default function RequestSuppliesPage() {
     setLastReqNum(reqNum)
     setForm(empty)
     setSubmitting(false)
-    setSuccessOpen(true)
+    setSubmitted(true)
   }
 
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-gray-900">Request Supplies</h1>
-        <p className="text-gray-600 mt-1">Submit a request for office supplies</p>
+        <p className="text-sm text-gray-500 mt-1">Submit a request for office supplies</p>
       </div>
+
+      {submitted && (
+        <div className="flex items-center gap-3 bg-green-50 border border-green-200 rounded-lg px-5 py-4">
+          <CheckCircle className="w-5 h-5 text-green-600 shrink-0" />
+          <div>
+            <p className="text-sm font-medium text-green-800">Supply request <span className="font-mono">{lastReqNum}</span> submitted successfully</p>
+            <p className="text-xs text-green-600 mt-0.5">You will be notified once it is approved or fulfilled.</p>
+          </div>
+          <button className="ml-auto text-green-500 hover:text-green-700 text-xs" onClick={() => setSubmitted(false)}>Dismiss</button>
+        </div>
+      )}
 
       <Card className="p-6">
         <form onSubmit={handleSubmit} className="space-y-5">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Select Item *</label>
-            <select value={form.item_id} onChange={e => selectItem(e.target.value)} className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-orange-400">
-              <option value="">-- Select a supply item --</option>
-              {categories.map(cat => {
-                const catItems = items.filter(i => i.category_id === cat.id)
-                if (!catItems.length) return null
-                return (
-                  <optgroup key={cat.id} label={cat.name}>
-                    {catItems.map(i => <option key={i.id} value={i.id}>{i.name} ({i.quantity_on_hand} {i.unit} available)</option>)}
-                  </optgroup>
-                )
-              })}
-              {items.filter(i => !i.category_id).map(i => <option key={i.id} value={i.id}>{i.name} ({i.quantity_on_hand} {i.unit} available)</option>)}
-            </select>
-            {!form.item_id && <p className="text-xs text-gray-400 mt-1">Can't find the item? Type it below:</p>}
-            {!form.item_id && <Input className="mt-1" placeholder="Or type item name..." value={form.item_name} onChange={e => set('item_name', e.target.value)} />}
-          </div>
+          <div className="p-5 border border-gray-200 rounded-xl space-y-5 bg-gray-50/40">
 
-          {selectedItem && (
-            <div className="text-xs text-gray-500 bg-gray-50 px-3 py-2 rounded">
-              Available stock: <span className="font-medium text-gray-700">{selectedItem.quantity_on_hand} {selectedItem.unit}</span>
+            {/* Row 1: Employee + Item */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">Employee Name</label>
+                <input
+                  type="text"
+                  value={employeeName}
+                  disabled
+                  className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-lg bg-gray-100 text-gray-500 cursor-not-allowed"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                  Supply Item <span className="text-red-500">*</span>
+                </label>
+                <select
+                  value={form.item_id}
+                  onChange={e => set('item_id', e.target.value)}
+                  className="w-full px-3 py-2.5 text-sm border border-gray-300 rounded-lg bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                >
+                  <option value="">-- Select a supply item --</option>
+                  {categories.map(cat => {
+                    const catItems = items.filter(i => i.category_id === cat.id)
+                    if (!catItems.length) return null
+                    return (
+                      <optgroup key={cat.id} label={cat.name}>
+                        {catItems.map(i => (
+                          <option key={i.id} value={i.id}>
+                            {i.name} ({i.quantity_on_hand} {i.unit} available)
+                          </option>
+                        ))}
+                      </optgroup>
+                    )
+                  })}
+                  {items.filter(i => !i.category_id).map(i => (
+                    <option key={i.id} value={i.id}>
+                      {i.name} ({i.quantity_on_hand} {i.unit} available)
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
-          )}
 
-          <div className="grid grid-cols-2 gap-4">
+            {/* Manual item entry when nothing selected */}
+            {!form.item_id && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                  Or enter item name manually
+                </label>
+                <input
+                  type="text"
+                  value={form.item_name}
+                  onChange={e => set('item_name', e.target.value)}
+                  placeholder="Can't find the item? Type it here..."
+                  className="w-full px-3 py-2.5 text-sm border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                />
+              </div>
+            )}
+
+            {/* Selected item details */}
+            {selectedItem && (
+              <div className="p-4 bg-blue-50 border border-blue-100 rounded-lg grid grid-cols-2 gap-x-8 gap-y-2 text-sm">
+                <div><span className="text-gray-500">Unit: </span><span className="font-medium text-gray-800">{selectedItem.unit || '—'}</span></div>
+                <div><span className="text-gray-500">Available Stock: </span><span className="font-medium text-gray-800">{selectedItem.quantity_on_hand} {selectedItem.unit}</span></div>
+              </div>
+            )}
+
+            {/* Row 2: Quantity + Priority + Purpose */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                  Quantity <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="number"
+                  min={1}
+                  max={selectedItem ? (selectedItem.quantity_on_hand ?? 9999) : 9999}
+                  value={form.quantity}
+                  onChange={e => set('quantity', Number(e.target.value))}
+                  required
+                  className="w-full px-3 py-2.5 text-sm border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">Priority</label>
+                <select
+                  value={form.priority}
+                  onChange={e => set('priority', e.target.value)}
+                  className="w-full px-3 py-2.5 text-sm border border-gray-300 rounded-lg bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                >
+                  <option value="low">Low</option>
+                  <option value="normal">Normal</option>
+                  <option value="high">High</option>
+                  <option value="urgent">Urgent</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                  Purpose <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={form.purpose}
+                  onChange={e => set('purpose', e.target.value)}
+                  placeholder="e.g., Weekly office use"
+                  required
+                  className="w-full px-3 py-2.5 text-sm border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                />
+              </div>
+            </div>
+
+            {/* Notes */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Quantity *</label>
-              <Input type="number" min={1} max={selectedItem ? (selectedItem.quantity_on_hand ?? 9999) : 9999} value={form.quantity} onChange={e => set('quantity', Number(e.target.value))} />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Priority</label>
-              <select value={form.priority} onChange={e => set('priority', e.target.value)} className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-orange-400">
-                <option value="low">Low</option>
-                <option value="normal">Normal</option>
-                <option value="high">High</option>
-                <option value="urgent">Urgent</option>
-              </select>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">Additional Notes</label>
+              <textarea
+                value={form.notes}
+                onChange={e => set('notes', e.target.value)}
+                placeholder="Any special requirements or additional details..."
+                rows={4}
+                className="w-full px-3 py-2.5 text-sm border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent resize-none"
+              />
             </div>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Purpose / Justification</label>
-            <textarea rows={3} value={form.purpose} onChange={e => set('purpose', e.target.value)} className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-orange-400" placeholder="Why do you need this item?" />
+          <div className="flex items-center justify-between pt-1">
+            <p className="text-sm text-gray-500">* Required fields</p>
+            <Button type="submit" disabled={submitting} className="bg-orange-600 hover:bg-orange-700 text-white px-6">
+              {submitting ? 'Submitting...' : 'Submit Request'}
+            </Button>
           </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Additional Notes</label>
-            <textarea rows={2} value={form.notes} onChange={e => set('notes', e.target.value)} className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-orange-400" placeholder="Any other details..." />
-          </div>
-
-          <Button type="submit" disabled={submitting} className="w-full bg-orange-600 hover:bg-orange-700">
-            <Send className="w-4 h-4 mr-2" />
-            {submitting ? 'Submitting...' : 'Submit Request'}
-          </Button>
         </form>
       </Card>
-
-      <Modal open={successOpen} onClose={() => setSuccessOpen(false)}>
-        <ModalHeader><h2 className="text-lg font-semibold text-green-700">Request Submitted!</h2></ModalHeader>
-        <ModalBody>
-          <p className="text-gray-600">Your supply request <span className="font-mono font-semibold text-gray-800">{lastReqNum}</span> has been submitted successfully.</p>
-          <p className="text-sm text-gray-500 mt-2">You will be notified once it is approved or fulfilled.</p>
-        </ModalBody>
-        <ModalFooter>
-          <Button className="bg-orange-600 hover:bg-orange-700" onClick={() => setSuccessOpen(false)}>OK</Button>
-        </ModalFooter>
-      </Modal>
     </div>
   )
 }
