@@ -244,7 +244,7 @@ export default function MyCreditRequestsPage() {
       </Card>
 
       {/* Apply Modal */}
-      <Modal isOpen={showModal} onClose={() => { setShowModal(false); reset() }} size="lg">
+      <Modal open={showModal} onClose={() => { setShowModal(false); reset() }} size="lg">
         <ModalHeader>Apply for Leave Credit</ModalHeader>
         <form onSubmit={handleSubmit(onSubmit)}>
           <ModalBody className="space-y-4">
@@ -400,7 +400,7 @@ export default function MyCreditRequestsPage() {
         }}
         title="Withdraw Request"
         message="Are you sure you want to withdraw this leave credit request?"
-        confirmLabel="Withdraw"
+        confirmText="Withdraw"
         variant="danger"
       />
     </div>

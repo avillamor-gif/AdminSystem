@@ -1,5 +1,8 @@
 import { createClient } from '@/lib/supabase/client'
 
+// leave_credit_requests is not yet in database.types.ts — cast to any until types are regenerated
+const db = () => createClient() as any
+
 export type CreditType = 'travel' | 'weekend_work' | 'holiday_work' | 'other'
 export type CreditStatus = 'pending' | 'approved' | 'rejected'
 
@@ -43,7 +46,7 @@ export interface LeaveCreditRequestInsert {
 
 export const leaveCreditService = {
   async getAll(): Promise<LeaveCreditRequest[]> {
-    const supabase = createClient()
+    const supabase = db()
     const { data, error } = await supabase
       .from('leave_credit_requests')
       .select('*')
@@ -51,9 +54,9 @@ export const leaveCreditService = {
     if (error) throw error
 
     // Resolve employee, leave_type and reviewer in separate queries
-    const employeeIds = [...new Set((data || []).map((r) => r.employee_id).filter(Boolean))]
-    const leaveTypeIds = [...new Set((data || []).map((r) => r.leave_type_id).filter(Boolean))]
-    const reviewerIds = [...new Set((data || []).map((r) => r.reviewed_by).filter(Boolean))]
+    const employeeIds = [...new Set((data || []).map((r: any) => r.employee_id).filter(Boolean))]
+    const leaveTypeIds = [...new Set((data || []).map((r: any) => r.leave_type_id).filter(Boolean))]
+    const reviewerIds = [...new Set((data || []).map((r: any) => r.reviewed_by).filter(Boolean))]
 
     const [{ data: employees }, { data: leaveTypes }, { data: reviewers }] = await Promise.all([
       employeeIds.length
@@ -67,11 +70,11 @@ export const leaveCreditService = {
         : { data: [] },
     ])
 
-    const empMap = new Map((employees || []).map((e) => [e.id, e]))
-    const ltMap = new Map((leaveTypes || []).map((t) => [t.id, t]))
-    const revMap = new Map((reviewers || []).map((e) => [e.id, e]))
+    const empMap = new Map((employees || []).map((e: any) => [e.id, e]))
+    const ltMap = new Map((leaveTypes || []).map((t: any) => [t.id, t]))
+    const revMap = new Map((reviewers || []).map((e: any) => [e.id, e]))
 
-    return (data || []).map((r) => ({
+    return (data || []).map((r: any) => ({
       ...r,
       employee: empMap.get(r.employee_id) ?? null,
       leave_type: r.leave_type_id ? (ltMap.get(r.leave_type_id) ?? null) : null,
@@ -80,7 +83,7 @@ export const leaveCreditService = {
   },
 
   async getByEmployee(employee_id: string): Promise<LeaveCreditRequest[]> {
-    const supabase = createClient()
+    const supabase = db()
     const { data, error } = await supabase
       .from('leave_credit_requests')
       .select('*')
@@ -88,20 +91,20 @@ export const leaveCreditService = {
       .order('created_at', { ascending: false })
     if (error) throw error
 
-    const leaveTypeIds = [...new Set((data || []).map((r) => r.leave_type_id).filter(Boolean))]
+    const leaveTypeIds = [...new Set((data || []).map((r: any) => r.leave_type_id).filter(Boolean))]
     const { data: leaveTypes } = leaveTypeIds.length
       ? await supabase.from('leave_types').select('id, leave_type_name').in('id', leaveTypeIds as string[])
       : { data: [] }
-    const ltMap = new Map((leaveTypes || []).map((t) => [t.id, t]))
+    const ltMap = new Map((leaveTypes || []).map((t: any) => [t.id, t]))
 
-    return (data || []).map((r) => ({
+    return (data || []).map((r: any) => ({
       ...r,
       leave_type: r.leave_type_id ? (ltMap.get(r.leave_type_id) ?? null) : null,
     })) as LeaveCreditRequest[]
   },
 
   async create(payload: LeaveCreditRequestInsert): Promise<LeaveCreditRequest> {
-    const supabase = createClient()
+    const supabase = db()
     const { data, error } = await supabase
       .from('leave_credit_requests')
       .insert(payload)
@@ -123,7 +126,7 @@ export const leaveCreditService = {
     reviewed_by: string,
     reviewer_notes?: string
   ): Promise<LeaveCreditRequest> {
-    const supabase = createClient()
+    const supabase = db()
 
     // 1. Fetch the full request
     const { data: req, error: fetchErr } = await supabase
@@ -192,7 +195,7 @@ export const leaveCreditService = {
     reviewed_by: string,
     reviewer_notes: string
   ): Promise<LeaveCreditRequest> {
-    const supabase = createClient()
+    const supabase = db()
     const { data, error } = await supabase
       .from('leave_credit_requests')
       .update({
@@ -209,7 +212,7 @@ export const leaveCreditService = {
   },
 
   async delete(id: string): Promise<void> {
-    const supabase = createClient()
+    const supabase = db()
     const { error } = await supabase.from('leave_credit_requests').delete().eq('id', id)
     if (error) throw error
   },

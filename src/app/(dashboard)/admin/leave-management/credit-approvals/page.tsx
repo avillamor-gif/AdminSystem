@@ -287,7 +287,7 @@ export default function LeaveCreditApprovalsPage() {
 
       {/* Review Modal */}
       {reviewModal && (
-        <Modal isOpen onClose={() => setReviewModal(null)}>
+        <Modal open onClose={() => setReviewModal(null)}>
           <ModalHeader>
             {reviewModal.action === 'approve' ? '✅ Approve Leave Credit' : '❌ Reject Leave Credit'}
           </ModalHeader>
@@ -393,7 +393,7 @@ export default function LeaveCreditApprovalsPage() {
         }}
         title="Delete Request"
         message="Are you sure you want to permanently delete this leave credit request?"
-        confirmLabel="Delete"
+        confirmText="Delete"
         variant="danger"
       />
     </div>
