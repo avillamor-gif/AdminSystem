@@ -1,21 +1,33 @@
 'use client'
 
 import { useState } from 'react'
-import { Card, Button, Badge, Modal, ModalHeader, ModalBody, ModalFooter, Input } from '@/components/ui'
-import { useRoles, usePermissions, useUpdateRole, useAssignPermissions } from '@/hooks'
-import { Shield, Plus, Edit2, Users, CheckCircle } from 'lucide-react'
+import { Card, Button, Badge, Modal, ModalHeader, ModalBody, ModalFooter, Input, ConfirmModal } from '@/components/ui'
+import { useRoles, usePermissions, useCreateRole, useUpdateRole, useDeleteRole, useAssignPermissions } from '@/hooks'
+import { Shield, Plus, Edit2, Trash2, Users, CheckCircle } from 'lucide-react'
 import type { RoleWithPermissions } from '@/services/rbac.service'
 
 export default function RBACPage() {
   const { data: roles = [], isLoading: rolesLoading } = useRoles()
   const { data: permissions = [], isLoading: permissionsLoading } = usePermissions()
+  const createRole = useCreateRole()
   const updateRole = useUpdateRole()
+  const deleteRole = useDeleteRole()
   const assignPermissions = useAssignPermissions()
 
+  // Edit state
   const [editingRole, setEditingRole] = useState<RoleWithPermissions | null>(null)
   const [editName, setEditName] = useState('')
   const [editDescription, setEditDescription] = useState('')
   const [selectedPermissionIds, setSelectedPermissionIds] = useState<Set<string>>(new Set())
+
+  // Create state
+  const [showCreate, setShowCreate] = useState(false)
+  const [newName, setNewName] = useState('')
+  const [newDescription, setNewDescription] = useState('')
+  const [newPermissionIds, setNewPermissionIds] = useState<Set<string>>(new Set())
+
+  // Delete state
+  const [deletingRole, setDeletingRole] = useState<RoleWithPermissions | null>(null)
 
   const groupedPermissions = permissions.reduce((acc, permission) => {
     if (!acc[permission.category]) acc[permission.category] = []
@@ -26,14 +38,15 @@ export default function RBACPage() {
   const getRoleColor = (roleName: string) => {
     switch (roleName.toLowerCase()) {
       case 'super admin': return 'bg-red-100 text-red-800'
-      case 'admin': return 'bg-orange-100 text-orange'
-      case 'hr manager': return 'bg-purple-100 text-purple-600'
-      case 'manager': return 'bg-blue-100 text-blue-600'
-      case 'employee': return 'bg-green-100 text-green-600'
+      case 'admin': return 'bg-orange-100 text-orange-700'
+      case 'hr manager': return 'bg-purple-100 text-purple-700'
+      case 'manager': return 'bg-blue-100 text-blue-700'
+      case 'employee': return 'bg-green-100 text-green-700'
       default: return 'bg-gray-100 text-gray-600'
     }
   }
 
+  // ── Edit helpers ──────────────────────────────────────────────────────────
   function openEdit(role: RoleWithPermissions) {
     setEditingRole(role)
     setEditName(role.name)
@@ -41,18 +54,22 @@ export default function RBACPage() {
     setSelectedPermissionIds(new Set(role.permissions.map(p => p.id)))
   }
 
-  function togglePermission(id: string) {
-    setSelectedPermissionIds(prev => {
+  function togglePermission(id: string, setFn: React.Dispatch<React.SetStateAction<Set<string>>>) {
+    setFn(prev => {
       const next = new Set(prev)
       next.has(id) ? next.delete(id) : next.add(id)
       return next
     })
   }
 
-  function toggleCategory(categoryPerms: typeof permissions) {
+  function toggleCategory(
+    categoryPerms: typeof permissions,
+    current: Set<string>,
+    setFn: React.Dispatch<React.SetStateAction<Set<string>>>
+  ) {
     const ids = categoryPerms.map(p => p.id)
-    const allSelected = ids.every(id => selectedPermissionIds.has(id))
-    setSelectedPermissionIds(prev => {
+    const allSelected = ids.every(id => current.has(id))
+    setFn(prev => {
       const next = new Set(prev)
       if (allSelected) {
         ids.forEach(id => next.delete(id))
@@ -63,7 +80,7 @@ export default function RBACPage() {
     })
   }
 
-  async function handleSave() {
+  async function handleSaveEdit() {
     if (!editingRole) return
     await updateRole.mutateAsync({
       id: editingRole.id,
@@ -76,21 +93,102 @@ export default function RBACPage() {
     setEditingRole(null)
   }
 
-  const isSaving = updateRole.isPending || assignPermissions.isPending
+  // ── Create helpers ────────────────────────────────────────────────────────
+  function openCreate() {
+    setNewName('')
+    setNewDescription('')
+    setNewPermissionIds(new Set())
+    setShowCreate(true)
+  }
+
+  async function handleCreate() {
+    const created = await createRole.mutateAsync({
+      name: newName.trim(),
+      description: newDescription.trim() || undefined,
+    })
+    if (created?.id && newPermissionIds.size > 0) {
+      await assignPermissions.mutateAsync({
+        roleId: created.id,
+        permissionIds: Array.from(newPermissionIds),
+      })
+    }
+    setShowCreate(false)
+  }
+
+  // ── Delete helpers ────────────────────────────────────────────────────────
+  async function handleDelete() {
+    if (!deletingRole) return
+    await deleteRole.mutateAsync(deletingRole.id)
+    setDeletingRole(null)
+  }
+
+  const isSavingEdit = updateRole.isPending || assignPermissions.isPending
+  const isCreating = createRole.isPending || assignPermissions.isPending
+  const isDeleting = deleteRole.isPending
+
+  // ── Permission checkbox panel (shared by create + edit) ───────────────────
+  function PermissionPanel({
+    selected,
+    setSelected,
+  }: {
+    selected: Set<string>
+    setSelected: React.Dispatch<React.SetStateAction<Set<string>>>
+  }) {
+    return (
+      <div className="space-y-3 overflow-y-auto pr-1" style={{ maxHeight: '360px' }}>
+        {Object.entries(groupedPermissions).map(([category, perms]) => {
+          const allChecked = perms.every(p => selected.has(p.id))
+          const someChecked = perms.some(p => selected.has(p.id))
+          return (
+            <div key={category} className="border border-gray-100 rounded-lg p-3">
+              <label className="flex items-center gap-2 mb-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={allChecked}
+                  ref={(el) => { if (el) el.indeterminate = someChecked && !allChecked }}
+                  onChange={() => toggleCategory(perms, selected, setSelected)}
+                  className="w-4 h-4 rounded"
+                />
+                <span className="text-sm font-semibold text-gray-800">{category}</span>
+                <span className="text-xs text-gray-400 ml-auto">
+                  {perms.filter(p => selected.has(p.id)).length}/{perms.length}
+                </span>
+              </label>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-1 pl-6">
+                {perms.map(p => (
+                  <label key={p.id} className="flex items-center gap-2 cursor-pointer py-0.5 group">
+                    <input
+                      type="checkbox"
+                      checked={selected.has(p.id)}
+                      onChange={() => togglePermission(p.id, setSelected)}
+                      className="w-4 h-4 rounded"
+                    />
+                    <span className="text-sm text-gray-700 group-hover:text-gray-900">{p.name}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+          )
+        })}
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-6">
+      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Role-Based Access Control</h1>
           <p className="text-gray-600 mt-1">Manage roles and permissions for system access</p>
         </div>
-        <Button>
+        <Button onClick={openCreate}>
           <Plus className="w-4 h-4 mr-2" />
           Create Role
         </Button>
       </div>
 
+      {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <Card className="p-6">
           <div className="flex items-center justify-between">
@@ -129,29 +227,43 @@ export default function RBACPage() {
         </Card>
       </div>
 
+      {/* Roles Grid */}
       <div>
         <h2 className="text-lg font-semibold text-gray-900 mb-4">System Roles</h2>
         {rolesLoading ? (
-          <p className="text-gray-500">Loading roles...</p>
+          <p className="text-gray-500">Loading roles…</p>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {roles.map((role) => (
               <Card key={role.id} className="p-6">
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                    <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
                       <Shield className="w-6 h-6 text-blue-600" />
                     </div>
                     <div>
                       <h3 className="font-semibold text-gray-900">{role.name}</h3>
                       <Badge className={getRoleColor(role.name)}>
-                        {role.permissions?.length || 0} permissions
+                        {role.permissions?.length ?? 0} permissions
                       </Badge>
                     </div>
                   </div>
-                  <Button variant="ghost" size="sm" onClick={() => openEdit(role)}>
-                    <Edit2 className="w-4 h-4" />
-                  </Button>
+                  <div className="flex items-center gap-1">
+                    <Button variant="ghost" size="sm" onClick={() => openEdit(role)} title="Edit role">
+                      <Edit2 className="w-4 h-4" />
+                    </Button>
+                    {!role.is_system_role && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setDeletingRole(role)}
+                        title="Delete role"
+                        className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    )}
+                  </div>
                 </div>
 
                 {role.description && (
@@ -160,16 +272,19 @@ export default function RBACPage() {
 
                 <div className="space-y-2">
                   <p className="text-xs font-medium text-gray-500 uppercase">Key Permissions</p>
-                  <div className="flex flex-wrap gap-2">
+                  <div className="flex flex-wrap gap-1">
                     {role.permissions?.slice(0, 5).map((permission) => (
                       <Badge key={permission.id} className="bg-gray-100 text-gray-700 text-xs">
                         {permission.name}
                       </Badge>
                     ))}
-                    {(role.permissions?.length || 0) > 5 && (
-                      <Badge className="bg-gray-100 text-gray-700 text-xs">
-                        +{(role.permissions?.length || 0) - 5} more
+                    {(role.permissions?.length ?? 0) > 5 && (
+                      <Badge className="bg-gray-100 text-gray-500 text-xs">
+                        +{(role.permissions?.length ?? 0) - 5} more
                       </Badge>
+                    )}
+                    {(role.permissions?.length ?? 0) === 0 && (
+                      <span className="text-xs text-gray-400 italic">No permissions assigned</span>
                     )}
                   </div>
                 </div>
@@ -179,16 +294,17 @@ export default function RBACPage() {
         )}
       </div>
 
+      {/* Permissions Catalogue */}
       <div>
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Permission Categories</h2>
+        <h2 className="text-lg font-semibold text-gray-900 mb-4">Permissions Catalogue</h2>
         {permissionsLoading ? (
-          <p className="text-gray-500">Loading permissions...</p>
+          <p className="text-gray-500">Loading permissions…</p>
         ) : (
           <div className="space-y-4">
             {Object.entries(groupedPermissions).map(([category, perms]) => (
               <Card key={category} className="p-6">
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="font-semibold text-gray-900 capitalize">{category}</h3>
+                  <h3 className="font-semibold text-gray-900">{category}</h3>
                   <Badge className="bg-blue-100 text-blue-800">{perms.length} permissions</Badge>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -198,8 +314,9 @@ export default function RBACPage() {
                       <div>
                         <p className="text-sm font-medium text-gray-900">{permission.name}</p>
                         {permission.description && (
-                          <p className="text-xs text-gray-600 mt-1">{permission.description}</p>
+                          <p className="text-xs text-gray-500 mt-0.5">{permission.description}</p>
                         )}
+                        <code className="text-[10px] text-gray-400">{permission.code}</code>
                       </div>
                     </div>
                   ))}
@@ -210,92 +327,138 @@ export default function RBACPage() {
         )}
       </div>
 
-      {/* Edit Role Modal */}
+      {/* ── Create Role Modal ─────────────────────────────────────────────── */}
+      <Modal open={showCreate} onClose={() => setShowCreate(false)} size="lg">
+        <ModalHeader onClose={() => setShowCreate(false)}>
+          Create New Role
+        </ModalHeader>
+        <form
+          onSubmit={(e) => { e.preventDefault(); handleCreate() }}
+          className="flex flex-col flex-1 min-h-0"
+        >
+          <ModalBody>
+            <div className="space-y-5">
+              <div className="grid grid-cols-1 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Role Name <span className="text-red-500">*</span>
+                  </label>
+                  <Input
+                    value={newName}
+                    onChange={e => setNewName(e.target.value)}
+                    placeholder="e.g. Department Head"
+                    autoFocus
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                  <Input
+                    value={newDescription}
+                    onChange={e => setNewDescription(e.target.value)}
+                    placeholder="Brief description of this role's purpose"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <p className="text-sm font-medium text-gray-700 mb-2">
+                  Assign Permissions
+                  <span className="ml-2 text-xs text-gray-400 font-normal">
+                    {newPermissionIds.size} selected
+                  </span>
+                </p>
+                <PermissionPanel selected={newPermissionIds} setSelected={setNewPermissionIds} />
+              </div>
+            </div>
+          </ModalBody>
+          <ModalFooter>
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => setShowCreate(false)}
+              disabled={isCreating}
+            >
+              Cancel
+            </Button>
+            <Button type="submit" disabled={isCreating || !newName.trim()}>
+              {isCreating ? 'Creating…' : 'Create Role'}
+            </Button>
+          </ModalFooter>
+        </form>
+      </Modal>
+
+      {/* ── Edit Role Modal ───────────────────────────────────────────────── */}
       <Modal open={!!editingRole} onClose={() => setEditingRole(null)} size="lg">
         <ModalHeader onClose={() => setEditingRole(null)}>
           Edit Role: {editingRole?.name}
         </ModalHeader>
-        <ModalBody>
-          <div className="space-y-5">
-            {/* Name & Description */}
-            <div className="grid grid-cols-1 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Role Name</label>
-                <Input
-                  value={editName}
-                  onChange={e => setEditName(e.target.value)}
-                  placeholder="Role name"
-                  disabled={editingRole?.is_system_role}
-                />
-                {editingRole?.is_system_role && (
-                  <p className="text-xs text-gray-400 mt-1">System role names cannot be changed.</p>
-                )}
+        <form
+          onSubmit={(e) => { e.preventDefault(); handleSaveEdit() }}
+          className="flex flex-col flex-1 min-h-0"
+        >
+          <ModalBody>
+            <div className="space-y-5">
+              <div className="grid grid-cols-1 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Role Name</label>
+                  <Input
+                    value={editName}
+                    onChange={e => setEditName(e.target.value)}
+                    placeholder="Role name"
+                    disabled={editingRole?.is_system_role}
+                  />
+                  {editingRole?.is_system_role && (
+                    <p className="text-xs text-gray-400 mt-1">System role names cannot be changed.</p>
+                  )}
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                  <Input
+                    value={editDescription}
+                    onChange={e => setEditDescription(e.target.value)}
+                    placeholder="Role description"
+                  />
+                </div>
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
-                <Input
-                  value={editDescription}
-                  onChange={e => setEditDescription(e.target.value)}
-                  placeholder="Role description"
-                />
-              </div>
-            </div>
 
-            {/* Permission assignment */}
-            <div>
-              <p className="text-sm font-medium text-gray-700 mb-3">
-                Permissions
-                <span className="ml-2 text-xs text-gray-400 font-normal">
-                  {selectedPermissionIds.size} selected
-                </span>
-              </p>
-              <div className="space-y-4 max-h-80 overflow-y-auto pr-1">
-                {Object.entries(groupedPermissions).map(([category, perms]) => {
-                  const allChecked = perms.every(p => selectedPermissionIds.has(p.id))
-                  const someChecked = perms.some(p => selectedPermissionIds.has(p.id))
-                  return (
-                    <div key={category} className="border border-gray-100 rounded-lg p-3">
-                      <label className="flex items-center gap-2 mb-2 cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={allChecked}
-                          ref={el => { if (el) el.indeterminate = someChecked && !allChecked }}
-                          onChange={() => toggleCategory(perms)}
-                          className="w-4 h-4 rounded accent-orange"
-                        />
-                        <span className="text-sm font-semibold text-gray-800">{category}</span>
-                      </label>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-1 pl-6">
-                        {perms.map(p => (
-                          <label key={p.id} className="flex items-center gap-2 cursor-pointer py-0.5">
-                            <input
-                              type="checkbox"
-                              checked={selectedPermissionIds.has(p.id)}
-                              onChange={() => togglePermission(p.id)}
-                              className="w-4 h-4 rounded accent-orange"
-                            />
-                            <span className="text-sm text-gray-700">{p.name}</span>
-                          </label>
-                        ))}
-                      </div>
-                    </div>
-                  )
-                })}
+              <div>
+                <p className="text-sm font-medium text-gray-700 mb-2">
+                  Permissions
+                  <span className="ml-2 text-xs text-gray-400 font-normal">
+                    {selectedPermissionIds.size} selected
+                  </span>
+                </p>
+                <PermissionPanel selected={selectedPermissionIds} setSelected={setSelectedPermissionIds} />
               </div>
             </div>
-          </div>
-        </ModalBody>
-        <ModalFooter>
-          <Button variant="secondary" onClick={() => setEditingRole(null)} disabled={isSaving}>
-            Cancel
-          </Button>
-          <Button onClick={handleSave} disabled={isSaving || !editName.trim()}>
-            {isSaving ? 'Saving...' : 'Save Changes'}
-          </Button>
-        </ModalFooter>
+          </ModalBody>
+          <ModalFooter>
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => setEditingRole(null)}
+              disabled={isSavingEdit}
+            >
+              Cancel
+            </Button>
+            <Button type="submit" disabled={isSavingEdit || !editName.trim()}>
+              {isSavingEdit ? 'Saving…' : 'Save Changes'}
+            </Button>
+          </ModalFooter>
+        </form>
       </Modal>
+
+      {/* ── Delete Confirmation ───────────────────────────────────────────── */}
+      <ConfirmModal
+        isOpen={!!deletingRole}
+        onClose={() => setDeletingRole(null)}
+        onConfirm={handleDelete}
+        title="Delete Role"
+        message={`Are you sure you want to delete the "${deletingRole?.name}" role? This action cannot be undone and will remove all associated permissions.`}
+        confirmText="Delete Role"
+        isLoading={isDeleting}
+        variant="danger"
+      />
     </div>
   )
 }
-
-
