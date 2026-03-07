@@ -52,6 +52,15 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: insertErr.message }, { status: 500 })
     }
 
+    // Auto-dismiss the original 'new_request' notification for this request
+    // so it disappears from the bell once the action has been taken.
+    const requestIdField2 = table === 'leave_request_notifications' ? 'leave_request_id' : 'request_id'
+    await admin
+      .from(table as any)
+      .update({ is_read: true })
+      .eq(requestIdField2, requestId)
+      .eq('type', 'new_request')
+
     return NextResponse.json({ inserted: 1 })
   } catch (err: any) {
     console.error('[notifications/decision] Error:', err)
