@@ -197,12 +197,19 @@ export function useApproveDirectLeaveRequest() {
     onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: leaveRequestKeys.all })
       queryClient.invalidateQueries({ queryKey: ['leaveBalances'] })
+      const isPendingSteps = (result as any)?.pending_steps === true
       logAction({
-        employee_id: result.employee_id,
-        action: 'Leave Request Approved',
-        details: `Leave request approved directly`,
+        employee_id: (result as any).employee_id ?? '',
+        action: isPendingSteps ? 'Leave Step Approved' : 'Leave Request Approved',
+        details: isPendingSteps
+          ? 'Approval step recorded — awaiting next approver'
+          : 'Leave request approved',
       })
-      toast.success('Leave request approved')
+      toast.success(
+        isPendingSteps
+          ? 'Your approval was recorded. Awaiting next step.'
+          : 'Leave request approved'
+      )
     },
     onError: (error: any) => {
       console.error('Approve leave request error:', error)
@@ -220,9 +227,9 @@ export function useRejectDirectLeaveRequest() {
       queryClient.invalidateQueries({ queryKey: leaveRequestKeys.all })
       queryClient.invalidateQueries({ queryKey: ['leaveBalances'] })
       logAction({
-        employee_id: result.employee_id,
+        employee_id: (result as any).employee_id ?? '',
         action: 'Leave Request Rejected',
-        details: `Leave request rejected directly`,
+        details: 'Leave request rejected',
       })
       toast.success('Leave request rejected')
     },

@@ -204,6 +204,34 @@ export const leaveRequestService = {
 
     if (error) throw error
 
+    // ── Seed leave_approvals rows for each workflow step ──────────────────
+    if (workflow_id) {
+      const { data: wf } = await supabase
+        .from('leave_approval_workflows')
+        .select('workflow_steps')
+        .eq('id', workflow_id)
+        .single()
+
+      const steps: any[] = wf?.workflow_steps
+        ? (typeof wf.workflow_steps === 'string'
+            ? JSON.parse(wf.workflow_steps)
+            : wf.workflow_steps)
+        : []
+
+      if (steps.length > 0) {
+        const approvalRows = steps.map((s: any) => ({
+          leave_request_id: (data as any).id,
+          step_number: s.step_order ?? 1,
+          approver_role: s.approver_role ?? 'Manager',
+          status: 'pending',
+          is_optional: s.is_optional ?? false,
+        }))
+        // Insert silently — don't fail the whole submission if seeding fails
+        await supabase.from('leave_approvals').insert(approvalRows as any).select()
+      }
+    }
+    // ─────────────────────────────────────────────────────────────────────
+
     // ── Send notifications to supervisor and all admins via server-side API ──
     // Uses /api/notifications/send (admin client) to bypass RLS on user_roles
     try {
@@ -331,7 +359,8 @@ export const leaveRequestService = {
     })
     const json = await res.json()
     if (!res.ok) throw new Error(json.error || 'Failed to approve')
-    return json.data as LeaveRequest
+    // Return full json so callers can detect pending_steps flag
+    return { ...(json.data as LeaveRequest), pending_steps: json.pending_steps ?? false }
   },
 
   // Directly reject a leave request (no workflow)

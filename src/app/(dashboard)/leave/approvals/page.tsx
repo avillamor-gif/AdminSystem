@@ -15,7 +15,7 @@ import {
 import type { LeaveRequest } from '@/services/leaveRequest.service'
 import { useCurrentEmployee } from '@/hooks/useEmployees'
 import { useNotifications } from '@/hooks/useNotifications'
-import { CheckCircle, XCircle, Clock, User, Calendar } from 'lucide-react'
+import { CheckCircle, XCircle, Clock, User, Calendar, GitBranch } from 'lucide-react'
 import { format, formatDistanceToNow } from 'date-fns'
 
 const approvalSchema = z.object({
@@ -66,19 +66,24 @@ export default function ApprovalDashboardPage() {
   const onSubmit = async (data: ApprovalForm) => {
     if (!selectedRequest) return
 
+    let result: any
     if (approvalAction === 'approve') {
-      await approveMutation.mutateAsync({
+      result = await approveMutation.mutateAsync({
         leave_request_id: selectedRequest.id,
         comments: data.comments,
       })
     } else {
-      await rejectMutation.mutateAsync({
+      result = await rejectMutation.mutateAsync({
         leave_request_id: selectedRequest.id,
         comments: data.comments || 'Request rejected',
       })
     }
     // Dismiss the bell notification now that action has been taken
     await markLeaveNotifReadByRequestId(selectedRequest.id)
+    // If the route indicated more steps are pending, show a specific message
+    if ((result as any)?.pending_steps) {
+      // toast already shown by mutation; no extra action needed
+    }
     handleCloseModal()
   }
 
@@ -197,6 +202,33 @@ export default function ApprovalDashboardPage() {
                     <div className="mb-3 p-3 bg-gray-50 rounded">
                       <span className="text-sm text-gray-600 font-medium">Reason:</span>
                       <p className="text-sm text-gray-800 mt-1">{request.reason}</p>
+                    </div>
+                  )}
+
+                  {/* Workflow step progress */}
+                  {(request as any).workflow && (request as any).approvals?.length > 0 && (
+                    <div className="mb-3 p-3 bg-blue-50 rounded border border-blue-100">
+                      <div className="flex items-center gap-1 text-xs font-medium text-blue-700 mb-2">
+                        <GitBranch className="w-3 h-3" />
+                        Workflow: {(request as any).workflow.workflow_name}
+                      </div>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        {(request as any).approvals.map((step: any, idx: number) => (
+                          <div key={idx} className="flex items-center gap-1">
+                            {idx > 0 && <span className="text-gray-400 text-xs">→</span>}
+                            <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${
+                              step.status === 'approved'
+                                ? 'bg-green-100 text-green-700'
+                                : step.status === 'rejected'
+                                ? 'bg-red-100 text-red-700'
+                                : 'bg-yellow-100 text-yellow-700'
+                            }`}>
+                              {step.status === 'approved' ? '✓' : step.status === 'rejected' ? '✗' : '…'}
+                              {' '}{step.approver_role}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   )}
 
