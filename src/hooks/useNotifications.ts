@@ -7,6 +7,7 @@ import { useCurrentUserPermissions } from '@/hooks'
 export type NotificationType =
   | 'equipment_request'
   | 'leave_request'
+  | 'leave_credit_request'
   | 'travel_request'
   | 'contract_expiring'
   | 'publication_request'
@@ -91,7 +92,8 @@ export function useNotifications() {
   const { data: leaveNotifsRaw = [] }  = useNotifQuery('leave_request_notifications')
   const { data: travelNotifs = [] }    = useNotifQuery('travel_request_notifications')
   const { data: pubNotifs = [] }       = useNotifQuery('publication_request_notifications')
-  const { data: supplyNotifs = [] }    = useNotifQuery('supply_request_notifications')
+  const { data: supplyNotifs = [] }       = useNotifQuery('supply_request_notifications')
+  const { data: leaveCreditNotifs = [] }   = useNotifQuery('leave_credit_notifications')
 
   // Authoritative source for new_request leave notifications:
   // Calls the server API which resets is_read=false if the leave is still pending.
@@ -230,6 +232,22 @@ export function useNotifications() {
       })
     }
 
+    // ── Leave Credit notifications (DB-driven) ────────────────────────────
+    for (const notif of leaveCreditNotifs) {
+      const isIncoming = notif.type === 'new_request'
+      if (isIncoming && !isAdmin) continue
+      items.push({
+        id: `leave-credit-${notif.id}`,
+        type: 'leave_credit_request' as NotificationType,
+        title: notif.title,
+        description: notif.message,
+        href: isIncoming ? '/admin/leave-management/credit-approvals' : '/leave/credit-requests',
+        createdAt: notif.created_at,
+        urgency: notif.type === 'rejected' ? 'warning' : 'normal',
+        actionRequired: isIncoming,
+      })
+    }
+
     return items.sort((a, b) => {
       const urgencyOrder = { urgent: 0, warning: 1, normal: 2 }
       if (urgencyOrder[a.urgency] !== urgencyOrder[b.urgency]) {
@@ -237,7 +255,7 @@ export function useNotifications() {
       }
       return new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()
     })
-  }, [roleLoaded, isAdmin, expiringContracts, equipmentNotifs, leaveNotifs, travelNotifs, pubNotifs, supplyNotifs])
+  }, [roleLoaded, isAdmin, expiringContracts, equipmentNotifs, leaveNotifs, leaveCreditNotifs, travelNotifs, pubNotifs, supplyNotifs])
 
   // Realtime subscriptions — invalidate queries instantly when new rows arrive
   useEffect(() => {
@@ -245,6 +263,7 @@ export function useNotifications() {
     const supabase = createClient()
     const tables = [
       'leave_request_notifications',
+      'leave_credit_notifications',
       'travel_request_notifications',
       'equipment_request_notifications',
       'publication_request_notifications',
@@ -284,6 +303,8 @@ export function useNotifications() {
     markNotifRead('publication_request_notifications', id.replace('pub-notif-', ''))
   const markSupplyNotifRead = (id: string) =>
     markNotifRead('supply_request_notifications', id.replace('supply-', ''))
+  const markLeaveCreditNotifRead = (id: string) =>
+    markNotifRead('leave_credit_notifications', id.replace('leave-credit-', ''))
 
   /** Dismiss the leave `new_request` notification that belongs to a specific leave request. */
   const markLeaveNotifReadByRequestId = async (leaveRequestId: string) => {
@@ -301,6 +322,7 @@ export function useNotifications() {
     markEquipmentNotifRead,
     markLeaveNotifRead,
     markLeaveNotifReadByRequestId,
+    markLeaveCreditNotifRead,
     markTravelNotifRead,
     markPubNotifRead,
     markSupplyNotifRead,

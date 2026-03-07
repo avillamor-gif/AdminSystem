@@ -1,6 +1,6 @@
 'use client'
 
-import { Bell, ChevronDown, HelpCircle, MessageSquare, LogOut, Package, Calendar, AlertTriangle, Clock, BookOpen, ShoppingCart, Plane } from 'lucide-react'
+import { Bell, ChevronDown, HelpCircle, MessageSquare, LogOut, Package, Calendar, AlertTriangle, Clock, BookOpen, ShoppingCart, Plane, Award } from 'lucide-react'
 import { Avatar } from '@/components/ui'
 import { useState, useMemo, useEffect, useRef } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
@@ -24,7 +24,7 @@ export function Header({ user }: HeaderProps) {
   const dropdownRef = useRef<HTMLDivElement>(null)
   const notifRef = useRef<HTMLDivElement>(null)
 
-  const { notifications, timeAgo, markEquipmentNotifRead, markLeaveNotifRead, markTravelNotifRead, markPubNotifRead, markSupplyNotifRead } = useNotifications()
+  const { notifications, timeAgo, markEquipmentNotifRead, markLeaveNotifRead, markLeaveCreditNotifRead, markTravelNotifRead, markPubNotifRead, markSupplyNotifRead } = useNotifications()
   const totalCount = notifications.length
 
   const handleSignOut = async () => {
@@ -161,6 +161,12 @@ export function Header({ user }: HeaderProps) {
                         iconColor: 'text-blue-600',
                         dot: 'bg-blue-500',
                       },
+                      leave_credit_request: {
+                        icon: Award,
+                        iconBg: 'bg-purple-100 group-hover:bg-purple-200',
+                        iconColor: 'text-purple-600',
+                        dot: notif.urgency === 'warning' ? 'bg-yellow-500' : 'bg-purple-500',
+                      },
                       travel_request: {
                         icon: Plane,
                         iconBg: 'bg-indigo-100 group-hover:bg-indigo-200',
@@ -198,6 +204,7 @@ export function Header({ user }: HeaderProps) {
                           if (!notif.actionRequired) {
                             if (notif.type === 'equipment_request') markEquipmentNotifRead(notif.id)
                             if (notif.type === 'leave_request') markLeaveNotifRead(notif.id)
+                            if (notif.type === 'leave_credit_request') markLeaveCreditNotifRead(notif.id)
                             if (notif.type === 'travel_request') markTravelNotifRead(notif.id)
                             if (notif.type === 'publication_request') markPubNotifRead(notif.id)
                             if (notif.type === 'supply_request') markSupplyNotifRead(notif.id)

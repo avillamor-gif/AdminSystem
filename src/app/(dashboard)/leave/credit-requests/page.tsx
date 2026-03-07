@@ -246,7 +246,7 @@ export default function MyCreditRequestsPage() {
       {/* Apply Modal */}
       <Modal open={showModal} onClose={() => { setShowModal(false); reset() }} size="lg">
         <ModalHeader>Apply for Leave Credit</ModalHeader>
-        <form onSubmit={handleSubmit(onSubmit)}>
+        <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col flex-1 min-h-0">
           <ModalBody className="space-y-4">
             {/* Credit Type */}
             <div>
