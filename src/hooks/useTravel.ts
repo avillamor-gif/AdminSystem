@@ -46,8 +46,15 @@ export function useCreateTravelRequest() {
   return useMutation({
     mutationFn: (data: Omit<TravelRequestInsert, 'request_number'>) => 
       travelService.create(data),
-    onSuccess: () => {
+    onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: travelKeys.all })
+      if (result.employee_id) {
+        logAction({
+          employee_id: result.employee_id,
+          action: 'Travel Request Created',
+          details: `Travel request created to ${result.destination || 'unknown destination'}`,
+        })
+      }
       toast.success('Travel request created successfully')
     },
     onError: (error) => {
@@ -92,8 +99,13 @@ export function useSubmitTravelRequest() {
       employeeName: string
       department?: string 
     }) => travelService.submit(id, employeeId, employeeName, department),
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: travelKeys.all })
+      logAction({
+        employee_id: variables.employeeId,
+        action: 'Travel Request Submitted',
+        details: `Travel request submitted for approval by ${variables.employeeName}`,
+      })
       toast.success('Travel request submitted for approval')
     },
     onError: (error) => {
@@ -117,8 +129,15 @@ export function useApproveTravelRequest() {
       approverId: string
       comments?: string 
     }) => travelService.approve(id, approverId, comments),
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: travelKeys.all })
+      if (variables.approverId) {
+        logAction({
+          employee_id: variables.approverId,
+          action: 'Travel Request Approved',
+          details: `Travel request approved`,
+        })
+      }
       toast.success('Travel request approved')
     },
     onError: (error) => {
@@ -142,8 +161,15 @@ export function useRejectTravelRequest() {
       approverId: string
       reason: string 
     }) => travelService.reject(id, approverId, reason),
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: travelKeys.all })
+      if (variables.approverId) {
+        logAction({
+          employee_id: variables.approverId,
+          action: 'Travel Request Rejected',
+          details: `Travel request rejected: ${variables.reason}`,
+        })
+      }
       toast.success('Travel request rejected')
     },
     onError: (error) => {

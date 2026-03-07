@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { attendanceService } from '@/services'
+import { logAction } from '@/services/auditLog.service'
 import toast from 'react-hot-toast'
 
 export const attendanceKeys = {
@@ -20,8 +21,13 @@ export function useClockIn() {
 
   return useMutation({
     mutationFn: (employeeId: string) => attendanceService.clockIn(employeeId),
-    onSuccess: () => {
+    onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: attendanceKeys.all })
+      logAction({
+        employee_id: result.employee_id,
+        action: 'Clocked In',
+        details: `Employee clocked in at ${new Date().toLocaleTimeString()}`,
+      })
       toast.success('Clocked in successfully')
     },
     onError: (error: Error) => {
@@ -35,8 +41,13 @@ export function useClockOut() {
 
   return useMutation({
     mutationFn: (recordId: string) => attendanceService.clockOut(recordId),
-    onSuccess: () => {
+    onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: attendanceKeys.all })
+      logAction({
+        employee_id: result.employee_id,
+        action: 'Clocked Out',
+        details: `Employee clocked out at ${new Date().toLocaleTimeString()}`,
+      })
       toast.success('Clocked out successfully')
     },
     onError: (error: Error) => {

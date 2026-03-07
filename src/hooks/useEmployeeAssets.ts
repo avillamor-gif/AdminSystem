@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { employeeAssetService, EmployeeAssetInsert, AssetReturnData } from '@/services/employeeAsset.service'
+import { logAction } from '@/services/auditLog.service'
 import { toast } from 'sonner'
 
 export const employeeAssetKeys = {
@@ -53,6 +54,11 @@ export function useCreateEmployeeAsset() {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: employeeAssetKeys.list(data.employee_id) })
       queryClient.invalidateQueries({ queryKey: employeeAssetKeys.unreturned(data.employee_id) })
+      logAction({
+        employee_id: data.employee_id,
+        action: 'Asset Assigned',
+        details: `Asset assigned to employee`,
+      })
       toast.success('Asset assigned successfully')
     },
     onError: (error: Error) => {
@@ -74,6 +80,11 @@ export function useReturnEmployeeAsset() {
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: employeeAssetKeys.list(variables.employeeId) })
       queryClient.invalidateQueries({ queryKey: employeeAssetKeys.unreturned(variables.employeeId) })
+      logAction({
+        employee_id: variables.employeeId,
+        action: 'Asset Returned',
+        details: `Asset marked as returned`,
+      })
       toast.success('Asset marked as returned')
     },
     onError: (error: Error) => {
@@ -104,6 +115,11 @@ export function useUpdateAssetStatus() {
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: employeeAssetKeys.list(variables.employeeId) })
       queryClient.invalidateQueries({ queryKey: employeeAssetKeys.unreturned(variables.employeeId) })
+      logAction({
+        employee_id: variables.employeeId,
+        action: 'Asset Status Updated',
+        details: `Asset status changed to: ${variables.status}`,
+      })
       toast.success('Asset status updated')
     },
     onError: (error: Error) => {

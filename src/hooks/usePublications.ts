@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { publicationService, publicationKeys, PublicationRequestFilters, PublicationRequestInsert, PublicationRequestUpdate } from '@/services/publication.service'
+import { logAction } from '@/services/auditLog.service'
 import { toast } from 'react-hot-toast'
 
 // Get all publication requests
@@ -65,8 +66,15 @@ export function useCreatePublicationRequest() {
   return useMutation({
     mutationFn: (data: Omit<PublicationRequestInsert, 'request_number'>) => 
       publicationService.create(data),
-    onSuccess: () => {
+    onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: publicationKeys.all })
+      if (result.employee_id) {
+        logAction({
+          employee_id: result.employee_id,
+          action: 'Publication Request Created',
+          details: `Publication request created: ${result.title || 'Untitled'}`,
+        })
+      }
     },
     onError: (error: any) => {
       console.error('Error creating publication request:', error)
@@ -85,6 +93,13 @@ export function useUpdatePublicationRequest() {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: publicationKeys.all })
       queryClient.setQueryData(publicationKeys.detail(data.id), data)
+      if (data.employee_id) {
+        logAction({
+          employee_id: data.employee_id,
+          action: 'Publication Request Updated',
+          details: `Publication request updated: ${data.title || 'Untitled'}`,
+        })
+      }
     },
     onError: (error: any) => {
       console.error('Error updating publication request:', error)
