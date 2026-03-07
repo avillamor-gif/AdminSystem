@@ -289,6 +289,11 @@ export const publicationService = {
       fulfilled_date: new Date().toISOString(),
       notes: notes || undefined
     })
+    await notifyRequesterOfDecision(
+      'publication_request_notifications', 'publication_requests', id,
+      'fulfilled', 'Publication Request Fulfilled',
+      'Your publication request has been fulfilled and is ready for pickup.'
+    )
   },
 
   // Cancel publication request

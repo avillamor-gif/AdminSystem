@@ -728,6 +728,13 @@ export const assetRequestService = {
       .single()
     
     if (error) throw error
+
+    await notifyRequesterOfDecision(
+      'equipment_request_notifications', 'asset_requests', id,
+      'fulfilled', 'Equipment Request Fulfilled',
+      'Your equipment request has been fulfilled and the item has been assigned to you.'
+    )
+
     return data as any
   },
 

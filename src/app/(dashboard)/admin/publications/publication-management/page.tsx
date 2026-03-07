@@ -178,7 +178,7 @@ export default function PublicationManagementPage() {
         'publication_request_notifications',
         'publication_requests',
         item.id,
-        'approved',
+        'fulfilled',
         'Publication Request Fulfilled',
         `Your publication request for "${item.publication_title}" has been fulfilled and is ready for pickup.`,
         item.request_number
