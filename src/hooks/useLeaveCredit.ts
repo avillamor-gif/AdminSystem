@@ -55,7 +55,9 @@ export function useCreateLeaveCreditRequest() {
         created.id,
         'New Leave Credit Request',
         `${employeeName} has submitted a leave credit request for ${payload.days_requested} day(s) — ${label} (${payload.work_date_from} to ${payload.work_date_to}).`,
-        employeeName
+        employeeName,
+        undefined,
+        'admin_dept_and_ed'
       )
       return created
     },

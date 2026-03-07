@@ -24,6 +24,10 @@ export type RequestNotifType =
 /**
  * Look up the supervisor and all admins/managers server-side,
  * then insert a 'new_request' notification for each.
+ *
+ * Pass targetGroup: 'admin_dept_and_ed' to instead notify all employees in the
+ * Administration Department AND all users with the Executive Director (ed) role.
+ * Used by Leave Credit requests.
  */
 export async function notifySupervisorsAndAdmins(
   table: RequestNotifTable,
@@ -32,13 +36,14 @@ export async function notifySupervisorsAndAdmins(
   title: string,
   message: string,
   requesterName: string,
-  requestNumber?: string
+  requestNumber?: string,
+  targetGroup?: 'admin_dept_and_ed'
 ): Promise<void> {
   try {
     await fetch('/api/notifications/send', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ table, employeeId, requestId, title, message, requesterName, requestNumber }),
+      body: JSON.stringify({ table, employeeId, requestId, title, message, requesterName, requestNumber, targetGroup }),
     })
   } catch (err) {
     console.warn(`[notification] notifySupervisorsAndAdmins failed:`, err)

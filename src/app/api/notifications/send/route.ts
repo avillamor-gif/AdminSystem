@@ -15,7 +15,7 @@ export async function POST(req: NextRequest) {
     // We proceed as long as the request comes with valid JSON payload
 
     const body = await req.json()
-    const { table, employeeId, requestId, title, message, requesterName, requestNumber } = body
+    const { table, employeeId, requestId, title, message, requesterName, requestNumber, targetGroup } = body
 
     if (!table || !employeeId || !requestId || !title || !message) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
@@ -23,7 +23,7 @@ export async function POST(req: NextRequest) {
 
     const admin = createAdminClient()
 
-    // 1. Fetch employee's manager_id (bypass RLS with admin client)
+    // 1. Fetch employee details
     const { data: emp } = await admin
       .from('employees')
       .select('first_name, last_name, manager_id')
@@ -33,26 +33,67 @@ export async function POST(req: NextRequest) {
     const name = emp ? `${emp.first_name} ${emp.last_name}` : (requesterName ?? 'An employee')
     const recipientUserIds = new Set<string>()
 
-    // 2. Direct supervisor via manager_id → user_roles
-    if (emp?.manager_id) {
-      const { data: supervisorUser } = await admin
+    if (targetGroup === 'admin_dept_and_ed') {
+      // ── Leave Credit path: notify Administration Department employees + ED role users ──
+
+      // A. All users with the Executive Director (ed) role
+      const { data: edUsers } = await admin
         .from('user_roles')
         .select('user_id')
-        .eq('employee_id', emp.manager_id)
-        .maybeSingle()
-      if (supervisorUser?.user_id) {
-        recipientUserIds.add(supervisorUser.user_id)
+        .eq('role', 'ed')
+      for (const u of edUsers ?? []) {
+        if (u.user_id) recipientUserIds.add(u.user_id)
       }
-    }
 
-    // 3. All admin/manager role users
-    const { data: adminUsers } = await admin
-      .from('user_roles')
-      .select('user_id, role')
-      .in('role', ADMIN_ROLES)
+      // B. Find the Administration Department (case-insensitive match)
+      const { data: adminDept } = await admin
+        .from('departments')
+        .select('id')
+        .ilike('name', '%administration%')
+        .maybeSingle()
 
-    for (const a of adminUsers ?? []) {
-      if (a.user_id) recipientUserIds.add(a.user_id)
+      if (adminDept?.id) {
+        // All employees in that department
+        const { data: adminEmpIds } = await admin
+          .from('employees')
+          .select('id')
+          .eq('department_id', adminDept.id)
+
+        const empIds = (adminEmpIds ?? []).map((e: any) => e.id).filter(Boolean)
+        if (empIds.length > 0) {
+          const { data: deptUsers } = await admin
+            .from('user_roles')
+            .select('user_id')
+            .in('employee_id', empIds)
+          for (const u of deptUsers ?? []) {
+            if (u.user_id) recipientUserIds.add(u.user_id)
+          }
+        }
+      }
+    } else {
+      // ── Default path: notify direct supervisor + all admin/hr/manager role users ──
+
+      // 2. Direct supervisor via manager_id → user_roles
+      if (emp?.manager_id) {
+        const { data: supervisorUser } = await admin
+          .from('user_roles')
+          .select('user_id')
+          .eq('employee_id', emp.manager_id)
+          .maybeSingle()
+        if (supervisorUser?.user_id) {
+          recipientUserIds.add(supervisorUser.user_id)
+        }
+      }
+
+      // 3. All admin/manager role users
+      const { data: adminUsers } = await admin
+        .from('user_roles')
+        .select('user_id, role')
+        .in('role', ADMIN_ROLES)
+
+      for (const a of adminUsers ?? []) {
+        if (a.user_id) recipientUserIds.add(a.user_id)
+      }
     }
 
     if (recipientUserIds.size === 0) {
@@ -70,7 +111,7 @@ export async function POST(req: NextRequest) {
         [requestIdField]: requestId,
         requester_name: name,
       }
-      if (table !== 'leave_request_notifications') {
+      if (table !== 'leave_request_notifications' && table !== 'leave_credit_notifications') {
         row.request_number = requestNumber ?? null
       }
       return row
@@ -88,3 +129,4 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: err.message }, { status: 500 })
   }
 }
+

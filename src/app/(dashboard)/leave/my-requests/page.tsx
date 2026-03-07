@@ -184,7 +184,7 @@ export default function MyLeavePage() {
       <Card className="p-4">
         <h2 className="text-lg font-semibold mb-4">Leave Balances ({currentYear})</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {balances.map(balance => (
+          {balances.filter(b => (b.total_allocated ?? 0) > 0).map(balance => (
             <div key={balance.id} className="border rounded p-3">
               <div className="flex items-center justify-between mb-2">
                 <span className="font-medium">{balance.leave_type?.leave_type_name}</span>
@@ -213,7 +213,7 @@ export default function MyLeavePage() {
               </div>
             </div>
           ))}
-          {balances.length === 0 && (
+          {balances.filter(b => (b.total_allocated ?? 0) > 0).length === 0 && (
             <div className="col-span-3 text-center py-4 text-gray-500">
               No leave balances allocated yet
             </div>
