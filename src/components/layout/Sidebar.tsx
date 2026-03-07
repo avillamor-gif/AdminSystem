@@ -19,7 +19,6 @@ import {
   BookOpen,
   Monitor,
   Package,
-  Award,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useState } from 'react'
@@ -40,7 +39,6 @@ const navigationItems: NavigationItem[] = [
   { name: 'Dashboard', href: '/', icon: LayoutDashboard },
   { name: 'Admin', href: '/admin', icon: Settings, requiresAdmin: true },
   { name: 'Leave', href: '/leave/my-requests', icon: Calendar, requiresPermission: 'leave.view' },
-  { name: 'Leave Credits', href: '/leave/credit-requests', icon: Award, requiresPermission: 'leave.view', activeBase: '/leave/credit-requests' },
   { name: 'Attendance Tracker', href: '/time', icon: Clock },
   { name: 'Travel', href: '/travel', icon: Plane },
   { name: 'Publications', href: '/publications/library', icon: BookOpen, activeBase: '/publications' },
