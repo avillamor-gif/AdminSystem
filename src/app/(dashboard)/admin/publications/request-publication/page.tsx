@@ -59,7 +59,7 @@ export default function RequestPublicationPage() {
           <h2 className="text-2xl font-bold text-gray-900 mb-2">Request Submitted!</h2>
           <p className="text-gray-600 mb-6">Your publication request has been submitted for approval.</p>
           <div className="flex justify-center gap-3">
-            <Button className="bg-orange-600 hover:bg-orange-700" onClick={() => { setSubmitted(false); setFormData({ publication_title: '', publication_type: 'book', request_type: 'new', publisher: '', purpose: '', notes: '', quantity: 1, priority: 'normal', delivery_method: 'pickup', deadline: '' }) }}>
+            <Button onClick={() => { setSubmitted(false); setFormData({ publication_title: '', publication_type: 'book', request_type: 'new', publisher: '', purpose: '', notes: '', quantity: 1, priority: 'normal', delivery_method: 'pickup', deadline: '' }) }}>
               Submit Another
             </Button>
             <Button variant="secondary" onClick={() => router.push('/admin/publications/publication-library')}>
@@ -144,7 +144,7 @@ export default function RequestPublicationPage() {
                   <textarea className="w-full p-2 border border-gray-300 rounded-md text-sm resize-none" rows={3} value={formData.notes} onChange={e => setFormData(p => ({ ...p, notes: e.target.value }))} placeholder="Any additional information..." />
                 </div>
                 <div className="flex gap-3 pt-2">
-                  <Button type="submit" className="bg-orange-600 hover:bg-orange-700" disabled={isPending}>
+                  <Button type="submit" disabled={isPending}>
                     <Send className="w-4 h-4 mr-2" />
                     {isPending ? 'Submitting...' : 'Submit Request'}
                   </Button>

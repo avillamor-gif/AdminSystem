@@ -108,7 +108,7 @@ export default function PrintingPressesPage() {
           <h1 className="text-2xl font-bold text-gray-900">Printing Presses</h1>
           <p className="text-gray-600 mt-1">Manage printing vendors and press partners</p>
         </div>
-        <Button className="bg-orange-600 hover:bg-orange-700" onClick={openCreate}>
+        <Button onClick={openCreate}>
           <Plus className="w-4 h-4 mr-2" />Add Printing Press
         </Button>
       </div>
@@ -152,7 +152,7 @@ export default function PrintingPressesPage() {
           <div className="p-12 text-center">
             <Printer className="w-12 h-12 text-gray-300 mx-auto mb-3" />
             <p className="text-gray-500">No printing presses found</p>
-            <Button className="mt-4 bg-orange-600 hover:bg-orange-700" onClick={openCreate}><Plus className="w-4 h-4 mr-2" />Add First Vendor</Button>
+            <Button className="mt-4" onClick={openCreate}><Plus className="w-4 h-4 mr-2" />Add First Vendor</Button>
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -293,7 +293,7 @@ export default function PrintingPressesPage() {
           </ModalBody>
           <ModalFooter>
             <Button type="button" variant="secondary" onClick={() => setIsModalOpen(false)}>Cancel</Button>
-            <Button type="submit" className="bg-orange-600 hover:bg-orange-700">{selectedItem ? 'Save Changes' : 'Add Vendor'}</Button>
+            <Button type="submit">{selectedItem ? 'Save Changes' : 'Add Vendor'}</Button>
           </ModalFooter>
         </form>
       </Modal>

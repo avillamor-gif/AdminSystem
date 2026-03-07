@@ -52,7 +52,7 @@ export default function PublicationLibraryPage() {
           <h1 className="text-2xl font-bold text-gray-900">Publication Library</h1>
           <p className="text-gray-600 mt-1">Manage all approved publications</p>
         </div>
-        <Button className="bg-orange-600 hover:bg-orange-700" onClick={() => router.push('/admin/publications/add-publication')}>
+        <Button onClick={() => router.push('/admin/publications/add-publication')}>
           <Plus className="w-4 h-4 mr-2" />Add Publication
         </Button>
       </div>
@@ -78,7 +78,7 @@ export default function PublicationLibraryPage() {
         <Card className="p-12 text-center">
           <BookOpen className="w-12 h-12 text-gray-300 mx-auto mb-3" />
           <p className="text-gray-500 font-medium">No publications yet</p>
-          <Button className="mt-4 bg-orange-600 hover:bg-orange-700" onClick={() => router.push('/admin/publications/add-publication')}>
+          <Button className="mt-4" onClick={() => router.push('/admin/publications/add-publication')}>
             <Plus className="w-4 h-4 mr-2" />Add First Publication
           </Button>
         </Card>

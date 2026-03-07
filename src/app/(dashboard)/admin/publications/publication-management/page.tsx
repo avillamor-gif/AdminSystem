@@ -217,7 +217,7 @@ export default function PublicationManagementPage() {
               Clear Filter
             </Button>
           )}
-          <Button className="bg-orange-600 hover:bg-orange-700" onClick={openCreate}>
+          <Button onClick={openCreate}>
             <Plus className="w-4 h-4 mr-2" />New Request
           </Button>
         </div>
@@ -290,7 +290,7 @@ export default function PublicationManagementPage() {
           <div className="p-12 text-center">
             <BookOpen className="w-12 h-12 text-gray-300 mx-auto mb-3" />
             <p className="text-gray-500">No publication requests found</p>
-            <Button className="mt-4 bg-orange-600 hover:bg-orange-700" onClick={openCreate}><Plus className="w-4 h-4 mr-2" />Create First Request</Button>
+            <Button className="mt-4" onClick={openCreate}><Plus className="w-4 h-4 mr-2" />Create First Request</Button>
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -446,7 +446,7 @@ export default function PublicationManagementPage() {
           </ModalBody>
           <ModalFooter>
             <Button type="button" variant="secondary" onClick={() => setIsModalOpen(false)}>Cancel</Button>
-            <Button type="submit" className="bg-orange-600 hover:bg-orange-700" disabled={isSaving}>
+            <Button type="submit" disabled={isSaving}>
               {isSaving ? 'Saving...' : selectedItem ? 'Save Changes' : 'Create Request'}
             </Button>
           </ModalFooter>

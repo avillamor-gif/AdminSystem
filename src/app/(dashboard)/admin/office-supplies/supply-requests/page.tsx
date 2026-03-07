@@ -214,10 +214,10 @@ export default function SupplyRequestsPage() {
             <Button type="button" variant="secondary" onClick={() => setDetailOpen(false)}>Close</Button>
             {selected.status === 'pending' && <>
               <Button variant="danger" disabled={actionLoading} onClick={() => handleAction('rejected')}>Reject</Button>
-              <Button className="bg-blue-600 hover:bg-blue-700" disabled={actionLoading} onClick={() => handleAction('approved')}>Approve</Button>
+              <Button disabled={actionLoading} onClick={() => handleAction('approved')}>Approve</Button>
             </>}
             {selected.status === 'approved' && (
-              <Button className="bg-green-600 hover:bg-green-700" disabled={actionLoading} onClick={() => handleAction('fulfilled')}>Mark Fulfilled</Button>
+              <Button disabled={actionLoading} onClick={() => handleAction('fulfilled')}>Mark Fulfilled</Button>
             )}
           </ModalFooter>
         </Modal>

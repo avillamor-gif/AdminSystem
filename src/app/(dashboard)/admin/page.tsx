@@ -10,14 +10,20 @@ import {
 } from 'lucide-react'
 import { Card, Button } from '@/components/ui'
 import { useRecentAuditLogs } from '@/hooks/useAuditLogs'
+import { useUsers } from '@/hooks/useUsers'
+import { useEmployees } from '@/hooks/useEmployees'
+import { useLeaveRequests } from '@/hooks/useLeaveRequests'
+import { useSecurityPolicies } from '@/hooks/useSecurityPolicies'
 import { formatDistanceToNow } from 'date-fns'
 
 export default function AdminPage() {
   const [activeSection, setActiveSection] = useState<string | null>(null)
   const router = useRouter()
   const { data: auditLogs = [], isLoading: logsLoading } = useRecentAuditLogs(6)
-
-  console.log('AdminPage rendering...')
+  const { data: users = [] } = useUsers()
+  const { data: employees = [] } = useEmployees()
+  const { data: leaveRequests = [] } = useLeaveRequests()
+  const { data: securityPolicies = [] } = useSecurityPolicies()
 
   const adminModules = [
     {
@@ -181,17 +187,16 @@ export default function AdminPage() {
     },
   ]
 
-  const quickStats = [
-    { label: 'Total Users', value: 247, icon: Users, color: 'text-blue-600', bg: 'bg-blue-50' },
-    { label: 'Active Policies', value: 23, icon: FileText, color: 'text-green-600', bg: 'bg-green-50' },
-    { label: 'System Alerts', value: 3, icon: AlertTriangle, color: 'text-orange', bg: 'bg-orange/10' },
-    { label: 'Security Events', value: 8, icon: Shield, color: 'text-red-600', bg: 'bg-red-50' },
-    { label: 'Data Backups', value: '99.9%', icon: Database, color: 'text-emerald-600', bg: 'bg-emerald-50' },
-    { label: 'Compliance Score', value: '98%', icon: Award, color: 'text-purple-600', bg: 'bg-purple-50' },
-  ]
+  const pendingLeaveCount = leaveRequests.filter(r => r.status === 'pending').length
 
-  console.log('Admin modules loaded:', adminModules.length)
-  console.log('Quick stats loaded:', quickStats.length)
+  const quickStats = [
+    { label: 'Total Users', value: users.length || employees.length, icon: Users, color: 'text-blue-600', bg: 'bg-blue-50' },
+    { label: 'Active Policies', value: securityPolicies.length, icon: FileText, color: 'text-green-600', bg: 'bg-green-50' },
+    { label: 'Pending Leave', value: pendingLeaveCount, icon: AlertTriangle, color: 'text-orange', bg: 'bg-orange/10' },
+    { label: 'Security Policies', value: securityPolicies.length, icon: Shield, color: 'text-red-600', bg: 'bg-red-50' },
+    { label: 'Total Employees', value: employees.length, icon: Database, color: 'text-emerald-600', bg: 'bg-emerald-50' },
+    { label: 'Leave Requests', value: leaveRequests.length, icon: Award, color: 'text-purple-600', bg: 'bg-purple-50' },
+  ]
 
   return (
     <div className="space-y-6">
@@ -445,12 +450,8 @@ export default function AdminPage() {
                           'Distribution Lists': '/admin/publications/distribution-lists',
                                                   }
                         const route = routeMap[item]
-                        console.log('Route for', item, ':', route)
                         if (route) {
-                          console.log('Navigating to:', route)
                           router.push(route)
-                        } else {
-                          console.warn('No route found for:', item)
                         }
                       }}
                     >
@@ -557,7 +558,7 @@ export default function AdminPage() {
           <Button 
             variant="outline" 
             className="justify-start"
-            onClick={() => router.push('/admin/user-access-security/role-management')}
+            onClick={() => router.push('/admin/user-access-security/rbac')}
           >
             <Shield className="w-4 h-4 mr-2" />
             Assign Role

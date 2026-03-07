@@ -241,7 +241,6 @@ export default function AddPublicationPage() {
           </Button>
           <Button
             onClick={handleSubmit as any}
-            className="bg-orange-600 hover:bg-orange-700"
             disabled={isSaving}
           >
             {isUploading ? 'Uploading...' : (createMutation.isPending || updateMutation.isPending) ? 'Saving...' : editId ? 'Save Changes' : 'Save Publication'}

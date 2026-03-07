@@ -78,7 +78,7 @@ export default function VendorManagementPage() {
           <h1 className="text-2xl font-bold text-gray-900">Vendor Management</h1>
           <p className="text-gray-600 mt-1">Manage office supply vendors</p>
         </div>
-        <Button className="bg-orange-600 hover:bg-orange-700" onClick={openCreate}><Plus className="w-4 h-4 mr-2" />Add Vendor</Button>
+        <Button onClick={openCreate}><Plus className="w-4 h-4 mr-2" />Add Vendor</Button>
       </div>
 
       <Card className="p-4"><Input placeholder="Search vendors..." value={search} onChange={e => setSearch(e.target.value)} /></Card>
@@ -132,7 +132,7 @@ export default function VendorManagementPage() {
           </ModalBody>
           <ModalFooter>
             <Button type="button" variant="secondary" onClick={() => setModalOpen(false)}>Cancel</Button>
-            <Button type="submit" disabled={saving} className="bg-orange-600 hover:bg-orange-700">{saving ? 'Saving...' : selected ? 'Save Changes' : 'Add Vendor'}</Button>
+            <Button type="submit" disabled={saving}>{saving ? 'Saving...' : selected ? 'Save Changes' : 'Add Vendor'}</Button>
           </ModalFooter>
         </form>
       </Modal>

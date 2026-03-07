@@ -58,7 +58,7 @@ export default function SupplyCategoriesPage() {
           <h1 className="text-2xl font-bold text-gray-900">Supply Categories</h1>
           <p className="text-gray-600 mt-1">Manage office supply categories</p>
         </div>
-        <Button className="bg-orange-600 hover:bg-orange-700" onClick={openCreate}><Plus className="w-4 h-4 mr-2" />Add Category</Button>
+        <Button onClick={openCreate}><Plus className="w-4 h-4 mr-2" />Add Category</Button>
       </div>
 
       <Card className="overflow-hidden p-0">
@@ -100,7 +100,7 @@ export default function SupplyCategoriesPage() {
           </ModalBody>
           <ModalFooter>
             <Button type="button" variant="secondary" onClick={() => setModalOpen(false)}>Cancel</Button>
-            <Button type="submit" className="bg-orange-600 hover:bg-orange-700">{selected ? 'Save Changes' : 'Add Category'}</Button>
+            <Button type="submit">{selected ? 'Save Changes' : 'Add Category'}</Button>
           </ModalFooter>
         </form>
       </Modal>

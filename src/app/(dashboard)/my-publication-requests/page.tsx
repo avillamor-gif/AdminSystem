@@ -84,7 +84,7 @@ export default function MyPublicationRequestsPage() {
           <h1 className="text-2xl font-bold text-gray-900">My Publication Requests</h1>
           <p className="text-gray-600 mt-1">Request books, journals, and other publications</p>
         </div>
-        <Button onClick={() => setShowCreateModal(true)} className="bg-orange-600 hover:bg-orange-700">
+        <Button onClick={() => setShowCreateModal(true)}>
           <Plus className="w-4 h-4 mr-2" />
           New Publication Request
         </Button>
@@ -287,7 +287,6 @@ export default function MyPublicationRequestsPage() {
                 Cancel
               </Button>
               <Button 
-                className="bg-orange-600 hover:bg-orange-700"
                 onClick={handleCreateRequest}
                 disabled={createPublicationMutation.isPending}
               >

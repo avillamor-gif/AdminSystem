@@ -83,7 +83,7 @@ export default function DistributionListsPage() {
           <h1 className="text-2xl font-bold text-gray-900">Distribution Lists</h1>
           <p className="text-gray-600 mt-1">Manage publication distribution groups</p>
         </div>
-        <Button className="bg-orange-600 hover:bg-orange-700" onClick={openCreate}>
+        <Button onClick={openCreate}>
           <Plus className="w-4 h-4 mr-2" />New List
         </Button>
       </div>
@@ -126,7 +126,7 @@ export default function DistributionListsPage() {
           <div className="p-12 text-center">
             <Users className="w-12 h-12 text-gray-300 mx-auto mb-3" />
             <p className="text-gray-500">No distribution lists found</p>
-            <Button className="mt-4 bg-orange-600 hover:bg-orange-700" onClick={openCreate}><Plus className="w-4 h-4 mr-2" />Create First List</Button>
+            <Button className="mt-4" onClick={openCreate}><Plus className="w-4 h-4 mr-2" />Create First List</Button>
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -223,7 +223,7 @@ export default function DistributionListsPage() {
           </ModalBody>
           <ModalFooter>
             <Button type="button" variant="secondary" onClick={() => setIsModalOpen(false)}>Cancel</Button>
-            <Button type="submit" className="bg-orange-600 hover:bg-orange-700">{selectedItem ? 'Save Changes' : 'Create List'}</Button>
+            <Button type="submit">{selectedItem ? 'Save Changes' : 'Create List'}</Button>
           </ModalFooter>
         </form>
       </Modal>

@@ -84,7 +84,7 @@ export default function SupplyInventoryPage() {
           <h1 className="text-2xl font-bold text-gray-900">Supply Inventory</h1>
           <p className="text-gray-600 mt-1">Manage office supply stock</p>
         </div>
-        <Button className="bg-orange-600 hover:bg-orange-700" onClick={openCreate}><Plus className="w-4 h-4 mr-2" />Add Item</Button>
+        <Button onClick={openCreate}><Plus className="w-4 h-4 mr-2" />Add Item</Button>
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -163,7 +163,7 @@ export default function SupplyInventoryPage() {
           </ModalBody>
           <ModalFooter>
             <Button type="button" variant="secondary" onClick={() => setModalOpen(false)}>Cancel</Button>
-            <Button type="submit" className="bg-orange-600 hover:bg-orange-700">{selected ? 'Save Changes' : 'Add Item'}</Button>
+            <Button type="submit">{selected ? 'Save Changes' : 'Add Item'}</Button>
           </ModalFooter>
         </form>
       </Modal>

@@ -203,7 +203,7 @@ function CheckoutPageInner() {
 
           <div className="flex items-center justify-between pt-1">
             <p className="text-sm text-gray-500">* Required fields</p>
-            <Button type="submit" disabled={createMutation.isPending} className="bg-green-600 hover:bg-green-700 text-white px-6">
+            <Button type="submit" disabled={createMutation.isPending} className="px-6">
               {createMutation.isPending ? 'Submitting...' : 'Submit Request'}
             </Button>
           </div>

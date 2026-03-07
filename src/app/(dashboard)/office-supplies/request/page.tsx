@@ -239,7 +239,7 @@ export default function RequestSuppliesPage() {
 
           <div className="flex items-center justify-between pt-1">
             <p className="text-sm text-gray-500">* Required fields</p>
-            <Button type="submit" disabled={submitting} className="bg-orange-600 hover:bg-orange-700 text-white px-6">
+            <Button type="submit" disabled={submitting} className="px-6">
               {submitting ? 'Submitting...' : 'Submit Request'}
             </Button>
           </div>
