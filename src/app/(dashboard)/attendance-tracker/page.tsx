@@ -5,6 +5,7 @@ import { Clock, Play, Square, Calendar, FileText, Timer, CheckCircle, X, Chevron
 import { Card, Button, Badge, Modal, ModalHeader, ModalBody, ModalFooter } from '@/components/ui'
 import { createClient } from '../../../lib/supabase/client'
 import { useAttendanceRecords, useClockIn, useClockOut, useCurrentEmployee, useLeaveRequests } from '@/hooks'
+import { useCurrentUserPermissions } from '@/hooks/usePermissions'
 import { useHolidays } from '@/hooks/useLeaveAbsence'
 
 type AttendanceType = 'work-onsite' | 'work-home' | 'work-offsite' | 'work-travel' | 'vacation' | 'sick' | 'days-off' | 'rest-day'
@@ -71,6 +72,8 @@ export default function TimePage() {
 
   // Fetch current employee data
   const { data: currentEmployee, isLoading: isLoadingEmployee, error: employeeError } = useCurrentEmployee()
+  const { data: roleInfo } = useCurrentUserPermissions()
+  const isAdmin = ['Admin', 'HR Manager', 'Super Admin', 'Executive Director'].includes(roleInfo?.role_name ?? '')
 
   // Debug logging
   useEffect(() => {
@@ -789,8 +792,8 @@ export default function TimePage() {
                   days.push(
                     <div
                       key={day}
-                      onClick={() => !holiday && handleDateClick(dateStr, attendanceUiType, attendance?.notes ? (attendance.notes.includes(':') ? attendance.notes.split(':').slice(1).join(':').trim() : '') : '')}
-                      className={`min-h-[100px] p-2 border-b border-gray-200 ${holiday ? 'cursor-default' : 'cursor-pointer hover:bg-gray-50'} transition-colors ${
+                      onClick={() => isAdmin && !holiday && handleDateClick(dateStr, attendanceUiType, attendance?.notes ? (attendance.notes.includes(':') ? attendance.notes.split(':').slice(1).join(':').trim() : '') : '')}
+                      className={`min-h-[100px] p-2 border-b border-gray-200 ${holiday || !isAdmin ? 'cursor-default' : 'cursor-pointer hover:bg-gray-50'} transition-colors ${
                         !isLastCol ? 'border-r' : ''
                       } ${bgColor}`}
                     >
