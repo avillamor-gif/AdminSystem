@@ -73,7 +73,7 @@ export default function TimePage() {
   // Fetch current employee data
   const { data: currentEmployee, isLoading: isLoadingEmployee, error: employeeError } = useCurrentEmployee()
   const { data: roleInfo } = useCurrentUserPermissions()
-  const isAdmin = ['Admin', 'HR Manager', 'Super Admin', 'Executive Director'].includes(roleInfo?.role_name ?? '')
+  const isAdmin = roleInfo?.role_name === 'Admin'
 
   // Debug logging
   useEffect(() => {
