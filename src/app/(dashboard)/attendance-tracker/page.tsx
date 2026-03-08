@@ -734,7 +734,7 @@ export default function TimePage() {
             }`}
           >
             <Calendar className="w-4 h-4 inline mr-2" />
-            Attendance
+            Timesheet
           </button>
           <button
             onClick={() => setActiveTab('reports')}
@@ -1039,7 +1039,7 @@ export default function TimePage() {
         </Card>
       )}
 
-      {/* Attendance Tab */}
+      {/* Timesheet Tab */}
       {activeTab === 'attendance' && (
         <Card className="overflow-hidden p-0">
           <div className="overflow-x-auto">
