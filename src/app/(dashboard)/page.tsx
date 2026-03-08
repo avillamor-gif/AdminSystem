@@ -137,7 +137,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Second Row */}
-      <div>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Employees on Leave Today */}
         <Card className="bg-white border border-gray-200 p-5">
           <div className="flex items-center justify-between mb-4">
@@ -196,10 +196,6 @@ export default function DashboardPage() {
           )}
         </Card>
 
-      </div>
-
-      {/* Third Row */}
-      <div>
         {/* Upcoming Holidays */}
         <Card className="bg-white border border-gray-200 p-5">
           <div className="flex items-center justify-between mb-4">
