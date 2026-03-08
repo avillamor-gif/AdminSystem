@@ -9,6 +9,38 @@ import { useHolidays } from '@/hooks/useLeaveAbsence'
 
 type AttendanceType = 'work-onsite' | 'work-home' | 'work-offsite' | 'work-travel' | 'vacation' | 'sick' | 'days-off' | 'rest-day'
 
+// Session entry stored inside the notes JSON array
+interface PunchSession {
+  type: AttendanceType
+  timeIn: string  // ISO timestamp
+  timeOut: string | null
+  note: string
+}
+
+// Parse notes field → array of PunchSession (handles legacy plain-text notes too)
+function parseSessions(notes: string | null): PunchSession[] {
+  if (!notes) return []
+  try {
+    const parsed = JSON.parse(notes)
+    if (Array.isArray(parsed)) return parsed as PunchSession[]
+  } catch {}
+  // Legacy: "work-onsite: some note" or just "work-onsite"
+  const parts = notes.split(':')
+  const type = parts[0].trim() as AttendanceType
+  const note = parts.slice(1).join(':').trim()
+  return [{ type, timeIn: '', timeOut: null, note }]
+}
+
+function serializeSessions(sessions: PunchSession[]): string {
+  return JSON.stringify(sessions)
+}
+
+// Format a timestamp to "09:34 AM"
+function fmtTime(iso: string | null | undefined): string {
+  if (!iso) return '—'
+  return new Date(iso).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })
+}
+
 // Map UI attendance types to database status values
 const mapAttendanceTypeToStatus = (type: AttendanceType): 'present' | 'absent' | 'late' | 'half_day' | 'on_leave' => {
   const mapping: Record<AttendanceType, 'present' | 'absent' | 'late' | 'half_day' | 'on_leave'> = {
@@ -89,16 +121,21 @@ export default function TimePage() {
       const today = new Date().toISOString().split('T')[0]
       const todayRecord = attendanceRecords.find(r => r.date === today && r.employee_id === currentEmployee.id)
       
-      if (todayRecord && todayRecord.clock_in && !todayRecord.clock_out) {
-        // Punched in but not yet punched out
-        setIsPunchedIn(true)
-        // Extract attendance type from notes (format: "work-onsite: note" or just "work-onsite")
-        const notesParts = todayRecord.notes?.split(':') || []
-        const attendanceType = notesParts[0] as AttendanceType || 'work-onsite'
-        setCurrentAttendanceType(attendanceType)
-        setPunchInTime(new Date(todayRecord.clock_in))
+      if (todayRecord) {
+        // Restore punch-in state from open session in the JSON sessions array
+        const sessions = parseSessions(todayRecord.notes)
+        const openSession = [...sessions].reverse().find(s => !s.timeOut)
+        if (openSession && openSession.timeIn) {
+          setIsPunchedIn(true)
+          setCurrentAttendanceType(openSession.type)
+          setPunchInTime(new Date(openSession.timeIn))
+        } else {
+          setIsPunchedIn(false)
+          setCurrentAttendanceType(null)
+          setPunchInTime(null)
+        }
       } else {
-        // Not punched in, or already punched out
+        // No record at all today
         setIsPunchedIn(false)
         setCurrentAttendanceType(null)
         setPunchInTime(null)
@@ -144,15 +181,28 @@ export default function TimePage() {
       
       const now = new Date()
       const today = new Date().toISOString().split('T')[0]
-      
-      // Save to database with mapped status (reset clock_out so punch-out detection works correctly)
-      const { data, error } = await supabase.from('attendance_records').upsert({
+
+      // Load existing sessions for today (if any) and append new open session
+      const existing = attendanceRecords?.find(r => r.date === today && r.employee_id === userRole.employee_id)
+      const sessions = parseSessions(existing?.notes ?? null)
+      const newSession: PunchSession = {
+        type: selectedAttendanceType,
+        timeIn: now.toISOString(),
+        timeOut: null,
+        note: attendanceNote,
+      }
+      sessions.push(newSession)
+
+      // first clock_in = earliest timeIn across sessions
+      const earliestIn = sessions.reduce((min, s) => s.timeIn && (!min || s.timeIn < min) ? s.timeIn : min, '')
+
+      const { error } = await supabase.from('attendance_records').upsert({
         employee_id: userRole.employee_id,
         date: today,
-        clock_in: now.toISOString(),
+        clock_in: earliestIn || now.toISOString(),
         clock_out: null,
         status: mapAttendanceTypeToStatus(selectedAttendanceType),
-        notes: `${selectedAttendanceType}${attendanceNote ? ': ' + attendanceNote : ''}` // Store UI type in notes
+        notes: serializeSessions(sessions),
       }, {
         onConflict: 'employee_id,date'
       })
@@ -245,11 +295,25 @@ export default function TimePage() {
       if (!roleError && userRole?.employee_id) {
         const now = new Date()
         const today = new Date().toISOString().split('T')[0]
-        
-        // Update the attendance record with clock_out time
+
+        // Close the last open session
+        const existing = attendanceRecords?.find(r => r.date === today && r.employee_id === userRole.employee_id)
+        const sessions = parseSessions(existing?.notes ?? null)
+        // Find the last session without a timeOut and close it
+        const lastOpenIdx = sessions.map((s, i) => (!s.timeOut ? i : -1)).filter(i => i >= 0).pop()
+        if (lastOpenIdx !== undefined) {
+          sessions[lastOpenIdx] = { ...sessions[lastOpenIdx], timeOut: now.toISOString() }
+        }
+
+        // latest clock_out = latest timeOut across sessions
+        const latestOut = sessions.reduce((max, s) => s.timeOut && (!max || s.timeOut > max) ? s.timeOut : max, '' as string)
+
         await supabase
           .from('attendance_records')
-          .update({ clock_out: now.toISOString() })
+          .update({
+            clock_out: latestOut || now.toISOString(),
+            notes: serializeSessions(sessions),
+          })
           .eq('employee_id', userRole.employee_id)
           .eq('date', today)
         
@@ -857,6 +921,10 @@ export default function TimePage() {
                     }
                   }
                   
+                  // Parse sessions for this day (for punch-based days)
+                  const daySessions = !leaveRequest && !holiday && attendance ? parseSessions(attendance.notes) : []
+                  const hasSessions = daySessions.length > 0 && daySessions[0].timeIn !== ''
+
                   days.push(
                     <div
                       key={day}
@@ -866,7 +934,9 @@ export default function TimePage() {
                       } ${bgColor}`}
                     >
                       <div className={`text-sm ${attendance || leaveRequest || holiday ? 'font-medium' : 'text-gray-500'}`}>{day}</div>
-                      {displayInfo && (
+
+                      {/* Holiday or Leave: show label + badge as before */}
+                      {(holiday || leaveRequest) && displayInfo && (
                         <>
                           <div className={`mt-1 text-xs font-medium ${displayInfo.textColor}`}>
                             {displayInfo.label}
@@ -878,14 +948,35 @@ export default function TimePage() {
                           )}
                         </>
                       )}
-                      {attendance?.notes && !leaveRequest && !holiday && (() => {
-                          const noteText = attendance.notes.includes(':') 
-                            ? attendance.notes.split(':').slice(1).join(':').trim()
-                            : null
-                          return noteText ? (
-                            <div className="mt-0.5 text-xs text-gray-500 truncate">{noteText}</div>
-                          ) : null
-                        })()}
+
+                      {/* Attendance with sessions: show each session block */}
+                      {!holiday && !leaveRequest && hasSessions && (
+                        <div className="mt-1 space-y-1">
+                          {daySessions.map((session, idx) => {
+                            const sInfo = getAttendanceTypeInfo(session.type)
+                            return (
+                              <div key={idx} className={`rounded px-1.5 py-1 ${sInfo.bgColor}`}>
+                                <div className={`text-xs font-semibold ${sInfo.textColor} truncate`}>
+                                  {sInfo.label}
+                                </div>
+                                <div className="text-[10px] text-gray-500 leading-tight">
+                                  <span className="font-medium">In:</span> {fmtTime(session.timeIn)}
+                                </div>
+                                <div className="text-[10px] text-gray-500 leading-tight">
+                                  <span className="font-medium">Out:</span> {session.timeOut ? fmtTime(session.timeOut) : <span className="text-green-500">Active</span>}
+                                </div>
+                              </div>
+                            )
+                          })}
+                        </div>
+                      )}
+
+                      {/* Attendance without sessions (legacy plain-text notes or manual calendar entry) */}
+                      {!holiday && !leaveRequest && !hasSessions && displayInfo && (
+                        <div className={`mt-1 text-xs font-medium ${displayInfo.textColor}`}>
+                          {displayInfo.label}
+                        </div>
+                      )}
                     </div>
                   )
                 }
