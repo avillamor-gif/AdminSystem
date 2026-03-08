@@ -81,7 +81,7 @@ export function Header({ user }: HeaderProps) {
     if (pathname.startsWith('/admin')) return 'Admin'
     if (pathname.startsWith('/employees')) return 'PIM'
     if (pathname.startsWith('/leave')) return 'Leave'
-    if (pathname.startsWith('/time')) return 'Attendance Tracker'
+    if (pathname.startsWith('/attendance-tracker')) return 'Attendance Tracker'
     if (pathname.startsWith('/travel')) return 'Travel'
     if (pathname.startsWith('/publications')) return 'Publications'
     if (pathname.startsWith('/office-supplies')) return 'Office Supplies'

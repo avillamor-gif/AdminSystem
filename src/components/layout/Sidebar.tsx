@@ -39,7 +39,7 @@ const navigationItems: NavigationItem[] = [
   { name: 'Dashboard', href: '/', icon: LayoutDashboard },
   { name: 'Admin', href: '/admin', icon: Settings, requiresAdmin: true },
   { name: 'Leave', href: '/leave/my-requests', icon: Calendar, requiresPermission: 'leave.view' },
-  { name: 'Attendance Tracker', href: '/time', icon: Clock },
+  { name: 'Attendance Tracker', href: '/attendance-tracker', icon: Clock },
   { name: 'Travel', href: '/travel', icon: Plane },
   { name: 'Publications', href: '/publications/library', icon: BookOpen, activeBase: '/publications' },
   { name: 'Office Equipment', href: '/equipment/browse', icon: Monitor, activeBase: '/equipment' },
