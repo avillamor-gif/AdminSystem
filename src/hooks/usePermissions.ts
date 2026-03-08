@@ -13,9 +13,9 @@ export function useCurrentUserPermissions() {
   return useQuery({
     queryKey: permissionKeys.current(),
     queryFn: () => permissionService.getCurrentUserPermissions(),
-    staleTime: 2 * 60 * 1000, // 2 minutes (reduced from 5)
+    staleTime: 0, // always re-fetch so RBAC changes are reflected immediately
     retry: 1,
-    refetchOnWindowFocus: false, // Don't refetch on window focus
+    refetchOnWindowFocus: true,
   })
 }
 

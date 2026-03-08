@@ -159,8 +159,7 @@ export const permissionService = {
         'travel.view', 'travel.apply',
         'equipment.view', 'equipment.request',
         'supplies.view', 'supplies.request',
-        'publications.view', 'publications.request',
-        'performance.view'
+        'publications.view', 'publications.request'
       ]
     }
     
@@ -168,54 +167,30 @@ export const permissionService = {
   },
 
   /**
-   * Get current user's permissions
+   * Get current user's permissions — always reads live from the database so
+   * that changes made in the RBAC admin panel take effect immediately.
+   *
+   * Strategy (in order):
+   *  1. Join user_roles → roles → role_permissions → permissions via role_id FK.
+   *  2. If role_id is NULL, fall back to matching by role name string.
+   *  3. Only if the DB returns nothing at all, use hardcoded defaults.
    */
   async getCurrentUserPermissions(): Promise<UserRoleInfo | null> {
     const supabase = createClient()
-    
+
     try {
-      // Get current user
       const { data: { user }, error: userError } = await supabase.auth.getUser()
-      
-      if (userError || !user) {
-        console.error('Error getting current user:', userError)
-        return null
-      }
+      if (userError || !user) return null
 
-      // Try to get user permissions from view first
-      const { data, error } = await supabase
-        .from('user_permissions' as any)
-        .select('*')
-        .eq('user_id', user.id)
-
-      // If view exists and has data, use it
-      if (!error && data && data.length > 0) {
-        const row = data[0] as any
-        const roleInfo: UserRoleInfo = {
-          role_id: row.role_id,
-          role_name: row.role_name,
-          role_description: row.role_description,
-          permissions: data.map((p: any) => p.permission_code)
-        }
-        return roleInfo
-      }
-
-      // Fallback: Get role from user_roles table and use default permissions
+      // ── Step 1: get the user's role row ──────────────────────────────────
       const { data: userRole, error: roleError } = await supabase
         .from('user_roles')
-        .select('role')
+        .select('role, role_id')
         .eq('user_id', user.id)
         .single()
 
-      if (roleError || !userRole) {
-        console.warn('No role found for user:', user.id)
-        return null
-      }
+      if (roleError || !userRole) return null
 
-      // Return default permissions based on role
-      const permissions = this.getDefaultPermissionsByRole(userRole.role)
-      
-      // Normalize role display name
       const roleDisplayNames: Record<string, string> = {
         'admin': 'Admin',
         'hr': 'HR Manager',
@@ -227,13 +202,73 @@ export const permissionService = {
         'super admin': 'Super Admin',
         'board_member': 'Board Member',
       }
-      const roleName = roleDisplayNames[userRole.role.toLowerCase()] || userRole.role
-      
+      const roleName = roleDisplayNames[userRole.role.toLowerCase()] ?? userRole.role
+
+      // Role-name → roles.name mapping (for fallback join by name)
+      const roleNameMap: Record<string, string> = {
+        'admin': 'Admin',
+        'hr': 'HR Manager',
+        'hr manager': 'HR Manager',
+        'manager': 'Manager',
+        'employee': 'Employee',
+        'ed': 'Executive Director',
+        'executive director': 'Executive Director',
+        'super admin': 'Super Admin',
+        'board_member': 'Board Member',
+      }
+      const rolesTableName = roleNameMap[userRole.role.toLowerCase()] ?? userRole.role
+
+      // ── Step 2: query permissions via role_id (preferred) ────────────────
+      let permissionCodes: string[] = []
+      let dbRoleId: string | null = null
+      let dbRoleName: string | null = null
+      let dbRoleDescription: string | null = null
+
+      if (userRole.role_id) {
+        const { data: rpRows } = await supabase
+          .from('role_permissions' as any)
+          .select('permission:permissions(id, code), role:roles!role_permissions_role_id_fkey(id, name, description)')
+          .eq('role_id', userRole.role_id)
+
+        if (rpRows && rpRows.length > 0) {
+          const firstRow = rpRows[0] as any
+          dbRoleId = firstRow.role?.id ?? userRole.role_id
+          dbRoleName = firstRow.role?.name ?? roleName
+          dbRoleDescription = firstRow.role?.description ?? null
+          permissionCodes = rpRows.map((r: any) => r.permission?.code).filter(Boolean)
+        }
+      }
+
+      // ── Step 3: fallback join by role name string ────────────────────────
+      if (permissionCodes.length === 0) {
+        const { data: roleRows } = await supabase
+          .from('roles' as any)
+          .select('id, name, description, role_permissions(permission:permissions(code))')
+          .eq('name', rolesTableName)
+          .eq('status', 'active')
+          .single()
+
+        if (roleRows) {
+          const r = roleRows as any
+          dbRoleId = r.id
+          dbRoleName = r.name
+          dbRoleDescription = r.description
+          permissionCodes = (r.role_permissions ?? [])
+            .map((rp: any) => rp.permission?.code)
+            .filter(Boolean)
+        }
+      }
+
+      // ── Step 4: last-resort hardcoded defaults (should rarely be hit) ────
+      if (permissionCodes.length === 0) {
+        permissionCodes = this.getDefaultPermissionsByRole(userRole.role)
+      }
+
       return {
-        role_id: userRole.role, // Use role string as ID
-        role_name: roleName,
-        role_description: `${roleName} role with default permissions`,
-        permissions
+        role_id: dbRoleId ?? userRole.role_id ?? userRole.role,
+        role_name: dbRoleName ?? roleName,
+        role_description: dbRoleDescription ?? `${roleName} role`,
+        permissions: permissionCodes,
       }
     } catch (error) {
       console.error('Error in getCurrentUserPermissions:', error)
