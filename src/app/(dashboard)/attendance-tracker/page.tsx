@@ -1063,40 +1063,65 @@ export default function TimePage() {
                     </td>
                   </tr>
                 ) : attendanceRecords && attendanceRecords.length > 0 ? (
-                  attendanceRecords.map((record) => {
-                    const uiType = record.notes ? record.notes.split(':')[0].trim() : (record.status ?? '')
+                  // Expand each record into one row per punch session
+                  attendanceRecords.flatMap((record) => {
+                    const sessions = parseSessions(record.notes)
+                    const hasSessions = sessions.length > 0 && sessions[0].timeIn !== ''
+
+                    if (hasSessions) {
+                      return sessions.map((session, idx) => {
+                        const info = getAttendanceTypeInfo(session.type)
+                        const duration = session.timeIn && session.timeOut
+                          ? formatDuration(session.timeIn, session.timeOut)
+                          : session.timeIn && !session.timeOut ? 'Active' : '—'
+                        return (
+                          <tr key={`${record.id}-${idx}`} className="hover:bg-gray-50">
+                            <td className="px-6 py-4 text-sm font-medium text-gray-900">
+                              {new Date(record.date + 'T00:00:00').toLocaleDateString('en-US', {
+                                year: 'numeric', month: 'short', day: 'numeric'
+                              })}
+                            </td>
+                            <td className="px-6 py-4 text-sm text-gray-600">
+                              {fmtTime(session.timeIn)}
+                            </td>
+                            <td className="px-6 py-4 text-sm text-gray-600">
+                              {session.timeOut ? fmtTime(session.timeOut) : <span className="text-green-600 font-medium">Active</span>}
+                            </td>
+                            <td className="px-6 py-4 text-sm text-gray-600">
+                              {duration}
+                            </td>
+                            <td className="px-6 py-4">
+                              <div className="flex items-center gap-2">
+                                <div className={`w-3 h-3 rounded-full ${info.color}`}></div>
+                                <span className="text-sm font-medium text-gray-700">{info.label}</span>
+                              </div>
+                            </td>
+                          </tr>
+                        )
+                      })
+                    }
+
+                    // Legacy plain-text record — show as single row
+                    const uiType = record.status ?? ''
                     const attendanceInfo = getAttendanceTypeInfo(uiType)
-                    return (
+                    return [(
                       <tr key={record.id} className="hover:bg-gray-50">
                         <td className="px-6 py-4 text-sm font-medium text-gray-900">
-                          {new Date(record.date).toLocaleDateString('en-US', {
-                            year: 'numeric',
-                            month: 'short',
-                            day: 'numeric'
+                          {new Date(record.date + 'T00:00:00').toLocaleDateString('en-US', {
+                            year: 'numeric', month: 'short', day: 'numeric'
                           })}
                         </td>
-                        <td className="px-6 py-4 text-sm text-gray-600">
-                          {formatTimeOnly(record.clock_in)}
-                        </td>
-                        <td className="px-6 py-4 text-sm text-gray-600">
-                          {formatTimeOnly(record.clock_out)}
-                        </td>
-                        <td className="px-6 py-4 text-sm text-gray-600">
-                          {formatDuration(record.clock_in, record.clock_out)}
-                        </td>
+                        <td className="px-6 py-4 text-sm text-gray-600">{formatTimeOnly(record.clock_in)}</td>
+                        <td className="px-6 py-4 text-sm text-gray-600">{formatTimeOnly(record.clock_out)}</td>
+                        <td className="px-6 py-4 text-sm text-gray-600">{formatDuration(record.clock_in, record.clock_out)}</td>
                         <td className="px-6 py-4">
                           <div className="flex items-center gap-2">
                             <div className={`w-3 h-3 rounded-full ${attendanceInfo.color}`}></div>
-                            <span className="text-sm font-medium text-gray-700">
-                              {attendanceInfo.label}
-                            </span>
+                            <span className="text-sm font-medium text-gray-700">{attendanceInfo.label}</span>
                           </div>
-                          {record.notes && (
-                            <div className="text-xs text-gray-500 mt-1">{record.notes}</div>
-                          )}
                         </td>
                       </tr>
-                    )
+                    )]
                   })
                 ) : (
                   <tr>
