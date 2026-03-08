@@ -20,6 +20,7 @@ import { EmergencyContactFormModal } from './EmergencyContactFormModal'
 import { uploadEmployeePhoto, deleteEmployeePhoto } from '@/lib/supabase/storage'
 import { logAction } from '@/services/auditLog.service'
 import { toast } from 'sonner'
+import { createClient } from '@/lib/supabase/client'
 
 type TabKey = 'personal' | 'contact' | 'employment' | 'emergency' | 'dependents' | 'banking' | 'benefits' | 'immigration' | 'assets' | 'qualifications' | 'security'
 
@@ -43,6 +44,9 @@ export function EmployeeDetailContent({
   const [selectedEmergencyContact, setSelectedEmergencyContact] = useState<any>(undefined)
   const [includeContractDetails, setIncludeContractDetails] = useState(false)
   const [isUploadingPhoto, setIsUploadingPhoto] = useState(false)
+  const [pwForm, setPwForm] = useState({ newPassword: '', confirmPassword: '' })
+  const [pwLoading, setPwLoading] = useState(false)
+  const [pwError, setPwError] = useState<string | null>(null)
   
   // Form state for Personal Information
   const [formData, setFormData] = useState({
@@ -1857,7 +1861,39 @@ export function EmployeeDetailContent({
           </div>
         )
       
-      case 'security':
+      case 'security': {
+        const handlePasswordChange = async (e: React.FormEvent) => {
+          e.preventDefault()
+          setPwError(null)
+
+          if (pwForm.newPassword.length < 8) {
+            setPwError('Password must be at least 8 characters.')
+            return
+          }
+          if (pwForm.newPassword !== pwForm.confirmPassword) {
+            setPwError('Passwords do not match.')
+            return
+          }
+
+          setPwLoading(true)
+          try {
+            const supabase = createClient()
+            const { error } = await supabase.auth.updateUser({ password: pwForm.newPassword })
+            if (error) throw error
+            toast.success('Password changed successfully.')
+            setPwForm({ newPassword: '', confirmPassword: '' })
+            logAction({
+              employee_id: employee.id,
+              action: 'Password Changed',
+              details: 'Employee changed their own password via Security & Privacy Settings',
+            })
+          } catch (err: any) {
+            setPwError(err?.message || 'Failed to change password. Please try again.')
+          } finally {
+            setPwLoading(false)
+          }
+        }
+
         return (
           <div className="space-y-4">
             <div className="flex items-center gap-3 mb-6">
@@ -1869,20 +1905,52 @@ export function EmployeeDetailContent({
                 <p className="text-sm text-gray-500 mt-1">Account security, password, and privacy controls</p>
               </div>
             </div>
-            <div className="border-t border-gray-200 mb-6"></div>
-            <div className="space-y-3">
-              <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                <span className="text-sm text-gray-700">Two-Factor Authentication</span>
-                <Badge variant="warning">Disabled</Badge>
-              </div>
-              <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                <span className="text-sm text-gray-700">Last Password Change</span>
-                <span className="text-sm text-gray-600">Never</span>
-              </div>
-              <Button variant="secondary" size="sm" className="mt-4">Reset Password</Button>
+            <div className="border-t border-gray-200 mb-6" />
+
+            {/* Change Password */}
+            <div className="bg-white border border-gray-200 rounded-xl p-6 max-w-md">
+              <h4 className="text-sm font-semibold text-gray-900 mb-4">Change Password</h4>
+              <form onSubmit={handlePasswordChange} className="space-y-4">
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">New Password</label>
+                  <input
+                    type="password"
+                    value={pwForm.newPassword}
+                    onChange={(e) => setPwForm(f => ({ ...f, newPassword: e.target.value }))}
+                    placeholder="Enter new password"
+                    required
+                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange/40 focus:border-orange"
+                  />
+                  <p className="text-xs text-gray-400 mt-1">Minimum 8 characters.</p>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Confirm New Password</label>
+                  <input
+                    type="password"
+                    value={pwForm.confirmPassword}
+                    onChange={(e) => setPwForm(f => ({ ...f, confirmPassword: e.target.value }))}
+                    placeholder="Re-enter new password"
+                    required
+                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange/40 focus:border-orange"
+                  />
+                </div>
+                {pwError && (
+                  <p className="text-xs text-red-600 bg-red-50 px-3 py-2 rounded-lg">{pwError}</p>
+                )}
+                <Button type="submit" disabled={pwLoading} className="w-full">
+                  {pwLoading ? 'Changing...' : 'Change Password'}
+                </Button>
+              </form>
+            </div>
+
+            {/* 2FA status (read-only for now) */}
+            <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg max-w-md">
+              <span className="text-sm text-gray-700">Two-Factor Authentication</span>
+              <Badge variant="warning">Disabled</Badge>
             </div>
           </div>
         )
+      }
       
       default:
         return null
