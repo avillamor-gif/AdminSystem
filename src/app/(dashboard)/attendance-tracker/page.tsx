@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { Clock, Play, Square, Calendar, FileText, Timer, CheckCircle, X, ChevronRight } from 'lucide-react'
 import { Card, Button, Badge, Modal, ModalHeader, ModalBody, ModalFooter } from '@/components/ui'
 import { createClient } from '../../../lib/supabase/client'
@@ -89,6 +89,56 @@ export default function TimePage() {
     endDate: monthEnd,
     employeeId: currentEmployee?.id, // Only show current employee's records
   })
+
+  // Compute current week's Mon–Sun date range (stable, only recomputes daily via currentTime day change)
+  const weekRange = useMemo(() => {
+    const today = new Date()
+    // Monday = 0 offset; Sunday = 6 offset (ISO week: Mon first)
+    const dayOfWeek = today.getDay() // 0=Sun,1=Mon,...,6=Sat
+    const diffToMonday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek
+    const monday = new Date(today)
+    monday.setHours(0, 0, 0, 0)
+    monday.setDate(today.getDate() + diffToMonday)
+    const sunday = new Date(monday)
+    sunday.setDate(monday.getDate() + 6)
+    const toStr = (d: Date) => d.toISOString().split('T')[0]
+    // Build Mon→Sun date strings
+    const dates = Array.from({ length: 7 }, (_, i) => {
+      const d = new Date(monday)
+      d.setDate(monday.getDate() + i)
+      return toStr(d)
+    })
+    return { weekStart: toStr(monday), weekEnd: toStr(sunday), dates }
+  }, [currentTime.toDateString()]) // recompute when calendar day changes
+
+  // Fetch attendance records for the current week (may straddle two months)
+  const { data: weekRecords } = useAttendanceRecords({
+    startDate: weekRange.weekStart,
+    endDate: weekRange.weekEnd,
+    employeeId: currentEmployee?.id,
+  })
+
+  // Compute hours per day for the current week from real punch sessions
+  const weeklyData = useMemo(() => {
+    const dayLabels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+    return weekRange.dates.map((dateStr, i) => {
+      const record = (weekRecords ?? []).find(r => r.date === dateStr)
+      if (!record) return { label: dayLabels[i], hours: 0, date: dateStr }
+      const sessions = parseSessions(record.notes)
+      const totalHours = sessions.reduce((sum, s) => {
+        if (s.timeIn && s.timeOut) {
+          return sum + (new Date(s.timeOut).getTime() - new Date(s.timeIn).getTime()) / 3_600_000
+        }
+        // If still active (no timeOut) count elapsed time up to now
+        if (s.timeIn && !s.timeOut) {
+          return sum + (Date.now() - new Date(s.timeIn).getTime()) / 3_600_000
+        }
+        return sum
+      }, 0)
+      // Round to 2 decimal places
+      return { label: dayLabels[i], hours: Math.round(totalHours * 100) / 100, date: dateStr }
+    })
+  }, [weekRecords, weekRange.dates, currentTime])
 
   // Fetch leave requests for current employee
   const { data: leaveRequests } = useLeaveRequests(currentEmployee?.id)
@@ -467,8 +517,8 @@ export default function TimePage() {
     }
   }
 
-  const weekdays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
-  const weeklyHours = [8, 8.5, 7.5, 8, 0, 0, 0]
+  const totalWeekHours = weeklyData.reduce((sum, d) => sum + d.hours, 0)
+  const maxDayHours = Math.max(...weeklyData.map(d => d.hours), 8) // at least 8 for bar scale
 
   return (
     <div className="space-y-6">
@@ -605,27 +655,36 @@ export default function TimePage() {
           <Card className="p-6">
             <h3 className="font-semibold text-gray-900 mb-4">This Week's Hours</h3>
             <div className="space-y-3">
-              {weekdays.map((day, index) => (
-                <div key={day} className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600 w-12">{day}</span>
-                  <div className="flex-1 mx-4">
-                    <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
-                      <div
-                        className="h-full bg-orange rounded-full"
-                        style={{ width: `${(weeklyHours[index] / 8) * 100}%` }}
-                      />
+              {weeklyData.map((day) => {
+                const today = new Date().toISOString().split('T')[0]
+                const isToday = day.date === today
+                const barPct = Math.min((day.hours / maxDayHours) * 100, 100)
+                return (
+                  <div key={day.label} className="flex items-center justify-between">
+                    <span className={`text-sm w-12 ${isToday ? 'font-semibold text-orange' : 'text-gray-600'}`}>
+                      {day.label}
+                    </span>
+                    <div className="flex-1 mx-4">
+                      <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                        <div
+                          className={`h-full rounded-full transition-all duration-500 ${day.hours > 0 ? 'bg-orange' : 'bg-gray-200'}`}
+                          style={{ width: `${barPct}%` }}
+                        />
+                      </div>
                     </div>
+                    <span className={`text-sm w-14 text-right ${
+                      isToday ? 'font-bold text-orange' : day.hours > 0 ? 'font-medium text-gray-900' : 'text-gray-400'
+                    }`}>
+                      {day.hours > 0 ? `${day.hours.toFixed(1)}h` : '—'}
+                    </span>
                   </div>
-                  <span className="text-sm font-medium text-gray-900 w-12 text-right">
-                    {weeklyHours[index]}h
-                  </span>
-                </div>
-              ))}
+                )
+              })}
             </div>
             <div className="mt-6 pt-4 border-t border-gray-100 flex justify-between">
               <span className="text-sm text-gray-500">Total This Week</span>
               <span className="font-bold text-orange">
-                {weeklyHours.reduce((a, b) => a + b, 0)}h
+                {totalWeekHours > 0 ? `${totalWeekHours.toFixed(1)}h` : '0h'}
               </span>
             </div>
           </Card>
