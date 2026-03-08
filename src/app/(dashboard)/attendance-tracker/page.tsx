@@ -2,60 +2,20 @@
 
 import { useState, useEffect, useMemo } from 'react'
 import { useSearchParams } from 'next/navigation'
-import { Clock, Play, Square, Calendar, FileText, Timer, CheckCircle, X, ChevronRight } from 'lucide-react'
-import { Card, Button, Badge, Modal, ModalHeader, ModalBody, ModalFooter } from '@/components/ui'
+import { Clock, Play, Square, Calendar, ChevronRight } from 'lucide-react'
+import { Card, Button, Badge } from '@/components/ui'
+import { AttendanceTypeModal } from '@/components/attendance/AttendanceTypeModal'
+import type { AttendanceType } from '@/components/attendance/AttendanceTypeModal'
+import { usePunchInOut, parseSessions, serializeSessions, mapAttendanceTypeToStatus } from '@/hooks/usePunchInOut'
 import { createClient } from '../../../lib/supabase/client'
-import { useAttendanceRecords, useClockIn, useClockOut, useCurrentEmployee, useLeaveRequests } from '@/hooks'
+import { useAttendanceRecords, useCurrentEmployee, useLeaveRequests } from '@/hooks'
 import { useCurrentUserPermissions } from '@/hooks/usePermissions'
 import { useHolidays } from '@/hooks/useLeaveAbsence'
-
-type AttendanceType = 'work-onsite' | 'work-home' | 'work-offsite' | 'work-travel' | 'vacation' | 'sick' | 'days-off' | 'rest-day'
-
-// Session entry stored inside the notes JSON array
-interface PunchSession {
-  type: AttendanceType
-  timeIn: string  // ISO timestamp
-  timeOut: string | null
-  note: string
-}
-
-// Parse notes field → array of PunchSession (handles legacy plain-text notes too)
-function parseSessions(notes: string | null): PunchSession[] {
-  if (!notes) return []
-  try {
-    const parsed = JSON.parse(notes)
-    if (Array.isArray(parsed)) return parsed as PunchSession[]
-  } catch {}
-  // Legacy: "work-onsite: some note" or just "work-onsite"
-  const parts = notes.split(':')
-  const type = parts[0].trim() as AttendanceType
-  const note = parts.slice(1).join(':').trim()
-  return [{ type, timeIn: '', timeOut: null, note }]
-}
-
-function serializeSessions(sessions: PunchSession[]): string {
-  return JSON.stringify(sessions)
-}
 
 // Format a timestamp to "09:34 AM"
 function fmtTime(iso: string | null | undefined): string {
   if (!iso) return '—'
   return new Date(iso).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })
-}
-
-// Map UI attendance types to database status values
-const mapAttendanceTypeToStatus = (type: AttendanceType): 'present' | 'absent' | 'late' | 'half_day' | 'on_leave' => {
-  const mapping: Record<AttendanceType, 'present' | 'absent' | 'late' | 'half_day' | 'on_leave'> = {
-    'work-onsite': 'present',
-    'work-home': 'present',
-    'work-offsite': 'present',
-    'work-travel': 'present',
-    'vacation': 'on_leave',
-    'sick': 'on_leave',
-    'days-off': 'on_leave',
-    'rest-day': 'on_leave',
-  }
-  return mapping[type]
 }
 
 export default function TimePage() {
@@ -68,12 +28,10 @@ export default function TimePage() {
     if (tab === 'timesheets' || tab === 'attendance') setActiveTab(tab)
   }, [searchParams])
   const [currentTime, setCurrentTime] = useState(new Date())
-  const [isPunchedIn, setIsPunchedIn] = useState(false)
-  const [punchInTime, setPunchInTime] = useState<Date | null>(null)
+  // Modal state for both punch-in and calendar-edit flows
   const [showAttendanceModal, setShowAttendanceModal] = useState(false)
   const [selectedAttendanceType, setSelectedAttendanceType] = useState<AttendanceType | null>(null)
   const [attendanceNote, setAttendanceNote] = useState('')
-  const [currentAttendanceType, setCurrentAttendanceType] = useState<AttendanceType | null>(null)
   const [isEditMode, setIsEditMode] = useState(false)
   const [selectedDate, setSelectedDate] = useState<string | null>(null)
   const [currentMonth, setCurrentMonth] = useState(new Date(new Date().getFullYear(), new Date().getMonth()))
@@ -83,12 +41,17 @@ export default function TimePage() {
   const { data: roleInfo } = useCurrentUserPermissions()
   const isAdmin = roleInfo?.role_name === 'Admin'
 
-  // Debug logging
-  useEffect(() => {
-    console.log('Current Employee Data:', currentEmployee)
-    console.log('Loading Employee:', isLoadingEmployee)
-    console.log('Employee Error:', employeeError)
-  }, [currentEmployee, isLoadingEmployee, employeeError])
+  // Shared punch-in/out logic — same function used by the Dashboard card
+  const {
+    isPunchedIn,
+    punchInTime,
+    currentType: currentAttendanceType,
+    saving: punchSaving,
+    confirmPunchIn,
+    punchOut: handlePunchOut,
+  } = usePunchInOut({
+    onPunchedIn: () => setActiveTab('timesheets'),
+  })
 
   // Fetch attendance records for current month
   const monthStart = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1).toISOString().split('T')[0]
@@ -161,43 +124,12 @@ export default function TimePage() {
     is_active: true 
   })
 
-  const clockIn = useClockIn()
-  const clockOut = useClockOut()
-
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000)
     return () => clearInterval(timer)
   }, [])
 
-  // Check if user is already punched in today
-  useEffect(() => {
-    if (attendanceRecords && currentEmployee) {
-      const today = new Date().toISOString().split('T')[0]
-      const todayRecord = attendanceRecords.find(r => r.date === today && r.employee_id === currentEmployee.id)
-      
-      if (todayRecord) {
-        // Restore punch-in state from open session in the JSON sessions array
-        const sessions = parseSessions(todayRecord.notes)
-        const openSession = [...sessions].reverse().find(s => !s.timeOut)
-        if (openSession && openSession.timeIn) {
-          setIsPunchedIn(true)
-          setCurrentAttendanceType(openSession.type)
-          setPunchInTime(new Date(openSession.timeIn))
-        } else {
-          setIsPunchedIn(false)
-          setCurrentAttendanceType(null)
-          setPunchInTime(null)
-        }
-      } else {
-        // No record at all today
-        setIsPunchedIn(false)
-        setCurrentAttendanceType(null)
-        setPunchInTime(null)
-      }
-    }
-  }, [attendanceRecords, currentEmployee])
-
-  const handlePunchIn = async () => {
+  const handlePunchIn = () => {
     setIsEditMode(false)
     setSelectedDate(null)
     setSelectedAttendanceType(null)
@@ -215,69 +147,11 @@ export default function TimePage() {
 
   const handleConfirmPunchIn = async () => {
     if (!selectedAttendanceType) return
-
-    const supabase = createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    
-    if (user) {
-      // Get employee_id from user_roles table
-      const { data: userRole, error: roleError } = await supabase
-        .from('user_roles')
-        .select('employee_id')
-        .eq('user_id', user.id)
-        .single()
-      
-      if (roleError || !userRole?.employee_id) {
-        console.error('Error getting employee:', roleError)
-        alert('Employee record not found. Please contact your administrator.')
-        return
-      }
-      
-      const now = new Date()
-      const today = new Date().toISOString().split('T')[0]
-
-      // Load existing sessions for today (if any) and append new open session
-      const existing = attendanceRecords?.find(r => r.date === today && r.employee_id === userRole.employee_id)
-      const sessions = parseSessions(existing?.notes ?? null)
-      const newSession: PunchSession = {
-        type: selectedAttendanceType,
-        timeIn: now.toISOString(),
-        timeOut: null,
-        note: attendanceNote,
-      }
-      sessions.push(newSession)
-
-      // first clock_in = earliest timeIn across sessions
-      const earliestIn = sessions.reduce((min, s) => s.timeIn && (!min || s.timeIn < min) ? s.timeIn : min, '')
-
-      const { error } = await supabase.from('attendance_records').upsert({
-        employee_id: userRole.employee_id,
-        date: today,
-        clock_in: earliestIn || now.toISOString(),
-        clock_out: null,
-        status: mapAttendanceTypeToStatus(selectedAttendanceType),
-        notes: serializeSessions(sessions),
-      }, {
-        onConflict: 'employee_id,date'
-      })
-      
-      if (error) {
-        console.error('Error saving attendance:', error)
-        alert(`Error: ${error.message}`)
-        return
-      }
-      
-      // Update UI state
-      setIsPunchedIn(true)
-      setPunchInTime(now)
-      setCurrentAttendanceType(selectedAttendanceType)
+    const ok = await confirmPunchIn(selectedAttendanceType, attendanceNote)
+    if (ok) {
       setShowAttendanceModal(false)
       setSelectedAttendanceType(null)
       setAttendanceNote('')
-      
-      // Refresh calendar data and switch to My Calendar tab
-      await refetch()
-      setActiveTab('timesheets')
     }
   }
 
@@ -335,52 +209,7 @@ export default function TimePage() {
     setIsEditMode(false)
   }
 
-  const handlePunchOut = async () => {
-    const supabase = createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    
-    if (user && isPunchedIn) {
-      // Get employee_id from user_roles table
-      const { data: userRole, error: roleError } = await supabase
-        .from('user_roles')
-        .select('employee_id')
-        .eq('user_id', user.id)
-        .single()
-      
-      if (!roleError && userRole?.employee_id) {
-        const now = new Date()
-        const today = new Date().toISOString().split('T')[0]
-
-        // Close the last open session
-        const existing = attendanceRecords?.find(r => r.date === today && r.employee_id === userRole.employee_id)
-        const sessions = parseSessions(existing?.notes ?? null)
-        // Find the last session without a timeOut and close it
-        const lastOpenIdx = sessions.map((s, i) => (!s.timeOut ? i : -1)).filter(i => i >= 0).pop()
-        if (lastOpenIdx !== undefined) {
-          sessions[lastOpenIdx] = { ...sessions[lastOpenIdx], timeOut: now.toISOString() }
-        }
-
-        // latest clock_out = latest timeOut across sessions
-        const latestOut = sessions.reduce((max, s) => s.timeOut && (!max || s.timeOut > max) ? s.timeOut : max, '' as string)
-
-        await supabase
-          .from('attendance_records')
-          .update({
-            clock_out: latestOut || now.toISOString(),
-            notes: serializeSessions(sessions),
-          })
-          .eq('employee_id', userRole.employee_id)
-          .eq('date', today)
-        
-        // Refresh attendance data
-        await refetch()
-      }
-    }
-    
-    setIsPunchedIn(false)
-    setPunchInTime(null)
-    setCurrentAttendanceType(null)
-  }
+  // handlePunchOut is provided by usePunchInOut (aliased as handlePunchOut above)
 
   const getAttendanceTypeInfo = (type: AttendanceType | string) => {
     const typeMap: Record<string, { label: string; color: string; bgColor: string; textColor: string }> = {
@@ -1009,141 +838,32 @@ export default function TimePage() {
         </Card>
       )}
 
-      {/* Attendance Type Selection Modal */}
-      <Modal open={showAttendanceModal} onClose={handleCancelEdit} className="max-w-lg">
-        <ModalHeader onClose={handleCancelEdit}>
-          {isEditMode
+      {/* Shared Attendance Type Modal — same component used by the Dashboard Punch In/Out card */}
+      <AttendanceTypeModal
+        open={showAttendanceModal}
+        title={
+          isEditMode
             ? 'Edit Attendance Entry'
             : selectedDate
               ? 'Add Attendance Entry'
-              : 'Select Attendance Type'}
-        </ModalHeader>
-        
-        <ModalBody>
-          {selectedDate && (
-            <div className={`mb-4 p-3 rounded-lg ${isEditMode ? 'bg-blue-50' : 'bg-green-50'}`}>
-              <p className={`text-sm font-medium ${isEditMode ? 'text-blue-700' : 'text-green-700'}`}>
-                {isEditMode ? 'Editing' : 'Adding entry for'}:{' '}
-                {new Date(selectedDate + 'T00:00:00').toLocaleDateString('en-US', {
-                  weekday: 'long',
-                  year: 'numeric',
-                  month: 'long',
-                  day: 'numeric',
-                })}
-              </p>
-            </div>
-          )}
-
-          {!isEditMode && !selectedDate && (
-            <div className="mb-4">
-              <p className="text-sm text-gray-600">Date: {formatDate(currentTime)}</p>
-            </div>
-          )}
-
-          <div className="grid grid-cols-2 gap-3 mb-6">
-            <button
-              onClick={() => setSelectedAttendanceType('work-onsite')}
-              className={`flex items-center gap-3 p-4 rounded-lg border-2 transition-all ${
-                selectedAttendanceType === 'work-onsite'
-                  ? 'border-blue-500 bg-blue-50'
-                  : 'border-gray-200 hover:border-gray-300'
-              }`}
-            >
-              <div className="w-6 h-6 bg-blue-500 rounded"></div>
-              <span className="text-sm font-medium text-gray-700">Work on-site</span>
-            </button>
-
-            <button
-              onClick={() => setSelectedAttendanceType('work-home')}
-              className={`flex items-center gap-3 p-4 rounded-lg border-2 transition-all ${
-                selectedAttendanceType === 'work-home'
-                  ? 'border-green-500 bg-green-50'
-                  : 'border-gray-200 hover:border-gray-300'
-              }`}
-            >
-              <div className="w-6 h-6 bg-green-500 rounded"></div>
-              <span className="text-sm font-medium text-gray-700">Work from home</span>
-            </button>
-
-            <button
-              onClick={() => setSelectedAttendanceType('work-offsite')}
-              className={`flex items-center gap-3 p-4 rounded-lg border-2 transition-all ${
-                selectedAttendanceType === 'work-offsite'
-                  ? 'border-purple-500 bg-purple-50'
-                  : 'border-gray-200 hover:border-gray-300'
-              }`}
-            >
-              <div className="w-6 h-6 bg-purple-500 rounded"></div>
-              <span className="text-sm font-medium text-gray-700">Work off-site</span>
-            </button>
-
-            <button
-              onClick={() => setSelectedAttendanceType('work-travel')}
-              className={`flex items-center gap-3 p-4 rounded-lg border-2 transition-all ${
-                selectedAttendanceType === 'work-travel'
-                  ? 'border-indigo-500 bg-indigo-50'
-                  : 'border-gray-200 hover:border-gray-300'
-              }`}
-            >
-              <div className="w-6 h-6 bg-indigo-500 rounded"></div>
-              <span className="text-sm font-medium text-gray-700">Work on Travel</span>
-            </button>
-
-            <button
-              onClick={() => setSelectedAttendanceType('days-off')}
-              className={`flex items-center gap-3 p-4 rounded-lg border-2 transition-all ${
-                selectedAttendanceType === 'days-off'
-                  ? 'border-orange bg-orange/10'
-                  : 'border-gray-200 hover:border-gray-300'
-              }`}
-            >
-              <div className="w-6 h-6 bg-orange rounded"></div>
-              <span className="text-sm font-medium text-gray-700">Days Off-set</span>
-            </button>
-
-            <button
-              onClick={() => setSelectedAttendanceType('rest-day')}
-              className={`flex items-center gap-3 p-4 rounded-lg border-2 transition-all ${
-                selectedAttendanceType === 'rest-day'
-                  ? 'border-gray-500 bg-gray-50'
-                  : 'border-gray-200 hover:border-gray-300'
-              }`}
-            >
-              <div className="w-6 h-6 bg-gray-500 rounded"></div>
-              <span className="text-sm font-medium text-gray-700">Day off / Rest day</span>
-            </button>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Note (Optional)
-            </label>
-            <textarea
-              value={attendanceNote}
-              onChange={(e) => setAttendanceNote(e.target.value)}
-              placeholder="Add any additional notes..."
-              rows={4}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange focus:border-transparent resize-none"
-            />
-          </div>
-        </ModalBody>
-
-        <ModalFooter>
-          <Button 
-            type="button" 
-            variant="outline" 
-            onClick={handleCancelEdit}
-          >
-            Cancel
-          </Button>
-          <Button 
-            onClick={selectedDate ? handleSaveAttendance : handleConfirmPunchIn}
-            disabled={!selectedAttendanceType}
-          >
-            {isEditMode ? 'Save Changes' : selectedDate ? 'Add Entry' : 'Punch In'}
-          </Button>
-        </ModalFooter>
-      </Modal>
+              : 'Select Attendance Type'
+        }
+        dateLabel={
+          selectedDate
+            ? new Date(selectedDate + 'T00:00:00').toLocaleDateString('en-US', {
+                weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
+              })
+            : formatDate(currentTime)
+        }
+        selectedType={selectedAttendanceType}
+        note={attendanceNote}
+        saving={punchSaving}
+        confirmLabel={isEditMode ? 'Save Changes' : selectedDate ? 'Add Entry' : 'Punch In'}
+        onSelectType={setSelectedAttendanceType}
+        onNoteChange={setAttendanceNote}
+        onConfirm={selectedDate ? handleSaveAttendance : handleConfirmPunchIn}
+        onCancel={handleCancelEdit}
+      />
 
     </div>
   )
