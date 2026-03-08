@@ -31,7 +31,10 @@ export default function DashboardPage() {
       {/* Quick Actions */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {/* Punch In/Out Widget */}
-        <PunchInOutCard onPunchedIn={() => router.push('/attendance-tracker?tab=timesheets')} />
+        <PunchInOutCard
+          onPunchedIn={() => router.push('/attendance-tracker?tab=timesheets')}
+          onPunchedOut={() => router.push('/attendance-tracker?tab=timesheets')}
+        />
 
         {/* Quick Launch */}
         <Card className="bg-white border border-gray-200 p-5">

@@ -10,9 +10,11 @@ import { usePunchInOut, attendanceTypeColor, attendanceTypeLabel } from '@/hooks
 interface Props {
   /** Called after a successful punch-in so the parent can navigate/switch tabs */
   onPunchedIn?: () => void
+  /** Called after a successful punch-out so the parent can navigate/switch tabs */
+  onPunchedOut?: () => void
 }
 
-export function PunchInOutCard({ onPunchedIn }: Props) {
+export function PunchInOutCard({ onPunchedIn, onPunchedOut }: Props) {
   const [currentTime, setCurrentTime] = useState(new Date())
   const [showModal, setShowModal]     = useState(false)
   const [selectedType, setSelectedType] = useState<AttendanceType | null>(null)
@@ -25,7 +27,7 @@ export function PunchInOutCard({ onPunchedIn }: Props) {
     saving,
     confirmPunchIn,
     punchOut,
-  } = usePunchInOut({ onPunchedIn })
+  } = usePunchInOut({ onPunchedIn, onPunchedOut })
 
   // Live clock
   useEffect(() => {

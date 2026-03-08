@@ -77,9 +77,11 @@ export const attendanceTypeLabel: Record<AttendanceType, string> = {
 interface UsePunchInOutOptions {
   /** Called after a successful punch-in */
   onPunchedIn?: () => void
+  /** Called after a successful punch-out */
+  onPunchedOut?: () => void
 }
 
-export function usePunchInOut({ onPunchedIn }: UsePunchInOutOptions = {}) {
+export function usePunchInOut({ onPunchedIn, onPunchedOut }: UsePunchInOutOptions = {}) {
   const today = new Date().toISOString().split('T')[0]
   const { data: currentEmployee } = useCurrentEmployee()
   const { data: attendanceRecords, refetch } = useAttendanceRecords({
@@ -220,7 +222,8 @@ export function usePunchInOut({ onPunchedIn }: UsePunchInOutOptions = {}) {
     setPunchInTime(null)
     setCurrentType(null)
     await refetch()
-  }, [isPunchedIn, attendanceRecords, today, refetch])
+    onPunchedOut?.()
+  }, [isPunchedIn, attendanceRecords, today, refetch, onPunchedOut])
 
   return {
     isPunchedIn,

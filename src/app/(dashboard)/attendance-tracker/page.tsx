@@ -51,6 +51,7 @@ export default function TimePage() {
     punchOut: handlePunchOut,
   } = usePunchInOut({
     onPunchedIn: () => setActiveTab('timesheets'),
+    onPunchedOut: () => setActiveTab('timesheets'),
   })
 
   // Fetch attendance records for current month
