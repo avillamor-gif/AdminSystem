@@ -20,7 +20,6 @@ import { EmergencyContactFormModal } from './EmergencyContactFormModal'
 import { uploadEmployeePhoto, deleteEmployeePhoto } from '@/lib/supabase/storage'
 import { logAction } from '@/services/auditLog.service'
 import { toast } from 'sonner'
-import { createClient } from '@/lib/supabase/client'
 
 type TabKey = 'personal' | 'contact' | 'employment' | 'emergency' | 'dependents' | 'banking' | 'benefits' | 'immigration' | 'assets' | 'qualifications' | 'security'
 
@@ -1877,9 +1876,13 @@ export function EmployeeDetailContent({
 
           setPwLoading(true)
           try {
-            const supabase = createClient()
-            const { error } = await supabase.auth.updateUser({ password: pwForm.newPassword })
-            if (error) throw error
+            const res = await fetch('/api/change-password', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ newPassword: pwForm.newPassword }),
+            })
+            const json = await res.json()
+            if (!res.ok) throw new Error(json.error || 'Failed to change password.')
             toast.success('Password changed successfully.')
             setPwForm({ newPassword: '', confirmPassword: '' })
             logAction({
