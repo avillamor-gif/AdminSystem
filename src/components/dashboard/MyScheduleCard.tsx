@@ -33,7 +33,7 @@ function buildEmbedUrl(email: string, view: CalendarView, timezone: string): str
 }
 
 // Roles that can view any employee's calendar
-const ELEVATED_ROLES = ['admin', 'hr', 'manager', 'ed', 'super admin']
+const ELEVATED_ROLES = ['admin']
 
 export function MyScheduleCard() {
   const [view, setView] = useState<CalendarView>('WEEK')
