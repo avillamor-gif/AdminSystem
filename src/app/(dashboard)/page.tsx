@@ -99,11 +99,11 @@ export default function DashboardPage() {
               <Users className="w-8 h-8 text-orange mb-2" />
               <span className="text-xs text-gray-600 group-hover:text-orange">My Leave</span>
             </a>
-            <a href="/attendance" className="flex flex-col items-center p-3 bg-gray-50 rounded-lg hover:bg-orange/10 transition-colors group">
+            <a href="/attendance-tracker" className="flex flex-col items-center p-3 bg-gray-50 rounded-lg hover:bg-orange/10 transition-colors group">
               <Clock className="w-8 h-8 text-orange mb-2" />
               <span className="text-xs text-gray-600 group-hover:text-orange">My Timesheet</span>
             </a>
-            <a href="/attendance" className="flex flex-col items-center p-3 bg-gray-50 rounded-lg hover:bg-orange/10 transition-colors group">
+            <a href="/attendance-tracker" className="flex flex-col items-center p-3 bg-gray-50 rounded-lg hover:bg-orange/10 transition-colors group">
               <Briefcase className="w-8 h-8 text-orange mb-2" />
               <span className="text-xs text-gray-600 group-hover:text-orange">Attendance</span>
             </a>
