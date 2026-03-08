@@ -1,62 +1,20 @@
 'use client'
 
-import { Users, Calendar, Clock, Briefcase, ArrowRight, Play, UserCheck, CalendarX, Check, X } from 'lucide-react'
-import { Card, Avatar, Button } from '@/components/ui'
+import { Users, Calendar, Clock, Briefcase, UserCheck, CalendarX } from 'lucide-react'
+import { Card, Avatar } from '@/components/ui'
 import { useEmployeesOnLeaveToday } from '@/hooks/useLeave'
 import { useHolidays } from '@/hooks/useLeaveAbsence'
-import { useEmployees } from '@/hooks/useEmployees'
-import { useDepartments } from '@/hooks/useDepartments'
-import { useTeamPendingRequests, useApproveLeaveRequest, useRejectLeaveRequest } from '@/hooks/useLeaveRequests'
-import { useCurrentEmployee } from '@/hooks/useEmployees'
-import { format } from 'date-fns'
+
 import { MyScheduleCard } from '@/components/dashboard/MyScheduleCard'
 
 export default function DashboardPage() {
-  const { data: currentEmployee } = useCurrentEmployee()
-  const { data: pendingRequests = [], isLoading: pendingLoading } = useTeamPendingRequests(currentEmployee?.id ?? '')
-  const approveMutation = useApproveLeaveRequest()
-  const rejectMutation = useRejectLeaveRequest()
   const { data: employeesOnLeave = [], isLoading: leaveLoading } = useEmployeesOnLeaveToday()
 
   const today = new Date().toISOString().split('T')[0]
-  const currentYear = new Date().getFullYear()
   const { data: allHolidays = [], isLoading: holidaysLoading } = useHolidays({ is_active: true })
   const upcomingHolidays = allHolidays
     .filter(h => h.holiday_date >= today)
     .slice(0, 5)
-
-  const { data: allEmployees = [], isLoading: employeesLoading } = useEmployees({})
-  const { data: allDepartments = [], isLoading: deptsLoading } = useDepartments()
-  const deptDistributionLoading = employeesLoading || deptsLoading
-
-  const barColors = [
-    'bg-orange', 'bg-amber-500', 'bg-yellow-500', 'bg-orange-300',
-    'bg-amber-300', 'bg-yellow-400', 'bg-orange-400', 'bg-amber-400',
-  ]
-
-  const deptDistribution = (() => {
-    if (!allEmployees.length) return []
-    const countMap = new Map<string, number>()
-    for (const emp of allEmployees) {
-      const id = (emp as any).department_id
-      if (id) countMap.set(id, (countMap.get(id) ?? 0) + 1)
-    }
-    const maxCount = Math.max(...countMap.values(), 1)
-    return allDepartments
-      .map((dept: any) => ({
-        id: dept.id,
-        name: dept.name,
-        count: countMap.get(dept.id) ?? 0,
-      }))
-      .filter(d => d.count > 0)
-      .sort((a, b) => b.count - a.count)
-      .slice(0, 6)
-      .map((d, i) => ({
-        ...d,
-        percentage: Math.round((d.count / maxCount) * 100),
-        color: barColors[i % barColors.length],
-      }))
-  })()
 
   return (
     <div className="space-y-6">
@@ -179,7 +137,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Second Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div>
         {/* Employees on Leave Today */}
         <Card className="bg-white border border-gray-200 p-5">
           <div className="flex items-center justify-between mb-4">
@@ -238,147 +196,10 @@ export default function DashboardPage() {
           )}
         </Card>
 
-        {/* Employee Distribution by Department */}
-        <Card className="bg-white border border-gray-200 p-5">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-semibold text-gray-700">Employee Distribution by Department</h3>
-            {!deptDistributionLoading && (
-              <span className="text-xs text-gray-500">{allEmployees.length} total</span>
-            )}
-          </div>
-          {deptDistributionLoading ? (
-            <div className="space-y-4">
-              {[1, 2, 3, 4].map(i => (
-                <div key={i} className="animate-pulse">
-                  <div className="flex justify-between mb-1">
-                    <div className="h-3 bg-gray-200 rounded w-24" />
-                    <div className="h-3 bg-gray-200 rounded w-6" />
-                  </div>
-                  <div className="w-full bg-gray-100 rounded-full h-2">
-                    <div className="bg-gray-200 h-2 rounded-full" style={{ width: `${40 + i * 10}%` }} />
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : deptDistribution.length === 0 ? (
-            <div className="text-center py-8 text-gray-500">
-              <p className="text-sm">No department data available</p>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {deptDistribution.map((dept) => (
-                <div key={dept.id}>
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="text-sm text-gray-700 truncate max-w-[70%]">{dept.name}</span>
-                    <span className="text-sm font-medium text-gray-900">{dept.count}</span>
-                  </div>
-                  <div className="w-full bg-gray-100 rounded-full h-2">
-                    <div
-                      className={`${dept.color} h-2 rounded-full transition-all duration-500`}
-                      style={{ width: `${dept.percentage}%` }}
-                    />
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </Card>
       </div>
 
       {/* Third Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Pending Leave Requests */}
-        <Card className="bg-white border border-gray-200 p-5 lg:col-span-2">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-semibold text-gray-700">Pending Leave Requests</h3>
-            <a href="/leave" className="text-orange text-sm hover:underline">View All</a>
-          </div>
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  <th className="pb-3">Employee</th>
-                  <th className="pb-3">Leave Type</th>
-                  <th className="pb-3">Duration</th>
-                  <th className="pb-3">Status</th>
-                  <th className="pb-3">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {pendingLoading ? (
-                  <tr>
-                    <td colSpan={5} className="py-8 text-center text-gray-500">
-                      <div className="flex justify-center">
-                        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary-600 border-t-transparent" />
-                      </div>
-                    </td>
-                  </tr>
-                ) : pendingRequests.length === 0 ? (
-                  <tr>
-                    <td colSpan={5} className="py-8 text-center text-gray-500">
-                      No pending leave requests
-                    </td>
-                  </tr>
-                ) : (
-                  pendingRequests.slice(0, 5).map((request) => {
-                    const employee = request.employee
-                    const firstName = employee?.first_name || ''
-                    const lastName = employee?.last_name || ''
-                    const fullName = firstName || lastName ? `${firstName} ${lastName}`.trim() : 'Unknown'
-                    const leaveType = request.leave_type?.leave_type_name || 'Leave'
-                    const startDate = format(new Date(request.start_date), 'MMM d')
-                    const endDate = format(new Date(request.end_date), 'MMM d')
-                    const duration = request.start_date === request.end_date ? startDate : `${startDate} - ${endDate}`
-                    
-                    return (
-                      <tr key={request.id} className="text-sm">
-                        <td className="py-3">
-                          <div className="flex items-center gap-2">
-                            <Avatar
-                              src={employee?.avatar_url}
-                              firstName={firstName || '?'}
-                              lastName={lastName}
-                              size="sm"
-                            />
-                            <span className="font-medium text-gray-900">{fullName}</span>
-                          </div>
-                        </td>
-                        <td className="py-3 text-gray-600">{leaveType}</td>
-                        <td className="py-3 text-gray-600">{duration} ({request.total_days} days)</td>
-                        <td className="py-3">
-                          <span className="px-2 py-1 bg-yellow-100 text-yellow-700 text-xs font-medium rounded">
-                            Pending
-                          </span>
-                        </td>
-                        <td className="py-3">
-                          <div className="flex gap-2">
-                            <button
-                              onClick={() => approveMutation.mutate({ approval_id: request.id, comments: '' })}
-                              disabled={approveMutation.isPending || rejectMutation.isPending}
-                              className="px-3 py-1 bg-green-50 text-green-600 text-xs font-medium rounded hover:bg-green-100 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
-                            >
-                              <Check className="w-3 h-3" />
-                              Approve
-                            </button>
-                            <button
-                              onClick={() => rejectMutation.mutate({ approval_id: request.id, comments: '' })}
-                              disabled={approveMutation.isPending || rejectMutation.isPending}
-                              className="px-3 py-1 bg-red-50 text-red-600 text-xs font-medium rounded hover:bg-red-100 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
-                            >
-                              <X className="w-3 h-3" />
-                              Reject
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    )
-                  })
-                )}
-              </tbody>
-            </table>
-          </div>
-        </Card>
-
+      <div>
         {/* Upcoming Holidays */}
         <Card className="bg-white border border-gray-200 p-5">
           <div className="flex items-center justify-between mb-4">
