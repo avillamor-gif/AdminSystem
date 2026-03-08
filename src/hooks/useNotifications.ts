@@ -327,12 +327,23 @@ export function useNotifications() {
     }
   }
 
+  /** Dismiss the leave credit `new_request` notification after the admin has acted on it. */
+  const markLeaveCreditNotifReadByRequestId = async (requestId: string) => {
+    const match = (leaveCreditNotifs as any[]).find(
+      (n: any) => n.request_id === requestId && n.type === 'new_request'
+    )
+    if (match) {
+      await markNotifRead('leave_credit_notifications', match.id)
+    }
+  }
+
   return {
     notifications, timeAgo, isAdmin,
     markEquipmentNotifRead,
     markLeaveNotifRead,
     markLeaveNotifReadByRequestId,
     markLeaveCreditNotifRead,
+    markLeaveCreditNotifReadByRequestId,
     markTravelNotifRead,
     markPubNotifRead,
     markSupplyNotifRead,

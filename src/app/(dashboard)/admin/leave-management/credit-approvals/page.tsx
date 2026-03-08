@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/Input'
 import { Modal, ModalHeader, ModalBody, ModalFooter } from '@/components/ui/Modal'
 import { ConfirmModal } from '@/components/ui/ConfirmModal'
 import { useCurrentEmployee } from '@/hooks/useEmployees'
+import { useNotifications } from '@/hooks/useNotifications'
 import {
   useLeaveCreditRequests,
   useApproveLeaveCreditRequest,
@@ -40,6 +41,7 @@ export default function LeaveCreditApprovalsPage() {
   const [deleteId, setDeleteId] = useState<string | null>(null)
 
   const { data: currentEmployee } = useCurrentEmployee()
+  const { markLeaveCreditNotifReadByRequestId } = useNotifications()
   const { data: allRequests = [], isLoading } = useLeaveCreditRequests()
   const approveMutation = useApproveLeaveCreditRequest()
   const rejectMutation = useRejectLeaveCreditRequest()
@@ -92,6 +94,7 @@ export default function LeaveCreditApprovalsPage() {
         reviewer_notes: reviewerNotes,
       })
     }
+    await markLeaveCreditNotifReadByRequestId(reviewModal.request.id)
     setReviewModal(null)
   }
 
