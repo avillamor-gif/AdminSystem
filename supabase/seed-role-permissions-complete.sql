@@ -55,7 +55,7 @@ INSERT INTO permissions (name, code, category, description) VALUES
 ('View Logs',             'system.logs',            'System',              'View system audit logs'),
 ('Manage Security',       'system.security',        'System',              'Manage security policies and 2FA'),
 ('Manage Admin',          'admin.manage',           'System',              'Access all admin sections')
-ON CONFLICT (code) DO NOTHING;
+ON CONFLICT DO NOTHING;
 
 -- ── 2. Ensure all standard roles exist ────────────────────────────────────
 INSERT INTO roles (name, description, is_system_role, status) VALUES
