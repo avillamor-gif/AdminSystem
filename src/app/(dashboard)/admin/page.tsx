@@ -74,7 +74,7 @@ export default function AdminPage() {
       description: 'Configure time tracking and attendance policies',
       icon: Clock,
       color: 'bg-orange',
-      items: ['Work Schedules', 'Shift Patterns', 'Overtime Rules', 'Break Policies', 'Time Tracking Methods', 'Attendance Policies'],
+      items: ['Work Schedules', 'Shift Patterns', 'Overtime Rules', 'Break Policies', 'Time Tracking Methods', 'Attendance Policies', 'Attendance Reports'],
     },
     {
       id: 'leave-policies',
@@ -346,6 +346,7 @@ export default function AdminPage() {
                           'Break Policies': '/admin/time-attendance/break-policies',
                           'Time Tracking Methods': '/admin/time-attendance/time-tracking-methods',
                           'Attendance Policies': '/admin/time-attendance/attendance-policies',
+                          'Attendance Reports': '/admin/time-attendance/reports',
                           
                           // Leave & Absence Management routes
                           'Leave Types': '/admin/leave-policies/leave-types',
