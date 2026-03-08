@@ -9,6 +9,7 @@ import { useDepartments } from '@/hooks/useDepartments'
 import { useTeamPendingRequests, useApproveLeaveRequest, useRejectLeaveRequest } from '@/hooks/useLeaveRequests'
 import { useCurrentEmployee } from '@/hooks/useEmployees'
 import { format } from 'date-fns'
+import { MyScheduleCard } from '@/components/dashboard/MyScheduleCard'
 
 export default function DashboardPage() {
   const { data: currentEmployee } = useCurrentEmployee()
@@ -435,6 +436,9 @@ export default function DashboardPage() {
           )}
         </Card>
       </div>
+
+      {/* My Schedule — full width */}
+      <MyScheduleCard />
     </div>
   )
 }
