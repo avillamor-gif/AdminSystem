@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useMemo } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { Clock, Play, Square, Calendar, FileText, Timer, CheckCircle, X, ChevronRight } from 'lucide-react'
 import { Card, Button, Badge, Modal, ModalHeader, ModalBody, ModalFooter } from '@/components/ui'
 import { createClient } from '../../../lib/supabase/client'
@@ -58,7 +59,14 @@ const mapAttendanceTypeToStatus = (type: AttendanceType): 'present' | 'absent' |
 }
 
 export default function TimePage() {
+  const searchParams = useSearchParams()
   const [activeTab, setActiveTab] = useState<'punch' | 'timesheets' | 'attendance'>('punch')
+
+  // Honour ?tab= query param on initial load
+  useEffect(() => {
+    const tab = searchParams.get('tab')
+    if (tab === 'timesheets' || tab === 'attendance') setActiveTab(tab)
+  }, [searchParams])
   const [currentTime, setCurrentTime] = useState(new Date())
   const [isPunchedIn, setIsPunchedIn] = useState(false)
   const [punchInTime, setPunchInTime] = useState<Date | null>(null)
@@ -267,8 +275,9 @@ export default function TimePage() {
       setSelectedAttendanceType(null)
       setAttendanceNote('')
       
-      // Refresh calendar data
+      // Refresh calendar data and switch to My Calendar tab
       await refetch()
+      setActiveTab('timesheets')
     }
   }
 

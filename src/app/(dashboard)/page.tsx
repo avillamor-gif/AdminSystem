@@ -4,10 +4,12 @@ import { Users, Calendar, Clock, Briefcase, UserCheck, CalendarX } from 'lucide-
 import { Card, Avatar } from '@/components/ui'
 import { useEmployeesOnLeaveToday } from '@/hooks/useLeave'
 import { useHolidays } from '@/hooks/useLeaveAbsence'
-
+import { useRouter } from 'next/navigation'
 import { MyScheduleCard } from '@/components/dashboard/MyScheduleCard'
+import { PunchInOutCard } from '@/components/dashboard/PunchInOutCard'
 
 export default function DashboardPage() {
+  const router = useRouter()
   const { data: employeesOnLeave = [], isLoading: leaveLoading } = useEmployeesOnLeaveToday()
 
   const today = new Date().toISOString().split('T')[0]
@@ -28,64 +30,8 @@ export default function DashboardPage() {
 
       {/* Quick Actions */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {/* Work Status Widget */}
-        <Card className="bg-white border border-gray-200 p-5">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-semibold text-gray-700">Work Status</h3>
-            <button className="text-gray-400 hover:text-gray-600">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-              </svg>
-            </button>
-          </div>
-          
-          <div className="flex items-center justify-between mb-4">
-            <p className="text-xs text-gray-600">Wednesday, Mar 4, 2026</p>
-            <div className="w-10 h-10 bg-orange rounded-full flex items-center justify-center">
-              <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
-              </svg>
-            </div>
-          </div>
-
-          <div className="bg-green-100 rounded-lg p-3 mb-4 text-center">
-            <p className="text-green-800 font-semibold text-sm">Work from home</p>
-          </div>
-
-          <div>
-            <p className="text-xs text-gray-600 font-medium mb-3">This Week (Mar 2-8)</p>
-            <div className="flex items-end justify-between gap-1.5">
-              <div className="flex flex-col items-center flex-1">
-                <div className="w-full h-24 bg-blue-500 rounded-t"></div>
-                <span className="text-xs text-gray-500 mt-1.5">Mon</span>
-              </div>
-              <div className="flex flex-col items-center flex-1">
-                <div className="w-full h-24 bg-blue-500 rounded-t"></div>
-                <span className="text-xs text-gray-500 mt-1.5">Tue</span>
-              </div>
-              <div className="flex flex-col items-center flex-1">
-                <div className="w-full h-24 bg-green-600 rounded-t"></div>
-                <span className="text-xs text-gray-500 mt-1.5">Wed</span>
-              </div>
-              <div className="flex flex-col items-center flex-1">
-                <div className="w-full h-24 bg-blue-500 rounded-t"></div>
-                <span className="text-xs text-gray-500 mt-1.5">Thu</span>
-              </div>
-              <div className="flex flex-col items-center flex-1">
-                <div className="w-full h-24 bg-blue-500 rounded-t"></div>
-                <span className="text-xs text-gray-500 mt-1.5">Fri</span>
-              </div>
-              <div className="flex flex-col items-center flex-1">
-                <div className="w-full h-16 bg-gray-200 rounded-t"></div>
-                <span className="text-xs text-gray-500 mt-1.5">Sat</span>
-              </div>
-              <div className="flex flex-col items-center flex-1">
-                <div className="w-full h-16 bg-gray-200 rounded-t"></div>
-                <span className="text-xs text-gray-500 mt-1.5">Sun</span>
-              </div>
-            </div>
-          </div>
-        </Card>
+        {/* Punch In/Out Widget */}
+        <PunchInOutCard onPunchedIn={() => router.push('/attendance-tracker?tab=timesheets')} />
 
         {/* Quick Launch */}
         <Card className="bg-white border border-gray-200 p-5">
