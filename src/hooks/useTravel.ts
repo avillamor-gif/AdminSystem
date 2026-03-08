@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { travelService, travelKeys, TravelRequestFilters, TravelRequestInsert, TravelRequestUpdate } from '@/services/travel.service'
 import { toast } from 'react-hot-toast'
+import { logAction } from '@/services/auditLog.service'
 
 // Get all travel requests
 export function useTravelRequests(filters: TravelRequestFilters = {}) {

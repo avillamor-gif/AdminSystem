@@ -183,7 +183,7 @@ export async function POST(req: NextRequest) {
     if (finalStatus !== 'pending') {
       const { data: updated, error: updateError } = await admin
         .from('leave_requests')
-        .update({ status: finalStatus })
+        .update({ status: finalStatus as 'approved' | 'rejected' | 'cancelled' | 'pending' })
         .eq('id', leave_request_id)
         .select()
         .single()

@@ -40,7 +40,7 @@ export async function POST(req: NextRequest) {
       const { data: edUsers } = await admin
         .from('user_roles')
         .select('user_id')
-        .eq('role', 'ed')
+        .eq('role', 'ed' as any)
       for (const u of edUsers ?? []) {
         if (u.user_id) recipientUserIds.add(u.user_id)
       }
@@ -77,7 +77,7 @@ export async function POST(req: NextRequest) {
       const { data: edUsers } = await admin
         .from('user_roles')
         .select('user_id')
-        .eq('role', 'ed')
+        .eq('role', 'ed' as any)
       for (const u of edUsers ?? []) {
         if (u.user_id) recipientUserIds.add(u.user_id)
       }

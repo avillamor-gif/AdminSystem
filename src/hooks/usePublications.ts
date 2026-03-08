@@ -72,7 +72,7 @@ export function useCreatePublicationRequest() {
         logAction({
           employee_id: result.employee_id,
           action: 'Publication Request Created',
-          details: `Publication request created: ${result.title || 'Untitled'}`,
+          details: `Publication request created: ${(result as any).title || result.publication_title || 'Untitled'}`,
         })
       }
     },
@@ -97,7 +97,7 @@ export function useUpdatePublicationRequest() {
         logAction({
           employee_id: data.employee_id,
           action: 'Publication Request Updated',
-          details: `Publication request updated: ${data.title || 'Untitled'}`,
+          details: `Publication request updated: ${(data as any).title || data.publication_title || 'Untitled'}`,
         })
       }
     },
