@@ -39,7 +39,7 @@ export default function TimePage() {
   // Fetch current employee data
   const { data: currentEmployee, isLoading: isLoadingEmployee, error: employeeError } = useCurrentEmployee()
   const { data: roleInfo } = useCurrentUserPermissions()
-  const isAdmin = roleInfo?.role_name === 'Admin'
+  const isAdmin = roleInfo?.permissions?.includes('attendance.edit') ?? false
 
   // Shared punch-in/out logic — same function used by the Dashboard card
   const {

@@ -122,7 +122,7 @@ export function EmployeeDetailContent({
   const uploadEmployeeAttachment = useUploadEmployeeAttachment()
   const deleteEmployeeAttachment = useDeleteEmployeeAttachment()
   const downloadEmployeeAttachment = useDownloadEmployeeAttachment()
-  const isAdmin = roleInfo?.role_name === 'Admin' || roleInfo?.role_name === 'Administrative Manager' || roleInfo?.role_name === 'Administrative Assistant'
+  const isAdmin = roleInfo?.permissions?.includes('employee.edit') ?? false
 
   // Debug logging
   useEffect(() => {

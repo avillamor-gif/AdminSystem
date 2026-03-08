@@ -24,146 +24,155 @@ export const permissionService = {
    * Default permissions by role
    */
   getDefaultPermissionsByRole(role: string): string[] {
+    // These defaults are kept in sync with the DB role_permissions table.
+    // They are only used as a last-resort fallback when the DB query returns
+    // zero permissions (e.g. during initial setup or a transient DB error).
     const rolePermissions: Record<string, string[]> = {
+      // ── Executive Director / ed ──────────────────────────────────────────
       'ed': [
-        'user.view', 'user.create', 'user.edit', 'user.delete', 'role.manage',
-        'users.view', 'users.create', 'users.edit', 'users.delete',
-        'employees.view', 'employees.create', 'employees.edit', 'employees.delete',
-        'employee.view', 'employee.create', 'employee.edit', 'employee.delete',
-        'departments.view', 'departments.create', 'departments.edit', 'departments.delete',
-        'leave.view', 'leave.apply', 'leave.approve', 'leave.reject', 'leave.manage_types', 'leave.manage_balance',
-        'leave.credits.view', 'leave.credits.apply', 'leave.credits.approve',
-        'attendance.view', 'attendance.edit', 'attendance.view_all', 'attendance.export',
-        'travel.view', 'travel.apply', 'travel.approve', 'travel.manage',
-        'equipment.view', 'equipment.request', 'equipment.approve', 'assets.manage',
-        'supplies.view', 'supplies.request', 'supplies.approve', 'supplies.manage',
-        'publications.view', 'publications.request', 'publications.manage',
-        'performance.view', 'performance.conduct', 'performance.manage_goals',
-        'recruitment.view', 'recruitment.manage',
-        'reports.view', 'reports.export',
-        'system.config', 'system.logs', 'system.security', 'admin.manage',
-        'settings.view', 'settings.edit'
+        'admin.manage', 'assets.manage',
+        'attendance.edit', 'attendance.export', 'attendance.view', 'attendance.view_all',
+        'employee.view', 'employees.view',
+        'equipment.approve', 'equipment.create', 'equipment.manage', 'equipment.view',
+        'leave.apply', 'leave.approve', 'leave.credits.apply', 'leave.credits.approve',
+        'leave.credits.view', 'leave.manage_balance', 'leave.manage_types', 'leave.reject', 'leave.view',
+        'performance.conduct', 'performance.manage_goals', 'performance.view',
+        'publications.approve', 'publications.create', 'publications.manage',
+        'publications.request', 'publications.view',
+        'recruitment.applications', 'recruitment.manage', 'recruitment.postings', 'recruitment.view',
+        'reports.export', 'reports.view',
+        'role.manage',
+        'supplies.approve', 'supplies.create', 'supplies.manage', 'supplies.view',
+        'system.config', 'system.logs', 'system.security',
+        'travel.apply', 'travel.approve', 'travel.create', 'travel.manage', 'travel.view',
+        'user.create', 'user.delete', 'user.edit', 'user.view',
       ],
       'executive director': [
-        'user.view', 'user.create', 'user.edit', 'user.delete', 'role.manage',
-        'users.view', 'users.create', 'users.edit', 'users.delete',
-        'employees.view', 'employees.create', 'employees.edit', 'employees.delete',
-        'employee.view', 'employee.create', 'employee.edit', 'employee.delete',
-        'departments.view', 'departments.create', 'departments.edit', 'departments.delete',
-        'leave.view', 'leave.apply', 'leave.approve', 'leave.reject', 'leave.manage_types', 'leave.manage_balance',
-        'leave.credits.view', 'leave.credits.apply', 'leave.credits.approve',
-        'attendance.view', 'attendance.edit', 'attendance.view_all', 'attendance.export',
-        'travel.view', 'travel.apply', 'travel.approve', 'travel.manage',
-        'equipment.view', 'equipment.request', 'equipment.approve', 'assets.manage',
-        'supplies.view', 'supplies.request', 'supplies.approve', 'supplies.manage',
-        'publications.view', 'publications.request', 'publications.manage',
-        'performance.view', 'performance.conduct', 'performance.manage_goals',
-        'recruitment.view', 'recruitment.manage',
-        'reports.view', 'reports.export',
-        'system.config', 'system.logs', 'system.security', 'admin.manage',
-        'settings.view', 'settings.edit'
+        'admin.manage', 'assets.manage',
+        'attendance.edit', 'attendance.export', 'attendance.view', 'attendance.view_all',
+        'employee.view', 'employees.view',
+        'equipment.approve', 'equipment.create', 'equipment.manage', 'equipment.view',
+        'leave.apply', 'leave.approve', 'leave.credits.apply', 'leave.credits.approve',
+        'leave.credits.view', 'leave.manage_balance', 'leave.manage_types', 'leave.reject', 'leave.view',
+        'performance.conduct', 'performance.manage_goals', 'performance.view',
+        'publications.approve', 'publications.create', 'publications.manage',
+        'publications.request', 'publications.view',
+        'recruitment.applications', 'recruitment.manage', 'recruitment.postings', 'recruitment.view',
+        'reports.export', 'reports.view',
+        'role.manage',
+        'supplies.approve', 'supplies.create', 'supplies.manage', 'supplies.view',
+        'system.config', 'system.logs', 'system.security',
+        'travel.apply', 'travel.approve', 'travel.create', 'travel.manage', 'travel.view',
+        'user.create', 'user.delete', 'user.edit', 'user.view',
       ],
+      // ── Super Admin ──────────────────────────────────────────────────────
       'super admin': [
-        'user.view', 'user.create', 'user.edit', 'user.delete', 'role.manage',
-        'users.view', 'users.create', 'users.edit', 'users.delete',
-        'employees.view', 'employees.create', 'employees.edit', 'employees.delete',
-        'employee.view', 'employee.create', 'employee.edit', 'employee.delete',
-        'departments.view', 'departments.create', 'departments.edit', 'departments.delete',
-        'leave.view', 'leave.apply', 'leave.approve', 'leave.reject', 'leave.manage_types', 'leave.manage_balance',
-        'leave.credits.view', 'leave.credits.apply', 'leave.credits.approve',
-        'attendance.view', 'attendance.edit', 'attendance.view_all', 'attendance.export',
-        'travel.view', 'travel.apply', 'travel.approve', 'travel.manage',
-        'equipment.view', 'equipment.request', 'equipment.approve', 'assets.manage',
-        'supplies.view', 'supplies.request', 'supplies.approve', 'supplies.manage',
-        'publications.view', 'publications.request', 'publications.manage',
-        'performance.view', 'performance.conduct', 'performance.manage_goals',
-        'recruitment.view', 'recruitment.manage',
-        'reports.view', 'reports.export',
-        'system.config', 'system.logs', 'system.security', 'admin.manage',
-        'settings.view', 'settings.edit'
+        'admin.manage', 'assets.manage',
+        'attendance.edit', 'attendance.export', 'attendance.view', 'attendance.view_all',
+        'employee.create', 'employee.delete', 'employee.edit', 'employee.view', 'employees.view',
+        'equipment.approve', 'equipment.create', 'equipment.manage', 'equipment.view',
+        'leave.apply', 'leave.approve', 'leave.credits.apply', 'leave.credits.approve',
+        'leave.credits.view', 'leave.manage_balance', 'leave.manage_types', 'leave.reject', 'leave.view',
+        'performance.conduct', 'performance.manage_goals', 'performance.view',
+        'publications.approve', 'publications.create', 'publications.manage',
+        'publications.request', 'publications.view',
+        'recruitment.applications', 'recruitment.manage', 'recruitment.postings', 'recruitment.view',
+        'reports.export', 'reports.view',
+        'role.manage',
+        'supplies.approve', 'supplies.create', 'supplies.manage', 'supplies.view',
+        'system.config', 'system.logs', 'system.security',
+        'travel.apply', 'travel.approve', 'travel.create', 'travel.manage', 'travel.view',
+        'user.create', 'user.delete', 'user.edit', 'user.view',
       ],
+      // ── Admin ────────────────────────────────────────────────────────────
       'admin': [
-        'user.view', 'user.create', 'user.edit', 'user.delete', 'role.manage',
-        'users.view', 'users.create', 'users.edit', 'users.delete',
-        'employees.view', 'employees.create', 'employees.edit', 'employees.delete',
-        'employee.view', 'employee.create', 'employee.edit', 'employee.delete',
-        'departments.view', 'departments.create', 'departments.edit', 'departments.delete',
-        'leave.view', 'leave.apply', 'leave.approve', 'leave.reject', 'leave.manage_types', 'leave.manage_balance',
-        'leave.credits.view', 'leave.credits.approve',
-        'attendance.view', 'attendance.edit', 'attendance.view_all', 'attendance.export',
-        'travel.view', 'travel.apply', 'travel.approve', 'travel.manage',
-        'equipment.view', 'equipment.request', 'equipment.approve', 'assets.manage',
-        'supplies.view', 'supplies.request', 'supplies.approve', 'supplies.manage',
-        'publications.view', 'publications.request', 'publications.manage',
-        'performance.view', 'performance.conduct', 'performance.manage_goals',
-        'recruitment.view', 'recruitment.manage',
-        'reports.view', 'reports.export',
-        'system.config', 'system.logs', 'system.security', 'admin.manage',
-        'settings.view', 'settings.edit'
+        'admin.manage', 'assets.manage',
+        'attendance.edit', 'attendance.export', 'attendance.view', 'attendance.view_all',
+        'employee.create', 'employee.edit', 'employee.view', 'employees.view',
+        'equipment.approve', 'equipment.create', 'equipment.manage', 'equipment.view',
+        'leave.apply', 'leave.approve', 'leave.credits.approve', 'leave.credits.view',
+        'leave.manage_balance', 'leave.manage_types', 'leave.reject', 'leave.view',
+        'performance.conduct', 'performance.manage_goals', 'performance.view',
+        'publications.approve', 'publications.create', 'publications.manage',
+        'publications.request', 'publications.view',
+        'recruitment.applications', 'recruitment.manage', 'recruitment.postings', 'recruitment.view',
+        'reports.export', 'reports.view',
+        'role.manage',
+        'supplies.approve', 'supplies.create', 'supplies.manage', 'supplies.view',
+        'system.config', 'system.logs', 'system.security',
+        'travel.apply', 'travel.approve', 'travel.create', 'travel.manage', 'travel.view',
+        'user.create', 'user.delete', 'user.edit', 'user.view',
       ],
+      // ── HR Manager / hr ──────────────────────────────────────────────────
       'hr': [
-        'user.view', 'user.create', 'user.edit',
-        'users.view', 'users.create', 'users.edit',
-        'employees.view', 'employees.create', 'employees.edit',
-        'employee.view', 'employee.create', 'employee.edit',
-        'departments.view',
-        'leave.view', 'leave.apply', 'leave.approve', 'leave.manage_types', 'leave.manage_balance',
-        'leave.credits.view', 'leave.credits.approve',
-        'attendance.view', 'attendance.view_all', 'attendance.export',
-        'travel.view', 'travel.approve',
-        'equipment.view', 'equipment.approve',
-        'supplies.view', 'supplies.approve',
-        'publications.view', 'publications.manage',
-        'performance.view', 'performance.conduct', 'performance.manage_goals',
-        'recruitment.view', 'recruitment.manage',
-        'reports.view', 'reports.export',
-        'admin.manage'
+        'admin.manage',
+        'attendance.export', 'attendance.view', 'attendance.view_all',
+        'employee.create', 'employee.edit', 'employee.view', 'employees.view',
+        'equipment.approve', 'equipment.view',
+        'leave.apply', 'leave.approve', 'leave.credits.approve', 'leave.credits.view',
+        'leave.manage_balance', 'leave.manage_types', 'leave.reject', 'leave.view',
+        'performance.conduct', 'performance.manage_goals', 'performance.view',
+        'publications.manage', 'publications.view',
+        'recruitment.manage', 'recruitment.view',
+        'reports.export', 'reports.view',
+        'supplies.approve', 'supplies.view',
+        'travel.approve', 'travel.view',
+        'user.create', 'user.edit', 'user.view',
       ],
       'hr manager': [
-        'user.view', 'user.create', 'user.edit',
-        'users.view', 'users.create', 'users.edit',
-        'employees.view', 'employees.create', 'employees.edit',
-        'employee.view', 'employee.create', 'employee.edit',
-        'departments.view',
-        'leave.view', 'leave.apply', 'leave.approve', 'leave.manage_types', 'leave.manage_balance',
-        'leave.credits.view', 'leave.credits.approve',
-        'attendance.view', 'attendance.view_all', 'attendance.export',
-        'travel.view', 'travel.approve',
-        'equipment.view', 'equipment.approve',
-        'supplies.view', 'supplies.approve',
-        'publications.view', 'publications.manage',
-        'performance.view', 'performance.conduct', 'performance.manage_goals',
-        'recruitment.view', 'recruitment.manage',
-        'reports.view', 'reports.export',
-        'admin.manage'
+        'admin.manage',
+        'attendance.export', 'attendance.view', 'attendance.view_all',
+        'employee.create', 'employee.edit', 'employee.view', 'employees.view',
+        'equipment.approve', 'equipment.view',
+        'leave.apply', 'leave.approve', 'leave.credits.approve', 'leave.credits.view',
+        'leave.manage_balance', 'leave.manage_types', 'leave.reject', 'leave.view',
+        'performance.conduct', 'performance.manage_goals', 'performance.view',
+        'publications.manage', 'publications.view',
+        'recruitment.manage', 'recruitment.view',
+        'reports.export', 'reports.view',
+        'supplies.approve', 'supplies.view',
+        'travel.approve', 'travel.view',
+        'user.create', 'user.edit', 'user.view',
       ],
+      // ── Manager ──────────────────────────────────────────────────────────
       'manager': [
-        'employees.view', 'employees.edit',
-        'employee.view', 'employee.edit',
-        'leave.view', 'leave.apply', 'leave.approve', 'leave.reject',
-        'leave.credits.view', 'leave.credits.apply',
         'attendance.view', 'attendance.view_all',
-        'travel.view', 'travel.apply', 'travel.approve',
-        'equipment.view', 'equipment.request',
-        'supplies.view', 'supplies.request',
-        'publications.view', 'publications.request',
-        'performance.view', 'performance.conduct', 'performance.manage_goals',
-        'reports.view'
+        'employee.view', 'employees.view',
+        'equipment.view',
+        'leave.apply', 'leave.approve', 'leave.credits.apply', 'leave.credits.view',
+        'leave.reject', 'leave.view',
+        'performance.conduct', 'performance.manage_goals', 'performance.view',
+        'publications.request', 'publications.view',
+        'reports.view',
+        'supplies.view',
+        'travel.apply', 'travel.approve', 'travel.view',
       ],
+      // ── Employee ─────────────────────────────────────────────────────────
       'employee': [
-        'employees.view',
-        'employee.view',
-        'leave.view', 'leave.apply', 'leave.create',
-        'leave.credits.view', 'leave.credits.apply',
         'attendance.view',
-        'travel.view', 'travel.apply',
-        'equipment.view', 'equipment.request',
-        'supplies.view', 'supplies.request',
-        'publications.view', 'publications.request'
-      ]
+        'employee.view', 'employees.view',
+        'equipment.view',
+        'leave.apply', 'leave.credits.apply', 'leave.credits.view', 'leave.view',
+        'publications.request', 'publications.view',
+        'supplies.view',
+        'travel.apply', 'travel.view',
+      ],
+      // ── Board Member ─────────────────────────────────────────────────────
+      'board member': [
+        'employees.view',
+        'leave.view',
+        'performance.view',
+        'reports.view',
+      ],
+      'board_member': [
+        'employees.view',
+        'leave.view',
+        'performance.view',
+        'reports.view',
+      ],
     }
-    
-    return rolePermissions[role.toLowerCase()] || rolePermissions['employee']
+
+    return rolePermissions[role.toLowerCase()] ?? rolePermissions['employee']
   },
 
   /**
@@ -201,10 +210,11 @@ export const permissionService = {
         'executive director': 'Executive Director',
         'super admin': 'Super Admin',
         'board_member': 'Board Member',
+        'board member': 'Board Member',
       }
       const roleName = roleDisplayNames[userRole.role.toLowerCase()] ?? userRole.role
 
-      // Role-name → roles.name mapping (for fallback join by name)
+      // user_roles.role string → roles.name in the roles table
       const roleNameMap: Record<string, string> = {
         'admin': 'Admin',
         'hr': 'HR Manager',
@@ -215,8 +225,11 @@ export const permissionService = {
         'executive director': 'Executive Director',
         'super admin': 'Super Admin',
         'board_member': 'Board Member',
+        'board member': 'Board Member',
       }
-      const rolesTableName = roleNameMap[userRole.role.toLowerCase()] ?? userRole.role
+      // For unknown/future roles, capitalise each word so "new role" → "New Role"
+      const rolesTableName = roleNameMap[userRole.role.toLowerCase()]
+        ?? userRole.role.replace(/\b\w/g, (c: string) => c.toUpperCase())
 
       // ── Step 2: query permissions by role name string from the roles table ─
       let permissionCodes: string[] = []
@@ -310,6 +323,6 @@ export const permissionService = {
     
     if (!roleInfo) return false
     
-    return roleInfo.role_name === 'Admin'
+    return roleInfo.permissions.includes('admin.manage')
   }
 }

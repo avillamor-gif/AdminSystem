@@ -60,7 +60,7 @@ export function useIsAdmin() {
   
   if (!roleInfo) return false
   
-  return roleInfo.role_name === 'Admin'
+  return roleInfo.permissions.includes('admin.manage')
 }
 
 /**

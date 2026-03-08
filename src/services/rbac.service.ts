@@ -78,13 +78,15 @@ export const rbacService = {
         roleCounts[key] = (roleCounts[key] || 0) + 1
       })
 
-      // Map role table names to the stored role string values
+      // Map roles.name → user_roles.role stored string values
       const roleNameToKey: Record<string, string> = {
-        'super admin': 'super_admin',
+        'super admin': 'super admin',
         'admin': 'admin',
         'hr manager': 'hr',
         'manager': 'manager',
         'employee': 'employee',
+        'executive director': 'ed',
+        'board member': 'board_member',
       }
 
       // Transform data
