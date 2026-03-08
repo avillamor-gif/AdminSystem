@@ -68,23 +68,7 @@ INSERT INTO roles (name, description, is_system_role, status) VALUES
 ('Board Member',       'Board member read-only access',               false, 'active')
 ON CONFLICT (name) DO NOTHING;
 
--- ── 3. Ensure user_roles.role_id is linked for all known role strings ─────
-UPDATE user_roles ur SET role_id = r.id FROM roles r
-WHERE ur.role_id IS NULL AND ur.role = 'admin'        AND r.name = 'Admin';
-UPDATE user_roles ur SET role_id = r.id FROM roles r
-WHERE ur.role_id IS NULL AND ur.role = 'hr'           AND r.name = 'HR Manager';
-UPDATE user_roles ur SET role_id = r.id FROM roles r
-WHERE ur.role_id IS NULL AND ur.role = 'manager'      AND r.name = 'Manager';
-UPDATE user_roles ur SET role_id = r.id FROM roles r
-WHERE ur.role_id IS NULL AND ur.role = 'employee'     AND r.name = 'Employee';
-UPDATE user_roles ur SET role_id = r.id FROM roles r
-WHERE ur.role_id IS NULL AND ur.role = 'ed'           AND r.name = 'Executive Director';
-UPDATE user_roles ur SET role_id = r.id FROM roles r
-WHERE ur.role_id IS NULL AND ur.role IN ('super admin','super_admin') AND r.name = 'Super Admin';
-UPDATE user_roles ur SET role_id = r.id FROM roles r
-WHERE ur.role_id IS NULL AND ur.role = 'board_member' AND r.name = 'Board Member';
-
--- ── 4. Seed default role_permissions (skips any already set) ──────────────
+-- ── 3. Seed default role_permissions (skips any already set) ──────────────
 
 -- Super Admin — everything
 INSERT INTO role_permissions (role_id, permission_id)

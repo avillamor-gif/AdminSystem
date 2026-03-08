@@ -185,7 +185,7 @@ export const permissionService = {
       // ── Step 1: get the user's role row ──────────────────────────────────
       const { data: userRole, error: roleError } = await supabase
         .from('user_roles')
-        .select('role, role_id')
+        .select('role')
         .eq('user_id', user.id)
         .single()
 
@@ -218,54 +218,36 @@ export const permissionService = {
       }
       const rolesTableName = roleNameMap[userRole.role.toLowerCase()] ?? userRole.role
 
-      // ── Step 2: query permissions via role_id (preferred) ────────────────
+      // ── Step 2: query permissions by role name string from the roles table ─
       let permissionCodes: string[] = []
       let dbRoleId: string | null = null
       let dbRoleName: string | null = null
       let dbRoleDescription: string | null = null
 
-      if (userRole.role_id) {
-        const { data: rpRows } = await supabase
-          .from('role_permissions' as any)
-          .select('permission:permissions(id, code), role:roles!role_permissions_role_id_fkey(id, name, description)')
-          .eq('role_id', userRole.role_id)
+      const { data: roleRows } = await supabase
+        .from('roles' as any)
+        .select('id, name, description, role_permissions(permission:permissions(code))')
+        .eq('name', rolesTableName)
+        .eq('status', 'active')
+        .single()
 
-        if (rpRows && rpRows.length > 0) {
-          const firstRow = rpRows[0] as any
-          dbRoleId = firstRow.role?.id ?? userRole.role_id
-          dbRoleName = firstRow.role?.name ?? roleName
-          dbRoleDescription = firstRow.role?.description ?? null
-          permissionCodes = rpRows.map((r: any) => r.permission?.code).filter(Boolean)
-        }
+      if (roleRows) {
+        const r = roleRows as any
+        dbRoleId = r.id
+        dbRoleName = r.name
+        dbRoleDescription = r.description
+        permissionCodes = (r.role_permissions ?? [])
+          .map((rp: any) => rp.permission?.code)
+          .filter(Boolean)
       }
 
-      // ── Step 3: fallback join by role name string ────────────────────────
-      if (permissionCodes.length === 0) {
-        const { data: roleRows } = await supabase
-          .from('roles' as any)
-          .select('id, name, description, role_permissions(permission:permissions(code))')
-          .eq('name', rolesTableName)
-          .eq('status', 'active')
-          .single()
-
-        if (roleRows) {
-          const r = roleRows as any
-          dbRoleId = r.id
-          dbRoleName = r.name
-          dbRoleDescription = r.description
-          permissionCodes = (r.role_permissions ?? [])
-            .map((rp: any) => rp.permission?.code)
-            .filter(Boolean)
-        }
-      }
-
-      // ── Step 4: last-resort hardcoded defaults (should rarely be hit) ────
+      // ── Step 3: last-resort hardcoded defaults (should rarely be hit) ────
       if (permissionCodes.length === 0) {
         permissionCodes = this.getDefaultPermissionsByRole(userRole.role)
       }
 
       return {
-        role_id: dbRoleId ?? userRole.role_id ?? userRole.role,
+        role_id: dbRoleId ?? userRole.role,
         role_name: dbRoleName ?? roleName,
         role_description: dbRoleDescription ?? `${roleName} role`,
         permissions: permissionCodes,
