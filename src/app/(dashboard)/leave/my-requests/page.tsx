@@ -310,7 +310,7 @@ export default function MyLeavePage() {
 
       {/* Create Leave Request Modal */}
       <Modal open={showModal} onClose={handleCloseModal}>
-        <form onSubmit={handleSubmit(onSubmit)}>
+        <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col flex-1 min-h-0">
           <ModalHeader onClose={handleCloseModal}>Request Leave</ModalHeader>
           <ModalBody>
             <div className="space-y-4">
