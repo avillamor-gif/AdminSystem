@@ -60,7 +60,14 @@ function LoginContent() {
       
       // Small delay to ensure session is set
       await new Promise(resolve => setTimeout(resolve, 100))
-      
+
+      // Record the session in active_sessions table (best-effort, don't block login)
+      try {
+        await fetch('/api/sessions/create', { method: 'POST' })
+      } catch (e) {
+        console.warn('Could not record session:', e)
+      }
+
       router.push('/')
       router.refresh()
     } catch (error) {
