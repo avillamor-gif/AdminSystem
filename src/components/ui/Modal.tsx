@@ -60,7 +60,7 @@ export function ModalHeader({ children, onClose }: { children: React.ReactNode; 
 }
 
 export function ModalBody({ children, className }: { children: React.ReactNode; className?: string }) {
-  return <div className={cn('flex-1 overflow-y-auto px-6 py-5', className)}>{children}</div>
+  return <div className={cn('flex-1 min-h-0 overflow-y-auto px-6 py-5', className)}>{children}</div>
 }
 
 export function ModalFooter({ children, className }: { children: React.ReactNode; className?: string }) {
