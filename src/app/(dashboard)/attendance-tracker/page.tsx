@@ -1078,30 +1078,6 @@ export default function TimePage() {
             </button>
 
             <button
-              onClick={() => setSelectedAttendanceType('vacation')}
-              className={`flex items-center gap-3 p-4 rounded-lg border-2 transition-all ${
-                selectedAttendanceType === 'vacation'
-                  ? 'border-amber-500 bg-amber-50'
-                  : 'border-gray-200 hover:border-gray-300'
-              }`}
-            >
-              <div className="w-6 h-6 bg-amber-500 rounded"></div>
-              <span className="text-sm font-medium text-gray-700">Vacation leave</span>
-            </button>
-
-            <button
-              onClick={() => setSelectedAttendanceType('sick')}
-              className={`flex items-center gap-3 p-4 rounded-lg border-2 transition-all ${
-                selectedAttendanceType === 'sick'
-                  ? 'border-red-500 bg-red-50'
-                  : 'border-gray-200 hover:border-gray-300'
-              }`}
-            >
-              <div className="w-6 h-6 bg-red-500 rounded"></div>
-              <span className="text-sm font-medium text-gray-700">Sick leave</span>
-            </button>
-
-            <button
               onClick={() => setSelectedAttendanceType('days-off')}
               className={`flex items-center gap-3 p-4 rounded-lg border-2 transition-all ${
                 selectedAttendanceType === 'days-off'
