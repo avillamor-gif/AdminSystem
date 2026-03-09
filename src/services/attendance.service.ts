@@ -1,4 +1,5 @@
 import { createClient } from '../lib/supabase/client'
+import { localDateStr } from '../lib/utils'
 import type { Tables } from '../lib/supabase'
 
 export type AttendanceRecord = Tables<'attendance_records'>
@@ -39,7 +40,7 @@ export const attendanceService = {
 
   async clockIn(employeeId: string): Promise<AttendanceRecord> {
     const supabase = createClient()
-    const today = new Date().toISOString().split('T')[0]
+    const today = localDateStr()
     const now = new Date().toISOString()
 
     // Check if already clocked in today

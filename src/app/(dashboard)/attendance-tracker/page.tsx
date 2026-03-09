@@ -11,6 +11,7 @@ import { createClient } from '../../../lib/supabase/client'
 import { useAttendanceRecords, useCurrentEmployee, useLeaveRequests } from '@/hooks'
 import { useCurrentUserPermissions } from '@/hooks/usePermissions'
 import { useHolidays } from '@/hooks/useLeaveAbsence'
+import { localDateStr } from '@/lib/utils'
 
 // Format a timestamp to "09:34 AM"
 function fmtTime(iso: string | null | undefined): string {
@@ -501,7 +502,7 @@ export default function TimePage() {
             <h3 className="font-semibold text-gray-900 mb-4">This Week's Hours</h3>
             <div className="space-y-3">
               {weeklyData.map((day) => {
-                const today = new Date().toISOString().split('T')[0]
+                const today = localDateStr()
                 const isToday = day.date === today
                 const barPct = Math.min((day.hours / maxDayHours) * 100, 100)
                 return (

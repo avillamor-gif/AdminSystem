@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase/client'
 import { useAttendanceRecords } from './useAttendance'
 import { attendanceKeys } from './useAttendance'
 import { useCurrentEmployee } from './useEmployees'
+import { localDateStr } from '@/lib/utils'
 import type { AttendanceType } from '@/components/attendance/AttendanceTypeModal'
 
 // ── Session helpers ──────────────────────────────────────────────────────────
@@ -84,7 +85,7 @@ interface UsePunchInOutOptions {
 }
 
 export function usePunchInOut({ onPunchedIn, onPunchedOut }: UsePunchInOutOptions = {}) {
-  const today = new Date().toISOString().split('T')[0]
+  const today = localDateStr()
   const queryClient = useQueryClient()
   const { data: currentEmployee, isLoading: isLoadingEmployee } = useCurrentEmployee()
   const { data: attendanceRecords, refetch, isLoading: isLoadingRecords } = useAttendanceRecords({

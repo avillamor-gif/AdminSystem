@@ -5,6 +5,7 @@ import { Card, Avatar } from '@/components/ui'
 import { useEmployeesOnLeaveToday } from '@/hooks/useLeave'
 import { useHolidays } from '@/hooks/useLeaveAbsence'
 import { useRouter } from 'next/navigation'
+import { localDateStr } from '@/lib/utils'
 import { MyScheduleCard } from '@/components/dashboard/MyScheduleCard'
 import { PunchInOutCard } from '@/components/dashboard/PunchInOutCard'
 
@@ -12,7 +13,7 @@ export default function DashboardPage() {
   const router = useRouter()
   const { data: employeesOnLeave = [], isLoading: leaveLoading } = useEmployeesOnLeaveToday()
 
-  const today = new Date().toISOString().split('T')[0]
+  const today = localDateStr()
   const { data: allHolidays = [], isLoading: holidaysLoading } = useHolidays({ is_active: true })
   const upcomingHolidays = allHolidays
     .filter(h => h.holiday_date >= today)
