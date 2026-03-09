@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { 
   Users, Building2, Briefcase, Settings, Globe, Shield, 
@@ -17,6 +18,7 @@ import { useCurrentUserPermissions } from '@/hooks/usePermissions'
 import { formatDistanceToNow } from 'date-fns'
 
 export default function AdminPage() {
+  const [activeSection, setActiveSection] = useState<string | null>(null)
   const router = useRouter()
   const { data: auditLogs = [], isLoading: logsLoading } = useRecentAuditLogs(6)
   const { data: users = [] } = useUsers()
@@ -312,8 +314,10 @@ export default function AdminPage() {
           {adminModules.map((module) => (
             <Card 
               key={module.id} 
-              className="p-6 cursor-pointer transition-all hover:shadow-lg hover:ring-2 hover:ring-orange"
-              onClick={() => module.href && router.push(module.href)}
+              className={`p-6 cursor-pointer transition-all hover:shadow-lg ${
+                activeSection === module.id ? 'ring-2 ring-orange' : ''
+              }`}
+              onClick={() => setActiveSection(activeSection === module.id ? null : module.id)}
             >
               <div className="flex items-start gap-4">
                 <div className={`p-3 rounded-lg ${module.color}`}>
@@ -323,24 +327,17 @@ export default function AdminPage() {
                   <h3 className="font-semibold text-gray-900">{module.title}</h3>
                   <p className="text-sm text-gray-500 mt-1">{module.description}</p>
                 </div>
-                <ChevronRight className="w-5 h-5 text-gray-400" />
+                <ChevronRight className={`w-5 h-5 text-gray-400 transition-transform ${
+                  activeSection === module.id ? 'rotate-90' : ''
+                }`} />
               </div>
 
-              <div className="mt-3 pt-3 border-t border-gray-100">
-                <div className="flex flex-wrap gap-1">
-                  {module.items.slice(0, 4).map((item) => (
-                    <span key={item} className="text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full">{item}</span>
-                  ))}
-                  {module.items.length > 4 && (
-                    <span className="text-xs bg-gray-100 text-gray-400 px-2 py-0.5 rounded-full">+{module.items.length - 4} more</span>
-                  )}
-                </div>
-              </div>
-              {false && (
-                <div className="hidden">
+              {activeSection === module.id && (
+                <div className="mt-4 pt-4 border-t border-gray-100 space-y-2">
                   {module.items.map((item) => (
                     <button
                       key={item}
+                      className="w-full text-left px-3 py-2 text-sm text-gray-600 hover:bg-gray-50 hover:text-orange rounded-lg transition-colors"
                       onClick={(e) => {
                         e.stopPropagation()
                         const routeMap: Record<string, string> = {
