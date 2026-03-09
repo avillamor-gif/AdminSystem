@@ -92,6 +92,7 @@ export function UserFormModal({ open, onClose, user }: UserFormModalProps) {
       'manager': 'Manager',
       'employee': 'Employee',
       'ed': 'Executive Director',
+      'super admin': 'Super Admin',
       'board_member': 'Board Member',
     }
     return enumMap[enumValue] || enumValue
@@ -109,6 +110,7 @@ export function UserFormModal({ open, onClose, user }: UserFormModalProps) {
       'employee': 'employee',
       'ed': 'ed',
       'executivedirector': 'ed',
+      'superadmin': 'super admin',
       'boardmember': 'board_member',
     }
     return staticMap[slug] || slug
