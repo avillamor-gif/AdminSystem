@@ -258,18 +258,34 @@ export const leaveRequestService = {
 
   async cancel(id: string, cancelled_by: string) {
     const supabase = createClient()
+
+    // First attempt with cancellation audit columns (requires migration)
     const { data, error } = await supabase
       .from('leave_requests')
-      .update({ 
-        status: 'cancelled', 
+      .update({
+        status: 'cancelled',
         cancelled_at: new Date().toISOString(),
-        cancelled_by 
-      })
+        cancelled_by,
+      } as any)
       .eq('id', id)
       .select()
       .single()
 
-    if (error) throw error
+    if (error) {
+      // If the columns don't exist yet, fall back to updating status only
+      if (error.code === 'PGRST204' || error.message?.includes('cancelled_at') || error.message?.includes('cancelled_by')) {
+        const { data: fallback, error: fallbackError } = await supabase
+          .from('leave_requests')
+          .update({ status: 'cancelled' })
+          .eq('id', id)
+          .select()
+          .single()
+        if (fallbackError) throw fallbackError
+        return fallback as unknown as LeaveRequest
+      }
+      throw error
+    }
+
     return data as unknown as LeaveRequest
   },
 
