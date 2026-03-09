@@ -14,6 +14,7 @@ import { useUsers } from '@/hooks/useUsers'
 import { useEmployees } from '@/hooks/useEmployees'
 import { useLeaveRequests } from '@/hooks/useLeaveRequests'
 import { useSecurityPolicies } from '@/hooks/useSecurityPolicies'
+import { useCurrentUserPermissions } from '@/hooks/usePermissions'
 import { formatDistanceToNow } from 'date-fns'
 
 export default function AdminPage() {
@@ -24,8 +25,11 @@ export default function AdminPage() {
   const { data: employees = [] } = useEmployees()
   const { data: leaveRequests = [] } = useLeaveRequests()
   const { data: securityPolicies = [] } = useSecurityPolicies()
+  const { data: roleInfo } = useCurrentUserPermissions()
+  const userPermissions = roleInfo?.permissions ?? []
+  const can = (p: string) => userPermissions.includes(p)
 
-  const adminModules = [
+  const allAdminModules = [
     {
       id: 'user-access',
       title: 'User Access & Security',
@@ -34,6 +38,7 @@ export default function AdminPage() {
       color: 'bg-red-500',
       items: ['User Management', 'Role-Based Access Control', 'Security Policies', 'Session Management', 'Two-Factor Authentication', 'Password Policies'],
       href: '/admin/user-access-security',
+      requiresPermission: 'user.view',
     },
     {
       id: 'organization',
@@ -42,6 +47,7 @@ export default function AdminPage() {
       icon: Building2,
       color: 'bg-blue-500',
       items: ['Company Structure', 'Locations Management', 'Location Types', 'Department Hierarchy', 'International Operations', 'Organizational Chart'],
+      requiresPermission: 'org.view',
     },
     {
       id: 'job-management',
@@ -50,6 +56,7 @@ export default function AdminPage() {
       icon: Briefcase,
       color: 'bg-green-500',
       items: ['Job Titles', 'Job Descriptions', 'Pay Grades', 'Salary Structures', 'Employment Types', 'Job Categories', 'Career Paths'],
+      requiresPermission: 'jobs.view',
     },
     {
       id: 'employee-data',
@@ -58,15 +65,16 @@ export default function AdminPage() {
       icon: Users,
       color: 'bg-purple-500',
       items: [
-        'Employee Profiles', 
-        'Data Management', 
-        'PIM Configuration', 
-        'Reporting Fields', 
-        'Data Import/Export', 
+        'Employee Profiles',
+        'Data Management',
+        'PIM Configuration',
+        'Reporting Fields',
+        'Data Import/Export',
         'Employee Records',
         'Generate ID',
         'Termination & Activation'
       ],
+      requiresPermission: 'employees.view',
     },
     {
       id: 'time-attendance',
@@ -75,6 +83,7 @@ export default function AdminPage() {
       icon: Clock,
       color: 'bg-orange',
       items: ['Work Schedules', 'Shift Patterns', 'Overtime Rules', 'Break Policies', 'Time Tracking Methods', 'Attendance Policies', 'Attendance Reports'],
+      requiresPermission: 'time_attendance.manage',
     },
     {
       id: 'leave-policies',
@@ -83,6 +92,7 @@ export default function AdminPage() {
       icon: Calendar,
       color: 'bg-indigo-500',
       items: ['Leave Types', 'Accrual Rules', 'Leave Policies', 'Leave Balances', 'Holiday Calendar', 'Absence Categories', 'Approval Workflows', 'Leave Credit Approvals'],
+      requiresPermission: 'leave.manage_types',
     },
     {
       id: 'payroll-benefits',
@@ -91,6 +101,7 @@ export default function AdminPage() {
       icon: DollarSign,
       color: 'bg-emerald-500',
       items: ['Pay Components', 'Tax Configuration', 'Benefits Plans', 'Deductions', 'Bonus Structures', 'Reimbursements'],
+      requiresPermission: 'system.config',
     },
     {
       id: 'performance',
@@ -99,6 +110,7 @@ export default function AdminPage() {
       icon: TrendingUp,
       color: 'bg-cyan-500',
       items: ['Review Cycles', 'Rating Scales', 'Goal Templates', 'Competency Models', 'KPI Frameworks', '360 Feedback'],
+      requiresPermission: 'performance.manage_goals',
     },
     {
       id: 'learning-development',
@@ -107,6 +119,7 @@ export default function AdminPage() {
       icon: BookOpen,
       color: 'bg-pink-500',
       items: ['Training Programs', 'Certifications', 'Skills Matrix', 'Learning Paths', 'External Training', 'Compliance Training'],
+      requiresPermission: 'learning.manage',
     },
     {
       id: 'recruitment',
@@ -128,6 +141,7 @@ export default function AdminPage() {
         'Talent Pool',
         'Screening Questions'
       ],
+      requiresPermission: 'recruitment.manage',
     },
     {
       id: 'compliance-audit',
@@ -136,6 +150,7 @@ export default function AdminPage() {
       icon: Gavel,
       color: 'bg-amber-500',
       items: ['Regulatory Compliance', 'Audit Trails', 'Data Retention Policies', 'Privacy Settings', 'GDPR Compliance', 'Labor Law Compliance'],
+      requiresPermission: 'compliance.view',
     },
     {
       id: 'analytics-reports',
@@ -144,6 +159,7 @@ export default function AdminPage() {
       icon: BarChart3,
       color: 'bg-teal-500',
       items: ['Standard Reports', 'Custom Reports', 'Dashboard Configuration', 'Data Analytics', 'KPI Metrics', 'Export Settings'],
+      requiresPermission: 'analytics.view',
     },
     {
       id: 'system-config',
@@ -152,6 +168,7 @@ export default function AdminPage() {
       icon: Settings,
       color: 'bg-gray-600',
       items: ['General Settings', 'Email Configuration', 'API Settings', 'Integration Management', 'Backup & Recovery', 'System Maintenance'],
+      requiresPermission: 'system.config',
     },
     {
       id: 'travel',
@@ -160,6 +177,7 @@ export default function AdminPage() {
       icon: Globe,
       color: 'bg-blue-600',
       items: ['Travel Requests', 'Travel Booking', 'Expense Management', 'Travel Policies', 'Travel Vendor Management', 'Travel Analytics'],
+      requiresPermission: 'travel.manage',
     },
     {
       id: 'asset-management',
@@ -168,6 +186,7 @@ export default function AdminPage() {
       icon: Package,
       color: 'bg-slate-600',
       items: ['Assets', 'Assignments', 'Maintenance', 'Requests', 'Setup', 'Reports'],
+      requiresPermission: 'assets.manage',
     },
     {
       id: 'office-supplies',
@@ -176,6 +195,7 @@ export default function AdminPage() {
       icon: Package,
       color: 'bg-green-600',
       items: ['Supply Inventory', 'Supply Requests', 'Vendor Management', 'Purchase Orders', 'Stock Levels', 'Supply Categories'],
+      requiresPermission: 'supplies.manage',
     },
     {
       id: 'publications',
@@ -184,8 +204,13 @@ export default function AdminPage() {
       icon: FileText,
       color: 'bg-purple-600',
       items: ['Publication Management', 'Add Publication', 'Printing Presses', 'Distribution Lists'],
+      requiresPermission: 'publications.manage',
     },
   ]
+
+  const adminModules = allAdminModules.filter(m =>
+    !m.requiresPermission || can(m.requiresPermission)
+  )
 
   const pendingLeaveCount = leaveRequests.filter(r => r.status === 'pending').length
 
