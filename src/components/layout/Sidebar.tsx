@@ -45,7 +45,7 @@ const navigationItems: NavigationItem[] = [
   { name: 'Publications', href: '/publications/library', icon: BookOpen, activeBase: '/publications' },
   { name: 'Office Equipment', href: '/equipment/browse', icon: Monitor, activeBase: '/equipment' },
   { name: 'Office Supplies', href: '/office-supplies', icon: Package },
-  { name: 'Recruitment', href: '/admin/recruitment', icon: Briefcase, requiresPermission: 'recruitment.view' },
+
   { name: 'My Info', href: '/my-info', icon: UserCircle, badge: 'Personal Info' },
   { name: 'Performance', href: '/performance', icon: FileText, requiresPermission: 'performance.view' },
   { name: 'Directory', href: '/directory', icon: Building2 },
