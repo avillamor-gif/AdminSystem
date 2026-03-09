@@ -71,16 +71,6 @@ export default function MyLeavePage() {
     return balances.find(b => b.leave_type_id === selectedLeaveType)
   }, [balances, selectedLeaveType])
 
-  // Only allow leave types that have an active allocation for this employee
-  const allocatedLeaveTypes = useMemo(() => {
-    const allocatedTypeIds = new Set(
-      balances
-        .filter(b => (b.total_allocated ?? 0) > 0)
-        .map(b => b.leave_type_id)
-    )
-    return leaveTypes.filter(lt => allocatedTypeIds.has(lt.id))
-  }, [leaveTypes, balances])
-
   const filteredRequests = useMemo(() => {
     if (!statusFilter) return leaveRequests
     return leaveRequests.filter(req => req.status === statusFilter)
@@ -323,11 +313,11 @@ export default function MyLeavePage() {
                   className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-lg bg-gray-100 text-gray-500 cursor-not-allowed"
                 />
               </div>
-              {allocatedLeaveTypes.length === 0 ? (
+              {leaveTypes.filter(lt => lt.is_active).length === 0 ? (
                 <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 text-sm">
-                  <p className="font-semibold text-amber-800 mb-1">No Leave Balance Allocated</p>
+                  <p className="font-semibold text-amber-800 mb-1">No Leave Types Available</p>
                   <p className="text-amber-700">
-                    You don't have any leave days allocated for {currentYear}. Please contact HR to set up your leave balance before submitting a request.
+                    No active leave types are configured. Please contact HR.
                   </p>
                 </div>
               ) : (
@@ -338,11 +328,11 @@ export default function MyLeavePage() {
                   required
                 >
                   <option value="">Select leave type</option>
-                  {allocatedLeaveTypes.map(type => {
+                  {leaveTypes.filter(lt => lt.is_active).map(type => {
                     const bal = balances.find(b => b.leave_type_id === type.id)
                     return (
                       <option key={type.id} value={type.id}>
-                        {type.leave_type_name} ({bal?.available_days ?? 0} days available)
+                        {type.leave_type_name}{bal ? ` (${bal.available_days} days available)` : ''}
                       </option>
                     )
                   })}
