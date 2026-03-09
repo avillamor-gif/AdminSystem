@@ -23,6 +23,11 @@ import { Plus, Calendar, Clock, XCircle } from 'lucide-react'
 import { format } from 'date-fns'
 import { countWorkingDays } from '@/lib/dateUtils'
 
+function isoToday() {
+  const d = new Date()
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+}
+
 const leaveRequestSchema = z.object({
   leave_type_id: z.string().min(1, 'Leave type is required'),
   start_date: z.string().min(1, 'Start date is required'),
@@ -366,7 +371,7 @@ export default function MyLeavePage() {
                   if (endDate && endDate < date) setValue('end_date', '', { shouldValidate: true })
                 }}
                 holidayDates={holidayDates}
-                minDate={new Date().toISOString().slice(0, 10)}
+                minDate={isoToday()}
                 required
                 error={errors.start_date?.message}
               />

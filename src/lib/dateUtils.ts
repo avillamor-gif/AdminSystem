@@ -9,23 +9,34 @@ export function countWorkingDays(
   endDate: string | Date,
   holidayDates: Set<string> = new Set()
 ): number {
-  const start = new Date(startDate)
-  const end = new Date(endDate)
+  // Parse YYYY-MM-DD strings as LOCAL midnight to avoid UTC offset shifting
+  const parseLocal = (d: string | Date): Date => {
+    if (d instanceof Date) return d
+    const [y, m, day] = d.split('-').map(Number)
+    return new Date(y, m - 1, day)
+  }
 
-  // Normalise to midnight local time so date comparisons are reliable
-  start.setHours(0, 0, 0, 0)
-  end.setHours(0, 0, 0, 0)
+  const start = parseLocal(startDate)
+  const end = parseLocal(endDate)
 
   if (end < start) return 0
+
+  // Format a Date as YYYY-MM-DD in LOCAL time (no UTC shift)
+  const localIso = (d: Date): string => {
+    const y = d.getFullYear()
+    const m = String(d.getMonth() + 1).padStart(2, '0')
+    const day = String(d.getDate()).padStart(2, '0')
+    return `${y}-${m}-${day}`
+  }
 
   let count = 0
   const cursor = new Date(start)
 
   while (cursor <= end) {
-    const day = cursor.getDay() // 0 = Sun, 6 = Sat
-    const iso = cursor.toISOString().slice(0, 10) // YYYY-MM-DD
+    const dow = cursor.getDay() // 0 = Sun, 6 = Sat
+    const iso = localIso(cursor)
 
-    if (day !== 0 && day !== 6 && !holidayDates.has(iso)) {
+    if (dow !== 0 && dow !== 6 && !holidayDates.has(iso)) {
       count++
     }
 
