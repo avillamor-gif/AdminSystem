@@ -33,7 +33,7 @@ export default function MyInfoPage() {
       <EmployeeDetailContent
         overrideEmployeeId={currentEmployee.employee_id}
         hideBackButton
-        readOnly
+        selfService
       />
     </div>
   )

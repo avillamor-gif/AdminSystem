@@ -28,11 +28,13 @@ export function EmployeeDetailContent({
   overrideEmployeeId,
   hideBackButton = false,
   readOnly = false,
+  selfService = false,
 }: {
   backHref?: string
   overrideEmployeeId?: string
   hideBackButton?: boolean
   readOnly?: boolean
+  selfService?: boolean
 }) {
   const params = useParams()
   const router = useRouter()
@@ -123,6 +125,8 @@ export function EmployeeDetailContent({
   const deleteEmployeeAttachment = useDeleteEmployeeAttachment()
   const downloadEmployeeAttachment = useDownloadEmployeeAttachment()
   const isAdmin = roleInfo?.permissions?.includes('employee.edit') ?? false
+  // In self-service mode (My Info), employees can edit their own personal/contact/emergency data
+  const canSelfEdit = isAdmin || selfService
 
   // Debug logging
   useEffect(() => {
@@ -1616,8 +1620,8 @@ export function EmployeeDetailContent({
                       const input = document.getElementById('emergency-contact-file-upload') as HTMLInputElement
                       if (input) input.click()
                     }}
-                    disabled={uploadEmployeeAttachment.isPending || !isAdmin}
-                    className={`cursor-pointer flex flex-col items-center w-full ${(uploadEmployeeAttachment.isPending || !isAdmin) ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    disabled={uploadEmployeeAttachment.isPending || !canSelfEdit}
+                    className={`cursor-pointer flex flex-col items-center w-full ${(uploadEmployeeAttachment.isPending || !canSelfEdit) ? 'opacity-50 cursor-not-allowed' : ''}`}
                   >
                     {uploadEmployeeAttachment.isPending ? (
                       <div className="w-8 h-8 border-2 border-orange border-t-transparent rounded-full animate-spin mb-2" />
