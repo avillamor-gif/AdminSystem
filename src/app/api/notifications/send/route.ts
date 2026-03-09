@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
+import { resend, FROM_ADDRESS } from '@/lib/resend'
+import { newLeaveRequestEmail, newGenericRequestEmail } from '@/lib/emailTemplates'
 
 const ADMIN_ROLES = [
   'admin', 'hr', 'manager',
@@ -169,6 +171,80 @@ export async function POST(req: NextRequest) {
     if (insertErr) {
       console.error('[notifications/send] Insert error:', insertErr)
       return NextResponse.json({ error: insertErr.message }, { status: 500 })
+    }
+
+    // ── Fire-and-forget emails to recipients who have an email address ──────
+    if (process.env.RESEND_API_KEY) {
+      try {
+        // Collect email addresses for all recipient user IDs
+        const recipientList = [...recipientUserIds]
+        const { data: authUsers } = await admin.auth.admin.listUsers()
+        const userEmailMap: Record<string, string> = {}
+        for (const u of authUsers?.users ?? []) {
+          if (u.email) userEmailMap[u.id] = u.email
+        }
+        const toAddresses = recipientList
+          .map((id) => userEmailMap[id])
+          .filter(Boolean) as string[]
+
+        if (toAddresses.length > 0) {
+          let emailPayload: { subject: string; html: string } | null = null
+
+          if (table === 'leave_request_notifications') {
+            // Fetch leave request details for a richer email
+            const { data: lr } = await admin
+              .from('leave_requests')
+              .select('start_date, end_date, total_days, reason, leave_type:leave_types(name)')
+              .eq('id', requestId)
+              .maybeSingle() as { data: any }
+
+            const leaveTypeName = lr?.leave_type?.name ?? 'Leave'
+            emailPayload = newLeaveRequestEmail({
+              requesterName: name,
+              leaveType: leaveTypeName,
+              startDate: lr?.start_date ?? '',
+              endDate: lr?.end_date ?? '',
+              days: lr?.total_days ?? 0,
+              reason: lr?.reason ?? undefined,
+            })
+          } else {
+            const requestTypeMap: Record<string, string> = {
+              travel_request_notifications: 'Travel',
+              publication_request_notifications: 'Publication',
+              equipment_request_notifications: 'Equipment',
+              supply_request_notifications: 'Supply',
+              leave_credit_notifications: 'Leave Credit',
+            }
+            const requestType = requestTypeMap[table] ?? 'Request'
+            emailPayload = newGenericRequestEmail({
+              requesterName: name,
+              requestType,
+              requestNumber: requestNumber ?? undefined,
+              details: message.replace('{name}', name),
+            })
+          }
+
+          if (emailPayload) {
+            // Send in batches of 50 (Resend batch limit)
+            for (let i = 0; i < toAddresses.length; i += 50) {
+              const batch = toAddresses.slice(i, i + 50)
+              await Promise.allSettled(
+                batch.map((to) =>
+                  resend.emails.send({
+                    from: FROM_ADDRESS,
+                    to,
+                    subject: emailPayload!.subject,
+                    html: emailPayload!.html,
+                  })
+                )
+              )
+            }
+          }
+        }
+      } catch (emailErr) {
+        // Email failure must never break the notification insert
+        console.warn('[notifications/send] Email send failed:', emailErr)
+      }
     }
 
     return NextResponse.json({ inserted: rows.length })

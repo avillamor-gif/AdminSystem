@@ -1,5 +1,7 @@
 import { createClient } from '@supabase/supabase-js'
 import { NextResponse } from 'next/server'
+import { resend, FROM_ADDRESS } from '@/lib/resend'
+import { welcomeEmail } from '@/lib/emailTemplates'
 
 export async function POST(request: Request) {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
@@ -83,6 +85,20 @@ export async function POST(request: Request) {
     if (roleError) {
       console.error('Error creating user_roles:', roleError)
       // Don't fail the request, just log it
+    }
+
+    // Send welcome email (fire-and-forget)
+    if (process.env.RESEND_API_KEY) {
+      try {
+        const { subject, html } = welcomeEmail({
+          employeeName: `${employee.first_name} ${employee.last_name}`,
+          email,
+          temporaryPassword: password,
+        })
+        await resend.emails.send({ from: FROM_ADDRESS, to: email, subject, html })
+      } catch (emailErr) {
+        console.warn('[create-employee-auth] Welcome email failed:', emailErr)
+      }
     }
 
     return NextResponse.json({
