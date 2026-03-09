@@ -1,8 +1,10 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 import { createClient } from '@/lib/supabase/client'
 import { useAttendanceRecords } from './useAttendance'
+import { attendanceKeys } from './useAttendance'
 import { useCurrentEmployee } from './useEmployees'
 import type { AttendanceType } from '@/components/attendance/AttendanceTypeModal'
 
@@ -83,6 +85,7 @@ interface UsePunchInOutOptions {
 
 export function usePunchInOut({ onPunchedIn, onPunchedOut }: UsePunchInOutOptions = {}) {
   const today = new Date().toISOString().split('T')[0]
+  const queryClient = useQueryClient()
   const { data: currentEmployee, isLoading: isLoadingEmployee } = useCurrentEmployee()
   const { data: attendanceRecords, refetch, isLoading: isLoadingRecords } = useAttendanceRecords({
     startDate: today,
@@ -171,14 +174,14 @@ export function usePunchInOut({ onPunchedIn, onPunchedOut }: UsePunchInOutOption
         setIsPunchedIn(true)
         setPunchInTime(now)
         setCurrentType(type)
-        await refetch()
+        await queryClient.invalidateQueries({ queryKey: attendanceKeys.all })
         onPunchedIn?.()
         return true
       } finally {
         setSaving(false)
       }
     },
-    [attendanceRecords, today, refetch, onPunchedIn],
+    [attendanceRecords, today, queryClient, onPunchedIn],
   )
 
   /** Close the current open session and write clock_out to Supabase */
@@ -225,9 +228,9 @@ export function usePunchInOut({ onPunchedIn, onPunchedOut }: UsePunchInOutOption
     setIsPunchedIn(false)
     setPunchInTime(null)
     setCurrentType(null)
-    await refetch()
+    await queryClient.invalidateQueries({ queryKey: attendanceKeys.all })
     onPunchedOut?.()
-  }, [isPunchedIn, attendanceRecords, today, refetch, onPunchedOut])
+  }, [isPunchedIn, attendanceRecords, today, queryClient, onPunchedOut])
 
   return {
     isPunchedIn,
