@@ -635,7 +635,16 @@ export default function TimePage() {
                   days.push(
                     <div
                       key={day}
-                      onClick={() => isAdmin && !holiday && handleDateClick(dateStr, attendanceUiType, attendance?.notes ? (attendance.notes.includes(':') ? attendance.notes.split(':').slice(1).join(':').trim() : '') : '')}
+                      onClick={() => {
+                        if (!isAdmin || holiday) return
+                        // If notes is JSON (punch session data), there is no user-written note
+                        const rawNote = attendance?.notes ?? ''
+                        const isPunchJson = rawNote.trimStart().startsWith('[') || rawNote.trimStart().startsWith('{') || rawNote.includes('"timeIn"')
+                        const existingNote = isPunchJson
+                          ? ''
+                          : (rawNote.includes(':') ? rawNote.split(':').slice(1).join(':').trim() : '')
+                        handleDateClick(dateStr, attendanceUiType, existingNote)
+                      }}
                       className={`min-h-[100px] p-2 border-b border-gray-200 ${holiday || !isAdmin ? 'cursor-default' : 'cursor-pointer hover:bg-gray-50'} transition-colors ${
                         !isLastCol ? 'border-r' : ''
                       } ${bgColor}`}
