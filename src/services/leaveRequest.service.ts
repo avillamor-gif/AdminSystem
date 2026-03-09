@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/client'
+import { countWorkingDays } from '@/lib/dateUtils'
 
 // =============================================
 // TYPES
@@ -196,9 +197,29 @@ export const leaveRequestService = {
       }
     }
 
+    // Recalculate total_days as working days (exclude weekends + holidays)
+    let workingDays = request.total_days ?? 0
+    if (request.start_date && request.end_date) {
+      const startYear = new Date(request.start_date).getFullYear()
+      const endYear = new Date(request.end_date).getFullYear()
+      const years = startYear === endYear ? [startYear] : [startYear, endYear]
+      let holidayDates = new Set<string>()
+      for (const year of years) {
+        const { data: hols } = await supabase
+          .from('holidays')
+          .select('holiday_date')
+          .eq('year', year)
+          .eq('is_active', true)
+        for (const h of hols ?? []) {
+          if (h.holiday_date) holidayDates.add(h.holiday_date.slice(0, 10))
+        }
+      }
+      workingDays = countWorkingDays(request.start_date, request.end_date, holidayDates)
+    }
+
     const { data, error } = await supabase
       .from('leave_requests')
-      .insert({ ...request, workflow_id } as any)
+      .insert({ ...request, workflow_id, total_days: workingDays } as any)
       .select()
       .single()
 

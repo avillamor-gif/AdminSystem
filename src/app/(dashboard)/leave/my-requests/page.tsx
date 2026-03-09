@@ -17,10 +17,11 @@ import {
   useLeaveBalances,
   type LeaveRequest,
 } from '@/hooks/useLeaveRequests'
-import { useLeaveTypes } from '@/hooks/useLeaveAbsence'
+import { useLeaveTypes, useHolidays } from '@/hooks/useLeaveAbsence'
 import { useCurrentEmployee } from '@/hooks/useEmployees'
 import { Plus, Calendar, Clock, XCircle } from 'lucide-react'
-import { format, differenceInDays } from 'date-fns'
+import { format } from 'date-fns'
+import { countWorkingDays } from '@/lib/dateUtils'
 
 const leaveRequestSchema = z.object({
   leave_type_id: z.string().min(1, 'Leave type is required'),
@@ -41,6 +42,7 @@ export default function MyLeavePage() {
     employee_id: currentEmployee?.id,
   })
   const { data: leaveTypes = [] } = useLeaveTypes({ is_active: true })
+  const { data: holidays = [] } = useHolidays({ is_active: true })
   const { data: balances = [] } = useLeaveBalances(currentEmployee?.id || '', currentYear)
   const createMutation = useCreateLeaveRequest()
   const cancelMutation = useCancelLeaveRequest()
@@ -61,11 +63,11 @@ export default function MyLeavePage() {
 
   const totalDays = useMemo(() => {
     if (startDate && endDate) {
-      const days = differenceInDays(new Date(endDate), new Date(startDate)) + 1
-      return days > 0 ? days : 0
+      const holidayDates = new Set(holidays.map((h: any) => h.holiday_date?.slice(0, 10)))
+      return countWorkingDays(startDate, endDate, holidayDates)
     }
     return 0
-  }, [startDate, endDate])
+  }, [startDate, endDate, holidays])
 
   const selectedBalance = useMemo(() => {
     return balances.find(b => b.leave_type_id === selectedLeaveType)
