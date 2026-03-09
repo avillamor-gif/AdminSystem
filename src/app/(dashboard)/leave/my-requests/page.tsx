@@ -398,7 +398,6 @@ export default function MyLeavePage() {
               type="submit"
               disabled={
                 createMutation.isPending ||
-                allocatedLeaveTypes.length === 0 ||
                 (selectedBalance !== undefined && totalDays > selectedBalance.available_days) ||
                 (selectedLeaveType !== '' && selectedBalance === undefined)
               }
