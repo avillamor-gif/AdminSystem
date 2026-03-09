@@ -8,6 +8,33 @@ const ADMIN_ROLES = [
   'admin', 'hr', 'manager',
 ] as const
 
+/** Resolve the user_id of the Administration department manager */
+async function getAdminDeptManagerUserId(admin: ReturnType<typeof createAdminClient>): Promise<string | null> {
+  const { data: adminDept } = await admin
+    .from('departments')
+    .select('id')
+    .ilike('name', '%administration%')
+    .maybeSingle()
+  if (!adminDept?.id) return null
+
+  // Find employees in the Admin dept who have the admin or manager role in user_roles
+  const { data: adminEmpIds } = await admin
+    .from('employees')
+    .select('id')
+    .eq('department_id', adminDept.id)
+  const empIds = (adminEmpIds ?? []).map((e: any) => e.id).filter(Boolean)
+  if (empIds.length === 0) return null
+
+  const { data: adminUser } = await admin
+    .from('user_roles')
+    .select('user_id')
+    .in('employee_id', empIds)
+    .in('role', ['admin', 'manager'])
+    .limit(1)
+    .maybeSingle()
+  return adminUser?.user_id ?? null
+}
+
 export async function POST(req: NextRequest) {
   try {
     // Verify the caller is an authenticated user (using server client which reads cookies)
@@ -120,10 +147,43 @@ export async function POST(req: NextRequest) {
 
       // Exclude the requester themselves from notifications
       // (they'll get a decision notification when approved/rejected)
+    } else if (targetGroup === 'leave_request') {
+      // ── Leave Request path: notify ONLY the employee's direct manager ──
+      if (emp?.manager_id) {
+        const { data: managerUser } = await admin
+          .from('user_roles')
+          .select('user_id')
+          .eq('employee_id', emp.manager_id)
+          .maybeSingle()
+        if (managerUser?.user_id) recipientUserIds.add(managerUser.user_id)
+      }
+      // Fallback: if no direct manager set, notify all HR users
+      if (recipientUserIds.size === 0) {
+        const { data: hrUsers } = await admin
+          .from('user_roles')
+          .select('user_id')
+          .eq('role', 'hr')
+        for (const u of hrUsers ?? []) {
+          if (u.user_id) recipientUserIds.add(u.user_id)
+        }
+      }
+    } else if (targetGroup === 'admin_resources') {
+      // ── Publications / Equipment / Supplies: notify only the Admin dept manager ──
+      const adminManagerUserId = await getAdminDeptManagerUserId(admin)
+      if (adminManagerUserId) recipientUserIds.add(adminManagerUserId)
+      // Fallback: notify all admin-role users if no admin dept manager found
+      if (recipientUserIds.size === 0) {
+        const { data: adminUsers } = await admin
+          .from('user_roles')
+          .select('user_id')
+          .eq('role', 'admin')
+        for (const u of adminUsers ?? []) {
+          if (u.user_id) recipientUserIds.add(u.user_id)
+        }
+      }
     } else {
-      // ── Default path: notify direct supervisor + all admin/hr/manager role users ──
-
-      // 2. Direct supervisor via manager_id → user_roles
+      // ── Default path: notify direct supervisor only ──
+      // (kept as fallback for any future request types)
       if (emp?.manager_id) {
         const { data: supervisorUser } = await admin
           .from('user_roles')
@@ -135,14 +195,15 @@ export async function POST(req: NextRequest) {
         }
       }
 
-      // 3. All admin/manager role users
-      const { data: adminUsers } = await admin
-        .from('user_roles')
-        .select('user_id, role')
-        .in('role', ADMIN_ROLES)
-
-      for (const a of adminUsers ?? []) {
-        if (a.user_id) recipientUserIds.add(a.user_id)
+      // Fallback: all admin/manager role users if no manager set
+      if (recipientUserIds.size === 0) {
+        const { data: adminUsers } = await admin
+          .from('user_roles')
+          .select('user_id, role')
+          .in('role', ADMIN_ROLES)
+        for (const a of adminUsers ?? []) {
+          if (a.user_id) recipientUserIds.add(a.user_id)
+        }
       }
     }
 

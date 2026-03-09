@@ -250,7 +250,9 @@ export const leaveService = {
         (data as any).id,
         'New Leave Request',
         `{name} has submitted a leave request.`,
-        requesterName
+        requesterName,
+        undefined,
+        'leave_request'
       )
     } catch (notifErr) {
       console.warn('Leave notification error (leave.service):', notifErr)

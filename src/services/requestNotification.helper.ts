@@ -37,7 +37,7 @@ export async function notifySupervisorsAndAdmins(
   message: string,
   requesterName: string,
   requestNumber?: string,
-  targetGroup?: 'admin_dept_and_ed' | 'travel_approval'
+  targetGroup?: 'admin_dept_and_ed' | 'travel_approval' | 'leave_request' | 'admin_resources'
 ): Promise<void> {
   try {
     await fetch('/api/notifications/send', {

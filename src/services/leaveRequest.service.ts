@@ -232,6 +232,7 @@ export const leaveRequestService = {
           title: 'New Leave Request from {name}',
           message: '{name} has submitted a leave request.',
           requesterName: '',
+          targetGroup: 'leave_request',
         }),
       })
     } catch (notifErr) {

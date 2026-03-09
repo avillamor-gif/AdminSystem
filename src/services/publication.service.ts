@@ -217,7 +217,8 @@ export const publicationService = {
       'New Publication Request',
       '{name} has submitted a publication request for "' + (request.publication_title ?? 'a publication') + '".',
       employeeName,
-      (request as any).request_number
+      (request as any).request_number,
+      'admin_resources'
     )
 
     // Create workflow request
