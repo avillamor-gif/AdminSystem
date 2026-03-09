@@ -6,10 +6,10 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
-import { Input } from '@/components/ui/Input'
 import { Select } from '@/components/ui/Select'
 import { Modal, ModalHeader, ModalBody, ModalFooter } from '@/components/ui/Modal'
 import { Badge } from '@/components/ui/Badge'
+import { LeaveDatePicker } from '@/components/ui/LeaveDatePicker'
 import {
   useLeaveRequests,
   useCreateLeaveRequest,
@@ -52,6 +52,7 @@ export default function MyLeavePage() {
     handleSubmit,
     reset,
     watch,
+    setValue,
     formState: { errors },
   } = useForm<LeaveRequestForm>({
     resolver: zodResolver(leaveRequestSchema),
@@ -60,6 +61,11 @@ export default function MyLeavePage() {
   const startDate = watch('start_date')
   const endDate = watch('end_date')
   const selectedLeaveType = watch('leave_type_id')
+
+  const holidayDates = useMemo(
+    () => new Set(holidays.map((h: any) => h.holiday_date?.slice(0, 10)).filter(Boolean)),
+    [holidays]
+  )
 
   const totalDays = useMemo(() => {
     if (startDate && endDate) {
@@ -351,20 +357,29 @@ export default function MyLeavePage() {
                 </div>
               )}
 
-              <Input
-                type="date"
+              <input type="hidden" {...register('start_date')} />
+              <LeaveDatePicker
                 label="Start Date"
-                {...register('start_date')}
-                error={errors.start_date?.message}
+                value={startDate || ''}
+                onChange={date => {
+                  setValue('start_date', date, { shouldValidate: true })
+                  if (endDate && endDate < date) setValue('end_date', '', { shouldValidate: true })
+                }}
+                holidayDates={holidayDates}
+                minDate={new Date().toISOString().slice(0, 10)}
                 required
+                error={errors.start_date?.message}
               />
 
-              <Input
-                type="date"
+              <input type="hidden" {...register('end_date')} />
+              <LeaveDatePicker
                 label="End Date"
-                {...register('end_date')}
-                error={errors.end_date?.message}
+                value={endDate || ''}
+                onChange={date => setValue('end_date', date, { shouldValidate: true })}
+                holidayDates={holidayDates}
+                minDate={startDate || new Date().toISOString().slice(0, 10)}
                 required
+                error={errors.end_date?.message}
               />
 
               {totalDays > 0 && (
