@@ -1,8 +1,8 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
-import { Package, Clock } from 'lucide-react'
-import { Card, Badge } from '@/components/ui'
+import { Package, Clock, Ban } from 'lucide-react'
+import { Card, Badge, Button, Modal, ModalHeader, ModalBody, ModalFooter } from '@/components/ui'
 import { createClient } from '@/lib/supabase/client'
 import toast from 'react-hot-toast'
 
@@ -18,6 +18,7 @@ const STATUS_COLORS: Record<string, string> = {
   approved: 'bg-blue-100 text-blue-700',
   fulfilled: 'bg-green-100 text-green-700',
   rejected: 'bg-red-100 text-red-700',
+  cancelled: 'bg-gray-100 text-gray-500',
 }
 
 const PRIORITY_COLORS: Record<string, string> = {
@@ -30,6 +31,8 @@ const PRIORITY_COLORS: Record<string, string> = {
 export default function MySupplyRequestsPage() {
   const [requests, setRequests] = useState<Request[]>([])
   const [loading, setLoading] = useState(true)
+  const [withdrawModal, setWithdrawModal] = useState<{ open: boolean; req: Request | null }>({ open: false, req: null })
+  const [isWithdrawing, setIsWithdrawing] = useState(false)
 
   useEffect(() => {
     const load = async () => {
@@ -57,6 +60,27 @@ export default function MySupplyRequestsPage() {
     rejected: requests.filter(r => r.status === 'rejected').length,
   }
 
+  const handleWithdraw = async () => {
+    const req = withdrawModal.req
+    if (!req) return
+    setIsWithdrawing(true)
+    try {
+      const supabase = createClient()
+      const { error } = await supabase
+        .from('supply_requests')
+        .update({ status: 'cancelled' })
+        .eq('id', req.id)
+      if (error) throw error
+      setRequests(prev => prev.map(r => r.id === req.id ? { ...r, status: 'cancelled' } : r))
+      toast.success('Request withdrawn successfully')
+      setWithdrawModal({ open: false, req: null })
+    } catch {
+      toast.error('Failed to withdraw request')
+    } finally {
+      setIsWithdrawing(false)
+    }
+  }
+
   return (
     <div className="space-y-6">
       <div>
@@ -82,7 +106,7 @@ export default function MySupplyRequestsPage() {
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead className="bg-gray-50 border-b">
-                <tr>{['Request #', 'Item', 'Qty', 'Priority', 'Status', 'Date', 'Notes'].map(h => <th key={h} className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase whitespace-nowrap">{h}</th>)}</tr>
+                <tr>{['Request #', 'Item', 'Qty', 'Priority', 'Status', 'Date', 'Notes', 'Actions'].map(h => <th key={h} className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase whitespace-nowrap">{h}</th>)}</tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
                 {requests.map(r => (
@@ -104,6 +128,18 @@ export default function MySupplyRequestsPage() {
                         <span className="text-blue-500 text-xs">Approved {new Date(r.approved_at).toLocaleDateString()}</span>
                       )}
                     </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      {r.status === 'pending' && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-xs text-red-500 hover:text-red-600 hover:bg-red-50 whitespace-nowrap"
+                          onClick={() => setWithdrawModal({ open: true, req: r })}
+                        >
+                          <Ban className="w-3.5 h-3.5 mr-1" />Withdraw
+                        </Button>
+                      )}
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -111,6 +147,26 @@ export default function MySupplyRequestsPage() {
           </div>
         )}
       </Card>
+      {/* Withdraw Modal */}
+      <Modal open={withdrawModal.open} onClose={() => setWithdrawModal({ open: false, req: null })}>
+        <ModalHeader>
+          <h2 className="text-lg font-semibold text-gray-900">Withdraw Request</h2>
+        </ModalHeader>
+        <ModalBody>
+          <p className="text-sm text-gray-600">
+            Are you sure you want to withdraw your request for{' '}
+            <span className="font-semibold text-gray-900">{withdrawModal.req?.item_name}</span>?
+            This action cannot be undone.
+          </p>
+        </ModalBody>
+        <ModalFooter>
+          <Button variant="secondary" onClick={() => setWithdrawModal({ open: false, req: null })}>Cancel</Button>
+          <Button variant="danger" onClick={handleWithdraw} disabled={isWithdrawing}>
+            <Ban className="w-4 h-4 mr-1.5" />
+            {isWithdrawing ? 'Withdrawing...' : 'Withdraw Request'}
+          </Button>
+        </ModalFooter>
+      </Modal>
     </div>
   )
 }

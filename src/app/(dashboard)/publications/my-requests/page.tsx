@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { FileText, Clock, CheckCircle, XCircle, Package, Undo2 } from 'lucide-react'
+import { FileText, Clock, CheckCircle, XCircle, Package, Undo2, Ban } from 'lucide-react'
 import { Card, Button, Modal, ModalHeader, ModalBody, ModalFooter } from '@/components/ui'
 import { usePublicationRequests, useUpdatePublicationRequest } from '@/hooks/usePublications'
 import { useCurrentEmployee } from '@/hooks/useEmployees'
@@ -36,6 +36,8 @@ export default function MyPublicationRequestsPage() {
   const [returnModal, setReturnModal] = useState<{ open: boolean; req: any | null }>({ open: false, req: null })
   const [returnQty, setReturnQty] = useState(1)
   const [isReturning, setIsReturning] = useState(false)
+  const [withdrawModal, setWithdrawModal] = useState<{ open: boolean; req: any | null }>({ open: false, req: null })
+  const [isWithdrawing, setIsWithdrawing] = useState(false)
 
   const { data: currentEmployee } = useCurrentEmployee()
   const { data: allRequests = [], isLoading, refetch } = usePublicationRequests(
@@ -86,6 +88,22 @@ export default function MyPublicationRequestsPage() {
       toast.error('Failed to process return')
     } finally {
       setIsReturning(false)
+    }
+  }
+
+  const handleWithdraw = async () => {
+    const req = withdrawModal.req
+    if (!req) return
+    setIsWithdrawing(true)
+    try {
+      await updateMutation.mutateAsync({ id: req.id, updates: { status: 'cancelled' as any } })
+      toast.success('Request withdrawn successfully')
+      setWithdrawModal({ open: false, req: null })
+      refetch()
+    } catch (err) {
+      toast.error('Failed to withdraw request')
+    } finally {
+      setIsWithdrawing(false)
     }
   }
 
@@ -188,16 +206,28 @@ export default function MyPublicationRequestsPage() {
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      {req.status === 'fulfilled' && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="text-xs text-purple-600 hover:text-purple-700 hover:bg-purple-50 whitespace-nowrap"
-                          onClick={() => openReturn(req)}
-                        >
-                          <Undo2 className="w-3.5 h-3.5 mr-1" />Return
-                        </Button>
-                      )}
+                      <div className="flex items-center gap-2">
+                        {req.status === 'fulfilled' && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-xs text-purple-600 hover:text-purple-700 hover:bg-purple-50 whitespace-nowrap"
+                            onClick={() => openReturn(req)}
+                          >
+                            <Undo2 className="w-3.5 h-3.5 mr-1" />Return
+                          </Button>
+                        )}
+                        {(req.status === 'submitted' || req.status === 'draft') && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-xs text-red-500 hover:text-red-600 hover:bg-red-50 whitespace-nowrap"
+                            onClick={() => setWithdrawModal({ open: true, req })}
+                          >
+                            <Ban className="w-3.5 h-3.5 mr-1" />Withdraw
+                          </Button>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -206,6 +236,27 @@ export default function MyPublicationRequestsPage() {
           </div>
         )}
       </Card>
+
+      {/* Withdraw Modal */}
+      <Modal open={withdrawModal.open} onClose={() => setWithdrawModal({ open: false, req: null })}>
+        <ModalHeader>
+          <h2 className="text-lg font-semibold text-gray-900">Withdraw Request</h2>
+        </ModalHeader>
+        <ModalBody>
+          <p className="text-sm text-gray-600">
+            Are you sure you want to withdraw your request for{' '}
+            <span className="font-semibold text-gray-900">{withdrawModal.req?.publication_title}</span>?
+            This action cannot be undone.
+          </p>
+        </ModalBody>
+        <ModalFooter>
+          <Button variant="secondary" onClick={() => setWithdrawModal({ open: false, req: null })}>Cancel</Button>
+          <Button variant="danger" onClick={handleWithdraw} disabled={isWithdrawing}>
+            <Ban className="w-4 h-4 mr-1.5" />
+            {isWithdrawing ? 'Withdrawing...' : 'Withdraw Request'}
+          </Button>
+        </ModalFooter>
+      </Modal>
 
       {/* Return Modal */}
       <Modal open={returnModal.open} onClose={() => setReturnModal({ open: false, req: null })}>

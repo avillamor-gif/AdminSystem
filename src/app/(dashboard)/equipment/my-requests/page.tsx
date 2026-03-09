@@ -1,22 +1,39 @@
 'use client'
 
 import { useState } from 'react'
-import { FileText, Clock, CheckCircle, Package, XCircle } from 'lucide-react'
-import { Card } from '@/components/ui'
-import { useAssetRequests } from '@/hooks/useAssets'
+import { FileText, Clock, CheckCircle, Package, XCircle, Ban } from 'lucide-react'
+import { Card, Button, Modal, ModalHeader, ModalBody, ModalFooter } from '@/components/ui'
+import { useAssetRequests, useUpdateAssetRequest } from '@/hooks/useAssets'
 import { useCurrentEmployee } from '@/hooks/useEmployees'
 
 export default function MyEquipmentRequestsPage() {
   const [statusFilter, setStatusFilter] = useState('')
+  const [withdrawModal, setWithdrawModal] = useState<{ open: boolean; req: any | null }>({ open: false, req: null })
+  const [isWithdrawing, setIsWithdrawing] = useState(false)
 
   const { data: currentEmployee } = useCurrentEmployee()
   const { data: requests = [], isLoading } = useAssetRequests(
     currentEmployee?.id ? { employee_id: currentEmployee.id } : undefined
   )
+  const updateMutation = useUpdateAssetRequest()
 
   const filtered = statusFilter
     ? requests.filter((r) => r.status === statusFilter)
     : requests
+
+  const handleWithdraw = async () => {
+    const req = withdrawModal.req
+    if (!req) return
+    setIsWithdrawing(true)
+    try {
+      await updateMutation.mutateAsync({ id: req.id, data: { status: 'cancelled' as any } })
+      setWithdrawModal({ open: false, req: null })
+    } catch {
+      // error toast handled by hook
+    } finally {
+      setIsWithdrawing(false)
+    }
+  }
 
   // Stats
   const total = requests.length
@@ -30,6 +47,7 @@ export default function MyEquipmentRequestsPage() {
     approved: 'bg-blue-100 text-blue-700',
     fulfilled: 'bg-green-100 text-green-700',
     rejected: 'bg-red-100 text-red-700',
+    cancelled: 'bg-gray-100 text-gray-500',
   }
 
   const priorityBadge: Record<string, string> = {
@@ -109,6 +127,7 @@ export default function MyEquipmentRequestsPage() {
           <option value="approved">Approved</option>
           <option value="fulfilled">Fulfilled</option>
           <option value="rejected">Rejected</option>
+          <option value="cancelled">Cancelled</option>
         </select>
       </Card>
 
@@ -134,7 +153,7 @@ export default function MyEquipmentRequestsPage() {
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50 border-b border-gray-200">
                 <tr>
-                  {['Item Description', 'Category', 'Priority', 'Requested Date', 'Status', 'Notes'].map(
+                  {['Item Description', 'Category', 'Priority', 'Requested Date', 'Status', 'Notes', 'Actions'].map(
                     (h) => (
                       <th
                         key={h}
@@ -177,6 +196,18 @@ export default function MyEquipmentRequestsPage() {
                       <td className="px-6 py-4 text-sm text-gray-500 max-w-xs truncate">
                         {req.rejection_reason || req.notes || '—'}
                       </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        {(req.status === 'pending') && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-xs text-red-500 hover:text-red-600 hover:bg-red-50 whitespace-nowrap"
+                            onClick={() => setWithdrawModal({ open: true, req })}
+                          >
+                            <Ban className="w-3.5 h-3.5 mr-1" />Withdraw
+                          </Button>
+                        )}
+                      </td>
                     </tr>
                   )
                 })}
@@ -185,6 +216,26 @@ export default function MyEquipmentRequestsPage() {
           </div>
         )}
       </Card>
+      {/* Withdraw Modal */}
+      <Modal open={withdrawModal.open} onClose={() => setWithdrawModal({ open: false, req: null })}>
+        <ModalHeader>
+          <h2 className="text-lg font-semibold text-gray-900">Withdraw Request</h2>
+        </ModalHeader>
+        <ModalBody>
+          <p className="text-sm text-gray-600">
+            Are you sure you want to withdraw your request for{' '}
+            <span className="font-semibold text-gray-900">{withdrawModal.req?.item_description}</span>?
+            This action cannot be undone.
+          </p>
+        </ModalBody>
+        <ModalFooter>
+          <Button variant="secondary" onClick={() => setWithdrawModal({ open: false, req: null })}>Cancel</Button>
+          <Button variant="danger" onClick={handleWithdraw} disabled={isWithdrawing}>
+            <Ban className="w-4 h-4 mr-1.5" />
+            {isWithdrawing ? 'Withdrawing...' : 'Withdraw Request'}
+          </Button>
+        </ModalFooter>
+      </Modal>
     </div>
   )
 }
