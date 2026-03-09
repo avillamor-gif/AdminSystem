@@ -17,7 +17,7 @@ const userSchema = z.object({
   password: z.string().min(8, 'Password must be at least 8 characters').optional().or(z.literal('')),
   role: z.string().min(1, 'Role is required'),
   status: z.enum(['active', 'inactive', 'suspended']).default('active'),
-  employee_id: z.string().optional(),
+  employee_id: z.string().min(1, 'Please link this user to an employee record'),
 })
 
 type FormData = z.infer<typeof userSchema>
@@ -499,13 +499,13 @@ export function UserFormModal({ open, onClose, user }: UserFormModalProps) {
           
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Employee (Optional)
+              Employee <span className="text-red-500">*</span>
             </label>
             <select
               {...register('employee_id')}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange focus:border-transparent"
             >
-              <option value="">Select an employee (optional)</option>
+              <option value="">Select an employee</option>
               {employees.map(employee => (
                 <option key={employee.id} value={employee.id}>
                   {employee.first_name} {employee.last_name} - {employee.employee_id}
@@ -513,8 +513,11 @@ export function UserFormModal({ open, onClose, user }: UserFormModalProps) {
                 </option>
               ))}
             </select>
+            {errors.employee_id && (
+              <p className="text-xs text-red-500 mt-1">{errors.employee_id.message}</p>
+            )}
             <p className="text-xs text-gray-500 mt-1">
-              Link this user account to an existing employee record
+              Every user must be linked to an employee record
             </p>
           </div>
 
