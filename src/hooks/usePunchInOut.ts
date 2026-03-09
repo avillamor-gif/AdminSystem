@@ -83,8 +83,8 @@ interface UsePunchInOutOptions {
 
 export function usePunchInOut({ onPunchedIn, onPunchedOut }: UsePunchInOutOptions = {}) {
   const today = new Date().toISOString().split('T')[0]
-  const { data: currentEmployee } = useCurrentEmployee()
-  const { data: attendanceRecords, refetch } = useAttendanceRecords({
+  const { data: currentEmployee, isLoading: isLoadingEmployee } = useCurrentEmployee()
+  const { data: attendanceRecords, refetch, isLoading: isLoadingRecords } = useAttendanceRecords({
     startDate: today,
     endDate: today,
     employeeId: currentEmployee?.id,
@@ -96,9 +96,13 @@ export function usePunchInOut({ onPunchedIn, onPunchedOut }: UsePunchInOutOption
   const [saving, setSaving]                   = useState(false)
 
   // Restore punch-in state from today's DB record
+  // Only run once both the employee AND the attendance records have loaded.
+  // If we run while records are still undefined (loading), we would incorrectly
+  // reset isPunchedIn to false and lose the active session display.
   useEffect(() => {
-    if (!attendanceRecords || !currentEmployee) return
-    const rec = attendanceRecords.find(
+    if (isLoadingEmployee || isLoadingRecords) return   // still loading — don't touch state
+    if (!currentEmployee) return
+    const rec = attendanceRecords?.find(
       r => r.date === today && r.employee_id === currentEmployee.id,
     )
     if (rec) {
@@ -114,7 +118,7 @@ export function usePunchInOut({ onPunchedIn, onPunchedOut }: UsePunchInOutOption
     setIsPunchedIn(false)
     setCurrentType(null)
     setPunchInTime(null)
-  }, [attendanceRecords, currentEmployee, today])
+  }, [attendanceRecords, currentEmployee, today, isLoadingEmployee, isLoadingRecords])
 
   /** Write a new punch-in session to Supabase */
   const confirmPunchIn = useCallback(
@@ -230,6 +234,7 @@ export function usePunchInOut({ onPunchedIn, onPunchedOut }: UsePunchInOutOption
     punchInTime,
     currentType,
     saving,
+    isLoading: isLoadingEmployee || isLoadingRecords,
     confirmPunchIn,
     punchOut,
     attendanceRecords,

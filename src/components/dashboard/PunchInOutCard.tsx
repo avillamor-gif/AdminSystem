@@ -25,6 +25,7 @@ export function PunchInOutCard({ onPunchedIn, onPunchedOut }: Props) {
     punchInTime,
     currentType,
     saving,
+    isLoading,
     confirmPunchIn,
     punchOut,
   } = usePunchInOut({ onPunchedIn, onPunchedOut })
@@ -81,7 +82,9 @@ export function PunchInOutCard({ onPunchedIn, onPunchedOut }: Props) {
           <p className="text-4xl font-bold text-gray-900 mt-1 tabular-nums">{formatTime(currentTime)}</p>
         </div>
 
-        {isPunchedIn ? (
+        {isLoading ? (
+          <div className="p-4 text-center text-sm text-gray-400">Loading…</div>
+        ) : isPunchedIn ? (
           <div className="space-y-4">
             <div className="p-4 bg-green-50 rounded-xl border border-green-100">
               <p className="text-xs text-green-600 font-medium">Currently punched in</p>

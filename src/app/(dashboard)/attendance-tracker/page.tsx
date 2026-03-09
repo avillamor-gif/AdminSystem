@@ -47,6 +47,7 @@ export default function TimePage() {
     punchInTime,
     currentType: currentAttendanceType,
     saving: punchSaving,
+    isLoading: punchLoading,
     confirmPunchIn,
     punchOut: handlePunchOut,
   } = usePunchInOut({
@@ -453,7 +454,9 @@ export default function TimePage() {
               <p className="text-5xl font-bold text-gray-900 mt-2">{formatTime(currentTime)}</p>
             </div>
             
-            {isPunchedIn ? (
+            {punchLoading ? (
+              <div className="p-4 text-center text-sm text-gray-400">Loading…</div>
+            ) : isPunchedIn ? (
               <div className="space-y-4">
                 <div className="p-4 bg-green-50 rounded-lg">
                   <p className="text-sm text-green-600">You are currently punched in</p>
