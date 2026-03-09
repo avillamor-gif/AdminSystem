@@ -9,6 +9,7 @@ import {
   Settings,
   Building2,
   UserCircle,
+  Users,
   Briefcase,
   FileText,
   Search,
@@ -37,14 +38,14 @@ interface NavigationItem {
 
 const navigationItems: NavigationItem[] = [
   { name: 'Dashboard', href: '/', icon: LayoutDashboard },
-  { name: 'Admin', href: '/admin', icon: Settings, requiresAdmin: true },
+  { name: 'Admin', href: '/admin', icon: Settings, requiresPermission: 'admin.manage' },
   { name: 'Leave', href: '/leave/my-requests', icon: Calendar, requiresPermission: 'leave.view' },
   { name: 'Attendance Tracker', href: '/attendance-tracker', icon: Clock },
   { name: 'Travel', href: '/travel', icon: Plane },
   { name: 'Publications', href: '/publications/library', icon: BookOpen, activeBase: '/publications' },
   { name: 'Office Equipment', href: '/equipment/browse', icon: Monitor, activeBase: '/equipment' },
   { name: 'Office Supplies', href: '/office-supplies', icon: Package },
-  { name: 'Recruitment', href: '/admin/recruitment', icon: Briefcase, requiresAdmin: true },
+  { name: 'Recruitment', href: '/admin/recruitment', icon: Briefcase, requiresPermission: 'recruitment.view' },
   { name: 'My Info', href: '/my-info', icon: UserCircle, badge: 'Personal Info' },
   { name: 'Performance', href: '/performance', icon: FileText, requiresPermission: 'performance.view' },
   { name: 'Directory', href: '/directory', icon: Building2 },
@@ -60,7 +61,6 @@ export function Sidebar() {
   const navigation = navigationItems.filter(item => {
     if (!item.requiresPermission && !item.requiresAdmin) return true
     if (isLoading) return false
-    if (item.requiresAdmin && roleInfo) return ['Admin', 'HR Manager', 'Super Admin'].includes(roleInfo.role_name)
     if (item.requiresPermission && roleInfo) return roleInfo.permissions.includes(item.requiresPermission)
     return false
   })

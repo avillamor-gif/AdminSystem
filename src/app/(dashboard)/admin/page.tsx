@@ -1,6 +1,5 @@
 'use client'
 
-import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { 
   Users, Building2, Briefcase, Settings, Globe, Shield, 
@@ -18,7 +17,6 @@ import { useCurrentUserPermissions } from '@/hooks/usePermissions'
 import { formatDistanceToNow } from 'date-fns'
 
 export default function AdminPage() {
-  const [activeSection, setActiveSection] = useState<string | null>(null)
   const router = useRouter()
   const { data: auditLogs = [], isLoading: logsLoading } = useRecentAuditLogs(6)
   const { data: users = [] } = useUsers()
@@ -46,6 +44,7 @@ export default function AdminPage() {
       description: 'Configure company hierarchy and locations',
       icon: Building2,
       color: 'bg-blue-500',
+      href: '/admin/organization-structure',
       items: ['Company Structure', 'Locations Management', 'Location Types', 'Department Hierarchy', 'International Operations', 'Organizational Chart'],
       requiresPermission: 'org.view',
     },
@@ -55,6 +54,7 @@ export default function AdminPage() {
       description: 'Define job structures and compensation',
       icon: Briefcase,
       color: 'bg-green-500',
+      href: '/admin/job-management',
       items: ['Job Titles', 'Job Descriptions', 'Pay Grades', 'Salary Structures', 'Employment Types', 'Job Categories', 'Career Paths'],
       requiresPermission: 'jobs.view',
     },
@@ -64,6 +64,7 @@ export default function AdminPage() {
       description: 'Configure employee information and PIM fields',
       icon: Users,
       color: 'bg-purple-500',
+      href: '/admin/employee-data',
       items: [
         'Employee Profiles',
         'Data Management',
@@ -82,6 +83,7 @@ export default function AdminPage() {
       description: 'Configure time tracking and attendance policies',
       icon: Clock,
       color: 'bg-orange',
+      href: '/admin/time-attendance',
       items: ['Work Schedules', 'Shift Patterns', 'Overtime Rules', 'Break Policies', 'Time Tracking Methods', 'Attendance Policies', 'Attendance Reports'],
       requiresPermission: 'time_attendance.manage',
     },
@@ -91,6 +93,7 @@ export default function AdminPage() {
       description: 'Configure leave types and policies',
       icon: Calendar,
       color: 'bg-indigo-500',
+      href: '/admin/leave-policies',
       items: ['Leave Types', 'Accrual Rules', 'Leave Policies', 'Leave Balances', 'Holiday Calendar', 'Absence Categories', 'Approval Workflows', 'Leave Credit Approvals'],
       requiresPermission: 'leave.manage_types',
     },
@@ -100,6 +103,7 @@ export default function AdminPage() {
       description: 'Configure compensation and benefits',
       icon: DollarSign,
       color: 'bg-emerald-500',
+      href: '/admin/payroll-benefits',
       items: ['Pay Components', 'Tax Configuration', 'Benefits Plans', 'Deductions', 'Bonus Structures', 'Reimbursements'],
       requiresPermission: 'system.config',
     },
@@ -109,6 +113,7 @@ export default function AdminPage() {
       description: 'Configure performance and goal settings',
       icon: TrendingUp,
       color: 'bg-cyan-500',
+      href: '/admin/performance',
       items: ['Review Cycles', 'Rating Scales', 'Goal Templates', 'Competency Models', 'KPI Frameworks', '360 Feedback'],
       requiresPermission: 'performance.manage_goals',
     },
@@ -118,6 +123,7 @@ export default function AdminPage() {
       description: 'Configure training and certification programs',
       icon: BookOpen,
       color: 'bg-pink-500',
+      href: '/admin/learning-development',
       items: ['Training Programs', 'Certifications', 'Skills Matrix', 'Learning Paths', 'External Training', 'Compliance Training'],
       requiresPermission: 'learning.manage',
     },
@@ -127,6 +133,7 @@ export default function AdminPage() {
       description: 'Manage job postings, candidates, and hiring process',
       icon: UserPlus,
       color: 'bg-violet-500',
+      href: '/admin/recruitment',
       items: [
         'Job Postings',
         'Candidate Management',
@@ -149,6 +156,7 @@ export default function AdminPage() {
       description: 'Manage regulatory compliance and auditing',
       icon: Gavel,
       color: 'bg-amber-500',
+      href: '/admin/compliance-audit',
       items: ['Regulatory Compliance', 'Audit Trails', 'Data Retention Policies', 'Privacy Settings', 'GDPR Compliance', 'Labor Law Compliance'],
       requiresPermission: 'compliance.view',
     },
@@ -158,6 +166,7 @@ export default function AdminPage() {
       description: 'Configure reports and analytics dashboards',
       icon: BarChart3,
       color: 'bg-teal-500',
+      href: '/admin/analytics-reports',
       items: ['Standard Reports', 'Custom Reports', 'Dashboard Configuration', 'Data Analytics', 'KPI Metrics', 'Export Settings'],
       requiresPermission: 'analytics.view',
     },
@@ -167,6 +176,7 @@ export default function AdminPage() {
       description: 'Configure system settings and integrations',
       icon: Settings,
       color: 'bg-gray-600',
+      href: '/admin/system-config',
       items: ['General Settings', 'Email Configuration', 'API Settings', 'Integration Management', 'Backup & Recovery', 'System Maintenance'],
       requiresPermission: 'system.config',
     },
@@ -176,6 +186,7 @@ export default function AdminPage() {
       description: 'Manage business travel requests, bookings, and expenses',
       icon: Globe,
       color: 'bg-blue-600',
+      href: '/admin/travel',
       items: ['Travel Requests', 'Travel Booking', 'Expense Management', 'Travel Policies', 'Travel Vendor Management', 'Travel Analytics'],
       requiresPermission: 'travel.manage',
     },
@@ -185,6 +196,7 @@ export default function AdminPage() {
       description: 'Track and manage company assets and equipment',
       icon: Package,
       color: 'bg-slate-600',
+      href: '/admin/asset-management',
       items: ['Assets', 'Assignments', 'Maintenance', 'Requests', 'Setup', 'Reports'],
       requiresPermission: 'assets.manage',
     },
@@ -194,6 +206,7 @@ export default function AdminPage() {
       description: 'Track office supplies inventory and procurement',
       icon: Package,
       color: 'bg-green-600',
+      href: '/admin/office-supplies',
       items: ['Supply Inventory', 'Supply Requests', 'Vendor Management', 'Purchase Orders', 'Stock Levels', 'Supply Categories'],
       requiresPermission: 'supplies.manage',
     },
@@ -203,6 +216,7 @@ export default function AdminPage() {
       description: 'Manage company publications and documents',
       icon: FileText,
       color: 'bg-purple-600',
+      href: '/admin/publications',
       items: ['Publication Management', 'Add Publication', 'Printing Presses', 'Distribution Lists'],
       requiresPermission: 'publications.manage',
     },
@@ -298,12 +312,8 @@ export default function AdminPage() {
           {adminModules.map((module) => (
             <Card 
               key={module.id} 
-              className={`p-6 cursor-pointer transition-all hover:shadow-lg ${
-                activeSection === module.id ? 'ring-2 ring-orange' : ''
-              }`}
-              onClick={() => {
-                setActiveSection(activeSection === module.id ? null : module.id)
-              }}
+              className="p-6 cursor-pointer transition-all hover:shadow-lg hover:ring-2 hover:ring-orange"
+              onClick={() => module.href && router.push(module.href)}
             >
               <div className="flex items-start gap-4">
                 <div className={`p-3 rounded-lg ${module.color}`}>
@@ -313,21 +323,26 @@ export default function AdminPage() {
                   <h3 className="font-semibold text-gray-900">{module.title}</h3>
                   <p className="text-sm text-gray-500 mt-1">{module.description}</p>
                 </div>
-                <ChevronRight className={`w-5 h-5 text-gray-400 transition-transform ${
-                  activeSection === module.id ? 'rotate-90' : ''
-                }`} />
+                <ChevronRight className="w-5 h-5 text-gray-400" />
               </div>
 
-              {activeSection === module.id && (
-                <div className="mt-4 pt-4 border-t border-gray-100 space-y-2">
+              <div className="mt-3 pt-3 border-t border-gray-100">
+                <div className="flex flex-wrap gap-1">
+                  {module.items.slice(0, 4).map((item) => (
+                    <span key={item} className="text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full">{item}</span>
+                  ))}
+                  {module.items.length > 4 && (
+                    <span className="text-xs bg-gray-100 text-gray-400 px-2 py-0.5 rounded-full">+{module.items.length - 4} more</span>
+                  )}
+                </div>
+              </div>
+              {false && (
+                <div className="hidden">
                   {module.items.map((item) => (
                     <button
                       key={item}
-                      className="w-full text-left px-3 py-2 text-sm text-gray-600 hover:bg-gray-50 hover:text-orange rounded-lg transition-colors"
                       onClick={(e) => {
                         e.stopPropagation()
-                        console.log('Clicked item:', item)
-                        // Handle navigation to specific admin module
                         const routeMap: Record<string, string> = {
                           // User Access & Security routes
                           'User Management': '/admin/user-access-security/user-management',
@@ -476,9 +491,7 @@ export default function AdminPage() {
                           'Distribution Lists': '/admin/publications/distribution-lists',
                                                   }
                         const route = routeMap[item]
-                        if (route) {
-                          router.push(route)
-                        }
+                        if (route) router.push(route)
                       }}
                     >
                       {item}
