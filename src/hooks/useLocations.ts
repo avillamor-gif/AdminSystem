@@ -1,11 +1,6 @@
-import { useQuery, useMutation, useQueryClient, UseQueryResult } from '@tanstack/react-query'
-import { locationService, type LocationWithRelations, type LocationFilters } from '@/services/location.service'
-import type { Database } from '@/lib/supabase/database.types'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { locationService, type LocationWithRelations, type LocationFilters, type Location, type LocationInsert, type LocationUpdate } from '@/services/location.service'
 import { toast } from 'sonner'
-
-type Location = Database['public']['Tables']['locations']['Row']
-type LocationInsert = Database['public']['Tables']['locations']['Insert']
-type LocationUpdate = Database['public']['Tables']['locations']['Update']
 
 export const locationKeys = {
   all: ['locations'] as const,

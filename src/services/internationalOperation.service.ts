@@ -1,9 +1,47 @@
 import { createClient } from '@/lib/supabase/client'
-import type { Database } from '@/lib/supabase/database.types'
 
-type InternationalOperation = Database['public']['Tables']['international_operations']['Row']
-type InternationalOperationInsert = Database['public']['Tables']['international_operations']['Insert']
-type InternationalOperationUpdate = Database['public']['Tables']['international_operations']['Update']
+// Manual type — international_operations was added via migration after last db:types run
+export interface InternationalOperation {
+  id: string
+  country: string
+  country_code: string
+  region: string | null
+  operation_type: string | null
+  office_name: string | null
+  location_id: string | null
+  company_structure_id: string | null
+  country_director_id: string | null
+  contact_person: string | null
+  email: string | null
+  phone: string | null
+  address: string | null
+  established_date: string | null
+  status: string
+  employee_count: number
+  local_staff_count: number
+  expat_staff_count: number
+  annual_budget: number | null
+  currency: string | null
+  funding_sources: string[] | null
+  legal_entity_name: string | null
+  registration_number: string | null
+  tax_id: string | null
+  registration_date: string | null
+  registration_authority: string | null
+  active_programs: number
+  program_areas: string[] | null
+  beneficiary_count: number | null
+  official_languages: string[] | null
+  working_languages: string[] | null
+  timezone: string | null
+  local_partners: string[] | null
+  government_partnerships: string[] | null
+  notes: string | null
+  created_at: string | null
+  updated_at: string | null
+}
+export type InternationalOperationInsert = Omit<InternationalOperation, 'id' | 'created_at' | 'updated_at'>
+export type InternationalOperationUpdate = Partial<InternationalOperationInsert>
 
 export interface InternationalOperationWithRelations extends InternationalOperation {
   country_director?: {

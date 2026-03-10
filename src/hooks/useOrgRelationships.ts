@@ -1,11 +1,6 @@
 import { useQuery, useMutation, useQueryClient, UseQueryResult } from '@tanstack/react-query'
-import { orgRelationshipService, type OrgRelationshipWithRelations, type OrgRelationshipFilters, type OrgChartNode } from '@/services/orgRelationship.service'
-import type { Database } from '@/lib/supabase/database.types'
+import { orgRelationshipService, type OrgRelationshipWithRelations, type OrgRelationshipFilters, type OrgChartNode, type OrgRelationship, type OrgRelationshipInsert, type OrgRelationshipUpdate } from '@/services/orgRelationship.service'
 import { toast } from 'sonner'
-
-type OrgRelationship = Database['public']['Tables']['org_relationships']['Row']
-type OrgRelationshipInsert = Database['public']['Tables']['org_relationships']['Insert']
-type OrgRelationshipUpdate = Database['public']['Tables']['org_relationships']['Update']
 
 export const orgRelationshipKeys = {
   all: ['org_relationships'] as const,

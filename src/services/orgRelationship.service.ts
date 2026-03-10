@@ -1,9 +1,21 @@
 import { createClient } from '@/lib/supabase/client'
-import type { Database } from '@/lib/supabase/database.types'
 
-type OrgRelationship = Database['public']['Tables']['org_relationships']['Row']
-type OrgRelationshipInsert = Database['public']['Tables']['org_relationships']['Insert']
-type OrgRelationshipUpdate = Database['public']['Tables']['org_relationships']['Update']
+// Manual type — org_relationships was added via migration after last db:types run
+export interface OrgRelationship {
+  id: string
+  parent_id: string
+  child_id: string
+  relationship_type: string
+  department_id: string | null
+  start_date: string | null
+  end_date: string | null
+  status: string
+  notes: string | null
+  created_at: string | null
+  updated_at: string | null
+}
+export type OrgRelationshipInsert = Omit<OrgRelationship, 'id' | 'created_at' | 'updated_at'>
+export type OrgRelationshipUpdate = Partial<OrgRelationshipInsert>
 
 export interface OrgRelationshipWithRelations extends OrgRelationship {
   parent?: {

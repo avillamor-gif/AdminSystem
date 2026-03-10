@@ -1,11 +1,6 @@
-import { useQuery, useMutation, useQueryClient, UseQueryResult } from '@tanstack/react-query'
-import { internationalOperationService, type InternationalOperationWithRelations, type InternationalOperationFilters } from '@/services/internationalOperation.service'
-import type { Database } from '@/lib/supabase/database.types'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { internationalOperationService, type InternationalOperationWithRelations, type InternationalOperationFilters, type InternationalOperation, type InternationalOperationInsert, type InternationalOperationUpdate } from '@/services/internationalOperation.service'
 import { toast } from 'sonner'
-
-type InternationalOperation = Database['public']['Tables']['international_operations']['Row']
-type InternationalOperationInsert = Database['public']['Tables']['international_operations']['Insert']
-type InternationalOperationUpdate = Database['public']['Tables']['international_operations']['Update']
 
 export const internationalOperationKeys = {
   all: ['international_operations'] as const,

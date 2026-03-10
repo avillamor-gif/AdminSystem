@@ -1,9 +1,49 @@
 import { createClient } from '@/lib/supabase/client'
-import type { Database } from '@/lib/supabase/database.types'
 
-export type Location = Database['public']['Tables']['locations']['Row']
-export type LocationInsert = Database['public']['Tables']['locations']['Insert']
-export type LocationUpdate = Database['public']['Tables']['locations']['Update']
+// Manual type — locations (org module) was added via migration after last db:types run
+export interface Location {
+  id: string
+  name: string
+  code: string | null
+  location_type: string
+  parent_location_id: string | null
+  company_structure_id: string | null
+  address_line1: string | null
+  address_line2: string | null
+  city: string | null
+  state_province: string | null
+  country: string
+  postal_code: string | null
+  latitude: number | null
+  longitude: number | null
+  phone: string | null
+  fax: string | null
+  email: string | null
+  website: string | null
+  manager_id: string | null
+  employee_capacity: number | null
+  current_employee_count: number
+  operational_hours: string | null
+  timezone: string
+  established_date: string | null
+  monthly_rent: number | null
+  square_footage: number | null
+  lease_expiry_date: string | null
+  status: string
+  is_headquarters: boolean
+  has_parking: boolean
+  parking_spaces: number | null
+  has_cafeteria: boolean
+  has_gym: boolean
+  has_medical_room: boolean
+  has_conference_rooms: boolean
+  conference_room_count: number
+  notes: string | null
+  created_at: string | null
+  updated_at: string | null
+}
+export type LocationInsert = Omit<Location, 'id' | 'created_at' | 'updated_at'>
+export type LocationUpdate = Partial<LocationInsert>
 
 export interface LocationWithRelations extends Location {
   manager?: {

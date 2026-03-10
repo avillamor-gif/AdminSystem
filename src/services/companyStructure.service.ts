@@ -1,9 +1,36 @@
 import { createClient } from '@/lib/supabase/client'
-import type { Database } from '@/lib/supabase/database.types'
 
-type CompanyStructure = Database['public']['Tables']['company_structures']['Row']
-type CompanyStructureInsert = Database['public']['Tables']['company_structures']['Insert']
-type CompanyStructureUpdate = Database['public']['Tables']['company_structures']['Update']
+// Manual type — company_structures was added via migration after last db:types run
+export interface CompanyStructure {
+  id: string
+  name: string
+  description: string | null
+  level: number
+  parent_id: string | null
+  structure_type: string
+  manager_id: string | null
+  location_id: string | null
+  employee_count: number | null
+  budget: number | null
+  established_date: string | null
+  status: string
+  code: string | null
+  email: string | null
+  phone: string | null
+  address: string | null
+  city: string | null
+  state: string | null
+  country: string | null
+  postal_code: string | null
+  mission_statement: string | null
+  vision_statement: string | null
+  operational_hours: string | null
+  timezone: string | null
+  created_at: string | null
+  updated_at: string | null
+}
+export type CompanyStructureInsert = Omit<CompanyStructure, 'id' | 'created_at' | 'updated_at'>
+export type CompanyStructureUpdate = Partial<CompanyStructureInsert>
 
 export interface CompanyStructureWithRelations extends CompanyStructure {
   manager?: {
