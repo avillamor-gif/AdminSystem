@@ -1,0 +1,12 @@
+'use client'
+
+import { useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+
+export default function LeavePoliciesPage() {
+  const router = useRouter()
+  useEffect(() => {
+    router.replace('/admin/leave-policies/leave-types')
+  }, [router])
+  return null
+}

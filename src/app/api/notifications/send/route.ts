@@ -4,35 +4,97 @@ import { createClient } from '@/lib/supabase/server'
 import { resend, FROM_ADDRESS } from '@/lib/resend'
 import { newLeaveRequestEmail, newGenericRequestEmail } from '@/lib/emailTemplates'
 
-const ADMIN_ROLES = [
-  'admin', 'hr', 'manager',
-] as const
+type AdminClient = ReturnType<typeof createAdminClient>
 
-/** Resolve the user_id of the Administration department manager */
-async function getAdminDeptManagerUserId(admin: ReturnType<typeof createAdminClient>): Promise<string | null> {
-  const { data: adminDept } = await admin
-    .from('departments')
-    .select('id')
-    .ilike('name', '%administration%')
-    .maybeSingle()
-  if (!adminDept?.id) return null
+/**
+ * Resolve a role slug from workflow_configs.notify_on_submit into a set of user IDs.
+ *
+ * Slugs:
+ *  direct_manager     – the employee's manager_id → user_id
+ *  ed                 – all users with role 'ed'
+ *  admin              – all users with role 'admin'
+ *  hr                 – all users with role 'hr'
+ *  finance_dept       – all employees in the Finance department
+ *  admin_dept         – all employees in the Administration department
+ *  admin_dept_manager – the first admin/manager-role user in the Administration department
+ */
+async function resolveRoleSlug(
+  slug: string,
+  admin: AdminClient,
+  emp: { manager_id?: string | null } | null
+): Promise<string[]> {
+  const ids: string[] = []
 
-  // Find employees in the Admin dept who have the admin or manager role in user_roles
-  const { data: adminEmpIds } = await admin
-    .from('employees')
-    .select('id')
-    .eq('department_id', adminDept.id)
-  const empIds = (adminEmpIds ?? []).map((e: any) => e.id).filter(Boolean)
-  if (empIds.length === 0) return null
+  if (slug === 'direct_manager') {
+    if (emp?.manager_id) {
+      const { data } = await admin
+        .from('user_roles')
+        .select('user_id')
+        .eq('employee_id', emp.manager_id)
+        .maybeSingle()
+      if (data?.user_id) ids.push(data.user_id)
+    }
+    // Fallback to all HR users when no manager is set
+    if (ids.length === 0) {
+      const { data } = await admin.from('user_roles').select('user_id').eq('role', 'hr')
+      for (const u of data ?? []) if (u.user_id) ids.push(u.user_id)
+    }
+    return ids
+  }
 
-  const { data: adminUser } = await admin
-    .from('user_roles')
-    .select('user_id')
-    .in('employee_id', empIds)
-    .in('role', ['admin', 'manager'])
-    .limit(1)
-    .maybeSingle()
-  return adminUser?.user_id ?? null
+  if (slug === 'ed' || slug === 'admin' || slug === 'hr') {
+    const { data } = await admin.from('user_roles').select('user_id').eq('role', slug as any)
+    for (const u of data ?? []) if (u.user_id) ids.push(u.user_id)
+    return ids
+  }
+
+  if (slug === 'finance_dept' || slug === 'admin_dept') {
+    const keyword = slug === 'finance_dept' ? '%finance%' : '%administration%'
+    const { data: dept } = await admin
+      .from('departments')
+      .select('id')
+      .ilike('name', keyword)
+      .maybeSingle()
+    if (dept?.id) {
+      const { data: empRows } = await admin.from('employees').select('id').eq('department_id', dept.id)
+      const empIds = (empRows ?? []).map((e: any) => e.id).filter(Boolean)
+      if (empIds.length > 0) {
+        const { data: users } = await admin.from('user_roles').select('user_id').in('employee_id', empIds)
+        for (const u of users ?? []) if (u.user_id) ids.push(u.user_id)
+      }
+    }
+    return ids
+  }
+
+  if (slug === 'admin_dept_manager') {
+    const { data: dept } = await admin
+      .from('departments')
+      .select('id')
+      .ilike('name', '%administration%')
+      .maybeSingle()
+    if (dept?.id) {
+      const { data: empRows } = await admin.from('employees').select('id').eq('department_id', dept.id)
+      const empIds = (empRows ?? []).map((e: any) => e.id).filter(Boolean)
+      if (empIds.length > 0) {
+        const { data: mgr } = await admin
+          .from('user_roles')
+          .select('user_id')
+          .in('employee_id', empIds)
+          .in('role', ['admin', 'manager'])
+          .limit(1)
+          .maybeSingle()
+        if (mgr?.user_id) ids.push(mgr.user_id)
+      }
+    }
+    // Fallback: all admin-role users
+    if (ids.length === 0) {
+      const { data } = await admin.from('user_roles').select('user_id').eq('role', 'admin')
+      for (const u of data ?? []) if (u.user_id) ids.push(u.user_id)
+    }
+    return ids
+  }
+
+  return ids
 }
 
 export async function POST(req: NextRequest) {
@@ -62,149 +124,35 @@ export async function POST(req: NextRequest) {
     const name = emp ? `${emp.first_name} ${emp.last_name}` : (requesterName ?? 'An employee')
     const recipientUserIds = new Set<string>()
 
-    if (targetGroup === 'admin_dept_and_ed') {
-      // ── Leave Credit path: notify Administration Department employees + ED role users ──
+    // 2. Resolve recipients from workflow_configs (DB-driven)
+    //    targetGroup maps to request_type in workflow_configs.
+    //    Legacy slug aliases are normalised below for backwards compatibility.
+    const requestTypeAlias: Record<string, string> = {
+      leave_request:    'leave',
+      admin_dept_and_ed: 'leave_credit',
+      travel_approval:  'travel',
+      admin_resources:  'publication', // generic admin_resources falls back to admin_dept_manager
+    }
+    const resolvedRequestType = requestTypeAlias[targetGroup] ?? targetGroup
 
-      // A. All users with the Executive Director (ed) role
-      const { data: edUsers } = await admin
-        .from('user_roles')
-        .select('user_id')
-        .eq('role', 'ed' as any)
-      for (const u of edUsers ?? []) {
-        if (u.user_id) recipientUserIds.add(u.user_id)
-      }
+    const { data: wfConfig } = await admin
+      .from('workflow_configs')
+      .select('notify_on_submit')
+      .eq('request_type', resolvedRequestType)
+      .eq('is_active', true)
+      .maybeSingle()
 
-      // B. Find the Administration Department (case-insensitive match)
-      const { data: adminDept } = await admin
-        .from('departments')
-        .select('id')
-        .ilike('name', '%administration%')
-        .maybeSingle()
+    const slugs: string[] = wfConfig?.notify_on_submit ?? []
 
-      if (adminDept?.id) {
-        // All employees in that department
-        const { data: adminEmpIds } = await admin
-          .from('employees')
-          .select('id')
-          .eq('department_id', adminDept.id)
+    for (const slug of slugs) {
+      const ids = await resolveRoleSlug(slug, admin, emp)
+      ids.forEach(id => recipientUserIds.add(id))
+    }
 
-        const empIds = (adminEmpIds ?? []).map((e: any) => e.id).filter(Boolean)
-        if (empIds.length > 0) {
-          const { data: deptUsers } = await admin
-            .from('user_roles')
-            .select('user_id')
-            .in('employee_id', empIds)
-          for (const u of deptUsers ?? []) {
-            if (u.user_id) recipientUserIds.add(u.user_id)
-          }
-        }
-      }
-    } else if (targetGroup === 'travel_approval') {
-      // ── Travel Request path: notify ED + admin manager + finance manager ──
-
-      // A. All users with the Executive Director (ed) role
-      const { data: edUsers } = await admin
-        .from('user_roles')
-        .select('user_id')
-        .eq('role', 'ed' as any)
-      for (const u of edUsers ?? []) {
-        if (u.user_id) recipientUserIds.add(u.user_id)
-      }
-
-      // B. All users with the 'admin' role (admin managers)
-      const { data: adminUsers } = await admin
-        .from('user_roles')
-        .select('user_id')
-        .eq('role', 'admin')
-      for (const u of adminUsers ?? []) {
-        if (u.user_id) recipientUserIds.add(u.user_id)
-      }
-
-      // C. All employees in the Finance Department
-      const { data: financeDept } = await admin
-        .from('departments')
-        .select('id')
-        .ilike('name', '%finance%')
-        .maybeSingle()
-
-      if (financeDept?.id) {
-        const { data: financeEmpIds } = await admin
-          .from('employees')
-          .select('id')
-          .eq('department_id', financeDept.id)
-
-        const empIds = (financeEmpIds ?? []).map((e: any) => e.id).filter(Boolean)
-        if (empIds.length > 0) {
-          const { data: financeUsers } = await admin
-            .from('user_roles')
-            .select('user_id')
-            .in('employee_id', empIds)
-          for (const u of financeUsers ?? []) {
-            if (u.user_id) recipientUserIds.add(u.user_id)
-          }
-        }
-      }
-
-      // Exclude the requester themselves from notifications
-      // (they'll get a decision notification when approved/rejected)
-    } else if (targetGroup === 'leave_request') {
-      // ── Leave Request path: notify ONLY the employee's direct manager ──
-      if (emp?.manager_id) {
-        const { data: managerUser } = await admin
-          .from('user_roles')
-          .select('user_id')
-          .eq('employee_id', emp.manager_id)
-          .maybeSingle()
-        if (managerUser?.user_id) recipientUserIds.add(managerUser.user_id)
-      }
-      // Fallback: if no direct manager set, notify all HR users
-      if (recipientUserIds.size === 0) {
-        const { data: hrUsers } = await admin
-          .from('user_roles')
-          .select('user_id')
-          .eq('role', 'hr')
-        for (const u of hrUsers ?? []) {
-          if (u.user_id) recipientUserIds.add(u.user_id)
-        }
-      }
-    } else if (targetGroup === 'admin_resources') {
-      // ── Publications / Equipment / Supplies: notify only the Admin dept manager ──
-      const adminManagerUserId = await getAdminDeptManagerUserId(admin)
-      if (adminManagerUserId) recipientUserIds.add(adminManagerUserId)
-      // Fallback: notify all admin-role users if no admin dept manager found
-      if (recipientUserIds.size === 0) {
-        const { data: adminUsers } = await admin
-          .from('user_roles')
-          .select('user_id')
-          .eq('role', 'admin')
-        for (const u of adminUsers ?? []) {
-          if (u.user_id) recipientUserIds.add(u.user_id)
-        }
-      }
-    } else {
-      // ── Default path: notify direct supervisor only ──
-      // (kept as fallback for any future request types)
-      if (emp?.manager_id) {
-        const { data: supervisorUser } = await admin
-          .from('user_roles')
-          .select('user_id')
-          .eq('employee_id', emp.manager_id)
-          .maybeSingle()
-        if (supervisorUser?.user_id) {
-          recipientUserIds.add(supervisorUser.user_id)
-        }
-      }
-
-      // Fallback: all admin/manager role users if no manager set
-      if (recipientUserIds.size === 0) {
-        const { data: adminUsers } = await admin
-          .from('user_roles')
-          .select('user_id, role')
-          .in('role', ADMIN_ROLES)
-        for (const a of adminUsers ?? []) {
-          if (a.user_id) recipientUserIds.add(a.user_id)
-        }
-      }
+    // 3. Fallback — if config not found or returns no recipients, use direct manager
+    if (recipientUserIds.size === 0) {
+      const fallbackIds = await resolveRoleSlug('direct_manager', admin, emp)
+      fallbackIds.forEach(id => recipientUserIds.add(id))
     }
 
     if (recipientUserIds.size === 0) {
@@ -212,6 +160,7 @@ export async function POST(req: NextRequest) {
     }
 
     // 4. Insert one notification row per recipient
+
     const requestIdField = table === 'leave_request_notifications' ? 'leave_request_id' : 'request_id'
     const rows = [...recipientUserIds].map((userId) => {
       const row: Record<string, unknown> = {

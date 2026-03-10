@@ -179,7 +179,7 @@ export default function AdminPage() {
       icon: Settings,
       color: 'bg-gray-600',
       href: '/admin/system-config',
-      items: ['General Settings', 'Email Configuration', 'API Settings', 'Integration Management', 'Backup & Recovery', 'System Maintenance'],
+      items: ['General Settings', 'Email Configuration', 'Workflow Settings', 'API Settings', 'Integration Management', 'Backup & Recovery', 'System Maintenance'],
       requiresPermission: 'system.config',
     },
     {
@@ -230,13 +230,13 @@ export default function AdminPage() {
 
   const pendingLeaveCount = leaveRequests.filter(r => r.status === 'pending').length
 
+  // Quick Stats: Remove duplicates, clarify labels
   const quickStats = [
-    { label: 'Total Users', value: users.length || employees.length, icon: Users, color: 'text-blue-600', bg: 'bg-blue-50' },
-    { label: 'Active Policies', value: securityPolicies.length, icon: FileText, color: 'text-green-600', bg: 'bg-green-50' },
-    { label: 'Pending Leave', value: pendingLeaveCount, icon: AlertTriangle, color: 'text-orange', bg: 'bg-orange/10' },
-    { label: 'Security Policies', value: securityPolicies.length, icon: Shield, color: 'text-red-600', bg: 'bg-red-50' },
+    { label: 'Total Users', value: users.length, icon: Users, color: 'text-blue-600', bg: 'bg-blue-50' },
     { label: 'Total Employees', value: employees.length, icon: Database, color: 'text-emerald-600', bg: 'bg-emerald-50' },
-    { label: 'Leave Requests', value: leaveRequests.length, icon: Award, color: 'text-purple-600', bg: 'bg-purple-50' },
+    { label: 'Active Security Policies', value: securityPolicies.length, icon: Shield, color: 'text-red-600', bg: 'bg-red-50' },
+    { label: 'Pending Leave Requests', value: pendingLeaveCount, icon: AlertTriangle, color: 'text-orange-600', bg: 'bg-orange-50' },
+    { label: 'Total Leave Requests', value: leaveRequests.length, icon: Award, color: 'text-purple-600', bg: 'bg-purple-50' },
   ]
 
   return (
@@ -265,44 +265,44 @@ export default function AdminPage() {
         ))}
       </div>
 
-      {/* System Health Monitor */}
+      {/* System Health Monitor (placeholder, ideally fetch real metrics) */}
       <Card className="p-6">
         <h3 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
           <Zap className="w-5 h-5 text-orange" />
           System Health Monitor
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="bg-green-50 p-4 rounded-lg">
+          <div className="bg-green-50 p-4 rounded-lg" aria-label="Database status">
             <div className="flex items-center gap-2 mb-2">
-              <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+              <div className="w-3 h-3 bg-green-500 rounded-full" aria-hidden="true"></div>
               <span className="text-sm font-medium text-green-800">Database</span>
             </div>
-            <p className="text-xs text-green-600">Response: 45ms</p>
-            <p className="text-xs text-green-600">Uptime: 99.98%</p>
+            <p className="text-xs text-green-600">Response: --</p>
+            <p className="text-xs text-green-600">Uptime: --</p>
           </div>
-          <div className="bg-green-50 p-4 rounded-lg">
+          <div className="bg-green-50 p-4 rounded-lg" aria-label="API status">
             <div className="flex items-center gap-2 mb-2">
-              <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+              <div className="w-3 h-3 bg-green-500 rounded-full" aria-hidden="true"></div>
               <span className="text-sm font-medium text-green-800">API Services</span>
             </div>
-            <p className="text-xs text-green-600">Response: 125ms</p>
-            <p className="text-xs text-green-600">Success Rate: 99.9%</p>
+            <p className="text-xs text-green-600">Response: --</p>
+            <p className="text-xs text-green-600">Success Rate: --</p>
           </div>
-          <div className="bg-yellow-50 p-4 rounded-lg">
+          <div className="bg-yellow-50 p-4 rounded-lg" aria-label="Storage status">
             <div className="flex items-center gap-2 mb-2">
-              <div className="w-3 h-3 bg-yellow-500 rounded-full animate-pulse"></div>
+              <div className="w-3 h-3 bg-yellow-500 rounded-full animate-pulse" aria-hidden="true"></div>
               <span className="text-sm font-medium text-yellow-800">Storage</span>
             </div>
-            <p className="text-xs text-yellow-600">Used: 78% (523GB)</p>
-            <p className="text-xs text-yellow-600">Free: 22% (147GB)</p>
+            <p className="text-xs text-yellow-600">Used: --</p>
+            <p className="text-xs text-yellow-600">Free: --</p>
           </div>
-          <div className="bg-blue-50 p-4 rounded-lg">
+          <div className="bg-blue-50 p-4 rounded-lg" aria-label="Memory status">
             <div className="flex items-center gap-2 mb-2">
-              <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
+              <div className="w-3 h-3 bg-blue-500 rounded-full" aria-hidden="true"></div>
               <span className="text-sm font-medium text-blue-800">Memory</span>
             </div>
-            <p className="text-xs text-blue-600">Used: 62% (4.9GB)</p>
-            <p className="text-xs text-blue-600">Available: 38% (3.1GB)</p>
+            <p className="text-xs text-blue-600">Used: --</p>
+            <p className="text-xs text-blue-600">Available: --</p>
           </div>
         </div>
       </Card>
@@ -317,7 +317,15 @@ export default function AdminPage() {
               className={`p-6 cursor-pointer transition-all hover:shadow-lg ${
                 activeSection === module.id ? 'ring-2 ring-orange' : ''
               }`}
+              tabIndex={0}
+              aria-expanded={activeSection === module.id}
+              aria-controls={`admin-section-${module.id}`}
               onClick={() => setActiveSection(activeSection === module.id ? null : module.id)}
+              onKeyDown={e => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  setActiveSection(activeSection === module.id ? null : module.id)
+                }
+              }}
             >
               <div className="flex items-start gap-4">
                 <div className={`p-3 rounded-lg ${module.color}`}>
@@ -333,7 +341,12 @@ export default function AdminPage() {
               </div>
 
               {activeSection === module.id && (
-                <div className="mt-4 pt-4 border-t border-gray-100 space-y-2">
+                <div
+                  id={`admin-section-${module.id}`}
+                  className="mt-4 pt-4 border-t border-gray-100 space-y-2"
+                  role="region"
+                  aria-label={`${module.title} details`}
+                >
                   {module.items.map((item) => (
                     <button
                       key={item}
@@ -404,20 +417,20 @@ export default function AdminPage() {
                           'Reimbursements': '/admin/payroll-benefits/reimbursements',
                           
                           // Performance Management routes
-                          'Review Cycles': '/admin/performance',
-                          'Rating Scales': '/admin/performance',
-                          'Goal Templates': '/admin/performance',
-                          'Competency Models': '/admin/performance',
-                          'KPI Frameworks': '/admin/performance',
-                          '360 Feedback': '/admin/performance',
+                          'Review Cycles': '/admin/performance/review-cycles',
+                          'Rating Scales': '/admin/performance/rating-scales',
+                          'Goal Templates': '/admin/performance/goal-templates',
+                          'Competency Models': '/admin/performance/competency-models',
+                          'KPI Frameworks': '/admin/performance/kpi-frameworks',
+                          '360 Feedback': '/admin/performance/360-feedback',
                           
                           // Learning & Development routes
-                          'Training Programs': '/admin/learning-development',
-                          'Certifications': '/admin/learning-development',
-                          'Skills Matrix': '/admin/learning-development',
-                          'Learning Paths': '/admin/learning-development',
-                          'External Training': '/admin/learning-development',
-                          'Compliance Training': '/admin/learning-development',
+                          'Training Programs': '/admin/learning-development/training-programs',
+                          'Certifications': '/admin/learning-development/certifications',
+                          'Skills Matrix': '/admin/learning-development/skills-matrix',
+                          'Learning Paths': '/admin/learning-development/learning-paths',
+                          'External Training': '/admin/learning-development/external-training',
+                          'Compliance Training': '/admin/learning-development/compliance-training',
                           
                           // Recruitment Management routes
                           'Job Postings': '/admin/recruitment/job-postings',
@@ -434,28 +447,29 @@ export default function AdminPage() {
                           'Screening Questions': '/admin/recruitment/screening-questions',
                           
                           // Compliance & Audit routes
-                          'Regulatory Compliance': '/admin/compliance-audit',
-                          'Audit Trails': '/admin/compliance-audit',
-                          'Data Retention Policies': '/admin/compliance-audit',
-                          'Privacy Settings': '/admin/compliance-audit',
-                          'GDPR Compliance': '/admin/compliance-audit',
-                          'Labor Law Compliance': '/admin/compliance-audit',
+                          'Regulatory Compliance': '/admin/compliance-audit/regulatory-compliance',
+                          'Audit Trails': '/admin/compliance-audit/audit-trails',
+                          'Data Retention Policies': '/admin/compliance-audit/data-retention-policies',
+                          'Privacy Settings': '/admin/compliance-audit/privacy-settings',
+                          'GDPR Compliance': '/admin/compliance-audit/gdpr-compliance',
+                          'Labor Law Compliance': '/admin/compliance-audit/labor-law-compliance',
                           
                           // Analytics & Reporting routes
-                          'Standard Reports': '/admin/analytics-reporting',
-                          'Custom Reports': '/admin/analytics-reporting',
-                          'Dashboard Configuration': '/admin/analytics-reporting',
-                          'Data Analytics': '/admin/analytics-reporting',
-                          'KPI Metrics': '/admin/analytics-reporting',
-                          'Export Settings': '/admin/analytics-reporting',
+                          'Standard Reports': '/admin/analytics-reports/standard-reports',
+                          'Custom Reports': '/admin/analytics-reports/custom-reports',
+                          'Dashboard Configuration': '/admin/analytics-reports/dashboard-configuration',
+                          'Data Analytics': '/admin/analytics-reports/data-analytics',
+                          'KPI Metrics': '/admin/analytics-reports/kpi-metrics',
+                          'Export Settings': '/admin/analytics-reports/export-settings',
                           
                           // System Configuration routes
-                          'General Settings': '/admin/system-configuration',
-                          'Email Configuration': '/admin/system-configuration',
-                          'API Settings': '/admin/system-configuration',
-                          'Integration Management': '/admin/system-configuration',
-                          'Backup & Recovery': '/admin/system-configuration',
-                          'System Maintenance': '/admin/system-configuration',
+                          'General Settings': '/admin/system-config/general-settings',
+                          'Email Configuration': '/admin/system-config/email-configuration',
+                          'Workflow Settings': '/admin/system-config/workflow-settings',
+                          'API Settings': '/admin/system-config/api-settings',
+                          'Integration Management': '/admin/system-config/integration-management',
+                          'Backup & Recovery': '/admin/system-config/backup-recovery',
+                          'System Maintenance': '/admin/system-config/system-maintenance',
                           
                           // Travel Management routes
                           'Travel Requests': '/admin/travel/travel-requests',
@@ -512,9 +526,16 @@ export default function AdminPage() {
           <div className="space-y-2">
             {auditLogs.map((log) => {
               // Determine icon and color based on action
+              // Improved: prioritize action type, fallback to system
               const getActivityType = (action: string) => {
                 const lowerAction = action.toLowerCase()
-                if (lowerAction.includes('security') || lowerAction.includes('password') || lowerAction.includes('access')) {
+                if (lowerAction.includes('deleted') || lowerAction.includes('removed')) {
+                  return { icon: AlertTriangle, type: 'delete' }
+                } else if (lowerAction.includes('created') || lowerAction.includes('added')) {
+                  return { icon: UserPlus, type: 'create' }
+                } else if (lowerAction.includes('updated') || lowerAction.includes('modified')) {
+                  return { icon: FileText, type: 'update' }
+                } else if (lowerAction.includes('security') || lowerAction.includes('password') || lowerAction.includes('access')) {
                   return { icon: Shield, type: 'security' }
                 } else if (lowerAction.includes('leave') || lowerAction.includes('policy')) {
                   return { icon: Calendar, type: 'policy' }
@@ -524,12 +545,6 @@ export default function AdminPage() {
                   return { icon: TrendingUp, type: 'process' }
                 } else if (lowerAction.includes('compliance') || lowerAction.includes('audit')) {
                   return { icon: Gavel, type: 'compliance' }
-                } else if (lowerAction.includes('created') || lowerAction.includes('added')) {
-                  return { icon: UserPlus, type: 'create' }
-                } else if (lowerAction.includes('updated') || lowerAction.includes('modified')) {
-                  return { icon: FileText, type: 'update' }
-                } else if (lowerAction.includes('deleted') || lowerAction.includes('removed')) {
-                  return { icon: AlertTriangle, type: 'delete' }
                 }
                 return { icon: Database, type: 'system' }
               }
@@ -586,6 +601,7 @@ export default function AdminPage() {
           <Button 
             variant="outline" 
             className="justify-start"
+            aria-label="Create User"
             onClick={() => router.push('/admin/user-access-security/user-management')}
           >
             <UserCheck className="w-4 h-4 mr-2" />
@@ -594,6 +610,7 @@ export default function AdminPage() {
           <Button 
             variant="outline" 
             className="justify-start"
+            aria-label="Assign Role"
             onClick={() => router.push('/admin/user-access-security/rbac')}
           >
             <Shield className="w-4 h-4 mr-2" />
@@ -602,6 +619,7 @@ export default function AdminPage() {
           <Button 
             variant="outline" 
             className="justify-start"
+            aria-label="Leave Policies"
             onClick={() => router.push('/admin/leave-policies')}
           >
             <FileText className="w-4 h-4 mr-2" />
@@ -610,7 +628,8 @@ export default function AdminPage() {
           <Button 
             variant="outline" 
             className="justify-start"
-            onClick={() => router.push('/admin/reports-analytics')}
+            aria-label="View Reports"
+            onClick={() => router.push('/admin/analytics-reports')}
           >
             <BarChart3 className="w-4 h-4 mr-2" />
             View Reports
@@ -618,6 +637,7 @@ export default function AdminPage() {
           <Button 
             variant="outline" 
             className="justify-start"
+            aria-label="Employee Records"
             onClick={() => router.push('/admin/employee-data/employee-records')}
           >
             <Eye className="w-4 h-4 mr-2" />
@@ -626,6 +646,7 @@ export default function AdminPage() {
           <Button 
             variant="outline" 
             className="justify-start"
+            aria-label="Security Policies"
             onClick={() => router.push('/admin/user-access-security/security-policies')}
           >
             <Lock className="w-4 h-4 mr-2" />
@@ -634,7 +655,8 @@ export default function AdminPage() {
           <Button 
             variant="outline" 
             className="justify-start"
-            onClick={() => router.push('/admin/data-privacy/data-backup')}
+            aria-label="Data Backup"
+            onClick={() => router.push('/admin/system-config/data-backup')}
           >
             <Database className="w-4 h-4 mr-2" />
             Data Backup
@@ -642,7 +664,8 @@ export default function AdminPage() {
           <Button 
             variant="outline" 
             className="justify-start"
-            onClick={() => router.push('/admin/system-config/system-preferences')}
+            aria-label="System Config"
+            onClick={() => router.push('/admin/system-config/general-settings')}
           >
             <Zap className="w-4 h-4 mr-2" />
             System Config

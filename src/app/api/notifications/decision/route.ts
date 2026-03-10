@@ -47,38 +47,64 @@ export async function POST(req: NextRequest) {
     // Build list of recipients: always the requester
     const recipientUserIds = new Set<string>([ur.user_id])
 
-    // For travel decisions: also notify admin managers + finance managers
-    if (notifyManagers === 'travel_managers') {
-      // All users with admin role
-      const { data: adminUsers } = await admin
-        .from('user_roles')
-        .select('user_id')
-        .eq('role', 'admin')
-      for (const u of adminUsers ?? []) {
-        if (u.user_id) recipientUserIds.add(u.user_id)
-      }
+    // For travel decisions: also CC the roles listed in workflow_configs.notify_on_decision
+    // This replaces the old hardcoded 'travel_managers' flag.
+    const requestTypeByTable: Record<string, string> = {
+      travel_request_notifications:      'travel',
+      publication_request_notifications: 'publication',
+      equipment_request_notifications:   'equipment',
+      supply_request_notifications:      'supply',
+      leave_request_notifications:       'leave',
+      leave_credit_notifications:        'leave_credit',
+    }
+    const requestType = requestTypeByTable[table]
 
-      // All employees in Finance Department
-      const { data: financeDept } = await admin
-        .from('departments')
-        .select('id')
-        .ilike('name', '%finance%')
+    if (requestType) {
+      const { data: wfConfig } = await admin
+        .from('workflow_configs')
+        .select('notify_on_decision')
+        .eq('request_type', requestType)
+        .eq('is_active', true)
         .maybeSingle()
 
-      if (financeDept?.id) {
-        const { data: financeEmpIds } = await admin
-          .from('employees')
-          .select('id')
-          .eq('department_id', financeDept.id)
+      const ccSlugs: string[] = wfConfig?.notify_on_decision ?? []
 
-        const empIds = (financeEmpIds ?? []).map((e: any) => e.id).filter(Boolean)
-        if (empIds.length > 0) {
-          const { data: financeUsers } = await admin
+      // Legacy support: if notifyManagers === 'travel_managers' and config is empty, fall back
+      const effectiveSlugs =
+        ccSlugs.length === 0 && notifyManagers === 'travel_managers'
+          ? ['admin', 'finance_dept']
+          : ccSlugs
+
+      for (const slug of effectiveSlugs) {
+        if (slug === 'admin' || slug === 'hr' || slug === 'ed') {
+          const { data: roleUsers } = await admin
             .from('user_roles')
             .select('user_id')
-            .in('employee_id', empIds)
-          for (const u of financeUsers ?? []) {
+            .eq('role', slug as any)
+          for (const u of roleUsers ?? []) {
             if (u.user_id) recipientUserIds.add(u.user_id)
+          }
+        } else if (slug === 'finance_dept') {
+          const { data: financeDept } = await admin
+            .from('departments')
+            .select('id')
+            .ilike('name', '%finance%')
+            .maybeSingle()
+          if (financeDept?.id) {
+            const { data: financeEmpIds } = await admin
+              .from('employees')
+              .select('id')
+              .eq('department_id', financeDept.id)
+            const empIds = (financeEmpIds ?? []).map((e: any) => e.id).filter(Boolean)
+            if (empIds.length > 0) {
+              const { data: financeUsers } = await admin
+                .from('user_roles')
+                .select('user_id')
+                .in('employee_id', empIds)
+              for (const u of financeUsers ?? []) {
+                if (u.user_id) recipientUserIds.add(u.user_id)
+              }
+            }
           }
         }
       }

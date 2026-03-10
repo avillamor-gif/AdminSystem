@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Modal, ModalHeader, ModalBody, ModalFooter, Button, Input, Select } from '@/components/ui'
 
 export interface PayComponentFormProps {
@@ -26,6 +26,14 @@ export function PayComponentForm({ open, onClose, onSave, initialData }: PayComp
     taxable: true,
     amount: '',
   })
+  useEffect(() => {
+    setForm(initialData || {
+      name: '',
+      type: '',
+      taxable: true,
+      amount: '',
+    })
+  }, [initialData])
 
   const handleChange = (field: string, value: any) => {
     setForm(f => ({ ...f, [field]: value }))
@@ -33,7 +41,14 @@ export function PayComponentForm({ open, onClose, onSave, initialData }: PayComp
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    onSave(form)
+    // Validation
+    if (!form.name.trim() || !form.type || form.amount === '' || isNaN(Number(form.amount)) || Number(form.amount) < 0) {
+      return
+    }
+    onSave({
+      ...form,
+      amount: Number(form.amount),
+    })
   }
 
   return (
@@ -63,11 +78,19 @@ export function PayComponentForm({ open, onClose, onSave, initialData }: PayComp
             label="Amount (PHP)"
             type="number"
             value={form.amount}
-            onChange={e => handleChange('amount', e.target.value)}
+            onChange={e => {
+              const val = e.target.value
+              if (val === '' || (!isNaN(Number(val)) && Number(val) >= 0)) {
+                handleChange('amount', val)
+              }
+            }}
             required
             min={0}
             id="paycomp-amount"
+            inputMode="decimal"
+            aria-describedby="paycomp-amount-desc"
           />
+          <span id="paycomp-amount-desc" className="sr-only">Enter a non-negative number</span>
           <div className="flex items-center gap-2 pt-1">
             <input
               id="paycomp-taxable"
@@ -75,6 +98,8 @@ export function PayComponentForm({ open, onClose, onSave, initialData }: PayComp
               checked={form.taxable}
               onChange={e => handleChange('taxable', e.target.checked)}
               className="rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+              aria-checked={form.taxable}
+              aria-label="Taxable"
             />
             <label htmlFor="paycomp-taxable" className="text-sm text-gray-700 select-none cursor-pointer">
               Taxable

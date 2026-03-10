@@ -2,23 +2,29 @@
 
 ## Architecture Overview
 
-**Next.js 14 App Router + Supabase** HRM system. All code lives in `src/` in the workspace root.
+**Next.js 14 App Router + Supabase** HRM system (PWA-enabled). All code lives in `src/` in the workspace root.
 
 ```
 src/
 ├── app/(dashboard)/            # Protected routes — all HR pages live here
-│   ├── employees/[id]/components/EmployeeDetailContent.tsx  # ~2000-line tabbed detail view
-│   ├── admin/                  # Admin sub-sections: job-management, leave-management, etc.
+│   ├── employees/[id]/components/EmployeeDetailContent.tsx  # ~2100-line tabbed detail view (reused for My Info)
+│   ├── admin/                  # Admin sub-sections: job-management, leave-management, payroll-benefits, etc.
+│   │   └── <section>/layout.tsx  # Each multi-page admin section uses SecondaryNav in a layout
 │   ├── api/                    # API routes (use service-role key for RLS bypass)
-│   └── layout.tsx              # Dashboard shell: resolves user→employee via user_roles
+│   ├── my-info/                # Self-service wrapper — renders EmployeeDetailContent with selfService prop
+│   └── layout.tsx              # Dashboard shell: resolves user→employee via user_roles, then email fallback
 ├── components/ui/              # Button, Input, Card, Modal, Badge, Avatar, Select, ConfirmModal
 ├── components/layout/          # Sidebar, Header, SecondaryNav
+├── components/admin/           # Domain-specific admin sub-components (e.g. payroll/PayComponentForm)
+├── contexts/SidebarContext.tsx  # Sidebar collapse state (useSidebar hook)
 ├── hooks/                      # React Query hooks (one file per domain, re-exported via index.ts)
-├── services/                   # Supabase query layer (one file per domain)
+├── services/                   # Supabase query layer (one file per domain, re-exported via index.ts)
 └── lib/supabase/
     ├── client.ts               # Browser client (createBrowserClient)
     ├── server.ts               # Server component client (createServerClient + cookies)
     ├── admin.ts                # Service-role client — server/API routes ONLY
+    ├── middleware.ts           # updateSession used by src/middleware.ts
+    ├── storage.ts              # Storage helpers: uploadEmployeePhoto, BUCKETS constant
     └── database.types.ts       # Auto-generated — DO NOT hand-edit
 ```
 
@@ -27,13 +33,15 @@ src/
 ## Development Commands
 
 ```bash
-npm install          # from workspace root (not hrm-react/)
+npm install          # from workspace root
 npm run dev          # http://localhost:3000
 npm run build
 npm run db:types     # regenerate src/lib/supabase/database.types.ts from Supabase
 ```
 
 **Required env vars:** `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`
+
+PWA is disabled in development (`next-pwa` config: `disable: process.env.NODE_ENV === 'development'`).
 
 ## Critical Supabase Patterns
 
@@ -51,10 +59,13 @@ await supabase.from('job_descriptions').insert(payload).select('*, job_title:job
 .select('*, department:departments(id, name), job_title:job_titles(id, title)')
 ```
 
+### Related-record fetching pattern
+All `*WithRelations` types (e.g. `EmployeeWithRelations`, `LeaveRequestWithRelations`) are assembled in JS, not SQL joins. Fetch the primary table with `select('*')`, then fetch related tables separately and map in JS. See `employee.service.ts` `getAll()` and `leave.service.ts` for the canonical pattern.
+
 ### Supabase Client Selection
 - **Client components / services:** `import { createClient } from '@/lib/supabase/client'`
 - **Server components / API routes:** `import { createClient } from '@/lib/supabase/server'`
-- **API routes needing RLS bypass:** `import { createAdminClient } from '@/lib/supabase/admin'` (service-role, server only)
+- **API routes needing RLS bypass:** `import { createAdminClient } from '@/lib/supabase/admin'` (service-role, never in browser)
 
 ### Types
 ```typescript
@@ -74,7 +85,7 @@ type Employee = Tables<'employees'>
     'employment_type_id', 'job_specification_id'
   ]
   ```
-- **`employee.service.ts` `getAll()`** fetches `departments` and `job_titles` in separate queries and maps in JS (intentional PGRST200 avoidance).
+- Services re-export via `src/services/index.ts` — import services from `@/services`, not individual files.
 - Services fixed to use `select('*')`: `jobDescription.service.ts`, `contractDocument.service.ts`, `employeeAttachment.service.ts`.
 
 ## React Query Hook Pattern
@@ -116,25 +127,40 @@ await selectedItem
 disabled={createMutation.isPending || updateMutation.isPending}
 ```
 
+Multi-page admin sections (e.g. `leave-management/`, `payroll-benefits/`) use a `layout.tsx` with `<SecondaryNav items={...} />` for the sub-nav, and a root `page.tsx` that `router.replace`s to the first sub-page.
+
 JSONB array fields (`responsibilities`, `qualifications`, `skills` on `job_descriptions`) must be guarded: `Array.isArray(desc.responsibilities) ? desc.responsibilities : []`
+
+## EmployeeDetailContent Reuse
+
+`EmployeeDetailContent` is a multi-prop component used in three contexts:
+- **Employee detail:** rendered by `employees/[id]/page.tsx` — uses `params.id`
+- **My Info (self-service):** `overrideEmployeeId={currentEmployee.employee_id}` + `hideBackButton` + `selfService` props
+- **Read-only:** `readOnly` prop hides all edit controls
 
 ## Notifications & API Routes
 
 Notifications use a two-step pattern to bypass RLS on `user_roles`:
-1. Service calls `notifySupervisorsAndAdmins()` / `notifyRequesterOfDecision()` from `src/services/requestNotification.helper.ts`
+1. Service/hook calls `notifySupervisorsAndAdmins()` / `notifyRequesterOfDecision()` from `src/services/requestNotification.helper.ts`
 2. These POST to `/api/notifications/send` or `/api/notifications/decision`, which use `createAdminClient()` to resolve supervisor/admin user IDs and insert rows
 
 **Never query `user_roles` for supervisor lookups in browser services** — RLS blocks it. Use the API route pattern above.
 
 API routes that need to create auth users (e.g., `/api/create-employee-auth`) use `SUPABASE_SERVICE_ROLE_KEY` directly — always guard for missing env vars.
 
+## Audit Logging
+
+`logAction()` from `src/services/auditLog.service.ts` is a fire-and-forget helper — call it from hooks in `onSuccess` callbacks. It swallows errors so it never breaks the main action. Used across `useTravel`, `useLeaveRequests`, `useAttendance`, etc.
+
 ## Auth & Permissions
 
-- `src/middleware.ts` protects all dashboard routes via `updateSession`
+- `src/middleware.ts` → `lib/supabase/middleware.ts` `updateSession` protects all dashboard routes; users not in `user_roles` are redirected to `/setup`
 - `user_roles` table links Supabase auth users → employees → roles
 - Dashboard `layout.tsx` resolves the logged-in user to an employee record first via `user_roles.employee_id`, then falls back to email match on `employees`
-- Use `useCurrentUserPermissions()` from `@/hooks/usePermissions` to gate UI by role; `useCurrentEmployee()` for the logged-in employee record
+- Permission hooks: `useCurrentUserPermissions()`, `useHasPermission(code)`, `useHasAnyPermission(codes[])`, `useIsAdmin()`, `useHasRole(name)` — all from `@/hooks/usePermissions`
+- `useCurrentEmployee()` returns the logged-in employee record
 - Permission codes follow `resource.action` format (e.g., `employees.edit`, `leave.approve`)
+- `permissionService.getDefaultPermissionsByRole()` defines fallback RBAC defaults synced to DB `role_permissions` table
 
 ## Database Notes
 
@@ -143,9 +169,13 @@ API routes that need to create auth users (e.g., `/api/create-employee-auth`) us
 - `employees` table has `employment_type_id` (FK → `employment_types`) and `job_specification_id` (FK → `job_descriptions`) added via migration (not in original schema.sql)
 - `employment_types.category` CHECK constraint: `'permanent'` | `'contract'` | `'temporary'` | `'intern'` | `'consultant'`
 
-## UI Components
+## UI Components & Utilities
 
 All in `src/components/ui/` — import via `@/components/ui`:
-`Button` (variants: `primary`, `secondary`, `danger`, `ghost`) · `Input` · `Select` · `Card` · `Modal` / `ModalHeader` / `ModalBody` / `ModalFooter` · `Badge` · `Avatar` · `ConfirmModal`
+`Button` (variants: `primary`, `secondary`, `danger`, `ghost`) · `Input` · `Select` · `Card` / `CardHeader` / `CardTitle` / `CardContent` · `Modal` / `ModalHeader` / `ModalBody` / `ModalFooter` · `Badge` · `Avatar` · `ConfirmModal`
 
-Toast: `import toast from 'react-hot-toast'` — used in mutation `onSuccess`/`onError` callbacks. (`sonner` is also used in `EmployeeDetailContent.tsx` only.)
+- Toast: `import toast from 'react-hot-toast'` in hooks/mutations. (`sonner` used in `EmployeeDetailContent.tsx` only — do not mix)
+- Date formatting: use `formatDate()` / `localDateStr()` from `@/lib/utils` — avoid `new Date().toISOString().split('T')[0]` (UTC timezone bug)
+- Styling: `cn()` from `@/lib/utils` (clsx + tailwind-merge)
+- Forms with validation: `react-hook-form` + `zod` + `zodResolver` (see `EmployeeFormModal.tsx`, `DepartmentFormModal.tsx`)
+- Storage uploads: use helpers from `@/lib/supabase/storage` (`uploadEmployeePhoto`, `BUCKETS` constants)

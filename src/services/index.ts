@@ -189,3 +189,5 @@ export type {
   LocationTypeUpdate,
   LocationTypeFilters
 } from './locationType.service'
+export { workflowConfigService } from './workflowConfig.service'
+export type { WorkflowConfig, ApprovalStep, WorkflowConfigUpdate } from './workflowConfig.service'

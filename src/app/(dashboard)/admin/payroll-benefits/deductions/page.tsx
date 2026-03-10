@@ -2,23 +2,14 @@
 'use client'
 
 import { useState } from 'react'
-import { Card, Button, Input, Select } from '@/components/ui'
-
-interface Deduction {
-  id: string
-  name: string
-  type: string
-  amount: number
-  recurring: boolean
-}
-
-const initialDeductions: Deduction[] = [
-  { id: '1', name: 'SSS', type: 'government', amount: 600, recurring: true },
-  { id: '2', name: 'PhilHealth', type: 'government', amount: 400, recurring: true },
-  { id: '3', name: 'Pag-IBIG', type: 'government', amount: 100, recurring: true },
-  { id: '4', name: 'Company Loan', type: 'company', amount: 2000, recurring: false },
-  { id: '5', name: 'Absence', type: 'other', amount: 500, recurring: false },
-]
+import { Card, Button, Input, Select, Modal, ModalHeader, ModalBody, ModalFooter } from '@/components/ui'
+import {
+  useDeductions,
+  useCreateDeduction,
+  useUpdateDeduction,
+  useDeleteDeduction,
+} from '@/hooks/useDeductions'
+import type { Deduction, DeductionInsert } from '@/services/deduction.service'
 
 const typeOptions = [
   { value: 'government', label: 'Government' },
