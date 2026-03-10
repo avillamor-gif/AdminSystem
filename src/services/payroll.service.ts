@@ -13,6 +13,7 @@
  */
 
 import { createClient } from '@/lib/supabase/client'
+import type { Tables, InsertTables as TablesInsert, UpdateTables as TablesUpdate } from '@/lib/supabase'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -20,67 +21,22 @@ export type PayrollRunStatus = 'draft' | 'processing' | 'for_approval' | 'approv
 export type PayslipStatus    = 'draft' | 'approved' | 'paid'
 export type PeriodType       = 'monthly' | 'semi_monthly' | 'weekly'
 
-export interface PayrollRun {
-  id: string
-  name: string
-  period_type: PeriodType
-  pay_date: string
-  period_start: string
-  period_end: string
-  status: PayrollRunStatus
-  notes: string | null
-  created_by: string | null
-  approved_by: string | null
-  approved_at: string | null
-  created_at: string
-  updated_at: string
+export type PayrollRun = Tables<'payroll_runs'> & {
   // aggregated (not in DB)
   payslip_count?: number
   total_net_pay?: number
   total_gross_pay?: number
 }
-
-export interface PayrollRunInsert {
-  name: string
-  period_type: PeriodType
-  pay_date: string
-  period_start: string
-  period_end: string
-  status?: PayrollRunStatus
-  notes?: string | null
-  created_by?: string | null
-}
+export type PayrollRunInsert = TablesInsert<'payroll_runs'>
 
 export interface BreakdownItem {
   name: string
   amount: number
 }
 
-export interface Payslip {
-  id: string
-  payroll_run_id: string
-  employee_id: string
-  basic_salary: number
-  allowances: number
-  gross_pay: number
-  sss_ee: number
-  philhealth_ee: number
-  pagibig_ee: number
-  withholding_tax: number
-  sss_er: number
-  philhealth_er: number
-  pagibig_er: number
-  other_deductions: number
-  total_deductions: number
-  net_pay: number
+export type Payslip = Tables<'payslips'> & {
   earnings_breakdown: BreakdownItem[] | null
   deductions_breakdown: BreakdownItem[] | null
-  adjustment_amount: number
-  adjustment_note: string | null
-  status: PayslipStatus
-  remarks: string | null
-  created_at: string
-  updated_at: string
   // joined
   employee?: {
     id: string
@@ -252,23 +208,23 @@ export const payrollService = {
   async getAllRuns(): Promise<PayrollRun[]> {
     const supabase = createClient()
     const { data, error } = await supabase
-      .from('payroll_runs' as any)
+      .from('payroll_runs')
       .select('*')
       .order('period_start', { ascending: false })
     if (error) throw error
-    const runs = (data ?? []) as unknown as PayrollRun[]
+    const runs = (data ?? []) as PayrollRun[]
 
     // Attach summary counts from payslips
     const ids = runs.map(r => r.id)
     if (ids.length === 0) return runs
 
     const { data: slips } = await supabase
-      .from('payslips' as any)
+      .from('payslips')
       .select('payroll_run_id, net_pay, gross_pay')
       .in('payroll_run_id', ids)
 
     const summary: Record<string, { count: number; net: number; gross: number }> = {}
-    for (const s of (slips ?? []) as any[]) {
+    for (const s of (slips ?? [])) {
       if (!summary[s.payroll_run_id]) summary[s.payroll_run_id] = { count: 0, net: 0, gross: 0 }
       summary[s.payroll_run_id].count++
       summary[s.payroll_run_id].net   += Number(s.net_pay)
@@ -286,47 +242,47 @@ export const payrollService = {
   async getRunById(id: string): Promise<PayrollRun | null> {
     const supabase = createClient()
     const { data, error } = await supabase
-      .from('payroll_runs' as any)
+      .from('payroll_runs')
       .select('*')
       .eq('id', id)
       .single()
     if (error) return null
-    return data as unknown as PayrollRun
+    return data as PayrollRun
   },
 
   async createRun(payload: PayrollRunInsert): Promise<PayrollRun> {
     const supabase = createClient()
     const { data: { user } } = await supabase.auth.getUser()
     const { data, error } = await supabase
-      .from('payroll_runs' as any)
+      .from('payroll_runs')
       .insert({ ...payload, created_by: user?.id ?? null })
       .select('*')
       .single()
     if (error) throw error
-    return data as unknown as PayrollRun
+    return data as PayrollRun
   },
 
   async updateRunStatus(id: string, status: PayrollRunStatus, approvedBy?: string): Promise<PayrollRun> {
     const supabase = createClient()
-    const patch: any = { status, updated_at: new Date().toISOString() }
+    const patch: TablesUpdate<'payroll_runs'> = { status, updated_at: new Date().toISOString() }
     if (status === 'approved' && approvedBy) {
       patch.approved_by  = approvedBy
       patch.approved_at  = new Date().toISOString()
     }
     const { data, error } = await supabase
-      .from('payroll_runs' as any)
+      .from('payroll_runs')
       .update(patch)
       .eq('id', id)
       .select('*')
       .single()
     if (error) throw error
-    return data as unknown as PayrollRun
+    return data as PayrollRun
   },
 
   async deleteRun(id: string): Promise<void> {
     const supabase = createClient()
     const { error } = await supabase
-      .from('payroll_runs' as any)
+      .from('payroll_runs')
       .delete()
       .eq('id', id)
     if (error) throw error
@@ -337,12 +293,12 @@ export const payrollService = {
   async getPayslipsByRun(runId: string): Promise<Payslip[]> {
     const supabase = createClient()
     const { data, error } = await supabase
-      .from('payslips' as any)
+      .from('payslips')
       .select('*')
       .eq('payroll_run_id', runId)
       .order('created_at', { ascending: true })
     if (error) throw error
-    const payslips = (data ?? []) as unknown as Payslip[]
+    const payslips = (data ?? []) as Payslip[]
 
     // Fetch employee details separately (avoid aliased FK)
     const empIds = [...new Set(payslips.map(p => p.employee_id))]
@@ -380,35 +336,35 @@ export const payrollService = {
   async getMyPayslips(employeeId: string): Promise<Payslip[]> {
     const supabase = createClient()
     const { data, error } = await supabase
-      .from('payslips' as any)
-      .select(`*, payroll_run:payroll_runs(id, name, period_start, period_end, pay_date, period_type)`)
+      .from('payslips')
+      .select('*')
       .eq('employee_id', employeeId)
       .order('created_at', { ascending: false })
     if (error) throw error
-    return (data ?? []) as unknown as Payslip[]
+    return (data ?? []) as Payslip[]
   },
 
-  async upsertPayslip(payslip: Omit<Payslip, 'id' | 'created_at' | 'updated_at'>): Promise<Payslip> {
+  async upsertPayslip(payslip: TablesInsert<'payslips'>): Promise<Payslip> {
     const supabase = createClient()
     const { data, error } = await supabase
-      .from('payslips' as any)
-      .upsert(payslip, { onConflict: 'payroll_run_id,employee_id' })
+      .from('payslips')
+      .upsert(payslip as TablesInsert<'payslips'>, { onConflict: 'payroll_run_id,employee_id' })
       .select('*')
       .single()
     if (error) throw error
-    return data as unknown as Payslip
+    return data as Payslip
   },
 
   async updatePayslip(id: string, patch: Partial<Payslip>): Promise<Payslip> {
     const supabase = createClient()
     const { data, error } = await supabase
-      .from('payslips' as any)
-      .update({ ...patch, updated_at: new Date().toISOString() })
+      .from('payslips')
+      .update({ ...patch, updated_at: new Date().toISOString() } as TablesUpdate<'payslips'>)
       .eq('id', id)
       .select('*')
       .single()
     if (error) throw error
-    return data as unknown as Payslip
+    return data as Payslip
   },
 
   /**
@@ -445,7 +401,7 @@ export const payrollService = {
       const rawComponents: { name: string; amount: number; type: string }[] =
         Array.isArray(struct?.components) ? struct.components : []
 
-      const computed = computePayslip(basicSalary, rawComponents, run.period_type)
+      const computed = computePayslip(basicSalary, rawComponents, run.period_type as PeriodType)
 
       const payslip = await payrollService.upsertPayslip({
         payroll_run_id:       run.id,
@@ -455,7 +411,7 @@ export const payrollService = {
         adjustment_note:      null,
         status:               'draft',
         remarks:              null,
-      })
+      } as unknown as TablesInsert<'payslips'>)
       results.push(payslip)
     }
 

@@ -208,8 +208,8 @@ export default function PayrollRunsPage() {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-3 flex-wrap">
                     <h3 className="font-semibold text-gray-900 truncate">{run.name}</h3>
-                    <span className={cn('px-2.5 py-0.5 rounded-full text-xs font-medium', STATUS_COLORS[run.status])}>
-                      {STATUS_LABELS[run.status]}
+                    <span className={cn('px-2.5 py-0.5 rounded-full text-xs font-medium', STATUS_COLORS[run.status as PayrollRunStatus])}>
+                      {STATUS_LABELS[run.status as PayrollRunStatus]}
                     </span>
                   </div>
                   <div className="flex items-center gap-4 mt-1 text-sm text-gray-500 flex-wrap">
@@ -233,7 +233,7 @@ export default function PayrollRunsPage() {
 
                 {/* Actions */}
                 <div className="flex items-center gap-2 shrink-0">
-                  {run.status === 'draft' && (
+                  {(run.status as PayrollRunStatus) === 'draft' && (
                     <Button
                       variant="secondary"
                       onClick={() => setGenerateRun(run)}
@@ -243,7 +243,7 @@ export default function PayrollRunsPage() {
                       Generate
                     </Button>
                   )}
-                  {run.status === 'for_approval' && (
+                  {(run.status as PayrollRunStatus) === 'for_approval' && (
                     <Button
                       variant="primary"
                       onClick={() => updateStatus.mutate({ id: run.id, status: 'approved' })}
@@ -253,7 +253,7 @@ export default function PayrollRunsPage() {
                       Approve
                     </Button>
                   )}
-                  {run.status === 'approved' && (
+                  {(run.status as PayrollRunStatus) === 'approved' && (
                     <Button
                       variant="primary"
                       onClick={() => updateStatus.mutate({ id: run.id, status: 'paid' })}
@@ -271,7 +271,7 @@ export default function PayrollRunsPage() {
                     View
                     <ChevronRight className="w-3.5 h-3.5 ml-1" />
                   </Button>
-                  {['draft', 'cancelled'].includes(run.status) && (
+                  {['draft', 'cancelled'].includes(run.status as PayrollRunStatus) && (
                     <Button
                       variant="danger"
                       onClick={() => setDeleteId(run.id)}

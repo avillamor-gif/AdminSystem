@@ -2049,6 +2049,7 @@ export type Database = {
           philhealth_number: string | null
           phone: string | null
           remote_location: string | null
+          salary_structure_id: string | null
           sex: string | null
           sss_number: string | null
           state: string | null
@@ -2094,6 +2095,7 @@ export type Database = {
           philhealth_number?: string | null
           phone?: string | null
           remote_location?: string | null
+          salary_structure_id?: string | null
           sex?: string | null
           sss_number?: string | null
           state?: string | null
@@ -2139,6 +2141,7 @@ export type Database = {
           philhealth_number?: string | null
           phone?: string | null
           remote_location?: string | null
+          salary_structure_id?: string | null
           sex?: string | null
           sss_number?: string | null
           state?: string | null
@@ -2207,6 +2210,13 @@ export type Database = {
             columns: ["manager_id"]
             isOneToOne: false
             referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employees_salary_structure_id_fkey"
+            columns: ["salary_structure_id"]
+            isOneToOne: false
+            referencedRelation: "salary_structures"
             referencedColumns: ["id"]
           },
         ]
@@ -4196,6 +4206,157 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: []
+      }
+      payroll_runs: {
+        Row: {
+          approved_at: string | null
+          approved_by: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          name: string
+          notes: string | null
+          pay_date: string
+          period_end: string
+          period_start: string
+          period_type: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          name: string
+          notes?: string | null
+          pay_date: string
+          period_end: string
+          period_start: string
+          period_type: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          name?: string
+          notes?: string | null
+          pay_date?: string
+          period_end?: string
+          period_start?: string
+          period_type?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      payslips: {
+        Row: {
+          adjustment_amount: number
+          adjustment_note: string | null
+          allowances: number
+          basic_salary: number
+          created_at: string
+          deductions_breakdown: Json | null
+          earnings_breakdown: Json | null
+          employee_id: string
+          gross_pay: number
+          id: string
+          net_pay: number
+          other_deductions: number
+          pagibig_ee: number
+          pagibig_er: number
+          payroll_run_id: string
+          philhealth_ee: number
+          philhealth_er: number
+          remarks: string | null
+          sss_ee: number
+          sss_er: number
+          status: string
+          total_deductions: number
+          updated_at: string
+          withholding_tax: number
+        }
+        Insert: {
+          adjustment_amount?: number
+          adjustment_note?: string | null
+          allowances?: number
+          basic_salary?: number
+          created_at?: string
+          deductions_breakdown?: Json | null
+          earnings_breakdown?: Json | null
+          employee_id: string
+          gross_pay?: number
+          id?: string
+          net_pay?: number
+          other_deductions?: number
+          pagibig_ee?: number
+          pagibig_er?: number
+          payroll_run_id: string
+          philhealth_ee?: number
+          philhealth_er?: number
+          remarks?: string | null
+          sss_ee?: number
+          sss_er?: number
+          status?: string
+          total_deductions?: number
+          updated_at?: string
+          withholding_tax?: number
+        }
+        Update: {
+          adjustment_amount?: number
+          adjustment_note?: string | null
+          allowances?: number
+          basic_salary?: number
+          created_at?: string
+          deductions_breakdown?: Json | null
+          earnings_breakdown?: Json | null
+          employee_id?: string
+          gross_pay?: number
+          id?: string
+          net_pay?: number
+          other_deductions?: number
+          pagibig_ee?: number
+          pagibig_er?: number
+          payroll_run_id?: string
+          philhealth_ee?: number
+          philhealth_er?: number
+          remarks?: string | null
+          sss_ee?: number
+          sss_er?: number
+          status?: string
+          total_deductions?: number
+          updated_at?: string
+          withholding_tax?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payslips_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "board_members"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payslips_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payslips_payroll_run_id_fkey"
+            columns: ["payroll_run_id"]
+            isOneToOne: false
+            referencedRelation: "payroll_runs"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       performance_reviews: {
         Row: {

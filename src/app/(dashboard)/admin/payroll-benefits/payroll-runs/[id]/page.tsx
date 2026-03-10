@@ -293,8 +293,8 @@ export default function PayrollRunDetailPage({ params }: { params: { id: string 
           <div>
             <div className="flex items-center gap-3">
               <h1 className="text-2xl font-bold text-gray-900">{run.name}</h1>
-              <span className={cn('px-2.5 py-0.5 rounded-full text-xs font-medium', STATUS_COLORS[run.status])}>
-                {STATUS_LABELS[run.status]}
+              <span className={cn('px-2.5 py-0.5 rounded-full text-xs font-medium', STATUS_COLORS[run.status as PayrollRunStatus])}>
+                {STATUS_LABELS[run.status as PayrollRunStatus]}
               </span>
             </div>
             <p className="text-gray-500 text-sm mt-0.5">
@@ -304,7 +304,7 @@ export default function PayrollRunDetailPage({ params }: { params: { id: string 
         </div>
 
         <div className="flex items-center gap-2 shrink-0">
-          {run.status === 'for_approval' && (
+          {(run.status as PayrollRunStatus) === 'for_approval' && (
             <Button
               onClick={() => updateStatus.mutate({ id: run.id, status: 'approved' })}
               disabled={updateStatus.isPending}
@@ -312,7 +312,7 @@ export default function PayrollRunDetailPage({ params }: { params: { id: string 
               <CheckCircle className="w-4 h-4 mr-1.5" />Approve
             </Button>
           )}
-          {run.status === 'approved' && (
+          {(run.status as PayrollRunStatus) === 'approved' && (
             <Button
               onClick={() => updateStatus.mutate({ id: run.id, status: 'paid' })}
               disabled={updateStatus.isPending}
@@ -364,7 +364,7 @@ export default function PayrollRunDetailPage({ params }: { params: { id: string 
               <PayslipRow
                 key={slip.id}
                 slip={slip}
-                runStatus={run.status}
+                runStatus={run.status as PayrollRunStatus}
                 onEdit={setEditSlip}
               />
             ))}
