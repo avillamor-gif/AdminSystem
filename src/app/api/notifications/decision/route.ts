@@ -67,7 +67,7 @@ export async function POST(req: NextRequest) {
         .eq('is_active', true)
         .maybeSingle()
 
-      const ccSlugs: string[] = wfConfig?.notify_on_decision ?? []
+      const ccSlugs: string[] = Array.isArray(wfConfig?.notify_on_decision) ? wfConfig.notify_on_decision as string[] : []
 
       // Legacy support: if notifyManagers === 'travel_managers' and config is empty, fall back
       const effectiveSlugs =

@@ -1,2 +1,2 @@
 export { createClient } from './client'
-export type { Database, Tables, InsertTables, UpdateTables } from './database.types'
+export type { Database, Tables, TablesInsert as InsertTables, TablesUpdate as UpdateTables } from './database.types'

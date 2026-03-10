@@ -4,8 +4,9 @@ import { Modal, ModalHeader, ModalBody, ModalFooter, Button, Input, Select } fro
 export interface PayComponentFormProps {
   open: boolean
   onClose: () => void
-  onSave: (data: any) => void
+  onSave: (data: any) => void | Promise<void>
   initialData?: any
+  loading?: boolean
 }
 
 const componentTypes = [
@@ -19,7 +20,7 @@ const componentTypes = [
   { value: 'other', label: 'Other' },
 ]
 
-export function PayComponentForm({ open, onClose, onSave, initialData }: PayComponentFormProps) {
+export function PayComponentForm({ open, onClose, onSave, initialData, loading }: PayComponentFormProps) {
   const [form, setForm] = useState(initialData || {
     name: '',
     type: '',
@@ -36,7 +37,7 @@ export function PayComponentForm({ open, onClose, onSave, initialData }: PayComp
   }, [initialData])
 
   const handleChange = (field: string, value: any) => {
-    setForm(f => ({ ...f, [field]: value }))
+    setForm((f: any) => ({ ...f, [field]: value }))
   }
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -110,8 +111,8 @@ export function PayComponentForm({ open, onClose, onSave, initialData }: PayComp
           <Button type="button" variant="secondary" onClick={onClose}>
             Cancel
           </Button>
-          <Button type="submit" variant="primary">
-            Save
+          <Button type="submit" variant="primary" disabled={loading}>
+            {loading ? 'Saving…' : 'Save'}
           </Button>
         </ModalFooter>
       </form>

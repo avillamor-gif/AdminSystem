@@ -1,4 +1,4 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient, type UseQueryResult } from '@tanstack/react-query'
 import { locationService, type LocationWithRelations, type LocationFilters } from '@/services/location.service'
 import type { Database } from '@/lib/supabase/database.types'
 import { toast } from 'sonner'

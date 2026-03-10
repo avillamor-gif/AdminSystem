@@ -46,7 +46,7 @@ export default function MyTravelRequestsPage() {
         estimated_cost: estimatedCost,
         business_justification: justification,
         status: 'submitted'
-      })
+      } as any)
       setShowCreateModal(false)
     } catch (error) {
       console.error('Error creating travel request:', error)

@@ -48,7 +48,7 @@ export default function MyPublicationRequestsPage() {
         purpose: justification,
         request_type: 'purchase',
         status: 'submitted'
-      })
+      } as any)
       setShowCreateModal(false)
     } catch (error) {
       console.error('Error creating publication request:', error)

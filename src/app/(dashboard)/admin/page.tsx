@@ -583,7 +583,7 @@ export default function AdminPage() {
                       by {log.changed_by} • {employeeName}
                     </p>
                     {log.details && (
-                      <p className="text-xs text-gray-400 mt-1">{log.details}</p>
+                      <p className="text-xs text-gray-400 mt-1">{typeof log.details === 'string' ? log.details : JSON.stringify(log.details)}</p>
                     )}
                   </div>
                   <p className="text-xs text-gray-400">{timeAgo}</p>

@@ -142,7 +142,7 @@ export async function POST(req: NextRequest) {
       .eq('is_active', true)
       .maybeSingle()
 
-    const slugs: string[] = wfConfig?.notify_on_submit ?? []
+    const slugs: string[] = Array.isArray(wfConfig?.notify_on_submit) ? wfConfig.notify_on_submit as string[] : []
 
     for (const slug of slugs) {
       const ids = await resolveRoleSlug(slug, admin, emp)

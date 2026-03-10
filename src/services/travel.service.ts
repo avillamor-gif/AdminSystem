@@ -1,5 +1,5 @@
 import { createClient } from '../lib/supabase/client'
-import { Tables, InsertTables, UpdateTables } from '../lib/supabase/database.types'
+import type { Tables, InsertTables, UpdateTables } from '../lib/supabase'
 import { workflowService } from './workflow.service'
 import { notifySupervisorsAndAdmins, notifyRequesterOfDecision } from './requestNotification.helper'
 

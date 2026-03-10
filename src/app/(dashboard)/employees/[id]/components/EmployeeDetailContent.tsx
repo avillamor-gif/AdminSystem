@@ -313,7 +313,7 @@ export function EmployeeDetailContent({
       
       await updateEmployee.mutateAsync({
         id: employee.id,
-        data: cleanData
+        data: cleanData as any
       })
       setIsEditMode(false)
       await logAction({

@@ -203,7 +203,7 @@ export const workScheduleService = {
   async update(id: string, updates: Partial<WorkSchedule>): Promise<WorkSchedule> {
     const { data, error } = await supabase
       .from('work_schedules')
-      .update({ ...updates, updated_at: new Date().toISOString() })
+      .update({ ...updates, updated_at: new Date().toISOString() } as any)
       .eq('id', id)
       .select()
       .single()
@@ -307,7 +307,7 @@ export const shiftPatternService = {
   async update(id: string, updates: Partial<ShiftPattern>): Promise<ShiftPattern> {
     const { data, error } = await supabase
       .from('shift_patterns')
-      .update({ ...updates, updated_at: new Date().toISOString() })
+      .update({ ...updates, updated_at: new Date().toISOString() } as any)
       .eq('id', id)
       .select()
       .single()
@@ -366,7 +366,7 @@ export const overtimeRuleService = {
   async update(id: string, updates: Partial<OvertimeRule>): Promise<OvertimeRule> {
     const { data, error } = await supabase
       .from('overtime_rules')
-      .update({ ...updates, updated_at: new Date().toISOString() })
+      .update({ ...updates, updated_at: new Date().toISOString() } as any)
       .eq('id', id)
       .select()
       .single()
@@ -425,7 +425,7 @@ export const breakPolicyService = {
   async update(id: string, updates: Partial<BreakPolicy>): Promise<BreakPolicy> {
     const { data, error } = await supabase
       .from('break_policies')
-      .update({ ...updates, updated_at: new Date().toISOString() })
+      .update({ ...updates, updated_at: new Date().toISOString() } as any)
       .eq('id', id)
       .select()
       .single()
@@ -484,7 +484,7 @@ export const timeTrackingMethodService = {
   async update(id: string, updates: Partial<TimeTrackingMethod>): Promise<TimeTrackingMethod> {
     const { data, error } = await supabase
       .from('time_tracking_methods')
-      .update({ ...updates, updated_at: new Date().toISOString() })
+      .update({ ...updates, updated_at: new Date().toISOString() } as any)
       .eq('id', id)
       .select()
       .single()
@@ -562,7 +562,7 @@ export const attendancePolicyService = {
   async update(id: string, updates: Partial<AttendancePolicy>): Promise<AttendancePolicy> {
     const { data, error } = await supabase
       .from('attendance_policies')
-      .update({ ...updates, updated_at: new Date().toISOString() })
+      .update({ ...updates, updated_at: new Date().toISOString() } as any)
       .eq('id', id)
       .select()
       .single()

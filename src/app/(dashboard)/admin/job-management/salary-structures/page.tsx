@@ -161,7 +161,7 @@ export default function SalaryStructuresPage() {
       return
     }
 
-    const submitData: SalaryStructureInsert | SalaryStructureUpdate = {
+    const submitData = {
       name: formData.name,
       code: formData.code,
       pay_grade_id: formData.pay_grade_id,
@@ -174,9 +174,9 @@ export default function SalaryStructuresPage() {
 
     try {
       if (editingId) {
-        await updateMutation.mutateAsync({ id: editingId, data: submitData })
+        await updateMutation.mutateAsync({ id: editingId, data: submitData as SalaryStructureUpdate })
       } else {
-        await createMutation.mutateAsync(submitData)
+        await createMutation.mutateAsync(submitData as SalaryStructureInsert)
       }
       handleCloseModal()
     } catch (error) {
