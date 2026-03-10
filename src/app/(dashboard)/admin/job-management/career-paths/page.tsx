@@ -263,7 +263,7 @@ export default function CareerPathsPage() {
                   <Target className="w-5 h-5 text-blue-600" />
                   <div>
                     <p className="text-xs text-gray-600">Career Levels</p>
-                    <p className="text-lg font-bold text-gray-900">{path.levels?.length || 0}</p>
+                    <p className="text-lg font-bold text-gray-900">{Array.isArray(path.levels) ? path.levels.length : 0}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-3 p-3 bg-purple-50 rounded-lg">
