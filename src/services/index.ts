@@ -191,3 +191,6 @@ export type {
 } from './locationType.service'
 export { workflowConfigService } from './workflowConfig.service'
 export type { WorkflowConfig, ApprovalStep, WorkflowConfigUpdate } from './workflowConfig.service'
+export { payrollService } from './payroll.service'
+export type { PayrollRun, PayrollRunInsert, Payslip, BreakdownItem, PeriodType, PayrollRunStatus, PayslipStatus, ComputedPayslip } from './payroll.service'
+export { computePayslip } from './payroll.service'

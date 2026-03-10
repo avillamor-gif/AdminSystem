@@ -12,6 +12,7 @@ const ALLOWED_FIELDS = [
   'national_id', 'voters_id', 'pagibig_number', 'philhealth_number', 'sss_number', 'tin_number',
   'work_phone', 'mobile_phone', 'home_phone', 'work_email', 'personal_email', 'state', 'zip_code',
   'contract_start_date', 'contract_end_date',
+  'salary_structure_id',
 ]
 
 export async function PATCH(

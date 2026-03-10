@@ -1,6 +1,7 @@
 import SecondaryNav from '@/components/layout/SecondaryNav'
 
 const navItems = [
+  { label: 'Payroll Runs',     href: '/admin/payroll-benefits/payroll-runs' },
   { label: 'Pay Components',   href: '/admin/payroll-benefits/pay-components' },
   { label: 'Tax Configuration',href: '/admin/payroll-benefits/tax-configuration' },
   { label: 'Benefits Plans',   href: '/admin/payroll-benefits/benefits-plans' },
