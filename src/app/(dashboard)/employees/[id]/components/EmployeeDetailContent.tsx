@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowLeft, Mail, Phone, MapPin, Calendar, Building2, Briefcase, User, Users, CreditCard, Shield, Award, FileText, Heart, Plane, Laptop, GraduationCap, Lock, Save, Paperclip, Upload, Download, Trash2, Edit, Eye, Camera } from 'lucide-react'
+import { ArrowLeft, Mail, Phone, MapPin, Calendar, Building2, Briefcase, User, Users, CreditCard, Shield, Award, FileText, Heart, Plane, Laptop, GraduationCap, Lock, Save, Paperclip, Upload, Download, Trash2, Edit, Eye, Camera, RotateCcw, Package } from 'lucide-react'
 import { Card, Avatar, Badge, Button, Input, Select } from '@/components/ui'
 import { formatDate } from '@/lib/utils'
 import { useEmployeeByEmployeeId, useUpdateEmployee, useEmployees } from '@/hooks/useEmployees'
@@ -16,6 +16,8 @@ import { useDepartments } from '@/hooks/useDepartments'
 import { useEmergencyContacts, useDeleteEmergencyContact } from '@/hooks/useEmergencyContacts'
 import { useContractDocuments, useUploadContractDocument, useDeleteContractDocument, useDownloadContractDocument } from '@/hooks/useContractDocuments'
 import { useEmployeeAttachments, useUploadEmployeeAttachment, useDeleteEmployeeAttachment, useDownloadEmployeeAttachment } from '@/hooks/useEmployeeAttachments'
+import { useAssets, useAssetAssignments, useAssignAsset, useReturnAsset, type Asset } from '@/hooks/useAssets'
+import { useCurrentEmployee } from '@/hooks/useEmployees'
 import { EmergencyContactFormModal } from './EmergencyContactFormModal'
 import { uploadEmployeePhoto, deleteEmployeePhoto } from '@/lib/supabase/storage'
 import { logAction } from '@/services/auditLog.service'
@@ -124,6 +126,25 @@ export function EmployeeDetailContent({
   const uploadEmployeeAttachment = useUploadEmployeeAttachment()
   const deleteEmployeeAttachment = useDeleteEmployeeAttachment()
   const downloadEmployeeAttachment = useDownloadEmployeeAttachment()
+  // Asset hooks
+  const { data: currentEmployee } = useCurrentEmployee()
+  const { data: assignedAssets = [], isLoading: isLoadingAssets } = useAssets(
+    employee?.id ? { assigned_to: employee.id } : undefined
+  )
+  const { data: assetAssignments = [], isLoading: isLoadingAssignments } = useAssetAssignments(
+    employee?.id ? { employee_id: employee.id, is_active: true } : undefined
+  )
+  const { data: availableAssets = [] } = useAssets({ status: 'available' })
+  const assignAsset = useAssignAsset()
+  const returnAsset = useReturnAsset()
+  // Asset modal state
+  const [isAssignAssetModalOpen, setIsAssignAssetModalOpen] = useState(false)
+  const [isReturnAssetModalOpen, setIsReturnAssetModalOpen] = useState(false)
+  const [selectedAssignmentId, setSelectedAssignmentId] = useState<string | null>(null)
+  const [selectedAssetIdToAssign, setSelectedAssetIdToAssign] = useState('')
+  const [assignCondition, setAssignCondition] = useState('')
+  const [returnCondition, setReturnCondition] = useState('')
+  const [returnNotes, setReturnNotes] = useState('')
   const isAdmin = roleInfo?.permissions?.includes('employee.edit') ?? false
   // In self-service mode (My Info), employees can edit their own personal/contact/emergency data
   const canSelfEdit = isAdmin || selfService
@@ -1827,6 +1848,7 @@ export function EmployeeDetailContent({
       case 'assets':
         return (
           <div className="space-y-4">
+            {/* Header */}
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-orange/10 rounded-lg">
@@ -1837,10 +1859,197 @@ export function EmployeeDetailContent({
                   <p className="text-sm text-gray-500 mt-1">Company property and equipment assigned to employee</p>
                 </div>
               </div>
-              <Button variant="secondary" size="sm">Assign Asset</Button>
+              {!readOnly && !selfService && isAdmin && (
+                <Button variant="secondary" size="sm" onClick={() => {
+                  setSelectedAssetIdToAssign('')
+                  setAssignCondition('')
+                  setIsAssignAssetModalOpen(true)
+                }}>
+                  Assign Asset
+                </Button>
+              )}
             </div>
-            <div className="border-t border-gray-200 mb-6"></div>
-            <p className="text-gray-500 text-center py-8">No assets assigned yet.</p>
+            <div className="border-t border-gray-200 mb-6" />
+
+            {/* Asset list */}
+            {isLoadingAssets || isLoadingAssignments ? (
+              <div className="text-center py-8 text-gray-400">Loading assets…</div>
+            ) : assignedAssets.length === 0 ? (
+              <div className="text-center py-12">
+                <Package className="w-10 h-10 text-gray-300 mx-auto mb-3" />
+                <p className="text-gray-500 font-medium">No assets assigned yet.</p>
+                {!readOnly && !selfService && isAdmin && (
+                  <p className="text-sm text-gray-400 mt-1">Click "Assign Asset" to assign company equipment.</p>
+                )}
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {assignedAssets.map((asset) => {
+                  const assignment = assetAssignments.find(a => a.asset_id === asset.id)
+                  return (
+                    <div key={asset.id} className="flex items-center justify-between bg-white border border-gray-200 rounded-xl p-4">
+                      <div className="flex items-center gap-4">
+                        <div className="p-2 bg-gray-100 rounded-lg">
+                          <Laptop className="w-5 h-5 text-gray-600" />
+                        </div>
+                        <div>
+                          <p className="font-semibold text-gray-900">{asset.name}</p>
+                          <div className="flex items-center gap-3 mt-1 flex-wrap">
+                            {asset.asset_tag && (
+                              <span className="text-xs text-gray-500 font-mono bg-gray-100 px-2 py-0.5 rounded">{asset.asset_tag}</span>
+                            )}
+                            {asset.category?.name && (
+                              <span className="text-xs text-gray-400">{asset.category.name}</span>
+                            )}
+                            {asset.serial_number && (
+                              <span className="text-xs text-gray-400">S/N: {asset.serial_number}</span>
+                            )}
+                            {asset.condition && (
+                              <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
+                                asset.condition === 'excellent' ? 'bg-green-100 text-green-700' :
+                                asset.condition === 'good' ? 'bg-blue-100 text-blue-700' :
+                                asset.condition === 'fair' ? 'bg-yellow-100 text-yellow-700' :
+                                'bg-red-100 text-red-700'
+                              }`}>{asset.condition.charAt(0).toUpperCase() + asset.condition.slice(1)}</span>
+                            )}
+                          </div>
+                          {assignment?.assigned_date && (
+                            <p className="text-xs text-gray-400 mt-1">Assigned {formatDate(assignment.assigned_date)}</p>
+                          )}
+                        </div>
+                      </div>
+                      {!readOnly && !selfService && isAdmin && assignment && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            setSelectedAssignmentId(assignment.id)
+                            setReturnCondition('')
+                            setReturnNotes('')
+                            setIsReturnAssetModalOpen(true)
+                          }}
+                          className="text-gray-500 hover:text-red-600 flex items-center gap-1"
+                        >
+                          <RotateCcw className="w-4 h-4" />
+                          Return
+                        </Button>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+
+            {/* Assign Asset Modal */}
+            {isAssignAssetModalOpen && (
+              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+                <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6">
+                  <h4 className="text-base font-semibold text-gray-900 mb-4">Assign Asset to Employee</h4>
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Select Asset <span className="text-red-500">*</span></label>
+                      <Select
+                        value={selectedAssetIdToAssign}
+                        onChange={(e) => setSelectedAssetIdToAssign(e.target.value)}
+                        options={[
+                          { value: '', label: availableAssets.length === 0 ? 'No available assets' : 'Choose an asset…' },
+                          ...availableAssets.map(a => ({
+                            value: a.id,
+                            label: `${a.name}${a.asset_tag ? ` [${a.asset_tag}]` : ''}${a.category?.name ? ` — ${a.category.name}` : ''}`
+                          }))
+                        ]}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Condition on Assignment</label>
+                      <Select
+                        value={assignCondition}
+                        onChange={(e) => setAssignCondition(e.target.value)}
+                        options={[
+                          { value: '', label: 'Select condition…' },
+                          { value: 'excellent', label: 'Excellent' },
+                          { value: 'good', label: 'Good' },
+                          { value: 'fair', label: 'Fair' },
+                          { value: 'poor', label: 'Poor' },
+                        ]}
+                      />
+                    </div>
+                  </div>
+                  <div className="flex justify-end gap-3 mt-6">
+                    <Button variant="ghost" onClick={() => setIsAssignAssetModalOpen(false)}>Cancel</Button>
+                    <Button
+                      variant="primary"
+                      disabled={!selectedAssetIdToAssign || assignAsset.isPending}
+                      onClick={async () => {
+                        if (!employee?.id || !selectedAssetIdToAssign) return
+                        await assignAsset.mutateAsync({
+                          assetId: selectedAssetIdToAssign,
+                          employeeId: employee.id,
+                          assignedBy: currentEmployee?.id || employee.id,
+                          condition: assignCondition || undefined,
+                        })
+                        setIsAssignAssetModalOpen(false)
+                      }}
+                    >
+                      {assignAsset.isPending ? 'Assigning…' : 'Assign Asset'}
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Return Asset Modal */}
+            {isReturnAssetModalOpen && (
+              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+                <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6">
+                  <h4 className="text-base font-semibold text-gray-900 mb-4">Return Asset</h4>
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Condition on Return</label>
+                      <Select
+                        value={returnCondition}
+                        onChange={(e) => setReturnCondition(e.target.value)}
+                        options={[
+                          { value: '', label: 'Select condition…' },
+                          { value: 'excellent', label: 'Excellent' },
+                          { value: 'good', label: 'Good' },
+                          { value: 'fair', label: 'Fair' },
+                          { value: 'poor', label: 'Poor' },
+                        ]}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Notes</label>
+                      <Input
+                        value={returnNotes}
+                        onChange={(e) => setReturnNotes(e.target.value)}
+                        placeholder="Any notes about the return…"
+                      />
+                    </div>
+                  </div>
+                  <div className="flex justify-end gap-3 mt-6">
+                    <Button variant="ghost" onClick={() => setIsReturnAssetModalOpen(false)}>Cancel</Button>
+                    <Button
+                      variant="primary"
+                      disabled={returnAsset.isPending}
+                      onClick={async () => {
+                        if (!selectedAssignmentId) return
+                        await returnAsset.mutateAsync({
+                          assignmentId: selectedAssignmentId,
+                          returnedBy: currentEmployee?.id || employee?.id || '',
+                          condition: returnCondition || undefined,
+                          notes: returnNotes || undefined,
+                        })
+                        setIsReturnAssetModalOpen(false)
+                        setSelectedAssignmentId(null)
+                      }}
+                    >
+                      {returnAsset.isPending ? 'Returning…' : 'Confirm Return'}
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         )
       
