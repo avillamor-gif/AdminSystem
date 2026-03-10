@@ -502,7 +502,7 @@ export default function TimePage() {
             <h3 className="font-semibold text-gray-900 mb-4">This Week's Hours</h3>
             <div className="space-y-3">
               {weeklyData.map((day) => {
-                const today = localDateStr()
+                const today = localDateStr(currentTime)
                 const isToday = day.date === today
                 const barPct = Math.min((day.hours / maxDayHours) * 100, 100)
                 return (
