@@ -18,6 +18,7 @@ import { useContractDocuments, useUploadContractDocument, useDeleteContractDocum
 import { useEmployeeAttachments, useUploadEmployeeAttachment, useDeleteEmployeeAttachment, useDownloadEmployeeAttachment } from '@/hooks/useEmployeeAttachments'
 import { useAssets, useAssetAssignments, useAssignAsset, useReturnAsset, type Asset } from '@/hooks/useAssets'
 import { useCurrentEmployee } from '@/hooks/useEmployees'
+import { useImmigrationDocuments, useCreateImmigrationDocument, useUpdateImmigrationDocument, useDeleteImmigrationDocument, type ImmigrationDocument } from '@/hooks/useImmigration'
 import { EmergencyContactFormModal } from './EmergencyContactFormModal'
 import { uploadEmployeePhoto, deleteEmployeePhoto } from '@/lib/supabase/storage'
 import { logAction } from '@/services/auditLog.service'
@@ -145,6 +146,23 @@ export function EmployeeDetailContent({
   const [assignCondition, setAssignCondition] = useState('')
   const [returnCondition, setReturnCondition] = useState('')
   const [returnNotes, setReturnNotes] = useState('')
+  // Immigration state
+  const { data: immigrationDocuments = [], isLoading: isLoadingImmigration } = useImmigrationDocuments(employee?.id || '')
+  const createImmigrationDoc = useCreateImmigrationDocument()
+  const updateImmigrationDoc = useUpdateImmigrationDocument()
+  const deleteImmigrationDoc = useDeleteImmigrationDocument()
+  const [isImmigrationModalOpen, setIsImmigrationModalOpen] = useState(false)
+  const [editingImmigrationDoc, setEditingImmigrationDoc] = useState<ImmigrationDocument | null>(null)
+  const [immigrationForm, setImmigrationForm] = useState({
+    document_type: 'passport' as 'passport' | 'visa',
+    document_number: '',
+    issued_date: '',
+    expiry_date: '',
+    eligible_status: '',
+    issued_by: '',
+    eligible_review_date: '',
+    comments: '',
+  })
   const isAdmin = roleInfo?.permissions?.includes('employee.edit') ?? false
   // In self-service mode (My Info), employees can edit their own personal/contact/emergency data
   const canSelfEdit = isAdmin || selfService
@@ -1825,23 +1843,243 @@ export function EmployeeDetailContent({
       case 'immigration':
         return (
           <div className="space-y-4">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="p-2 bg-orange/10 rounded-lg">
-                <Plane className="w-5 h-5 text-orange" />
+            {/* Title — do not modify */}
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-orange/10 rounded-lg">
+                  <Plane className="w-5 h-5 text-orange" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900">Immigration Documents</h3>
+                  <p className="text-sm text-gray-500 mt-1">Passport, visa, and work permit information</p>
+                </div>
               </div>
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900">Immigration Documents</h3>
-                <p className="text-sm text-gray-500 mt-1">Passport, visa, and work permit information</p>
-              </div>
+              {!readOnly && isAdmin && (
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => {
+                    setEditingImmigrationDoc(null)
+                    setImmigrationForm({ document_type: 'passport', document_number: '', issued_date: '', expiry_date: '', eligible_status: '', issued_by: '', eligible_review_date: '', comments: '' })
+                    setIsImmigrationModalOpen(true)
+                  }}
+                >
+                  Add Immigration
+                </Button>
+              )}
             </div>
-            <div className="border-t border-gray-200 mb-6"></div>
-            <div className="flex flex-col items-center justify-center py-12 text-center">
-              <div className="p-4 bg-gray-100 rounded-full mb-4">
-                <Plane className="w-8 h-8 text-gray-400" />
+            <div className="border-t border-gray-200 mb-6" />
+
+            {/* Document list */}
+            {isLoadingImmigration ? (
+              <div className="text-center py-8 text-gray-400">Loading…</div>
+            ) : immigrationDocuments.length === 0 ? (
+              <div className="text-center py-12">
+                <Plane className="w-10 h-10 text-gray-300 mx-auto mb-3" />
+                <p className="text-gray-500 font-medium">No immigration documents added yet.</p>
               </div>
-              <p className="text-gray-600 font-medium">Immigration module coming soon</p>
-              <p className="text-sm text-gray-400 mt-1">This section will display passport, visa, and work permit information once the module is configured.</p>
-            </div>
+            ) : (
+              <div className="space-y-3">
+                {immigrationDocuments.map((doc) => (
+                  <div key={doc.id} className="bg-white border border-gray-200 rounded-xl p-5">
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-center gap-3 mb-3">
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold ${
+                          doc.document_type === 'passport' ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-purple-700'
+                        }`}>
+                          {doc.document_type === 'passport' ? 'Passport' : 'Visa'}
+                        </span>
+                        <span className="font-mono font-semibold text-gray-900 text-sm">{doc.document_number}</span>
+                      </div>
+                      {!readOnly && isAdmin && (
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => {
+                              setEditingImmigrationDoc(doc)
+                              setImmigrationForm({
+                                document_type: doc.document_type,
+                                document_number: doc.document_number,
+                                issued_date: doc.issued_date || '',
+                                expiry_date: doc.expiry_date || '',
+                                eligible_status: doc.eligible_status || '',
+                                issued_by: doc.issued_by || '',
+                                eligible_review_date: doc.eligible_review_date || '',
+                                comments: doc.comments || '',
+                              })
+                              setIsImmigrationModalOpen(true)
+                            }}
+                            className="p-1.5 text-gray-400 hover:text-blue-600 rounded-lg hover:bg-blue-50 transition-colors"
+                          >
+                            <Edit className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => deleteImmigrationDoc.mutate({ id: doc.id, employeeId: employee!.id })}
+                            className="p-1.5 text-gray-400 hover:text-red-600 rounded-lg hover:bg-red-50 transition-colors"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-x-6 gap-y-2 text-sm">
+                      {doc.issued_date && (
+                        <div><span className="text-gray-500">Issued: </span><span className="text-gray-800">{formatDate(doc.issued_date)}</span></div>
+                      )}
+                      {doc.expiry_date && (
+                        <div><span className="text-gray-500">Expires: </span><span className="text-gray-800">{formatDate(doc.expiry_date)}</span></div>
+                      )}
+                      {doc.eligible_status && (
+                        <div><span className="text-gray-500">Status: </span><span className="text-gray-800">{doc.eligible_status}</span></div>
+                      )}
+                      {doc.issued_by && (
+                        <div><span className="text-gray-500">Issued By: </span><span className="text-gray-800">{doc.issued_by}</span></div>
+                      )}
+                      {doc.eligible_review_date && (
+                        <div><span className="text-gray-500">Review Date: </span><span className="text-gray-800">{formatDate(doc.eligible_review_date)}</span></div>
+                      )}
+                    </div>
+                    {doc.comments && (
+                      <p className="mt-3 text-sm text-gray-600 border-t border-gray-100 pt-3">{doc.comments}</p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Add / Edit Modal */}
+            {isImmigrationModalOpen && (
+              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+                <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl p-6">
+                  <h4 className="text-base font-semibold text-gray-900 mb-4 pb-3 border-b border-gray-200">
+                    {editingImmigrationDoc ? 'Edit Immigration' : 'Add Immigration'}
+                  </h4>
+
+                  {/* Document type radio */}
+                  <div className="mb-5">
+                    <p className="text-sm font-medium text-gray-700 mb-2">Document</p>
+                    <div className="flex items-center gap-6">
+                      {(['passport', 'visa'] as const).map((type) => (
+                        <label key={type} className="flex items-center gap-2 cursor-pointer">
+                          <input
+                            type="radio"
+                            name="document_type"
+                            value={type}
+                            checked={immigrationForm.document_type === type}
+                            onChange={() => setImmigrationForm(f => ({ ...f, document_type: type }))}
+                            className="w-4 h-4 accent-orange cursor-pointer"
+                          />
+                          <span className="text-sm text-gray-700 capitalize">{type}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Fields grid */}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="md:col-span-1">
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Number <span className="text-red-500">*</span></label>
+                      <Input
+                        value={immigrationForm.document_number}
+                        onChange={(e) => setImmigrationForm(f => ({ ...f, document_number: e.target.value }))}
+                        placeholder=""
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Issued Date</label>
+                      <Input
+                        type="date"
+                        value={immigrationForm.issued_date}
+                        onChange={(e) => setImmigrationForm(f => ({ ...f, issued_date: e.target.value }))}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Expiry Date</label>
+                      <Input
+                        type="date"
+                        value={immigrationForm.expiry_date}
+                        onChange={(e) => setImmigrationForm(f => ({ ...f, expiry_date: e.target.value }))}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Eligible Status</label>
+                      <Input
+                        value={immigrationForm.eligible_status}
+                        onChange={(e) => setImmigrationForm(f => ({ ...f, eligible_status: e.target.value }))}
+                        placeholder=""
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Issued By</label>
+                      <Select
+                        value={immigrationForm.issued_by}
+                        onChange={(e) => setImmigrationForm(f => ({ ...f, issued_by: e.target.value }))}
+                        options={[
+                          { value: '', label: '-- Select --' },
+                          { value: 'DFA', label: 'DFA' },
+                          { value: 'BI', label: 'Bureau of Immigration' },
+                          { value: 'DOJ', label: 'DOJ' },
+                          { value: 'Embassy', label: 'Embassy' },
+                          { value: 'Other', label: 'Other' },
+                        ]}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Eligible Review Date</label>
+                      <Input
+                        type="date"
+                        value={immigrationForm.eligible_review_date}
+                        onChange={(e) => setImmigrationForm(f => ({ ...f, eligible_review_date: e.target.value }))}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Comments */}
+                  <div className="mt-4">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Comments</label>
+                    <textarea
+                      value={immigrationForm.comments}
+                      onChange={(e) => setImmigrationForm(f => ({ ...f, comments: e.target.value }))}
+                      placeholder="Type Comments here"
+                      rows={4}
+                      className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange/40 focus:border-orange resize-y"
+                    />
+                  </div>
+
+                  {/* Footer */}
+                  <div className="flex items-center justify-between mt-6 pt-4 border-t border-gray-200">
+                    <p className="text-xs text-gray-400">* Required</p>
+                    <div className="flex gap-3">
+                      <Button variant="ghost" onClick={() => setIsImmigrationModalOpen(false)}>Cancel</Button>
+                      <Button
+                        variant="primary"
+                        disabled={!immigrationForm.document_number.trim() || createImmigrationDoc.isPending || updateImmigrationDoc.isPending}
+                        onClick={async () => {
+                          if (!employee?.id || !immigrationForm.document_number.trim()) return
+                          const payload = {
+                            document_type: immigrationForm.document_type,
+                            document_number: immigrationForm.document_number.trim(),
+                            issued_date: immigrationForm.issued_date || null,
+                            expiry_date: immigrationForm.expiry_date || null,
+                            eligible_status: immigrationForm.eligible_status || null,
+                            issued_by: immigrationForm.issued_by || null,
+                            eligible_review_date: immigrationForm.eligible_review_date || null,
+                            comments: immigrationForm.comments || null,
+                          }
+                          if (editingImmigrationDoc) {
+                            await updateImmigrationDoc.mutateAsync({ id: editingImmigrationDoc.id, data: payload, employeeId: employee.id })
+                          } else {
+                            await createImmigrationDoc.mutateAsync({ ...payload, employee_id: employee.id })
+                          }
+                          setIsImmigrationModalOpen(false)
+                        }}
+                      >
+                        {createImmigrationDoc.isPending || updateImmigrationDoc.isPending ? 'Saving…' : 'Save'}
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         )
       
