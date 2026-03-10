@@ -53,7 +53,7 @@ export const workflowConfigService = {
       .order('display_name')
 
     if (error) throw error
-    return (data ?? []) as WorkflowConfig[]
+    return (data ?? []) as unknown as WorkflowConfig[]
   },
 
   async getByType(requestType: string): Promise<WorkflowConfig | null> {
@@ -65,7 +65,7 @@ export const workflowConfigService = {
       .maybeSingle()
 
     if (error) throw error
-    return data as WorkflowConfig | null
+    return data as unknown as WorkflowConfig | null
   },
 }
 
