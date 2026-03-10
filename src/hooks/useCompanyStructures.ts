@@ -1,6 +1,11 @@
 import { useQuery, useMutation, useQueryClient, UseQueryResult } from '@tanstack/react-query'
-import { companyStructureService, type CompanyStructureWithRelations, type CompanyStructureFilters, type CompanyStructure, type CompanyStructureInsert, type CompanyStructureUpdate } from '@/services/companyStructure.service'
+import { companyStructureService, type CompanyStructureWithRelations, type CompanyStructureFilters } from '@/services/companyStructure.service'
+import type { Database } from '@/lib/supabase/database.types'
 import { toast } from 'sonner'
+
+type CompanyStructure = Database['public']['Tables']['company_structures']['Row']
+type CompanyStructureInsert = Database['public']['Tables']['company_structures']['Insert']
+type CompanyStructureUpdate = Database['public']['Tables']['company_structures']['Update']
 
 export const companyStructureKeys = {
   all: ['company_structures'] as const,
