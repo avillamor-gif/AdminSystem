@@ -200,7 +200,7 @@ export default function CareerPathsPage() {
           <p className="text-sm text-gray-600">Avg Path Length</p>
           <p className="text-2xl font-bold text-purple-600 mt-1">
             {careerPaths.length > 0
-              ? (careerPaths.reduce((sum, p) => sum + (p.levels?.length || 0), 0) / careerPaths.length).toFixed(1)
+              ? (careerPaths.reduce((sum, p) => sum + (Array.isArray(p.levels) ? p.levels.length : 0), 0) / careerPaths.length).toFixed(1)
               : '0'}{' '}
             levels
           </p>
