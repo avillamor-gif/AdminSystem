@@ -206,7 +206,7 @@ export default function EmployeeRecordsPage() {
                 <div className="divide-y divide-gray-200">
                   {attachments.length > 0 ? (
                     attachments.map((attachment) => (
-                      <div key={attachment.id} className="p-4 flex items-center justify-between hover:bg-gray-50">
+                      <div key={attachment.attachment_id} className="p-4 flex items-center justify-between hover:bg-gray-50">
                         <div className="flex items-center gap-3">
                           <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
                             <FileText className="w-5 h-5 text-blue-600" />
@@ -228,7 +228,7 @@ export default function EmployeeRecordsPage() {
                           <Button 
                             variant="ghost" 
                             size="sm"
-                            onClick={() => handleDelete(attachment.id, attachment.file_path)}
+                            onClick={() => handleDelete(attachment.attachment_id, attachment.file_path)}
                             disabled={deleteMutation.isPending}
                           >
                             <Trash2 className="w-4 h-4 text-red-600" />
