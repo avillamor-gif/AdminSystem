@@ -343,10 +343,31 @@ export const assetService = {
       query = query.or(`asset_tag.ilike.%${filters.search}%,name.ilike.%${filters.search}%,serial_number.ilike.%${filters.search}%`)
     }
 
-    const { data, error } = await query
-    
+    // Fetch assets
+    const { data: assets, error } = await query
     if (error) throw error
-    return (data || []) as unknown as Asset[]
+    if (!assets || assets.length === 0) return []
+
+    // Fetch all categories and employees referenced by assets
+    const [categoriesRes, employeesRes] = await Promise.all([
+      supabase.from('asset_categories').select('*'),
+      supabase.from('employees').select('id, first_name, last_name, email')
+    ])
+    const categories = categoriesRes.data || []
+    const employees = employeesRes.data || []
+
+    // Map categories and employees by id
+    const categoryMap = Object.fromEntries(categories.map((c: any) => [c.id, c]))
+    const employeeMap = Object.fromEntries(employees.map((e: any) => [e.id, e]))
+
+    // Attach category and employee objects to each asset
+    const assetsWithRelations = assets.map((asset: any) => ({
+      ...asset,
+      category: asset.category_id ? categoryMap[asset.category_id] || null : null,
+      employee: asset.assigned_to ? employeeMap[asset.assigned_to] || null : null
+    }))
+
+    return assetsWithRelations as Asset[]
   },
 
   async getById(id: string): Promise<Asset | null> {

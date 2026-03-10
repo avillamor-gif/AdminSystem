@@ -396,12 +396,12 @@ export default function AdminPage() {
                           'Leave Credit Approvals': '/admin/leave-management/credit-approvals',
                           
                           // Payroll & Benefits routes
-                          'Pay Components': '/admin/payroll-benefits',
-                          'Tax Configuration': '/admin/payroll-benefits',
-                          'Benefits Plans': '/admin/payroll-benefits',
-                          'Deductions': '/admin/payroll-benefits',
-                          'Bonus Structures': '/admin/payroll-benefits',
-                          'Reimbursements': '/admin/payroll-benefits',
+                          'Pay Components': '/admin/payroll-benefits/pay-components',
+                          'Tax Configuration': '/admin/payroll-benefits/tax-configuration',
+                          'Benefits Plans': '/admin/payroll-benefits/benefits-plans',
+                          'Deductions': '/admin/payroll-benefits/deductions',
+                          'Bonus Structures': '/admin/payroll-benefits/bonus-structures',
+                          'Reimbursements': '/admin/payroll-benefits/reimbursements',
                           
                           // Performance Management routes
                           'Review Cycles': '/admin/performance',
