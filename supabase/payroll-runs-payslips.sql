@@ -34,7 +34,7 @@ CREATE POLICY "Admins/HR can manage payroll_runs"
   ON payroll_runs FOR ALL TO authenticated
   USING (EXISTS (
     SELECT 1 FROM user_roles
-    WHERE user_id = auth.uid() AND role IN ('admin', 'hr', 'super admin')
+    WHERE user_id = auth.uid() AND role IN ('admin', 'hr', 'ed')
   ));
 
 -- Payslips (one per employee per payroll run)
@@ -88,7 +88,7 @@ CREATE POLICY "Admins/HR can manage payslips"
   ON payslips FOR ALL TO authenticated
   USING (EXISTS (
     SELECT 1 FROM user_roles
-    WHERE user_id = auth.uid() AND role IN ('admin', 'hr', 'super admin')
+    WHERE user_id = auth.uid() AND role IN ('admin', 'hr', 'ed')
   ));
 
 -- Employees can view their own payslips
