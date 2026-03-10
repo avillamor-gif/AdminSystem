@@ -65,6 +65,7 @@ export interface Asset {
   qr_code?: string | null
   image_url?: string | null
   notes?: string | null
+  location_id?: string | null
   created_at: string | null
   updated_at: string | null
   // Relations
@@ -72,6 +73,7 @@ export interface Asset {
   brand?: AssetBrand
   vendor?: AssetVendor
   employee?: any
+  assetLocation?: AssetLocation
 }
 
 export interface AssetAssignment {
@@ -108,6 +110,15 @@ export interface AssetMaintenance {
   // Relations
   asset?: Asset
   vendor?: AssetVendor
+}
+
+export interface AssetLocation {
+  id: string
+  name: string
+  description?: string | null
+  is_active: boolean | null
+  created_at: string | null
+  updated_at: string | null
 }
 
 export interface AssetRequest {
@@ -309,6 +320,52 @@ export const assetVendorService = {
     
     if (error) throw error
   }
+}
+
+// =====================================================
+// ASSET LOCATIONS SERVICE
+// =====================================================
+
+const db = supabase as any
+
+export const assetLocationService = {
+  async getAll(): Promise<AssetLocation[]> {
+    const { data, error } = await db
+      .from('asset_locations')
+      .select('*')
+      .order('name')
+    if (error) throw error
+    return (data || []) as AssetLocation[]
+  },
+
+  async create(location: Partial<AssetLocation>): Promise<AssetLocation> {
+    const { data, error } = await db
+      .from('asset_locations')
+      .insert(location)
+      .select('*')
+      .single()
+    if (error) throw error
+    return data as AssetLocation
+  },
+
+  async update(id: string, updates: Partial<AssetLocation>): Promise<AssetLocation> {
+    const { data, error } = await db
+      .from('asset_locations')
+      .update({ ...updates, updated_at: new Date().toISOString() })
+      .eq('id', id)
+      .select('*')
+      .single()
+    if (error) throw error
+    return data as AssetLocation
+  },
+
+  async delete(id: string): Promise<void> {
+    const { error } = await db
+      .from('asset_locations')
+      .delete()
+      .eq('id', id)
+    if (error) throw error
+  },
 }
 
 // =====================================================

@@ -1,14 +1,14 @@
 'use client'
 
 import { useState } from 'react'
-import { useAssetCategories, useCreateAssetCategory, useUpdateAssetCategory, useDeleteAssetCategory, useAssetBrands, useCreateAssetBrand, useUpdateAssetBrand, useDeleteAssetBrand, useAssetVendors, useCreateAssetVendor, useUpdateAssetVendor, useDeleteAssetVendor, type AssetCategory, type AssetBrand, type AssetVendor } from '@/hooks/useAssets'
+import { useAssetCategories, useCreateAssetCategory, useUpdateAssetCategory, useDeleteAssetCategory, useAssetBrands, useCreateAssetBrand, useUpdateAssetBrand, useDeleteAssetBrand, useAssetVendors, useCreateAssetVendor, useUpdateAssetVendor, useDeleteAssetVendor, useAssetLocations, useCreateAssetLocation, useUpdateAssetLocation, useDeleteAssetLocation, type AssetCategory, type AssetBrand, type AssetVendor, type AssetLocation } from '@/hooks/useAssets'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Modal, ModalHeader, ModalBody, ModalFooter } from '@/components/ui/Modal'
-import { Plus, Edit, Trash2, Package, Tag, Building } from 'lucide-react'
+import { Plus, Edit, Trash2, Package, Tag, Building, MapPin } from 'lucide-react'
 
-type TabType = 'categories' | 'brands' | 'vendors'
+type TabType = 'categories' | 'brands' | 'vendors' | 'locations'
 
 export default function SetupPage() {
   const [activeTab, setActiveTab] = useState<TabType>('categories')
@@ -18,6 +18,7 @@ export default function SetupPage() {
   const [categoryForm, setCategoryForm] = useState({ name: '', description: '', icon: '', is_active: true })
   const [brandForm, setBrandForm] = useState({ name: '', description: '', is_active: true })
   const [vendorForm, setVendorForm] = useState({ name: '', contact_person: '', email: '', phone: '', address: '', is_active: true })
+  const [locationForm, setLocationForm] = useState({ name: '', description: '', is_active: true })
 
   // Categories
   const { data: categories = [] } = useAssetCategories()
@@ -37,6 +38,12 @@ export default function SetupPage() {
   const updateVendor = useUpdateAssetVendor()
   const deleteVendor = useDeleteAssetVendor()
 
+  // Locations
+  const { data: locations = [] } = useAssetLocations()
+  const createLocation = useCreateAssetLocation()
+  const updateLocation = useUpdateAssetLocation()
+  const deleteLocation = useDeleteAssetLocation()
+
   const categoryStats = {
     total: categories.length,
     active: categories.filter(c => c.is_active).length,
@@ -53,6 +60,12 @@ export default function SetupPage() {
     total: vendors.length,
     active: vendors.filter(v => v.is_active).length,
     inactive: vendors.filter(v => !v.is_active).length
+  }
+
+  const locationStats = {
+    total: locations.length,
+    active: locations.filter(l => l.is_active).length,
+    inactive: locations.filter(l => !l.is_active).length
   }
 
   const handleOpenModal = (item?: any) => {
@@ -80,6 +93,14 @@ export default function SetupPage() {
         setSelectedItem(null)
         setVendorForm({ name: '', contact_person: '', email: '', phone: '', address: '', is_active: true })
       }
+    } else if (activeTab === 'locations') {
+      if (item) {
+        setSelectedItem(item)
+        setLocationForm({ name: item.name, description: item.description || '', is_active: item.is_active })
+      } else {
+        setSelectedItem(null)
+        setLocationForm({ name: '', description: '', is_active: true })
+      }
     }
     setShowModal(true)
   }
@@ -106,6 +127,12 @@ export default function SetupPage() {
         } else {
           await createVendor.mutateAsync(vendorForm)
         }
+      } else if (activeTab === 'locations') {
+        if (selectedItem) {
+          await updateLocation.mutateAsync({ id: selectedItem.id, data: locationForm })
+        } else {
+          await createLocation.mutateAsync(locationForm)
+        }
       }
       setShowModal(false)
     } catch (error) {
@@ -123,6 +150,8 @@ export default function SetupPage() {
         await deleteBrand.mutateAsync(id)
       } else if (activeTab === 'vendors') {
         await deleteVendor.mutateAsync(id)
+      } else if (activeTab === 'locations') {
+        await deleteLocation.mutateAsync(id)
       }
     } catch (error) {
       console.error('Delete failed:', error)
@@ -344,16 +373,89 @@ export default function SetupPage() {
     </div>
   )
 
+  const renderLocations = () => (
+    <div className="space-y-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Card className="p-6 flex flex-col items-center text-center">
+          <div className="p-3 bg-blue-100 rounded-xl mb-3">
+            <MapPin className="w-6 h-6 text-blue-600" />
+          </div>
+          <p className="text-3xl font-bold text-blue-600 mb-1">{locationStats.total}</p>
+          <p className="text-sm text-gray-500">Total Locations</p>
+        </Card>
+        <Card className="p-6 flex flex-col items-center text-center">
+          <div className="p-3 bg-green-100 rounded-xl mb-3">
+            <MapPin className="w-6 h-6 text-green-600" />
+          </div>
+          <p className="text-3xl font-bold text-green-600 mb-1">{locationStats.active}</p>
+          <p className="text-sm text-gray-500">Active</p>
+        </Card>
+        <Card className="p-6 flex flex-col items-center text-center">
+          <div className="p-3 bg-gray-100 rounded-xl mb-3">
+            <MapPin className="w-6 h-6 text-gray-500" />
+          </div>
+          <p className="text-3xl font-bold text-gray-500 mb-1">{locationStats.inactive}</p>
+          <p className="text-sm text-gray-500">Inactive</p>
+        </Card>
+      </div>
+
+      <Card className="overflow-hidden p-0">
+        <div className="px-6 py-4 border-b border-gray-200">
+          <h3 className="font-semibold text-gray-900">Asset Locations</h3>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead className="bg-gray-50 border-b border-gray-200">
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Description</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-200">
+              {locations.length === 0 ? (
+                <tr>
+                  <td colSpan={4} className="px-6 py-8 text-center text-sm text-gray-400">No locations added yet. Click "Add Location" to get started.</td>
+                </tr>
+              ) : locations.map(loc => (
+                <tr key={loc.id} className="hover:bg-gray-50">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{loc.name}</td>
+                  <td className="px-6 py-4 text-sm text-gray-500">{loc.description || '—'}</td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${loc.is_active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
+                      {loc.is_active ? 'Active' : 'Inactive'}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="flex items-center justify-end gap-1">
+                      <button onClick={() => handleOpenModal(loc)} title="Edit" className="p-1 text-gray-400 hover:text-gray-600 rounded hover:bg-gray-100">
+                        <Edit className="h-4 w-4" />
+                      </button>
+                      <button onClick={() => handleDelete(loc.id)} title="Delete" className="p-1 text-gray-400 hover:text-red-600 rounded hover:bg-red-50">
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </Card>
+    </div>
+  )
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Categories & Setup</h1>
-          <p className="text-gray-600">Manage asset categories, brands, and vendors</p>
+          <p className="text-gray-600">Manage asset categories, brands, vendors, and locations</p>
         </div>
         <Button onClick={() => handleOpenModal()}>
           <Plus className="h-4 w-4 mr-2" />
-          Add {activeTab === 'categories' ? 'Category' : activeTab === 'brands' ? 'Brand' : 'Vendor'}
+          Add {activeTab === 'categories' ? 'Category' : activeTab === 'brands' ? 'Brand' : activeTab === 'vendors' ? 'Vendor' : 'Location'}
         </Button>
       </div>
 
@@ -393,6 +495,17 @@ export default function SetupPage() {
             <Building className="inline-block h-5 w-5 mr-2" />
             Vendors
           </button>
+          <button
+            onClick={() => setActiveTab('locations')}
+            className={`py-4 px-1 border-b-2 font-medium text-sm ${
+              activeTab === 'locations'
+                ? 'border-orange text-orange'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+            }`}
+          >
+            <MapPin className="inline-block h-5 w-5 mr-2" />
+            Locations
+          </button>
         </nav>
       </div>
 
@@ -400,12 +513,13 @@ export default function SetupPage() {
       {activeTab === 'categories' && renderCategories()}
       {activeTab === 'brands' && renderBrands()}
       {activeTab === 'vendors' && renderVendors()}
+      {activeTab === 'locations' && renderLocations()}
 
       {/* Modal */}
       <Modal open={showModal} onClose={() => setShowModal(false)}>
         <form onSubmit={handleSubmit}>
           <ModalHeader onClose={() => setShowModal(false)}>
-            {selectedItem ? 'Edit' : 'Add'} {activeTab === 'categories' ? 'Category' : activeTab === 'brands' ? 'Brand' : 'Vendor'}
+            {selectedItem ? 'Edit' : 'Add'} {activeTab === 'categories' ? 'Category' : activeTab === 'brands' ? 'Brand' : activeTab === 'vendors' ? 'Vendor' : 'Location'}
           </ModalHeader>
           <ModalBody>
             <div className="space-y-4">
@@ -521,6 +635,39 @@ export default function SetupPage() {
                       className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
                     />
                     <label htmlFor="vendor_active" className="ml-2 block text-sm text-gray-700">
+                      Active
+                    </label>
+                  </div>
+                </>
+              )}
+              {activeTab === 'locations' && (
+                <>
+                  <Input
+                    label="Name"
+                    value={locationForm.name}
+                    onChange={(e) => setLocationForm({ ...locationForm, name: e.target.value })}
+                    required
+                    placeholder="e.g. Server Room, Conference Room A"
+                  />
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                    <textarea
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      rows={2}
+                      value={locationForm.description}
+                      onChange={(e) => setLocationForm({ ...locationForm, description: e.target.value })}
+                      placeholder="Optional description of this location"
+                    />
+                  </div>
+                  <div className="flex items-center">
+                    <input
+                      type="checkbox"
+                      id="location_active"
+                      checked={locationForm.is_active}
+                      onChange={(e) => setLocationForm({ ...locationForm, is_active: e.target.checked })}
+                      className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                    />
+                    <label htmlFor="location_active" className="ml-2 block text-sm text-gray-700">
                       Active
                     </label>
                   </div>

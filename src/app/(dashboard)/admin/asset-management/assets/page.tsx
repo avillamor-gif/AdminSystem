@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react'
 import { createPortal } from 'react-dom'
-import { useAssets, useAssetCategories, useAssetBrands, useAssetVendors, useCreateAsset, useUpdateAsset, useDeleteAsset, useReturnAsset, useAssetAssignments, type Asset, type AssetAssignment } from '@/hooks/useAssets'
+import { useAssets, useAssetCategories, useAssetBrands, useAssetVendors, useAssetLocations, useCreateAsset, useUpdateAsset, useDeleteAsset, useReturnAsset, useAssetAssignments, type Asset, type AssetAssignment } from '@/hooks/useAssets'
 import { useEmployees } from '@/hooks/useEmployees'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
@@ -59,6 +59,7 @@ export default function AssetsPage() {
     model: '',
     category_id: '',
     location: '',
+    location_id: '',
     purchase_date: '',
     warranty_start_date: '',
     warranty_end_date: '',
@@ -83,6 +84,7 @@ export default function AssetsPage() {
   const { data: categories = [] } = useAssetCategories()
   const { data: brands = [] } = useAssetBrands()
   const { data: vendors = [] } = useAssetVendors()
+  const { data: assetLocations = [] } = useAssetLocations()
   const { data: employees = [] } = useEmployees()
   const { data: assignmentHistory = [] } = useAssetAssignments(
     selectedAsset ? { asset_id: selectedAsset.id } : undefined
@@ -116,6 +118,7 @@ export default function AssetsPage() {
         model: asset.model || '',
         category_id: asset.category_id || '',
         location: asset.location || '',
+        location_id: (asset as any).location_id || '',
         purchase_date: asset.purchase_date || '',
         warranty_start_date: asset.warranty_start_date || '',
         warranty_end_date: asset.warranty_end_date || '',
@@ -141,6 +144,7 @@ export default function AssetsPage() {
         model: '',
         category_id: '',
         location: '',
+        location_id: '',
         purchase_date: '',
         warranty_start_date: '',
         warranty_end_date: '',
@@ -183,6 +187,7 @@ export default function AssetsPage() {
       model: '',
       category_id: '',
       location: '',
+      location_id: '',
       purchase_date: '',
       warranty_start_date: '',
       warranty_end_date: '',
@@ -257,6 +262,7 @@ export default function AssetsPage() {
       model: formData.model || undefined,
       category_id: formData.category_id || undefined,
       location: formData.location || undefined,
+      location_id: formData.location_id || (null as unknown as string),
       purchase_date: formData.purchase_date || undefined,
       warranty_start_date: formData.warranty_start_date || undefined,
       warranty_end_date: formData.warranty_end_date || undefined,
@@ -639,10 +645,17 @@ export default function AssetsPage() {
                           <option key={category.id} value={category.id}>{category.name}</option>
                         ))}
                       </Select>
-                      <Input
+                      <Select
                         label="Location"
-                        value={formData.location}
-                        onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                        value={formData.location_id}
+                        onChange={(e) => {
+                          const loc = assetLocations.find(l => l.id === e.target.value)
+                          setFormData({ ...formData, location_id: e.target.value, location: loc?.name || '' })
+                        }}
+                        options={[
+                          { value: '', label: 'Select Location' },
+                          ...assetLocations.filter(l => l.is_active).map(l => ({ value: l.id, label: l.name }))
+                        ]}
                       />
                     </div>
 
@@ -1061,10 +1074,17 @@ export default function AssetsPage() {
 
                     {/* Location + Acquired */}
                     <div className="grid grid-cols-2 gap-4">
-                      <Input
+                      <Select
                         label="Location"
-                        value={formData.location}
-                        onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                        value={formData.location_id}
+                        onChange={(e) => {
+                          const loc = assetLocations.find(l => l.id === e.target.value)
+                          setFormData({ ...formData, location_id: e.target.value, location: loc?.name || '' })
+                        }}
+                        options={[
+                          { value: '', label: 'Select Location' },
+                          ...assetLocations.filter(l => l.is_active).map(l => ({ value: l.id, label: l.name }))
+                        ]}
                       />
                       <Input
                         label="Acquired"

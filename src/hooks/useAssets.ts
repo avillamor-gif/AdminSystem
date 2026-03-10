@@ -4,6 +4,7 @@ import {
   assetCategoryService,
   assetBrandService,
   assetVendorService,
+  assetLocationService,
   assetService,
   assetAssignmentService,
   assetMaintenanceService,
@@ -11,6 +12,7 @@ import {
   type AssetCategory,
   type AssetBrand,
   type AssetVendor,
+  type AssetLocation,
   type Asset,
   type AssetAssignment,
   type AssetMaintenance,
@@ -22,6 +24,7 @@ export type {
   AssetCategory,
   AssetBrand,
   AssetVendor,
+  AssetLocation,
   Asset,
   AssetAssignment,
   AssetMaintenance,
@@ -237,6 +240,65 @@ export function useDeleteAssetVendor() {
     },
     onError: (error: any) => {
       toast.error(error.message || 'Failed to delete asset vendor')
+    }
+  })
+}
+
+// =====================================================
+// ASSET LOCATIONS HOOKS
+// =====================================================
+
+export const assetLocationKeys = {
+  all: ['asset-locations'] as const,
+  list: () => [...assetLocationKeys.all, 'list'] as const,
+}
+
+export function useAssetLocations() {
+  return useQuery({
+    queryKey: assetLocationKeys.list(),
+    queryFn: () => assetLocationService.getAll()
+  })
+}
+
+export function useCreateAssetLocation() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (data: Partial<AssetLocation>) => assetLocationService.create(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: assetLocationKeys.all })
+      toast.success('Location created successfully')
+    },
+    onError: (error: any) => {
+      toast.error(error.message || 'Failed to create location')
+    }
+  })
+}
+
+export function useUpdateAssetLocation() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: Partial<AssetLocation> }) =>
+      assetLocationService.update(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: assetLocationKeys.all })
+      toast.success('Location updated successfully')
+    },
+    onError: (error: any) => {
+      toast.error(error.message || 'Failed to update location')
+    }
+  })
+}
+
+export function useDeleteAssetLocation() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (id: string) => assetLocationService.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: assetLocationKeys.all })
+      toast.success('Location deleted successfully')
+    },
+    onError: (error: any) => {
+      toast.error(error.message || 'Failed to delete location')
     }
   })
 }
