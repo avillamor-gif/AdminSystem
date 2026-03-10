@@ -39,7 +39,7 @@ export default function TaxConfigurationPage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-gray-900">Tax Configuration</h1>
-        <p className="text-gray-600 mt-1">Configure BIR tax tables. (SSS, PhilHealth, Pag-IBIG coming soon.)</p>
+        <p className="text-gray-600 mt-1">Configure BIR TRAIN Law tax brackets and view mandatory government contribution rates (SSS, PhilHealth, Pag-IBIG).</p>
       </div>
       <Card className="p-6 mb-6">
         <div className="flex justify-between items-center mb-4">
@@ -98,7 +98,122 @@ export default function TaxConfigurationPage() {
           </div>
         )}
       </Card>
-      {/* SSS, PhilHealth, Pag-IBIG coming soon */}
+
+      {/* SSS Contribution Table */}
+      <Card className="p-6">
+        <h2 className="text-lg font-semibold text-gray-900 mb-1">SSS Contribution Table (2025)</h2>
+        <p className="text-sm text-gray-500 mb-4">
+          Total rate: <strong>14%</strong> (EE 4.5% + ER 9.5%). Monthly Salary Credit (MSC) range: ₱4,000–₱30,000.
+          Mandatory for all employees including NGO staff.
+        </p>
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-gray-200 text-sm">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Monthly Salary Range</th>
+                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">MSC</th>
+                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">EE Share (4.5%)</th>
+                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">ER Share (9.5%)</th>
+                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Total</th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-100 text-xs">
+              {[
+                { range: 'Below ₱4,250', msc: 4000, ee: 180, er: 380, total: 560 },
+                { range: '₱4,250 – ₱4,749.99', msc: 4500, ee: 202.5, er: 427.5, total: 630 },
+                { range: '₱7,750 – ₱8,249.99', msc: 8000, ee: 360, er: 760, total: 1120 },
+                { range: '₱14,750 – ₱15,249.99', msc: 15000, ee: 675, er: 1425, total: 2100 },
+                { range: '₱19,750 – ₱20,249.99', msc: 20000, ee: 900, er: 1900, total: 2800 },
+                { range: '₱24,750 – ₱25,249.99', msc: 25000, ee: 1125, er: 2375, total: 3500 },
+                { range: '₱29,750 and above', msc: 30000, ee: 1350, er: 2850, total: 4200 },
+              ].map(row => (
+                <tr key={row.msc}>
+                  <td className="px-4 py-2 text-gray-700">{row.range}</td>
+                  <td className="px-4 py-2 text-gray-700">₱{row.msc.toLocaleString()}</td>
+                  <td className="px-4 py-2 text-gray-700">₱{row.ee.toLocaleString()}</td>
+                  <td className="px-4 py-2 text-gray-700">₱{row.er.toLocaleString()}</td>
+                  <td className="px-4 py-2 font-medium text-gray-900">₱{row.total.toLocaleString()}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <p className="text-xs text-gray-400 mt-2">Showing selected salary brackets. Refer to SSS circular for full schedule.</p>
+      </Card>
+
+      {/* PhilHealth Contribution Table */}
+      <Card className="p-6">
+        <h2 className="text-lg font-semibold text-gray-900 mb-1">PhilHealth Contribution (2025)</h2>
+        <p className="text-sm text-gray-500 mb-4">
+          Rate: <strong>5%</strong> of basic monthly salary (EE 2.5% + ER 2.5%). Salary ceiling: ₱100,000.
+          Minimum monthly contribution: ₱500 (based on ₱10,000 floor).
+        </p>
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-gray-200 text-sm">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Basic Monthly Salary</th>
+                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">EE Share (2.5%)</th>
+                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">ER Share (2.5%)</th>
+                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Total Monthly Premium</th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-100 text-xs">
+              {[
+                { salary: '₱10,000 (minimum)', ee: 250, er: 250, total: 500 },
+                { salary: '₱15,000', ee: 375, er: 375, total: 750 },
+                { salary: '₱20,000', ee: 500, er: 500, total: 1000 },
+                { salary: '₱30,000', ee: 750, er: 750, total: 1500 },
+                { salary: '₱50,000', ee: 1250, er: 1250, total: 2500 },
+                { salary: '₱100,000 (ceiling)', ee: 2500, er: 2500, total: 5000 },
+              ].map(row => (
+                <tr key={row.salary}>
+                  <td className="px-4 py-2 text-gray-700">{row.salary}</td>
+                  <td className="px-4 py-2 text-gray-700">₱{row.ee.toLocaleString()}</td>
+                  <td className="px-4 py-2 text-gray-700">₱{row.er.toLocaleString()}</td>
+                  <td className="px-4 py-2 font-medium text-gray-900">₱{row.total.toLocaleString()}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </Card>
+
+      {/* Pag-IBIG Contribution */}
+      <Card className="p-6">
+        <h2 className="text-lg font-semibold text-gray-900 mb-1">Pag-IBIG (HDMF) Contribution (2025)</h2>
+        <p className="text-sm text-gray-500 mb-4">
+          EE: 1% if monthly compensation ≤ ₱1,500; 2% if &gt; ₱1,500.
+          ER: 2% of monthly compensation, capped at <strong>₱100/month</strong>.
+        </p>
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-gray-200 text-sm">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Monthly Compensation</th>
+                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">EE Rate</th>
+                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">EE Share</th>
+                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">ER Share (capped ₱100)</th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-100 text-xs">
+              <tr>
+                <td className="px-4 py-2 text-gray-700">₱1,500 and below</td>
+                <td className="px-4 py-2 text-gray-700">1%</td>
+                <td className="px-4 py-2 text-gray-700">₱15 max</td>
+                <td className="px-4 py-2 text-gray-700">₱30 max</td>
+              </tr>
+              <tr>
+                <td className="px-4 py-2 text-gray-700">Above ₱1,500</td>
+                <td className="px-4 py-2 text-gray-700">2%</td>
+                <td className="px-4 py-2 text-gray-700">2% of salary</td>
+                <td className="px-4 py-2 text-gray-700">₱100 (max)</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p className="text-xs text-gray-400 mt-2">Employees may opt to contribute more than the mandatory minimum.</p>
+      </Card>
     </div>
   )
 }

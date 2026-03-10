@@ -3,7 +3,7 @@ import { createClient } from '@/lib/supabase/client'
 export interface Reimbursement {
   id: string
   name: string
-  type: 'transport' | 'representation' | 'other'
+  type: 'transport' | 'representation' | 'per_diem' | 'field_work' | 'communication' | 'medical' | 'other'
   amount: number
   taxable: boolean
   status: 'Pending' | 'Approved' | 'Rejected'
@@ -16,7 +16,7 @@ export interface Reimbursement {
 export type ReimbursementInsert = Omit<Reimbursement, 'id' | 'created_at' | 'updated_at'>
 export type ReimbursementUpdate = Partial<ReimbursementInsert>
 
-const table = 'reimbursements'
+const table = 'reimbursements' as any
 
 export const reimbursementService = {
   async getAll() {
@@ -26,13 +26,13 @@ export const reimbursementService = {
       .select('*')
       .order('created_at', { ascending: false })
     if (error) throw error
-    return data as Reimbursement[]
+    return data as unknown as Reimbursement[]
   },
   async create(payload: ReimbursementInsert) {
     const supabase = createClient()
     const { data, error } = await supabase.from(table).insert(payload).select('*').single()
     if (error) throw error
-    return data as Reimbursement
+    return data as unknown as Reimbursement
   },
   async update(id: string, payload: ReimbursementUpdate) {
     const supabase = createClient()
@@ -43,7 +43,7 @@ export const reimbursementService = {
       .select('*')
       .single()
     if (error) throw error
-    return data as Reimbursement
+    return data as unknown as Reimbursement
   },
   async remove(id: string) {
     const supabase = createClient()

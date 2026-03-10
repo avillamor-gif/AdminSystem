@@ -3,7 +3,7 @@ import { createClient } from '@/lib/supabase/client'
 export interface Deduction {
   id: string
   name: string
-  type: 'government' | 'company' | 'other'
+  type: 'sss' | 'philhealth' | 'pagibig' | 'bir_withholding' | 'company' | 'other'
   amount: number
   recurring: boolean
   description?: string | null
@@ -15,7 +15,7 @@ export interface Deduction {
 export type DeductionInsert = Omit<Deduction, 'id' | 'created_at' | 'updated_at'>
 export type DeductionUpdate = Partial<DeductionInsert>
 
-const table = 'deductions'
+const table = 'deductions' as any
 
 export const deductionService = {
   async getAll() {
@@ -25,13 +25,13 @@ export const deductionService = {
       .select('*')
       .order('created_at', { ascending: false })
     if (error) throw error
-    return data as Deduction[]
+    return data as unknown as Deduction[]
   },
   async create(payload: DeductionInsert) {
     const supabase = createClient()
     const { data, error } = await supabase.from(table).insert(payload).select('*').single()
     if (error) throw error
-    return data as Deduction
+    return data as unknown as Deduction
   },
   async update(id: string, payload: DeductionUpdate) {
     const supabase = createClient()
@@ -42,7 +42,7 @@ export const deductionService = {
       .select('*')
       .single()
     if (error) throw error
-    return data as Deduction
+    return data as unknown as Deduction
   },
   async remove(id: string) {
     const supabase = createClient()

@@ -13,10 +13,26 @@ import {
 } from '@/hooks/useBenefitsPlans'
 
 const typeOptions = [
-  { value: 'government', label: 'Government' },
-  { value: 'health', label: 'Health/HMO' },
-  { value: 'leave', label: 'Leave Credit' },
+  { value: 'government', label: 'Government Benefit (SSS/PhilHealth/Pag-IBIG)' },
+  { value: 'health', label: 'Health / HMO Insurance' },
+  { value: 'leave', label: 'Leave Credit / Monetization' },
+  { value: 'rice', label: 'Rice Subsidy (De Minimis — ₱2,000/mo)' },
+  { value: 'clothing', label: 'Clothing / Uniform Allowance (De Minimis — ₱6,000/yr)' },
+  { value: 'laundry', label: 'Laundry Allowance (De Minimis — ₱300/mo)' },
+  { value: 'medical_cash', label: 'Medical Cash Allowance (De Minimis — ₱750/mo)' },
+  { value: 'meal', label: 'Meal Subsidy (De Minimis — ₱2,000/mo)' },
   { value: 'other', label: 'Other' },
+]
+
+// BIR de minimis benefit limits (2025)
+const deMinimisLimits = [
+  { name: 'Rice Subsidy', limit: '₱2,000 / month', note: 'In cash or kind' },
+  { name: 'Clothing / Uniform Allowance', limit: '₱6,000 / year', note: 'Includes laundry' },
+  { name: 'Laundry Allowance', limit: '₱300 / month', note: 'Actual laundry' },
+  { name: 'Medical Cash Allowance', limit: '₱750 / month', note: 'To dependents' },
+  { name: 'Meal Subsidy', limit: '₱2,000 / month', note: 'Not to exceed 25% of min. wage' },
+  { name: 'Gifts (Christmas / Anniversary)', limit: '₱5,000 / year', note: 'In cash or kind' },
+  { name: 'Daily Meal Allowance — OT', limit: '25% of daily min. wage', note: 'For overtime only' },
 ]
 
 
@@ -44,8 +60,35 @@ export default function BenefitsPlansPage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-gray-900">Benefits Plans</h1>
-        <p className="text-gray-600 mt-1">Manage employee benefits plans including SSS, PhilHealth, Pag-IBIG, HMO, and leave credits.</p>
+        <p className="text-gray-600 mt-1">Manage employee benefits plans including SSS, PhilHealth, Pag-IBIG, HMO, de minimis benefits, and leave credits.</p>
       </div>
+
+      {/* De Minimis Reference Table */}
+      <Card className="p-6">
+        <h2 className="text-lg font-semibold text-gray-900 mb-1">BIR De Minimis Benefit Limits (Tax-Exempt)</h2>
+        <p className="text-sm text-gray-500 mb-4">Benefits within these limits are exempt from income tax and withholding tax for employees.</p>
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-gray-200 text-sm">
+            <thead className="bg-green-50">
+              <tr>
+                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Benefit</th>
+                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Tax-Free Limit</th>
+                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Notes</th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-100">
+              {deMinimisLimits.map(d => (
+                <tr key={d.name}>
+                  <td className="px-4 py-2 font-medium text-gray-900">{d.name}</td>
+                  <td className="px-4 py-2 text-gray-700">{d.limit}</td>
+                  <td className="px-4 py-2 text-gray-500 text-xs">{d.note}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </Card>
+
       <Card className="p-6">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-lg font-semibold text-gray-900">Benefit Plans List</h2>
