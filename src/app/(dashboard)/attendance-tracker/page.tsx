@@ -78,7 +78,8 @@ export default function TimePage() {
     monday.setDate(today.getDate() + diffToMonday)
     const sunday = new Date(monday)
     sunday.setDate(monday.getDate() + 6)
-    const toStr = (d: Date) => d.toISOString().split('T')[0]
+    // Use local date strings (not UTC) so dates match the timezone the user is in
+    const toStr = (d: Date) => localDateStr(d)
     // Build Mon→Sun date strings
     const dates = Array.from({ length: 7 }, (_, i) => {
       const d = new Date(monday)
