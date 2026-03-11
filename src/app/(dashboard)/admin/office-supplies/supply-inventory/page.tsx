@@ -95,7 +95,7 @@ export default function SupplyInventoryPage() {
           <h1 className="text-2xl font-bold text-gray-900">Supply Inventory</h1>
           <p className="text-gray-600 mt-1">Manage office supply stock</p>
         </div>
-        <Button onClick={openCreate}><Plus className="w-4 h-4 mr-2" />Add Item</Button>
+        <Button onClick={openCreate}><Plus className="w-4 h-4 mr-2" />Add Supply</Button>
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -144,7 +144,7 @@ export default function SupplyInventoryPage() {
 
       <Modal open={modalOpen} onClose={() => setModalOpen(false)} size="lg">
         <form onSubmit={handleSubmit}>
-          <ModalHeader><h2 className="text-lg font-semibold">{selected ? 'Edit Item' : 'Add Item'}</h2></ModalHeader>
+          <ModalHeader><h2 className="text-lg font-semibold">{selected ? 'Edit Supply' : 'Add Supply'}</h2></ModalHeader>
           <ModalBody>
             <div className="grid grid-cols-2 gap-4">
               <div className="col-span-2"><label className="block text-sm font-medium text-gray-700 mb-1">Name *</label><Input required value={form.name} onChange={e => set('name', e.target.value)} /></div>
@@ -183,7 +183,7 @@ export default function SupplyInventoryPage() {
           </ModalBody>
           <ModalFooter>
             <Button type="button" variant="secondary" onClick={() => setModalOpen(false)}>Cancel</Button>
-            <Button type="submit">{selected ? 'Save Changes' : 'Add Item'}</Button>
+            <Button type="submit">{selected ? 'Save Changes' : 'Add Supply'}</Button>
           </ModalFooter>
         </form>
       </Modal>
