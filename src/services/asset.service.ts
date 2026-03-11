@@ -326,41 +326,39 @@ export const assetVendorService = {
 // ASSET LOCATIONS SERVICE
 // =====================================================
 
-const db = supabase as any
-
 export const assetLocationService = {
   async getAll(): Promise<AssetLocation[]> {
-    const { data, error } = await db
+    const { data, error } = await supabase
       .from('asset_locations')
       .select('*')
       .order('name')
     if (error) throw error
-    return (data || []) as AssetLocation[]
+    return (data || []) as unknown as AssetLocation[]
   },
 
   async create(location: Partial<AssetLocation>): Promise<AssetLocation> {
-    const { data, error } = await db
+    const { data, error } = await supabase
       .from('asset_locations')
-      .insert(location)
+      .insert(location as any)
       .select('*')
       .single()
     if (error) throw error
-    return data as AssetLocation
+    return data as unknown as AssetLocation
   },
 
   async update(id: string, updates: Partial<AssetLocation>): Promise<AssetLocation> {
-    const { data, error } = await db
+    const { data, error } = await supabase
       .from('asset_locations')
-      .update({ ...updates, updated_at: new Date().toISOString() })
+      .update({ ...updates, updated_at: new Date().toISOString() } as any)
       .eq('id', id)
       .select('*')
       .single()
     if (error) throw error
-    return data as AssetLocation
+    return data as unknown as AssetLocation
   },
 
   async delete(id: string): Promise<void> {
-    const { error } = await db
+    const { error } = await supabase
       .from('asset_locations')
       .delete()
       .eq('id', id)

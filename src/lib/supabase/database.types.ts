@@ -351,6 +351,33 @@ export type Database = {
         }
         Relationships: []
       }
+      asset_locations: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       asset_maintenance: {
         Row: {
           asset_id: string
@@ -671,6 +698,7 @@ export type Database = {
           id: string
           image_url: string | null
           location: string | null
+          location_id: string | null
           model: string | null
           name: string
           notes: string | null
@@ -701,6 +729,7 @@ export type Database = {
           id?: string
           image_url?: string | null
           location?: string | null
+          location_id?: string | null
           model?: string | null
           name: string
           notes?: string | null
@@ -731,6 +760,7 @@ export type Database = {
           id?: string
           image_url?: string | null
           location?: string | null
+          location_id?: string | null
           model?: string | null
           name?: string
           notes?: string | null
@@ -776,6 +806,13 @@ export type Database = {
             columns: ["category_id"]
             isOneToOne: false
             referencedRelation: "asset_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assets_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "asset_locations"
             referencedColumns: ["id"]
           },
           {
@@ -1845,6 +1882,66 @@ export type Database = {
           total_records?: number
         }
         Relationships: []
+      }
+      employee_immigration: {
+        Row: {
+          comments: string | null
+          created_at: string | null
+          document_number: string
+          document_type: string
+          eligible_review_date: string | null
+          eligible_status: string | null
+          employee_id: string
+          expiry_date: string | null
+          id: string
+          issued_by: string | null
+          issued_date: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          comments?: string | null
+          created_at?: string | null
+          document_number: string
+          document_type: string
+          eligible_review_date?: string | null
+          eligible_status?: string | null
+          employee_id: string
+          expiry_date?: string | null
+          id?: string
+          issued_by?: string | null
+          issued_date?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          comments?: string | null
+          created_at?: string | null
+          document_number?: string
+          document_type?: string
+          eligible_review_date?: string | null
+          eligible_status?: string | null
+          employee_id?: string
+          expiry_date?: string | null
+          id?: string
+          issued_by?: string | null
+          issued_date?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employee_immigration_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "board_members"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employee_immigration_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       employee_profile_templates: {
         Row: {

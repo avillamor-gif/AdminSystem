@@ -1,8 +1,6 @@
 import { createClient } from '@/lib/supabase/client'
 
 const supabase = createClient()
-// Type cast helper — table is not in generated types until migration is run in Supabase
-const db = supabase as any
 
 export type ImmigrationDocumentType = 'passport' | 'visa'
 
@@ -46,41 +44,41 @@ export interface ImmigrationDocumentUpdate {
 
 export const immigrationService = {
   async getAllByEmployee(employeeId: string): Promise<ImmigrationDocument[]> {
-    const { data, error } = await db
+    const { data, error } = await supabase
       .from('employee_immigration')
       .select('*')
       .eq('employee_id', employeeId)
       .order('created_at', { ascending: false })
 
     if (error) throw error
-    return (data || []) as ImmigrationDocument[]
+    return (data || []) as unknown as ImmigrationDocument[]
   },
 
   async create(payload: ImmigrationDocumentInsert): Promise<ImmigrationDocument> {
-    const { data, error } = await db
+    const { data, error } = await supabase
       .from('employee_immigration')
-      .insert(payload)
+      .insert(payload as any)
       .select('*')
       .single()
 
     if (error) throw error
-    return data as ImmigrationDocument
+    return data as unknown as ImmigrationDocument
   },
 
   async update(id: string, updates: ImmigrationDocumentUpdate): Promise<ImmigrationDocument> {
-    const { data, error } = await db
+    const { data, error } = await supabase
       .from('employee_immigration')
-      .update({ ...updates, updated_at: new Date().toISOString() })
+      .update({ ...updates, updated_at: new Date().toISOString() } as any)
       .eq('id', id)
       .select('*')
       .single()
 
     if (error) throw error
-    return data as ImmigrationDocument
+    return data as unknown as ImmigrationDocument
   },
 
   async delete(id: string): Promise<void> {
-    const { error } = await db
+    const { error } = await supabase
       .from('employee_immigration')
       .delete()
       .eq('id', id)
