@@ -158,6 +158,11 @@ export default function SupplyInventoryPage() {
                   <option value="">-- None --</option>{vendors.map(v => <option key={v.id} value={v.id}>{v.name}</option>)}
                 </select>
               </div>
+              <div><label className="block text-sm font-medium text-gray-700 mb-1">Brand</label>
+                <select value={(form as any).brand_id} onChange={e => set('brand_id', e.target.value)} className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-orange-400">
+                  <option value="">-- None --</option>{brands.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
+                </select>
+              </div>
               <div><label className="block text-sm font-medium text-gray-700 mb-1">Unit</label>
                 <select value={form.unit} onChange={e => set('unit', e.target.value)} className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-orange-400">
                   {['Piece','Box','Pack','Ream','Roll','Set','Bottle','Can'].map(u => <option key={u} value={u.toLowerCase()}>{u}</option>)}
@@ -167,11 +172,6 @@ export default function SupplyInventoryPage() {
               <div><label className="block text-sm font-medium text-gray-700 mb-1">Qty on Hand</label><Input type="number" min={0} value={form.quantity_on_hand} onChange={e => set('quantity_on_hand', Number(e.target.value))} /></div>
               <div><label className="block text-sm font-medium text-gray-700 mb-1">Reorder Point</label><Input type="number" min={0} value={form.reorder_point} onChange={e => set('reorder_point', Number(e.target.value))} /></div>
               <div><label className="block text-sm font-medium text-gray-700 mb-1">Max Stock</label><Input type="number" min={0} value={form.max_stock} onChange={e => set('max_stock', Number(e.target.value))} /></div>
-              <div><label className="block text-sm font-medium text-gray-700 mb-1">Brand</label>
-                <select value={(form as any).brand_id} onChange={e => set('brand_id', e.target.value)} className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-orange-400">
-                  <option value="">-- None --</option>{brands.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
-                </select>
-              </div>
               <div><label className="block text-sm font-medium text-gray-700 mb-1">Location</label>
                 <select value={(form as any).location_id} onChange={e => set('location_id', e.target.value)} className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-orange-400">
                   <option value="">-- None --</option>{locations.map(l => <option key={l.id} value={l.id}>{l.name}</option>)}
