@@ -88,21 +88,20 @@ export default function OfficeSuppliesSetupPage() {
 
   const load = async () => {
     const supabase = createClient()
-    const sb = supabase as any
     const [cat, ven, bra, loc] = await Promise.all([
       supabase.from('supply_categories').select('*').order('name'),
       supabase.from('supply_vendors').select('*').order('name'),
-      sb.from('supply_brands').select('*').order('name'),
-      sb.from('supply_locations').select('*').order('name'),
+      supabase.from('supply_brands').select('*').order('name'),
+      supabase.from('supply_locations').select('*').order('name'),
     ])
     if (cat.error) toast.error('Failed to load categories')
     else setCategories(cat.data ?? [])
     if (ven.error) toast.error('Failed to load vendors')
     else setVendors(ven.data ?? [])
     if (bra.error) toast.error('Failed to load brands')
-    else setBrands((bra.data ?? []) as SupplyBrand[])
+    else setBrands(bra.data ?? [])
     if (loc.error) toast.error('Failed to load locations')
-    else setLocations((loc.data ?? []) as SupplyLocation[])
+    else setLocations(loc.data ?? [])
     setLoading(false)
   }
 
@@ -163,19 +162,17 @@ export default function OfficeSuppliesSetupPage() {
       } else if (activeTab === 'brands') {
         if (!brandForm.name.trim()) { toast.error('Name is required'); return }
         const payload = { ...brandForm, name: brandForm.name.trim() }
-        const sb = supabase as any
         const { error } = selectedItem
-          ? await sb.from('supply_brands').update({ ...payload, updated_at: new Date().toISOString() }).eq('id', selectedItem.id)
-          : await sb.from('supply_brands').insert(payload)
+          ? await supabase.from('supply_brands').update({ ...payload, updated_at: new Date().toISOString() }).eq('id', selectedItem.id)
+          : await supabase.from('supply_brands').insert(payload)
         if (error) { toast.error(error.message); return }
         toast.success(selectedItem ? 'Brand updated' : 'Brand added')
       } else if (activeTab === 'locations') {
         if (!locationForm.name.trim()) { toast.error('Name is required'); return }
         const payload = { ...locationForm, name: locationForm.name.trim() }
-        const sb = supabase as any
         const { error } = selectedItem
-          ? await sb.from('supply_locations').update({ ...payload, updated_at: new Date().toISOString() }).eq('id', selectedItem.id)
-          : await sb.from('supply_locations').insert(payload)
+          ? await supabase.from('supply_locations').update({ ...payload, updated_at: new Date().toISOString() }).eq('id', selectedItem.id)
+          : await supabase.from('supply_locations').insert(payload)
         if (error) { toast.error(error.message); return }
         toast.success(selectedItem ? 'Location updated' : 'Location added')
       }
