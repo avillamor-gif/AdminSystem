@@ -271,13 +271,14 @@ export const travelService = {
     try {
       const travelRecord = await this.getById(id)
       const equipment: any[] = (travelRecord as any)?.equipment_requested ?? []
+      if (travelRecord?.employee_id) {
       for (const item of equipment.filter((e: any) => e.asset_id)) {
         // Find the open assignment record tied to this employee + asset
         const { data: assignment } = await supabase
           .from('asset_assignments')
           .select('id, asset_id')
           .eq('asset_id', item.asset_id)
-          .eq('employee_id', travelRecord!.employee_id)
+          .eq('employee_id', travelRecord.employee_id)
           .is('returned_date', null)
           .maybeSingle()
         if (assignment) {
@@ -293,6 +294,7 @@ export const travelService = {
             updated_at: new Date().toISOString(),
           }).eq('id', item.asset_id)
         }
+      }
       }
     } catch (err) {
       console.warn('[travel] asset release on reject failed:', err)
@@ -320,12 +322,13 @@ export const travelService = {
     try {
       const travelRecord = await this.getById(id)
       const equipment: any[] = (travelRecord as any)?.equipment_requested ?? []
+      if (travelRecord?.employee_id) {
       for (const item of equipment.filter((e: any) => e.asset_id)) {
         const { data: assignment } = await supabase
           .from('asset_assignments')
           .select('id, asset_id')
           .eq('asset_id', item.asset_id)
-          .eq('employee_id', travelRecord!.employee_id)
+          .eq('employee_id', travelRecord.employee_id)
           .is('returned_date', null)
           .maybeSingle()
         if (assignment) {
@@ -340,6 +343,7 @@ export const travelService = {
             updated_at: new Date().toISOString(),
           }).eq('id', item.asset_id)
         }
+      }
       }
     } catch (err) {
       console.warn('[travel] asset release on cancel failed:', err)
