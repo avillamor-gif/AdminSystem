@@ -928,22 +928,21 @@ body{font-family:Arial,sans-serif;font-size:11px;padding:12px;}
 
         </>
       )}
+      {/* Attendance edit / add modal */}
+      {editModal.open && (() => {
+        const emp = employees.find(e => e.id === calEmployee)
+        const empName = emp ? `${emp.first_name} ${emp.last_name}` : ''
+        return (
+          <AttendanceEditModal
+            open={editModal.open}
+            onClose={() => setEditModal(s => ({ ...s, open: false }))}
+            employeeId={calEmployee}
+            employeeName={empName}
+            dateStr={editModal.dateStr}
+            record={editModal.record}
+          />
+        )
+      })()}
     </div>
-
-    {/* Attendance edit / add modal */}
-    {editModal.open && (() => {
-      const emp = employees.find(e => e.id === calEmployee)
-      const empName = emp ? `${emp.first_name} ${emp.last_name}` : ''
-      return (
-        <AttendanceEditModal
-          open={editModal.open}
-          onClose={() => setEditModal(s => ({ ...s, open: false }))}
-          employeeId={calEmployee}
-          employeeName={empName}
-          dateStr={editModal.dateStr}
-          record={editModal.record}
-        />
-      )
-    })()}
   )
 }
