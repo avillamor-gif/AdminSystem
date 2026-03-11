@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState, useMemo } from 'react'
-import { BarChart3, Calendar, FileText, Download, Printer, ChevronLeft, ChevronRight } from 'lucide-react'
+import { BarChart3, Calendar, FileText, Download, Printer, ChevronLeft, ChevronRight, Plus, Edit2 } from 'lucide-react'
 import { Card, Button, Badge } from '@/components/ui'
 import { useQuery } from '@tanstack/react-query'
 import { attendanceService } from '@/services'
@@ -9,6 +9,8 @@ import { useEmployees } from '@/hooks/useEmployees'
 import { useLeaveRequests } from '@/hooks/useLeaveRequests'
 import { useHolidays } from '@/hooks/useLeaveAbsence'
 import { localDateStr } from '@/lib/utils'
+import { AttendanceEditModal } from '@/components/admin/AttendanceEditModal'
+import type { AttendanceRecord } from '@/services/attendance.service'
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 
@@ -101,6 +103,16 @@ export default function AttendanceReportsPage() {
   // ── Calendar tab state ──────────────────────────────────────────────────
   const [calEmployee, setCalEmployee] = useState<string>('')
   const [calMonth, setCalMonth] = useState(() => new Date())
+  const [editModal, setEditModal] = useState<{
+    open: boolean
+    dateStr: string
+    record: AttendanceRecord | null
+  }>({ open: false, dateStr: '', record: null })
+
+  const openEditModal = (dateStr: string, record: AttendanceRecord | null) => {
+    if (!calEmployee) return // require employee selection first
+    setEditModal({ open: true, dateStr, record })
+  }
 
   const calMonthStart = `${calMonth.getFullYear()}-${String(calMonth.getMonth() + 1).padStart(2, '0')}-01`
   const calMonthEnd   = localDateStr(new Date(calMonth.getFullYear(), calMonth.getMonth() + 1, 0))
@@ -792,12 +804,27 @@ body{font-family:Arial,sans-serif;font-size:11px;padding:12px;}
                         cells.push(
                           <div
                             key={dateStr}
-                            className={`min-h-[100px] p-2 border-b border-gray-200 cursor-default transition-colors ${
+                            onClick={() => !holiday && openEditModal(dateStr, attendance)}
+                            className={`min-h-[100px] p-2 border-b border-gray-200 transition-colors group ${
                               !isLastCol ? 'border-r' : ''
-                            } ${bgColor}`}
+                            } ${bgColor} ${!holiday && calEmployee ? 'cursor-pointer hover:brightness-95' : 'cursor-default'}`}
                           >
-                            <div className={`text-sm ${attendance || leave || holiday ? 'font-medium' : 'text-gray-500'}`}>
-                              {day}
+                            <div className="flex items-start justify-between">
+                              <div className={`text-sm ${attendance || leave || holiday ? 'font-medium' : 'text-gray-500'}`}>
+                                {day}
+                              </div>
+                              {/* Edit/Add button shown on hover when employee is selected */}
+                              {!holiday && calEmployee && (
+                                <button
+                                  onClick={e => { e.stopPropagation(); openEditModal(dateStr, attendance) }}
+                                  className={`opacity-0 group-hover:opacity-100 transition-opacity p-0.5 rounded ${
+                                    attendance ? 'text-gray-400 hover:text-orange' : 'text-gray-300 hover:text-orange'
+                                  }`}
+                                  title={attendance ? 'Edit attendance' : 'Add attendance'}
+                                >
+                                  {attendance ? <Edit2 className="w-3 h-3" /> : <Plus className="w-3 h-3" />}
+                                </button>
+                              )}
                             </div>
 
                             {/* Holiday */}
@@ -888,6 +915,13 @@ body{font-family:Arial,sans-serif;font-size:11px;padding:12px;}
                     <div className="flex items-center gap-2"><div className="w-4 h-4 bg-pink-500 rounded" /><span className="text-xs text-gray-600">Public Holidays</span></div>
                   </div>
                 </div>
+
+                {/* Tip shown when no employee selected */}
+                {!calEmployee && (
+                  <p className="mt-4 text-xs text-gray-400 text-center">
+                    Select an employee above to edit or add attendance records by clicking a day.
+                  </p>
+                )}
               </Card>
             </div>
           )}
@@ -895,5 +929,21 @@ body{font-family:Arial,sans-serif;font-size:11px;padding:12px;}
         </>
       )}
     </div>
+
+    {/* Attendance edit / add modal */}
+    {editModal.open && (() => {
+      const emp = employees.find(e => e.id === calEmployee)
+      const empName = emp ? `${emp.first_name} ${emp.last_name}` : ''
+      return (
+        <AttendanceEditModal
+          open={editModal.open}
+          onClose={() => setEditModal(s => ({ ...s, open: false }))}
+          employeeId={calEmployee}
+          employeeName={empName}
+          dateStr={editModal.dateStr}
+          record={editModal.record}
+        />
+      )
+    })()}
   )
 }

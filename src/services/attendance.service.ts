@@ -86,4 +86,48 @@ export const attendanceService = {
     if (error) throw error
     return data as unknown as AttendanceRecord
   },
+
+  /** Admin: upsert a day's attendance record (create or update by employee+date) */
+  async upsertRecord(payload: {
+    id?: string
+    employee_id: string
+    date: string
+    status: string
+    clock_in?: string | null
+    clock_out?: string | null
+    notes?: string | null
+  }): Promise<AttendanceRecord> {
+    const supabase = createClient()
+    if (payload.id) {
+      // Update existing record
+      const { id, ...rest } = payload
+      const { data, error } = await supabase
+        .from('attendance_records')
+        .update(rest as never)
+        .eq('id', id)
+        .select()
+        .single()
+      if (error) throw error
+      return data as unknown as AttendanceRecord
+    } else {
+      // Insert new record
+      const { data, error } = await supabase
+        .from('attendance_records')
+        .insert(payload as never)
+        .select()
+        .single()
+      if (error) throw error
+      return data as unknown as AttendanceRecord
+    }
+  },
+
+  /** Admin: hard-delete an attendance record by id */
+  async deleteRecord(id: string): Promise<void> {
+    const supabase = createClient()
+    const { error } = await supabase
+      .from('attendance_records')
+      .delete()
+      .eq('id', id)
+    if (error) throw error
+  },
 }
