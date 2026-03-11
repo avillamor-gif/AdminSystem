@@ -209,7 +209,7 @@ export default function AdminPage() {
       icon: Package,
       color: 'bg-green-600',
       href: '/admin/office-supplies',
-      items: ['Supply Inventory', 'Supply Requests', 'Vendor Management', 'Purchase Orders', 'Stock Levels', 'Supply Categories'],
+      items: ['Supply Inventory', 'Supply Requests', 'Purchase Orders', 'Stock Levels', 'Setup'],
       requiresPermission: 'supplies.manage',
     },
     {
@@ -353,6 +353,24 @@ export default function AdminPage() {
                       className="w-full text-left px-3 py-2 text-sm text-gray-600 hover:bg-gray-50 hover:text-orange rounded-lg transition-colors"
                       onClick={(e) => {
                         e.stopPropagation()
+                        // For items that share a label across modules, derive
+                        // route from module.href + item slug first, then fall back to flat map
+                        const itemSlugMap: Record<string, string> = {
+                          'Supply Inventory': 'supply-inventory',
+                          'Supply Requests': 'supply-requests',
+                          'Purchase Orders': 'purchase-orders',
+                          'Stock Levels': 'stock-levels',
+                          'Setup': 'setup',
+                          'Assets': 'assets',
+                          'Assignments': 'assignments',
+                          'Maintenance': 'maintenance',
+                          'Requests': 'requests',
+                          'Reports': 'reports',
+                        }
+                        if (itemSlugMap[item] && (module.id === 'office-supplies' || module.id === 'asset-management')) {
+                          router.push(`${module.href}/${itemSlugMap[item]}`)
+                          return
+                        }
                         const routeMap: Record<string, string> = {
                           // User Access & Security routes
                           'User Management': '/admin/user-access-security/user-management',
@@ -487,13 +505,11 @@ export default function AdminPage() {
                           'Setup': '/admin/asset-management/setup',
                           'Reports': '/admin/asset-management/reports',
                           
-                          // Office Supplies routes
+                          // Office Supplies routes — handled by itemSlugMap above
                           'Supply Inventory': '/admin/office-supplies/supply-inventory',
                           'Supply Requests': '/admin/office-supplies/supply-requests',
-                          'Vendor Management': '/admin/office-supplies/vendor-management',
                           'Purchase Orders': '/admin/office-supplies/purchase-orders',
                           'Stock Levels': '/admin/office-supplies/stock-levels',
-                          'Supply Categories': '/admin/office-supplies/supply-categories',
 
                           // Publications routes
                           'Publication Management': '/admin/publications/publication-management',
