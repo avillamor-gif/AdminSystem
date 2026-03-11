@@ -50,7 +50,10 @@ function LoginContent() {
   async function onSubmit(data: LoginForm) {
     setLoading(true)
     try {
-      console.log('Attempting login for:', data.email)
+      // Prevent any stale URL params from showing credentials
+      if (typeof window !== 'undefined' && window.history.replaceState) {
+        window.history.replaceState({}, '', '/login')
+      }
       
       const { data: authData, error } = await supabase.auth.signInWithPassword({
         email: data.email,
@@ -58,12 +61,10 @@ function LoginContent() {
       })
 
       if (error) {
-        console.error('Login error:', error)
         toast.error(error.message)
         return
       }
 
-      console.log('Login successful:', authData.user?.email)
       toast.success('Logged in successfully')
       
       // Small delay to ensure session is set
@@ -79,7 +80,6 @@ function LoginContent() {
       router.push('/')
       router.refresh()
     } catch (error) {
-      console.error('Login exception:', error)
       toast.error('An error occurred during login')
     } finally {
       setLoading(false)
@@ -172,7 +172,7 @@ function LoginContent() {
               <p className="text-gray-500 mt-2">Welcome back! Please sign in to continue.</p>
             </div>
 
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+            <form onSubmit={handleSubmit(onSubmit)} action="#" method="post" className="space-y-5">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">
                   Username
