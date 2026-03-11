@@ -149,19 +149,39 @@ export const leaveService = {
       .lte('start_date', today)
       .gte('end_date', today)
 
-    // 2. Today's attendance records for WFH / offsite / travel / onsite
-    const workStatuses = ['work-home', 'work-offsite', 'work-travel', 'work-onsite']
+    // 2. Today's attendance records
     const { data: attRecords } = await supabase
       .from('attendance_records')
       .select('*')
       .eq('date', today)
 
+    const workStatuses = ['work-home', 'work-offsite', 'work-travel', 'work-onsite']
+
+    // Extract the attendance type from a record's notes field.
+    // Notes are stored as JSON sessions: [{"type":"work-home","timeIn":"..."}]
+    // or legacy plain-text: "work-home: note"
+    function getAttendanceType(notes: string | null): string | null {
+      if (!notes) return null
+      const trimmed = notes.trimStart()
+      if (trimmed.startsWith('[') || trimmed.startsWith('{')) {
+        try {
+          const sessions = JSON.parse(trimmed)
+          if (Array.isArray(sessions) && sessions.length > 0) {
+            // Use the most recent session's type
+            return sessions[sessions.length - 1]?.type ?? null
+          }
+        } catch {}
+      }
+      // Legacy plain-text: "work-home: note"
+      return notes.split(':')[0].trim() || null
+    }
+
     // Collect all unique employee IDs
     const leaveEmpIds = (leaveReqs || []).map(r => r.employee_id)
     const attEmpIds = (attRecords || [])
       .filter(r => {
-        const status = r.notes ? r.notes.split(':')[0].trim() : r.status
-        return workStatuses.includes(status)
+        const status = getAttendanceType(r.notes)
+        return workStatuses.includes(status ?? '')
       })
       .map(r => r.employee_id)
     const allEmpIds = [...new Set([...leaveEmpIds, ...attEmpIds])]
@@ -196,7 +216,7 @@ export const leaveService = {
 
     // Attendance-based statuses first (more specific)
     for (const rec of (attRecords || [])) {
-      const rawStatus = rec.notes ? rec.notes.split(':')[0].trim() : rec.status
+      const rawStatus = getAttendanceType(rec.notes) ?? rec.status
       if (!workStatuses.includes(rawStatus)) continue
       if (seen.has(rec.employee_id)) continue
       seen.add(rec.employee_id)
