@@ -57,8 +57,8 @@ export default function TimePage() {
   })
 
   // Fetch attendance records for current month
-  const monthStart = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1).toISOString().split('T')[0]
-  const monthEnd = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0).toISOString().split('T')[0]
+  const monthStart = localDateStr(new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1))
+  const monthEnd = localDateStr(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0))
   
   // Filter by current employee's ID
   const { data: attendanceRecords, isLoading, refetch } = useAttendanceRecords({
@@ -589,19 +589,30 @@ export default function TimePage() {
                   const attendance = getAttendanceForDate(dateStr)
                   const leaveRequest = getLeaveForDate(dateStr)
                   const holiday = getHolidayForDate(dateStr)
-                  // Parse the UI attendance type from notes (stored as "work-onsite: note" or "work-home")
-                  const attendanceUiType = attendance?.notes
-                    ? (attendance.notes.split(':')[0].trim() as AttendanceType)
-                    : (attendance?.status as AttendanceType | undefined)
+                  // Parse the UI attendance type from notes — handles both JSON sessions and legacy plain-text
+                  const _noteSessions = attendance ? parseSessions(attendance.notes) : []
+                  const attendanceUiType = attendance
+                    ? (_noteSessions.length > 0 && _noteSessions[0].timeIn
+                        ? (_noteSessions[_noteSessions.length - 1].type as AttendanceType)
+                        : (attendance.status as AttendanceType | undefined))
+                    : undefined
                   const attendanceInfo = attendanceUiType ? getAttendanceTypeInfo(attendanceUiType) : null
                   const isLastCol = (firstDay + day - 1) % 7 === 6
                   
-                  // Determine background color: holiday > leave > attendance
+                  // Parse sessions for this day (always, so attendance can take priority over leave)
+                  const daySessions = !holiday && attendance ? parseSessions(attendance.notes) : []
+                  const hasSessions = daySessions.length > 0 && daySessions[0].timeIn !== ''
+
+                  // Priority: holiday > attendance-with-sessions > leave > bare attendance
+                  // If the employee actually punched in (hasSessions), attendance takes precedence over leave
+                  const showAttendanceSessions = !holiday && hasSessions
+                  const showLeaveBlock = !holiday && !showAttendanceSessions && !!leaveRequest
+
+                  // Determine background color
                   let bgColor = ''
                   let displayInfo = null
                   
                   if (holiday) {
-                    // Show holiday (highest priority)
                     bgColor = 'bg-pink-50'
                     displayInfo = {
                       label: holiday.holiday_name,
@@ -609,17 +620,36 @@ export default function TimePage() {
                       badge: getHolidayTypeLabel(holiday.holiday_type),
                       badgeVariant: 'default' as const
                     }
-                  } else if (leaveRequest) {
-                    // Show leave request
-                    bgColor = leaveRequest.status === 'approved' ? 'bg-blue-50' : 'bg-yellow-50'
+                  } else if (showAttendanceSessions) {
+                    // Attendance sessions take priority — use first session's bg color
+                    bgColor = getAttendanceTypeInfo(daySessions[0].type).bgColor
+                    displayInfo = null // sessions rendered separately below
+                  } else if (showLeaveBlock) {
+                    // Map leave_type_code to legend color
+                    const ltCode = (leaveRequest!.leave_type as any)?.leave_type_code ?? ''
+                    const leaveColorMap: Record<string, { bg: string; text: string }> = {
+                      'vacation':    { bg: 'bg-amber-50',  text: 'text-amber-700' },
+                      'sick':        { bg: 'bg-red-50',    text: 'text-red-700' },
+                      'days-off':    { bg: 'bg-orange-50', text: 'text-orange-700' },
+                      'rest-day':    { bg: 'bg-gray-50',   text: 'text-gray-600' },
+                      'maternity':   { bg: 'bg-pink-50',   text: 'text-pink-700' },
+                      'paternity':   { bg: 'bg-indigo-50', text: 'text-indigo-700' },
+                      'emergency':   { bg: 'bg-red-50',    text: 'text-red-700' },
+                      'birthday':    { bg: 'bg-purple-50', text: 'text-purple-700' },
+                      'solo-parent': { bg: 'bg-teal-50',   text: 'text-teal-700' },
+                    }
+                    const leaveStyle = leaveColorMap[ltCode] ?? { bg: 'bg-blue-50', text: 'text-blue-700' }
+                    const ltName = (leaveRequest!.leave_type as any)?.leave_type_name
+                      || (leaveRequest!.leave_type as any)?.name
+                      || 'Leave'
+                    bgColor = leaveStyle.bg
                     displayInfo = {
-                      label: leaveRequest.leave_type?.name || 'Leave',
-                      textColor: leaveRequest.status === 'approved' ? 'text-blue-600' : 'text-yellow-600',
-                      badge: (leaveRequest.status ?? '').charAt(0).toUpperCase() + (leaveRequest.status ?? '').slice(1),
-                      badgeVariant: (leaveRequest.status === 'approved' ? 'success' : 'warning') as 'success' | 'warning'
+                      label: ltName,
+                      textColor: leaveStyle.text,
+                      badge: (leaveRequest!.status ?? '').charAt(0).toUpperCase() + (leaveRequest!.status ?? '').slice(1),
+                      badgeVariant: (leaveRequest!.status === 'approved' ? 'success' : 'warning') as 'success' | 'warning'
                     }
                   } else if (attendanceInfo) {
-                    // Show attendance
                     bgColor = attendanceInfo.bgColor
                     displayInfo = {
                       label: attendanceInfo.label,
@@ -628,10 +658,6 @@ export default function TimePage() {
                       badgeVariant: null
                     }
                   }
-                  
-                  // Parse sessions for this day (for punch-based days)
-                  const daySessions = !leaveRequest && !holiday && attendance ? parseSessions(attendance.notes) : []
-                  const hasSessions = daySessions.length > 0 && daySessions[0].timeIn !== ''
 
                   days.push(
                     <div
@@ -652,8 +678,8 @@ export default function TimePage() {
                     >
                       <div className={`text-sm ${attendance || leaveRequest || holiday ? 'font-medium' : 'text-gray-500'}`}>{day}</div>
 
-                      {/* Holiday or Leave: show label + badge as before */}
-                      {(holiday || leaveRequest) && displayInfo && (
+                      {/* Holiday */}
+                      {holiday && displayInfo && (
                         <>
                           <div className={`mt-1 text-xs font-medium ${displayInfo.textColor}`}>
                             {displayInfo.label}
@@ -666,8 +692,8 @@ export default function TimePage() {
                         </>
                       )}
 
-                      {/* Attendance with sessions: show each session block */}
-                      {!holiday && !leaveRequest && hasSessions && (
+                      {/* Attendance with sessions (takes priority over leave) */}
+                      {showAttendanceSessions && (
                         <div className="mt-1 space-y-1">
                           {daySessions.map((session, idx) => {
                             const sInfo = getAttendanceTypeInfo(session.type)
@@ -685,11 +711,32 @@ export default function TimePage() {
                               </div>
                             )
                           })}
+                          {/* Show leave note if employee came in despite being on leave */}
+                          {leaveRequest && (() => {
+                            const ltName = (leaveRequest.leave_type as any)?.leave_type_name
+                              || (leaveRequest.leave_type as any)?.name
+                              || 'Leave'
+                            return <div className="text-[10px] text-amber-600 font-medium mt-0.5">📋 {ltName}</div>
+                          })()}
                         </div>
                       )}
 
+                      {/* Leave request (only when no attendance sessions) */}
+                      {showLeaveBlock && displayInfo && (
+                        <>
+                          <div className={`mt-1 text-xs font-medium ${displayInfo.textColor}`}>
+                            {displayInfo.label}
+                          </div>
+                          {displayInfo.badge && (
+                            <Badge variant={displayInfo.badgeVariant} className="mt-1 text-xs">
+                              {displayInfo.badge}
+                            </Badge>
+                          )}
+                        </>
+                      )}
+
                       {/* Attendance without sessions (legacy plain-text notes or manual calendar entry) */}
-                      {!holiday && !leaveRequest && !hasSessions && displayInfo && (
+                      {!holiday && !showAttendanceSessions && !showLeaveBlock && displayInfo && (
                         <div className={`mt-1 text-xs font-medium ${displayInfo.textColor}`}>
                           {displayInfo.label}
                         </div>
@@ -742,14 +789,6 @@ export default function TimePage() {
               <div className="flex items-center gap-2">
                 <div className="w-4 h-4 bg-pink-500 rounded"></div>
                 <span className="text-xs text-gray-600">Public Holidays</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-4 h-4 bg-blue-50 border border-blue-300 rounded"></div>
-                <span className="text-xs text-gray-600">Leave Request (Approved)</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-4 h-4 bg-yellow-50 border border-yellow-300 rounded"></div>
-                <span className="text-xs text-gray-600">Leave Request (Pending)</span>
               </div>
             </div>
           </div>

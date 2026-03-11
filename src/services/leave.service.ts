@@ -217,7 +217,7 @@ export const leaveService = {
     // Attendance-based statuses first (more specific)
     for (const rec of (attRecords || [])) {
       const rawStatus = getAttendanceType(rec.notes) ?? rec.status
-      if (!workStatuses.includes(rawStatus)) continue
+      if (!rawStatus || !workStatuses.includes(rawStatus)) continue
       if (seen.has(rec.employee_id)) continue
       seen.add(rec.employee_id)
       const emp = empMap.get(rec.employee_id)

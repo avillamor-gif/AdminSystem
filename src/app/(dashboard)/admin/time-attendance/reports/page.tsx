@@ -1,11 +1,14 @@
 'use client'
 
-import { useState, useMemo } from 'react'
-import { BarChart3, Calendar, FileText, Download, Printer } from 'lucide-react'
+import React, { useState, useMemo } from 'react'
+import { BarChart3, Calendar, FileText, Download, Printer, ChevronLeft, ChevronRight } from 'lucide-react'
 import { Card, Button, Badge } from '@/components/ui'
 import { useQuery } from '@tanstack/react-query'
 import { attendanceService } from '@/services'
 import { useEmployees } from '@/hooks/useEmployees'
+import { useLeaveRequests } from '@/hooks/useLeaveRequests'
+import { useHolidays } from '@/hooks/useLeaveAbsence'
+import { localDateStr } from '@/lib/utils'
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 
@@ -80,7 +83,7 @@ const SHEET_TYPES = [
 
 // ─── component ──────────────────────────────────────────────────────────────
 
-type ReportType = 'attendance' | 'timesheet' | 'monthly-sheet' | 'project'
+type ReportType = 'attendance' | 'timesheet' | 'monthly-sheet' | 'project' | 'calendar'
 
 export default function AttendanceReportsPage() {
   const today = new Date()
@@ -94,6 +97,83 @@ export default function AttendanceReportsPage() {
   const [sheetYear, setSheetYear] = useState(today.getFullYear())
 
   const { data: employees = [], isLoading: loadingEmployees } = useEmployees()
+
+  // ── Calendar tab state ──────────────────────────────────────────────────
+  const [calEmployee, setCalEmployee] = useState<string>('')
+  const [calMonth, setCalMonth] = useState(() => new Date())
+
+  const calMonthStart = `${calMonth.getFullYear()}-${String(calMonth.getMonth() + 1).padStart(2, '0')}-01`
+  const calMonthEnd   = localDateStr(new Date(calMonth.getFullYear(), calMonth.getMonth() + 1, 0))
+
+  const { data: calRecords = [] } = useQuery({
+    queryKey: ['attendance', 'admin-calendar', calEmployee, calMonthStart, calMonthEnd],
+    queryFn: () => attendanceService.getRecords({
+      employeeId: calEmployee || undefined,
+      startDate: calMonthStart,
+      endDate: calMonthEnd,
+    }),
+    enabled: true,
+  })
+  const { data: calLeave = [] } = useLeaveRequests(
+    calEmployee ? { employee_id: calEmployee, status: 'approved' } : { status: 'approved' }
+  )
+  const { data: calHolidays = [] } = useHolidays({ year: calMonth.getFullYear(), is_active: true })
+
+  function formatCalMonth(d: Date) {
+    return d.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
+  }
+  function getDaysInCalMonth(d: Date) {
+    return new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate()
+  }
+  function getCalAttendance(dateStr: string) {
+    return calRecords.find(r => r.date === dateStr) ?? null
+  }
+  function getCalLeave(dateStr: string) {
+    return calLeave.find(lr =>
+      lr.status === 'approved' && lr.start_date <= dateStr && lr.end_date >= dateStr
+    ) ?? null
+  }
+  function getCalHoliday(dateStr: string) {
+    return calHolidays.find((h: any) => h.holiday_date === dateStr) ?? null
+  }
+  function getCalHolidayTypeLabel(type: string) {
+    if (type === 'regular') return 'Regular Holiday'
+    if (type === 'special_non_working') return 'Special Non-Working'
+    if (type === 'special_working') return 'Special Working'
+    return 'Holiday'
+  }
+
+  // Attendance type info for calendar — JSON-aware
+  const CAL_TYPE_INFO: Record<string, { label: string; bg: string; text: string; dot: string }> = {
+    'work-onsite':  { label: 'On-site',       bg: 'bg-blue-50',   text: 'text-blue-700',   dot: 'bg-blue-500' },
+    'work-home':    { label: 'WFH',           bg: 'bg-green-50',  text: 'text-green-700',  dot: 'bg-green-500' },
+    'work-offsite': { label: 'Off-site',      bg: 'bg-purple-50', text: 'text-purple-700', dot: 'bg-purple-500' },
+    'work-travel':  { label: 'Travel',        bg: 'bg-indigo-50', text: 'text-indigo-700', dot: 'bg-indigo-500' },
+    'vacation':     { label: 'Vacation',      bg: 'bg-amber-50',  text: 'text-amber-700',  dot: 'bg-amber-500' },
+    'sick':         { label: 'Sick leave',    bg: 'bg-red-50',    text: 'text-red-700',    dot: 'bg-red-500' },
+    'days-off':     { label: 'Days Off-set',  bg: 'bg-orange-50', text: 'text-orange-700', dot: 'bg-orange-500' },
+    'rest-day':     { label: 'Day off',       bg: 'bg-gray-50',   text: 'text-gray-600',   dot: 'bg-gray-400' },
+    'present':      { label: 'Present',       bg: 'bg-blue-50',   text: 'text-blue-700',   dot: 'bg-blue-500' },
+  }
+  function getCalTypeInfo(type: string) {
+    return CAL_TYPE_INFO[type] || { label: type, bg: 'bg-gray-50', text: 'text-gray-600', dot: 'bg-gray-400' }
+  }
+
+  // Map leave_type_code → legend colors (same palette as attendance types)
+  function getLeaveTypeStyle(code: string | null | undefined): { bg: string; text: string; label: string } {
+    const map: Record<string, { bg: string; text: string }> = {
+      'vacation':      { bg: 'bg-amber-50',  text: 'text-amber-700' },
+      'sick':          { bg: 'bg-red-50',    text: 'text-red-700' },
+      'days-off':      { bg: 'bg-orange-50', text: 'text-orange-700' },
+      'rest-day':      { bg: 'bg-gray-50',   text: 'text-gray-600' },
+      'maternity':     { bg: 'bg-pink-50',   text: 'text-pink-700' },
+      'paternity':     { bg: 'bg-indigo-50', text: 'text-indigo-700' },
+      'emergency':     { bg: 'bg-red-50',    text: 'text-red-700' },
+      'birthday':      { bg: 'bg-purple-50', text: 'text-purple-700' },
+      'solo-parent':   { bg: 'bg-teal-50',   text: 'text-teal-700' },
+    }
+    return { ...(map[code ?? ''] ?? { bg: 'bg-blue-50', text: 'text-blue-700' }), label: '' }
+  }
 
   // Fetch records — admin can query all or by specific employee
   const fetchStart = `${sheetYear - 1}-01-01`
@@ -244,6 +324,7 @@ body{font-family:Arial,sans-serif;font-size:11px;padding:12px;}
           {([
             { key: 'attendance',    label: 'Attendance Summary', icon: Calendar },
             { key: 'timesheet',     label: 'Timesheet',          icon: FileText },
+            { key: 'calendar',      label: 'Calendar',           icon: Calendar },
             { key: 'project',       label: 'Project / Hours',    icon: BarChart3 },
             { key: 'monthly-sheet', label: 'Monthly Sheet',      icon: Printer },
           ] as { key: ReportType; label: string; icon: any }[]).map(tab => (
@@ -263,7 +344,8 @@ body{font-family:Arial,sans-serif;font-size:11px;padding:12px;}
         </nav>
       </div>
 
-      {/* Filters */}
+      {/* Filters — hidden for Calendar tab which has its own controls */}
+      {activeReport !== 'calendar' && (
       <Card className="p-4">
         <div className="flex flex-wrap gap-4 items-end">
           {/* Employee picker */}
@@ -320,8 +402,9 @@ body{font-family:Arial,sans-serif;font-size:11px;padding:12px;}
           )}
         </div>
       </Card>
+      )}
 
-      {isLoading ? (
+      {isLoading && activeReport !== 'calendar' ? (
         <div className="flex justify-center py-16">
           <div className="h-8 w-8 animate-spin rounded-full border-4 border-orange border-t-transparent" />
         </div>
@@ -612,6 +695,199 @@ body{font-family:Arial,sans-serif;font-size:11px;padding:12px;}
               </div>
             </Card>
           )}
+
+          {/* ── Calendar ──────────────────────────────────────────── */}
+          {activeReport === 'calendar' && (
+            <div className="space-y-4">
+              {/* Calendar controls */}
+              <Card className="p-4">
+                <div className="flex flex-wrap gap-4 items-end">
+                  {/* Employee picker */}
+                  <div className="flex-1 min-w-[220px]">
+                    <label className="block text-xs font-medium text-gray-600 mb-1">Employee</label>
+                    <select
+                      value={calEmployee}
+                      onChange={e => setCalEmployee(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange focus:border-transparent"
+                    >
+                      <option value="">— Select Employee —</option>
+                      {employees.map(e => (
+                        <option key={e.id} value={e.id}>{e.first_name} {e.last_name}</option>
+                      ))}
+                    </select>
+                  </div>
+                  {/* Month navigation */}
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => setCalMonth(d => new Date(d.getFullYear(), d.getMonth() - 1, 1))}
+                      className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                    >
+                      <ChevronLeft className="w-4 h-4 text-gray-600" />
+                    </button>
+                    <span className="text-sm font-semibold text-gray-900 min-w-[140px] text-center">
+                      {formatCalMonth(calMonth)}
+                    </span>
+                    <button
+                      onClick={() => setCalMonth(d => new Date(d.getFullYear(), d.getMonth() + 1, 1))}
+                      className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                    >
+                      <ChevronRight className="w-4 h-4 text-gray-600" />
+                    </button>
+                  </div>
+                </div>
+              </Card>
+
+              {/* Calendar grid */}
+              <Card className="p-6">
+                {/* Calendar Grid */}
+                <div className="border border-gray-200 rounded-lg overflow-hidden">
+                  {/* Calendar Header */}
+                  <div className="grid grid-cols-7 bg-gray-50 border-b border-gray-200">
+                    {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
+                      <div key={day} className="p-3 text-center text-sm font-medium text-gray-600">{day}</div>
+                    ))}
+                  </div>
+
+                  {/* Calendar Body */}
+                  <div className="grid grid-cols-7">
+                    {(() => {
+                      const totalDays = getDaysInCalMonth(calMonth)
+                      const firstDow  = new Date(calMonth.getFullYear(), calMonth.getMonth(), 1).getDay()
+                      const cells: React.ReactNode[] = []
+
+                      // Empty cells before month starts
+                      for (let i = 0; i < firstDow; i++) {
+                        cells.push(
+                          <div key={`empty-${i}`} className="min-h-[100px] p-2 border-r border-b border-gray-200 bg-gray-50" />
+                        )
+                      }
+
+                      for (let day = 1; day <= totalDays; day++) {
+                        const dateStr    = `${calMonth.getFullYear()}-${String(calMonth.getMonth() + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`
+                        const attendance = getCalAttendance(dateStr)
+                        const leave      = getCalLeave(dateStr)
+                        const holiday    = getCalHoliday(dateStr) as any
+                        const isLastCol  = (firstDow + day - 1) % 7 === 6
+
+                        // Sessions — parse regardless of leave, so attendance can override leave
+                        const daySessions = !holiday && attendance ? parseSessions(attendance.notes) : []
+                        const hasSessions = daySessions.length > 0 && daySessions[0].timeIn !== ''
+
+                        // Priority: holiday > attendance-with-sessions > leave > bare attendance
+                        // If the employee actually punched in (hasSessions), show attendance over leave
+                        const showAttendance = !holiday && hasSessions
+                        const showLeave      = !holiday && !showAttendance && !!leave
+
+                        // Determine background
+                        let bgColor = ''
+                        if (holiday) bgColor = 'bg-pink-50'
+                        else if (showAttendance) bgColor = getCalTypeInfo(daySessions[0].type).bg
+                        else if (showLeave) bgColor = getLeaveTypeStyle((leave as any).leave_type?.leave_type_code).bg
+
+                        cells.push(
+                          <div
+                            key={dateStr}
+                            className={`min-h-[100px] p-2 border-b border-gray-200 cursor-default transition-colors ${
+                              !isLastCol ? 'border-r' : ''
+                            } ${bgColor}`}
+                          >
+                            <div className={`text-sm ${attendance || leave || holiday ? 'font-medium' : 'text-gray-500'}`}>
+                              {day}
+                            </div>
+
+                            {/* Holiday */}
+                            {holiday && (
+                              <>
+                                <div className="mt-1 text-xs font-medium text-pink-600">
+                                  {holiday.holiday_name}
+                                </div>
+                                <Badge variant="default" className="mt-1 text-xs">
+                                  {getCalHolidayTypeLabel(holiday.holiday_type)}
+                                </Badge>
+                              </>
+                            )}
+
+                            {/* Attendance with sessions (takes priority over leave) */}
+                            {showAttendance && (
+                              <div className="mt-1 space-y-1">
+                                {daySessions.map((session, idx) => {
+                                  const sInfo = getCalTypeInfo(session.type)
+                                  return (
+                                    <div key={idx} className={`rounded px-1.5 py-1 ${sInfo.bg}`}>
+                                      <div className={`text-xs font-semibold ${sInfo.text} truncate`}>
+                                        {sInfo.label}
+                                      </div>
+                                      <div className="text-[10px] text-gray-500 leading-tight">
+                                        <span className="font-medium">In:</span> {fmtTime(session.timeIn)}
+                                      </div>
+                                      <div className="text-[10px] text-gray-500 leading-tight">
+                                        <span className="font-medium">Out:</span> {session.timeOut ? fmtTime(session.timeOut) : <span className="text-green-500">Active</span>}
+                                      </div>
+                                    </div>
+                                  )
+                                })}
+                                {/* Show leave note if employee came in despite being on leave */}
+                                {leave && (() => {
+                                  const lt = (leave as any).leave_type
+                                  const ltName = lt?.leave_type_name || lt?.name || 'Leave'
+                                  return (
+                                    <div className="text-[10px] text-amber-600 font-medium mt-0.5">📋 {ltName}</div>
+                                  )
+                                })()}
+                              </div>
+                            )}
+
+                            {/* Leave request (only when no attendance sessions) */}
+                            {showLeave && (() => {
+                              const lt = (leave as any).leave_type
+                              const ltName = lt?.leave_type_name || lt?.name || 'Leave'
+                              const ltCode = lt?.leave_type_code ?? ''
+                              const style = getLeaveTypeStyle(ltCode)
+                              return (
+                                <>
+                                  <div className={`mt-1 text-xs font-medium ${style.text}`}>
+                                    {ltName}
+                                  </div>
+                                  <Badge variant={leave.status === 'approved' ? 'success' : 'warning'} className="mt-1 text-xs">
+                                    {(leave.status ?? '').charAt(0).toUpperCase() + (leave.status ?? '').slice(1)}
+                                  </Badge>
+                                </>
+                              )
+                            })()}
+
+                            {/* Attendance without sessions (legacy) */}
+                            {!holiday && !showAttendance && !showLeave && attendance && (
+                              <div className={`mt-1 text-xs font-medium ${getCalTypeInfo(attendance.status ?? '').text}`}>
+                                {getCalTypeInfo(attendance.status ?? '').label}
+                              </div>
+                            )}
+                          </div>
+                        )
+                      }
+                      return cells
+                    })()}
+                  </div>
+                </div>
+
+                {/* Legend */}
+                <div className="mt-6 pt-4 border-t border-gray-200">
+                  <h3 className="text-sm font-semibold text-gray-700 mb-3">Legend</h3>
+                  <div className="grid grid-cols-3 gap-3">
+                    <div className="flex items-center gap-2"><div className="w-4 h-4 bg-blue-500 rounded" /><span className="text-xs text-gray-600">Work on-site</span></div>
+                    <div className="flex items-center gap-2"><div className="w-4 h-4 bg-green-500 rounded" /><span className="text-xs text-gray-600">Work from home</span></div>
+                    <div className="flex items-center gap-2"><div className="w-4 h-4 bg-purple-500 rounded" /><span className="text-xs text-gray-600">Work off-site</span></div>
+                    <div className="flex items-center gap-2"><div className="w-4 h-4 bg-indigo-500 rounded" /><span className="text-xs text-gray-600">Work on Travel</span></div>
+                    <div className="flex items-center gap-2"><div className="w-4 h-4 bg-amber-500 rounded" /><span className="text-xs text-gray-600">Vacation leave</span></div>
+                    <div className="flex items-center gap-2"><div className="w-4 h-4 bg-red-500 rounded" /><span className="text-xs text-gray-600">Sick leave</span></div>
+                    <div className="flex items-center gap-2"><div className="w-4 h-4 bg-orange rounded" /><span className="text-xs text-gray-600">Days Off-set</span></div>
+                    <div className="flex items-center gap-2"><div className="w-4 h-4 bg-gray-500 rounded" /><span className="text-xs text-gray-600">Day off / Rest day</span></div>
+                    <div className="flex items-center gap-2"><div className="w-4 h-4 bg-pink-500 rounded" /><span className="text-xs text-gray-600">Public Holidays</span></div>
+                  </div>
+                </div>
+              </Card>
+            </div>
+          )}
+
         </>
       )}
     </div>
