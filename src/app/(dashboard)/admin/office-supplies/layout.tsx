@@ -3,10 +3,9 @@ import SecondaryNav from '@/components/layout/SecondaryNav'
 const officeSuppliesNavItems = [
   { label: 'Supply Inventory', href: '/admin/office-supplies/supply-inventory' },
   { label: 'Supply Requests', href: '/admin/office-supplies/supply-requests' },
-  { label: 'Vendor Management', href: '/admin/office-supplies/vendor-management' },
   { label: 'Purchase Orders', href: '/admin/office-supplies/purchase-orders' },
   { label: 'Stock Levels', href: '/admin/office-supplies/stock-levels' },
-  { label: 'Supply Categories', href: '/admin/office-supplies/supply-categories' },
+  { label: 'Setup', href: '/admin/office-supplies/setup' },
 ]
 
 export default function AdminOfficeSuppliesLayout({
