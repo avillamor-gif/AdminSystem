@@ -116,7 +116,7 @@ export default function DashboardPage() {
               <p className="text-sm">No status recorded for today yet</p>
             </div>
           ) : (
-            <div className="space-y-3 max-h-64 overflow-y-auto">
+            <div className="space-y-3 max-h-[368px] overflow-y-auto pr-1">
               {workStatusList.map((item) => {
                 const firstName = item.employee?.first_name ?? ''
                 const lastName = item.employee?.last_name ?? ''
