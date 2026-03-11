@@ -8,19 +8,24 @@ import toast from 'react-hot-toast'
 
 interface Category { id: string; name: string }
 interface Vendor { id: string; name: string }
+interface Brand { id: string; name: string }
+interface SupplyLocation { id: string; name: string }
 interface Item {
   id: string; name: string; description: string | null; category_id: string | null
   unit: string | null; unit_cost: number | null; quantity_on_hand: number | null; reorder_point: number | null
-  max_stock: number | null; location: string | null; vendor_id: string | null; is_active: boolean | null; notes: string | null
-  category?: Category; vendor?: Vendor
+  max_stock: number | null; location: string | null; location_id: string | null; vendor_id: string | null
+  brand_id: string | null; is_active: boolean | null; notes: string | null
+  category?: Category; vendor?: Vendor; brand?: Brand; supplyLocation?: SupplyLocation
 }
 
-const empty = { name: '', description: '', category_id: '', unit: 'piece', unit_cost: 0, quantity_on_hand: 0, reorder_point: 5, max_stock: 100, location: '', vendor_id: '', is_active: true, notes: '' }
+const empty = { name: '', description: '', category_id: '', brand_id: '', unit: 'piece', unit_cost: 0, quantity_on_hand: 0, reorder_point: 5, max_stock: 100, location_id: '', vendor_id: '', is_active: true, notes: '' }
 
 export default function SupplyInventoryPage() {
   const [items, setItems] = useState<Item[]>([])
   const [categories, setCategories] = useState<Category[]>([])
   const [vendors, setVendors] = useState<Vendor[]>([])
+  const [brands, setBrands] = useState<Brand[]>([])
+  const [locations, setLocations] = useState<SupplyLocation[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [modalOpen, setModalOpen] = useState(false)
@@ -30,29 +35,35 @@ export default function SupplyInventoryPage() {
 
   const load = async () => {
     const supabase = createClient()
-    const [itemsRes, catsRes, vendorsRes] = await Promise.all([
+    const [itemsRes, catsRes, vendorsRes, brandsRes, locsRes] = await Promise.all([
       supabase.from('supply_items').select('*').order('name'),
       supabase.from('supply_categories').select('id, name').eq('is_active', true).order('name'),
       supabase.from('supply_vendors').select('id, name').eq('is_active', true).order('name'),
+      supabase.from('supply_brands').select('id, name').eq('is_active', true).order('name'),
+      supabase.from('supply_locations').select('id, name').eq('is_active', true).order('name'),
     ])
     if (itemsRes.error) { toast.error('Failed to load inventory'); return }
     const catMap = Object.fromEntries((catsRes.data ?? []).map((c: Category) => [c.id, c]))
     const vendMap = Object.fromEntries((vendorsRes.data ?? []).map((v: Vendor) => [v.id, v]))
-    setItems((itemsRes.data ?? []).map((i: Item) => ({ ...i, category: catMap[i.category_id ?? ''], vendor: vendMap[i.vendor_id ?? ''] })))
+    const brandMap = Object.fromEntries((brandsRes.data ?? []).map((b: Brand) => [b.id, b]))
+    const locMap = Object.fromEntries((locsRes.data ?? []).map((l: SupplyLocation) => [l.id, l]))
+    setItems((itemsRes.data ?? []).map((i: Item) => ({ ...i, category: catMap[i.category_id ?? ''], vendor: vendMap[i.vendor_id ?? ''], brand: brandMap[i.brand_id ?? ''], supplyLocation: locMap[i.location_id ?? ''] })))
     setCategories(catsRes.data ?? [])
     setVendors(vendorsRes.data ?? [])
+    setBrands(brandsRes.data ?? [])
+    setLocations(locsRes.data ?? [])
     setLoading(false)
   }
   useEffect(() => { load() }, [])
 
   const openCreate = () => { setSelected(null); setForm(empty); setModalOpen(true) }
-  const openEdit = (i: Item) => { setSelected(i); setForm({ name: i.name, description: i.description ?? '', category_id: i.category_id ?? '', unit: i.unit ?? 'piece', unit_cost: i.unit_cost ?? 0, quantity_on_hand: i.quantity_on_hand ?? 0, reorder_point: i.reorder_point ?? 5, max_stock: i.max_stock ?? 100, location: i.location ?? '', vendor_id: i.vendor_id ?? '', is_active: i.is_active ?? true, notes: i.notes ?? '' }); setModalOpen(true) }
+  const openEdit = (i: Item) => { setSelected(i); setForm({ name: i.name, description: i.description ?? '', category_id: i.category_id ?? '', brand_id: i.brand_id ?? '', unit: i.unit ?? 'piece', unit_cost: i.unit_cost ?? 0, quantity_on_hand: i.quantity_on_hand ?? 0, reorder_point: i.reorder_point ?? 5, max_stock: i.max_stock ?? 100, location_id: i.location_id ?? '', vendor_id: i.vendor_id ?? '', is_active: i.is_active ?? true, notes: i.notes ?? '' }); setModalOpen(true) }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!form.name.trim()) { toast.error('Name is required'); return }
     const supabase = createClient()
-    const payload = { ...form, category_id: form.category_id || null, vendor_id: form.vendor_id || null, updated_at: new Date().toISOString() }
+    const payload = { ...form, category_id: form.category_id || null, vendor_id: form.vendor_id || null, brand_id: (form as any).brand_id || null, location_id: (form as any).location_id || null, updated_at: new Date().toISOString() }
     if (selected) {
       const { error } = await supabase.from('supply_items').update(payload).eq('id', selected.id)
       if (error) { toast.error(error.message); return }
@@ -110,7 +121,7 @@ export default function SupplyInventoryPage() {
                   const isLow = (item.quantity_on_hand ?? 0) <= (item.reorder_point ?? 0)
                   return (
                     <tr key={item.id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4"><div className="font-medium text-gray-900 text-sm">{item.name}</div>{item.location && <div className="text-xs text-gray-400">{item.location}</div>}</td>
+                      <td className="px-6 py-4"><div className="font-medium text-gray-900 text-sm">{item.name}</div>{item.supplyLocation && <div className="text-xs text-gray-400">{item.supplyLocation.name}</div>}</td>
                       <td className="px-6 py-4 text-sm text-gray-500">{item.category?.name ?? '—'}</td>
                       <td className="px-6 py-4 text-sm text-gray-700">₱{(item.unit_cost ?? 0).toFixed(2)}</td>
                       <td className="px-6 py-4"><span className={`text-sm font-semibold ${isLow ? 'text-red-600' : 'text-gray-700'}`}>{item.quantity_on_hand ?? 0} {item.unit ?? ''}{isLow && <span className="ml-1 text-xs text-red-400">(low)</span>}</span></td>
@@ -156,7 +167,16 @@ export default function SupplyInventoryPage() {
               <div><label className="block text-sm font-medium text-gray-700 mb-1">Qty on Hand</label><Input type="number" min={0} value={form.quantity_on_hand} onChange={e => set('quantity_on_hand', Number(e.target.value))} /></div>
               <div><label className="block text-sm font-medium text-gray-700 mb-1">Reorder Point</label><Input type="number" min={0} value={form.reorder_point} onChange={e => set('reorder_point', Number(e.target.value))} /></div>
               <div><label className="block text-sm font-medium text-gray-700 mb-1">Max Stock</label><Input type="number" min={0} value={form.max_stock} onChange={e => set('max_stock', Number(e.target.value))} /></div>
-              <div><label className="block text-sm font-medium text-gray-700 mb-1">Location</label><Input value={form.location} onChange={e => set('location', e.target.value)} placeholder="Storage room, shelf..." /></div>
+              <div><label className="block text-sm font-medium text-gray-700 mb-1">Brand</label>
+                <select value={(form as any).brand_id} onChange={e => set('brand_id', e.target.value)} className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-orange-400">
+                  <option value="">-- None --</option>{brands.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
+                </select>
+              </div>
+              <div><label className="block text-sm font-medium text-gray-700 mb-1">Location</label>
+                <select value={(form as any).location_id} onChange={e => set('location_id', e.target.value)} className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-orange-400">
+                  <option value="">-- None --</option>{locations.map(l => <option key={l.id} value={l.id}>{l.name}</option>)}
+                </select>
+              </div>
               <div className="col-span-2"><label className="block text-sm font-medium text-gray-700 mb-1">Notes</label><textarea rows={2} value={form.notes} onChange={e => set('notes', e.target.value)} className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-orange-400" /></div>
               <div className="flex items-center gap-2"><input type="checkbox" checked={form.is_active} onChange={e => set('is_active', e.target.checked)} className="w-4 h-4 text-orange-600" /><label className="text-sm text-gray-700">Active</label></div>
             </div>

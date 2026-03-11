@@ -5120,12 +5120,14 @@ export type Database = {
       }
       supply_items: {
         Row: {
+          brand_id: string | null
           category_id: string | null
           created_at: string | null
           description: string | null
           id: string
           is_active: boolean | null
           location: string | null
+          location_id: string | null
           max_stock: number | null
           name: string
           notes: string | null
@@ -5137,12 +5139,14 @@ export type Database = {
           vendor_id: string | null
         }
         Insert: {
+          brand_id?: string | null
           category_id?: string | null
           created_at?: string | null
           description?: string | null
           id?: string
           is_active?: boolean | null
           location?: string | null
+          location_id?: string | null
           max_stock?: number | null
           name: string
           notes?: string | null
@@ -5154,12 +5158,14 @@ export type Database = {
           vendor_id?: string | null
         }
         Update: {
+          brand_id?: string | null
           category_id?: string | null
           created_at?: string | null
           description?: string | null
           id?: string
           is_active?: boolean | null
           location?: string | null
+          location_id?: string | null
           max_stock?: number | null
           name?: string
           notes?: string | null
@@ -5172,10 +5178,24 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "supply_items_brand_id_fkey"
+            columns: ["brand_id"]
+            isOneToOne: false
+            referencedRelation: "supply_brands"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "supply_items_category_id_fkey"
             columns: ["category_id"]
             isOneToOne: false
             referencedRelation: "supply_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "supply_items_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "supply_locations"
             referencedColumns: ["id"]
           },
           {
