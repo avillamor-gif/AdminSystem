@@ -34,6 +34,9 @@ function LoginContent() {
   })
 
   useEffect(() => {
+    // Clear any stale last_active cookie so a fresh login always gets a clean slate
+    document.cookie = 'last_active=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT'
+
     const error = searchParams.get('error')
     const reason = searchParams.get('reason')
     if (error === 'unauthorized') {

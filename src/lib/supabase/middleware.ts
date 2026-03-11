@@ -56,7 +56,10 @@ export async function updateSession(request: NextRequest) {
 
     if (lastActiveRaw) {
       const lastActive = parseInt(lastActiveRaw, 10)
-      if (!isNaN(lastActive) && now - lastActive > SESSION_TIMEOUT_MS) {
+      // Guard: only treat as expired if the value is a valid recent timestamp
+      // (i.e. within the last 24h — rejects corrupt/old cookie values)
+      const isValidTimestamp = !isNaN(lastActive) && lastActive > now - 24 * 60 * 60 * 1000
+      if (isValidTimestamp && now - lastActive > SESSION_TIMEOUT_MS) {
         // Session expired — sign out and redirect
         await supabase.auth.signOut()
         const redirectUrl = new URL('/login', request.url)
@@ -69,7 +72,7 @@ export async function updateSession(request: NextRequest) {
 
     // Stamp / refresh the last_active cookie on every request
     response.cookies.set(LAST_ACTIVE_COOKIE, String(now), {
-      httpOnly: true,
+      httpOnly: false, // must be readable by client JS so activity resets work
       sameSite: 'lax',
       secure: process.env.NODE_ENV === 'production',
       path: '/',

@@ -9,22 +9,22 @@ const TIMEOUT_MS = 24 * 60 * 1000       // 24 minutes total
 const WARNING_MS = 20 * 60 * 1000       // warn at 20 minutes (4 min left)
 const ACTIVITY_EVENTS = ['mousedown', 'mousemove', 'keydown', 'scroll', 'touchstart', 'click'] as const
 
-// Cookie helper (client-side, so not httpOnly — mirrors the httpOnly one in middleware)
-// We write a non-httpOnly cookie that JS can reset on activity; middleware reads its own httpOnly copy.
 const LAST_ACTIVE_COOKIE = 'last_active'
 
 function stampLastActive() {
+  if (typeof document === 'undefined') return
   const expires = new Date(Date.now() + 60 * 60 * 1000).toUTCString()
   document.cookie = `${LAST_ACTIVE_COOKIE}=${Date.now()}; path=/; SameSite=Lax; expires=${expires}`
 }
 
 export default function SessionTimeoutProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter()
-  const supabase = createClient()
+  const supabaseRef = useRef(createClient())
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const warnTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [showWarning, setShowWarning] = useState(false)
-  const [countdown, setCountdown] = useState(4 * 60) // seconds remaining shown in modal
+  const showWarningRef = useRef(false)
+  const [countdown, setCountdown] = useState(4 * 60)
   const countdownRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   const clearAllTimers = useCallback(() => {
@@ -36,19 +36,22 @@ export default function SessionTimeoutProvider({ children }: { children: React.R
   const signOutAndRedirect = useCallback(async () => {
     clearAllTimers()
     setShowWarning(false)
-    await supabase.auth.signOut()
+    showWarningRef.current = false
+    await supabaseRef.current.auth.signOut()
     router.push('/login?reason=timeout')
     router.refresh()
-  }, [supabase, router, clearAllTimers])
+  }, [router, clearAllTimers])
 
   const resetTimers = useCallback(() => {
     clearAllTimers()
     setShowWarning(false)
+    showWarningRef.current = false
     stampLastActive()
 
     // Warning fires at 20 minutes
     warnTimerRef.current = setTimeout(() => {
       setShowWarning(true)
+      showWarningRef.current = true
       setCountdown(4 * 60)
       countdownRef.current = setInterval(() => {
         setCountdown(prev => {
@@ -73,9 +76,9 @@ export default function SessionTimeoutProvider({ children }: { children: React.R
     resetTimers()
 
     const handleActivity = () => {
-      // Only reset if warning isn't showing — once the warning appears the
-      // user must explicitly click "Stay signed in"
-      if (!showWarning) {
+      // Only reset if warning isn't showing — once it shows the user must
+      // explicitly click "Stay signed in"
+      if (!showWarningRef.current) {
         resetTimers()
       }
     }
