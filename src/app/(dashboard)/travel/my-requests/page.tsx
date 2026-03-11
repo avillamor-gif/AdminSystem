@@ -60,7 +60,7 @@ export default function MyTravelRequestsPage() {
           <h1 className="text-2xl font-bold text-gray-900">My Travel Requests</h1>
           <p className="text-gray-600 mt-1">Track and manage your business travel requests</p>
         </div>
-        <Button onClick={() => router.push('/travel/new-request')}>
+        <Button onClick={() => router.push('/travel/travel-request')}>
           <Plus className="w-4 h-4 mr-2" />
           New Request
         </Button>
