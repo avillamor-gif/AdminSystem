@@ -105,7 +105,7 @@ export const leaveRequestService = {
 
     const [{ data: employees }, { data: leaveTypes }, { data: workflows }] = await Promise.all([
       empIds.length ? supabase.from('employees').select('id, first_name, last_name, employee_id').in('id', empIds) : Promise.resolve({ data: [] }),
-      ltIds.length  ? supabase.from('leave_types').select('id, leave_type_name, leave_type_code, color_code').in('id', ltIds) : Promise.resolve({ data: [] }),
+      ltIds.length  ? supabase.from('leave_types').select('id, leave_type_name, leave_type_code, category, color_code').in('id', ltIds) : Promise.resolve({ data: [] }),
       wfIds.length  ? supabase.from('leave_approval_workflows').select('id, workflow_name').in('id', wfIds) : Promise.resolve({ data: [] }),
     ])
 
@@ -135,7 +135,7 @@ export const leaveRequestService = {
     // Enrich via separate queries (no FK to leave_types; two FKs to employees)
     const [{ data: empRows }, { data: ltRows }, { data: wfRows }, { data: approvals }] = await Promise.all([
       supabase.from('employees').select('id, first_name, last_name, employee_id, email').eq('id', request.employee_id),
-      supabase.from('leave_types').select('id, leave_type_name, leave_type_code, color_code').eq('id', request.leave_type_id),
+      supabase.from('leave_types').select('id, leave_type_name, leave_type_code, category, color_code').eq('id', request.leave_type_id),
       request.workflow_id
         ? supabase.from('leave_approval_workflows').select('id, workflow_name, workflow_steps').eq('id', request.workflow_id)
         : Promise.resolve({ data: [] }),

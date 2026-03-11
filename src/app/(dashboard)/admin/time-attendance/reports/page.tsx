@@ -159,20 +159,25 @@ export default function AttendanceReportsPage() {
     return CAL_TYPE_INFO[type] || { label: type, bg: 'bg-gray-50', text: 'text-gray-600', dot: 'bg-gray-400' }
   }
 
-  // Map leave_type_code → legend colors (same palette as attendance types)
-  function getLeaveTypeStyle(code: string | null | undefined): { bg: string; text: string; label: string } {
+  // Map leave category (enum) → legend colors
+  function getLeaveTypeStyle(lt: { category?: string | null; leave_type_code?: string | null } | null | undefined): { bg: string; text: string; label: string } {
+    const key = lt?.category ?? lt?.leave_type_code ?? ''
     const map: Record<string, { bg: string; text: string }> = {
-      'vacation':      { bg: 'bg-amber-50',  text: 'text-amber-700' },
-      'sick':          { bg: 'bg-red-50',    text: 'text-red-700' },
-      'days-off':      { bg: 'bg-orange-50', text: 'text-orange-700' },
-      'rest-day':      { bg: 'bg-gray-50',   text: 'text-gray-600' },
-      'maternity':     { bg: 'bg-pink-50',   text: 'text-pink-700' },
-      'paternity':     { bg: 'bg-indigo-50', text: 'text-indigo-700' },
-      'emergency':     { bg: 'bg-red-50',    text: 'text-red-700' },
-      'birthday':      { bg: 'bg-purple-50', text: 'text-purple-700' },
-      'solo-parent':   { bg: 'bg-teal-50',   text: 'text-teal-700' },
+      'vacation':    { bg: 'bg-amber-50',  text: 'text-amber-700' },
+      'sick':        { bg: 'bg-red-50',    text: 'text-red-700' },
+      'personal':    { bg: 'bg-orange-50', text: 'text-orange-700' },
+      'maternity':   { bg: 'bg-pink-50',   text: 'text-pink-700' },
+      'paternity':   { bg: 'bg-indigo-50', text: 'text-indigo-700' },
+      'bereavement': { bg: 'bg-gray-50',   text: 'text-gray-600' },
+      'other':       { bg: 'bg-purple-50', text: 'text-purple-700' },
+      // legacy leave_type_code fallbacks
+      'days-off':    { bg: 'bg-orange-50', text: 'text-orange-700' },
+      'rest-day':    { bg: 'bg-gray-50',   text: 'text-gray-600' },
+      'emergency':   { bg: 'bg-red-50',    text: 'text-red-700' },
+      'birthday':    { bg: 'bg-purple-50', text: 'text-purple-700' },
+      'solo-parent': { bg: 'bg-teal-50',   text: 'text-teal-700' },
     }
-    return { ...(map[code ?? ''] ?? { bg: 'bg-blue-50', text: 'text-blue-700' }), label: '' }
+    return { ...(map[key] ?? { bg: 'bg-amber-50', text: 'text-amber-700' }), label: '' }
   }
 
   // Fetch records — admin can query all or by specific employee
@@ -782,7 +787,7 @@ body{font-family:Arial,sans-serif;font-size:11px;padding:12px;}
                         let bgColor = ''
                         if (holiday) bgColor = 'bg-pink-50'
                         else if (showAttendance) bgColor = getCalTypeInfo(daySessions[0].type).bg
-                        else if (showLeave) bgColor = getLeaveTypeStyle((leave as any).leave_type?.leave_type_code).bg
+                        else if (showLeave) bgColor = getLeaveTypeStyle((leave as any).leave_type).bg
 
                         cells.push(
                           <div
@@ -841,8 +846,7 @@ body{font-family:Arial,sans-serif;font-size:11px;padding:12px;}
                             {showLeave && (() => {
                               const lt = (leave as any).leave_type
                               const ltName = lt?.leave_type_name || lt?.name || 'Leave'
-                              const ltCode = lt?.leave_type_code ?? ''
-                              const style = getLeaveTypeStyle(ltCode)
+                              const style = getLeaveTypeStyle(lt)
                               return (
                                 <>
                                   <div className={`mt-1 text-xs font-medium ${style.text}`}>

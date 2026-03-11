@@ -625,23 +625,26 @@ export default function TimePage() {
                     bgColor = getAttendanceTypeInfo(daySessions[0].type).bgColor
                     displayInfo = null // sessions rendered separately below
                   } else if (showLeaveBlock) {
-                    // Map leave_type_code to legend color
-                    const ltCode = (leaveRequest!.leave_type as any)?.leave_type_code ?? ''
+                    // Map leave category (enum) → color; fall back to leave_type_code for legacy
+                    const lt = leaveRequest!.leave_type as any
+                    const leaveColorKey = lt?.category ?? lt?.leave_type_code ?? ''
                     const leaveColorMap: Record<string, { bg: string; text: string }> = {
                       'vacation':    { bg: 'bg-amber-50',  text: 'text-amber-700' },
                       'sick':        { bg: 'bg-red-50',    text: 'text-red-700' },
-                      'days-off':    { bg: 'bg-orange-50', text: 'text-orange-700' },
-                      'rest-day':    { bg: 'bg-gray-50',   text: 'text-gray-600' },
+                      'personal':    { bg: 'bg-orange-50', text: 'text-orange-700' },
                       'maternity':   { bg: 'bg-pink-50',   text: 'text-pink-700' },
                       'paternity':   { bg: 'bg-indigo-50', text: 'text-indigo-700' },
+                      'bereavement': { bg: 'bg-gray-50',   text: 'text-gray-600' },
+                      'other':       { bg: 'bg-purple-50', text: 'text-purple-700' },
+                      // legacy leave_type_code fallbacks
+                      'days-off':    { bg: 'bg-orange-50', text: 'text-orange-700' },
+                      'rest-day':    { bg: 'bg-gray-50',   text: 'text-gray-600' },
                       'emergency':   { bg: 'bg-red-50',    text: 'text-red-700' },
                       'birthday':    { bg: 'bg-purple-50', text: 'text-purple-700' },
                       'solo-parent': { bg: 'bg-teal-50',   text: 'text-teal-700' },
                     }
-                    const leaveStyle = leaveColorMap[ltCode] ?? { bg: 'bg-blue-50', text: 'text-blue-700' }
-                    const ltName = (leaveRequest!.leave_type as any)?.leave_type_name
-                      || (leaveRequest!.leave_type as any)?.name
-                      || 'Leave'
+                    const leaveStyle = leaveColorMap[leaveColorKey] ?? { bg: 'bg-amber-50', text: 'text-amber-700' }
+                    const ltName = lt?.leave_type_name || lt?.name || 'Leave'
                     bgColor = leaveStyle.bg
                     displayInfo = {
                       label: ltName,
