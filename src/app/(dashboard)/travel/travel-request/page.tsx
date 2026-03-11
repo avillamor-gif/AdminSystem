@@ -16,7 +16,8 @@ import { createClient } from '@/lib/supabase/client'
 // ── Types ────────────────────────────────────────────────────────────────────
 
 interface DestinationRow {
-  dates: string
+  date_from: string
+  date_to: string
   destination: string
   purpose: string
   hotel_provided: boolean
@@ -97,7 +98,7 @@ type FormData = z.infer<typeof schema>
 const CURRENCIES = ['PHP', 'USD', 'EUR', 'SGD', 'JPY']
 
 const emptyDestination = (): DestinationRow => ({
-  dates: '', destination: '', purpose: '', hotel_provided: false, activity_funded: false, activity_funded_by: ''
+  date_from: '', date_to: '', destination: '', purpose: '', hotel_provided: false, activity_funded: false, activity_funded_by: ''
 })
 const emptyLeg = (): ItineraryLeg => ({
   date: '', from_location: '', to_location: '', departure_time: '', arrival_time: '',
@@ -291,7 +292,7 @@ export default function NewTravelRequestPage() {
     destinations_detail: destinationRows
       .filter(r => r.destination.trim())
       .map(r => ({
-        dates: r.dates,
+        dates: r.date_from && r.date_to ? `${r.date_from} – ${r.date_to}` : (r.date_from || r.date_to || ''),
         destination: r.destination,
         purpose: r.purpose,
         hotel_provided: r.hotel_provided,
@@ -416,12 +417,22 @@ export default function NewTravelRequestPage() {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Date(s)</label>
-                    <input
-                      className="w-full border border-gray-300 rounded-md px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
-                      placeholder="e.g. Mar 15–17"
-                      value={row.dates}
-                      onChange={e => updateDestRow(i, 'dates', e.target.value)}
-                    />
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="date"
+                        className="w-1/2 border border-gray-300 rounded-md px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
+                        value={row.date_from}
+                        onChange={e => updateDestRow(i, 'date_from', e.target.value)}
+                      />
+                      <span className="text-gray-400 shrink-0">–</span>
+                      <input
+                        type="date"
+                        className="w-1/2 border border-gray-300 rounded-md px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
+                        min={row.date_from || undefined}
+                        value={row.date_to}
+                        onChange={e => updateDestRow(i, 'date_to', e.target.value)}
+                      />
+                    </div>
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Destination</label>
