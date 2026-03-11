@@ -1946,6 +1946,148 @@ export function EmployeeDetailContent({
               </div>
             )}
 
+            {/* Attachments Section */}
+            <div className="mt-8 pt-6">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="p-2 bg-purple-50 rounded-lg">
+                  <Paperclip className="w-5 h-5 text-purple-600" />
+                </div>
+                <div>
+                  <h4 className="text-base font-semibold text-gray-900">Attachments</h4>
+                  <p className="text-sm text-gray-500 mt-1">Upload and manage immigration documents and files</p>
+                </div>
+              </div>
+              <div className="border-t border-gray-200 mb-4"></div>
+
+              {/* Upload */}
+              <div className="mb-6">
+                <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-orange transition-colors">
+                  <input
+                    type="file"
+                    id="immigration-file-upload"
+                    className="hidden"
+                    accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                    onChange={async (e) => {
+                      const file = e.target.files?.[0]
+                      if (!file || !employee) return
+                      if (file.size > 10 * 1024 * 1024) {
+                        toast.error('File size must be less than 10MB')
+                        e.target.value = ''
+                        return
+                      }
+                      try {
+                        await uploadEmployeeAttachment.mutateAsync({ employeeId: employee.id, file, documentType: 'immigration', uploadedBy: undefined })
+                        e.target.value = ''
+                      } catch (error: any) {
+                        toast.error(error?.message || 'Failed to upload attachment')
+                        e.target.value = ''
+                      }
+                    }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => (document.getElementById('immigration-file-upload') as HTMLInputElement)?.click()}
+                    disabled={!isEditMode || uploadEmployeeAttachment.isPending}
+                    className={`cursor-pointer flex flex-col items-center w-full ${(!isEditMode || uploadEmployeeAttachment.isPending) ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  >
+                    {uploadEmployeeAttachment.isPending ? (
+                      <div className="w-10 h-10 border-2 border-orange border-t-transparent rounded-full animate-spin mb-2" />
+                    ) : (
+                      <Upload className="w-10 h-10 text-gray-400 mb-2" />
+                    )}
+                    <p className="text-sm text-gray-600 mb-1">
+                      <span className="text-orange font-medium">Click to upload</span> or drag and drop
+                    </p>
+                    <p className="text-xs text-gray-500">PDF, DOC, DOCX, JPG, PNG (max. 10MB)</p>
+                  </button>
+                </div>
+              </div>
+
+              {/* Attachments Table */}
+              <div className="border border-gray-200 rounded-lg overflow-hidden">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">File Name</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Size</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date Added</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Added By</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {isLoadingAttachments ? (
+                      <tr>
+                        <td colSpan={6} className="px-4 py-8 text-center">
+                          <div className="inline-block w-6 h-6 border-2 border-orange border-t-transparent rounded-full animate-spin"></div>
+                        </td>
+                      </tr>
+                    ) : employeeAttachments.filter(a => a.document_type === 'immigration').length > 0 ? (
+                      employeeAttachments.filter(a => a.document_type === 'immigration').map((attachment) => (
+                        <tr key={attachment.id} className="hover:bg-gray-50">
+                          <td className="px-4 py-3 text-sm text-gray-900">{attachment.file_name}</td>
+                          <td className="px-4 py-3 text-sm text-gray-600">{(attachment.file_size / 1024).toFixed(0)} KB</td>
+                          <td className="px-4 py-3 text-sm text-gray-600">.{attachment.file_name.split('.').pop()?.toLowerCase() ?? attachment.file_type}</td>
+                          <td className="px-4 py-3 text-sm text-gray-600">{attachment.created_at ? formatDate(attachment.created_at) : '—'}</td>
+                          <td className="px-4 py-3 text-sm text-gray-600">
+                            {attachment.uploader ? `${attachment.uploader.first_name} ${attachment.uploader.last_name}` : '-'}
+                          </td>
+                          <td className="px-4 py-3 text-sm">
+                            <div className="flex items-center gap-2">
+                              <button
+                                className="text-gray-600 hover:text-gray-800 disabled:opacity-50"
+                                title="View"
+                                onClick={async () => {
+                                  try {
+                                    const { employeeAttachmentService } = await import('@/services')
+                                    const blob = await employeeAttachmentService.downloadFile(attachment.file_path)
+                                    const url = URL.createObjectURL(blob)
+                                    window.open(url, '_blank')
+                                    setTimeout(() => URL.revokeObjectURL(url), 1000)
+                                  } catch { toast.error('Failed to open file') }
+                                }}
+                              >
+                                <Eye className="w-4 h-4" />
+                              </button>
+                              <button
+                                onClick={() => downloadEmployeeAttachment.mutate({ filePath: attachment.file_path, fileName: attachment.file_name })}
+                                className="text-blue-600 hover:text-blue-800 disabled:opacity-50"
+                                disabled={downloadEmployeeAttachment.isPending}
+                                title="Download"
+                              >
+                                <Download className="w-4 h-4" />
+                              </button>
+                              {isEditMode && (
+                                <button
+                                  onClick={async () => {
+                                    if (window.confirm('Are you sure you want to delete this file?')) {
+                                      await deleteEmployeeAttachment.mutateAsync({ id: attachment.id, filePath: attachment.file_path, employeeId: employee!.id })
+                                    }
+                                  }}
+                                  className="text-red-600 hover:text-red-800 disabled:opacity-50"
+                                  disabled={deleteEmployeeAttachment.isPending}
+                                  title="Delete"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </button>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td colSpan={6} className="px-4 py-8 text-center text-sm text-gray-500">
+                          No attachments found. Upload files to get started.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
             {/* Add / Edit Modal */}
             {isImmigrationModalOpen && (
               <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
