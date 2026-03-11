@@ -4,11 +4,12 @@ import { toast } from 'react-hot-toast'
 import { logAction } from '@/services/auditLog.service'
 
 // Get all travel requests
-export function useTravelRequests(filters: TravelRequestFilters = {}) {
+export function useTravelRequests(filters: TravelRequestFilters = {}, enabled = true) {
   return useQuery({
     queryKey: travelKeys.list(filters),
     queryFn: () => travelService.getAll(filters),
     staleTime: 5 * 60 * 1000, // 5 minutes
+    enabled,
   })
 }
 
@@ -45,7 +46,7 @@ export function useCreateTravelRequest() {
   const queryClient = useQueryClient()
   
   return useMutation({
-    mutationFn: (data: Omit<TravelRequestInsert, 'request_number'>) => 
+    mutationFn: (data: Omit<Partial<TravelRequestInsert> & Pick<TravelRequestInsert, 'employee_id' | 'estimated_cost'>, 'request_number'>) => 
       travelService.create(data),
     onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: travelKeys.all })

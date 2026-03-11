@@ -271,20 +271,19 @@ export const workflowService = {
               level: 1,
               approverRole: 'manager',
               timeoutDays: 2,
-              autoApprove: true,
-              conditions: { maxAmount: 500 }
+              conditions: {}
             },
             {
               level: 2,
               approverRole: 'department_head',
               timeoutDays: 3,
-              conditions: { minAmount: 500, maxAmount: 2000 }
+              conditions: {}
             },
             {
               level: 3,
               approverRole: 'finance',
               timeoutDays: 5,
-              conditions: { minAmount: 2000 }
+              conditions: {}
             }
           ]
         }

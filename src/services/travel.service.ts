@@ -96,7 +96,7 @@ export const travelService = {
   },
 
   // Create new travel request
-  async create(requestData: Omit<TravelRequestInsert, 'request_number'>): Promise<TravelRequest> {
+  async create(requestData: Omit<Partial<TravelRequestInsert> & Pick<TravelRequestInsert, 'employee_id' | 'estimated_cost'>, 'request_number'>): Promise<TravelRequest> {
     const requestNumber = generateRequestNumber()
     
     const { data, error } = await supabase
@@ -195,6 +195,46 @@ export const travelService = {
       'travel_managers'
     )
 
+    // Seed attendance records for each travel day (status=present, type=work-travel)
+    try {
+      await fetch('/api/travel/seed-attendance', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ travelRequestId: id }),
+      })
+    } catch (err) {
+      console.warn('[travel] seed-attendance failed:', err)
+    }
+
+    // Assign requested assets in Asset Management
+    try {
+      const travelRecord = await this.getById(id)
+      const equipment: any[] = (travelRecord as any)?.equipment_requested ?? []
+      const assetsToAssign = equipment.filter((e: any) => e.asset_id)
+      if (assetsToAssign.length > 0 && travelRecord?.employee_id) {
+        for (const item of assetsToAssign) {
+          // Mark asset as assigned
+          await supabase.from('assets').update({
+            status: 'assigned',
+            assigned_to: travelRecord.employee_id,
+            assigned_date: new Date().toISOString().split('T')[0],
+            updated_at: new Date().toISOString(),
+          }).eq('id', item.asset_id).eq('status', 'available')
+
+          // Create assignment record with travel context
+          await supabase.from('asset_assignments').insert({
+            asset_id: item.asset_id,
+            employee_id: travelRecord.employee_id,
+            assigned_by: approverId,
+            assigned_date: new Date().toISOString().split('T')[0],
+            notes: `Travel request ${(travelRecord as any).request_number ?? id}${item.expected_return_date ? ` — Expected return: ${item.expected_return_date}` : ''}${item.purpose ? ` — ${item.purpose}` : ''}`,
+          })
+        }
+      }
+    } catch (err) {
+      console.warn('[travel] asset assignment failed:', err)
+    }
+
     // Update workflow
     await workflowService.processApproval(id, 'travel', approverId, 'approved', comments)
   },
@@ -216,6 +256,48 @@ export const travelService = {
       'travel_managers'
     )
 
+    // Remove any attendance records that were seeded when this request was previously approved
+    try {
+      await fetch('/api/travel/seed-attendance', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ travelRequestId: id }),
+      })
+    } catch (err) {
+      console.warn('[travel] remove seed-attendance failed:', err)
+    }
+
+    // Release any assets that were assigned when this request was approved
+    try {
+      const travelRecord = await this.getById(id)
+      const equipment: any[] = (travelRecord as any)?.equipment_requested ?? []
+      for (const item of equipment.filter((e: any) => e.asset_id)) {
+        // Find the open assignment record tied to this employee + asset
+        const { data: assignment } = await supabase
+          .from('asset_assignments')
+          .select('id, asset_id')
+          .eq('asset_id', item.asset_id)
+          .eq('employee_id', travelRecord!.employee_id)
+          .is('returned_date', null)
+          .maybeSingle()
+        if (assignment) {
+          await supabase.from('asset_assignments').update({
+            returned_date: new Date().toISOString().split('T')[0],
+            returned_by: approverId,
+            notes: `Auto-released: travel request rejected`,
+          }).eq('id', assignment.id)
+          await supabase.from('assets').update({
+            status: 'available',
+            assigned_to: null,
+            assigned_date: null,
+            updated_at: new Date().toISOString(),
+          }).eq('id', item.asset_id)
+        }
+      }
+    } catch (err) {
+      console.warn('[travel] asset release on reject failed:', err)
+    }
+
     // Update workflow
     await workflowService.processApproval(id, 'travel', approverId, 'rejected', reason)
   },
@@ -223,6 +305,46 @@ export const travelService = {
   // Cancel travel request
   async cancel(id: string): Promise<void> {
     await this.update(id, { status: 'cancelled' })
+    // Remove any attendance records seeded when this request was approved
+    try {
+      await fetch('/api/travel/seed-attendance', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ travelRequestId: id }),
+      })
+    } catch (err) {
+      console.warn('[travel] remove seed-attendance on cancel failed:', err)
+    }
+
+    // Release any assets that were assigned when this request was approved
+    try {
+      const travelRecord = await this.getById(id)
+      const equipment: any[] = (travelRecord as any)?.equipment_requested ?? []
+      for (const item of equipment.filter((e: any) => e.asset_id)) {
+        const { data: assignment } = await supabase
+          .from('asset_assignments')
+          .select('id, asset_id')
+          .eq('asset_id', item.asset_id)
+          .eq('employee_id', travelRecord!.employee_id)
+          .is('returned_date', null)
+          .maybeSingle()
+        if (assignment) {
+          await supabase.from('asset_assignments').update({
+            returned_date: new Date().toISOString().split('T')[0],
+            notes: `Auto-released: travel request cancelled`,
+          }).eq('id', assignment.id)
+          await supabase.from('assets').update({
+            status: 'available',
+            assigned_to: null,
+            assigned_date: null,
+            updated_at: new Date().toISOString(),
+          }).eq('id', item.asset_id)
+        }
+      }
+    } catch (err) {
+      console.warn('[travel] asset release on cancel failed:', err)
+    }
+
     await workflowService.cancelWorkflow(id, 'travel')
   },
 

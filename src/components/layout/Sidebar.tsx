@@ -41,7 +41,7 @@ const navigationItems: NavigationItem[] = [
   { name: 'Admin', href: '/admin', icon: Settings, requiresPermission: 'admin.manage' },
   { name: 'Leave', href: '/leave/my-requests', icon: Calendar, requiresPermission: 'leave.view' },
   { name: 'Attendance Tracker', href: '/attendance-tracker', icon: Clock },
-  { name: 'Travel', href: '/travel', icon: Plane },
+  { name: 'Travel', href: '/travel/new-request', icon: Plane, activeBase: '/travel' },
   { name: 'Publications', href: '/publications/library', icon: BookOpen, activeBase: '/publications' },
   { name: 'Office Equipment', href: '/equipment/browse', icon: Monitor, activeBase: '/equipment' },
   { name: 'Office Supplies', href: '/office-supplies', icon: Package },
