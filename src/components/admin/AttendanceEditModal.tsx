@@ -224,12 +224,21 @@ export function AttendanceEditModal({ open, onClose, employeeId, employeeName, d
             >
               + Add another session
             </button>
+
+            {record && (
+              <button
+                onClick={() => setConfirmDelete(true)}
+                className="w-full py-2 border border-dashed border-red-200 rounded-lg text-sm text-red-400 hover:border-red-400 hover:text-red-600 transition-colors"
+              >
+                Clear Session
+              </button>
+            )}
           </div>
         </ModalBody>
 
         <ModalFooter>
           <div className="flex items-center justify-between w-full">
-            {/* Delete — only shown when editing existing record */}
+            {/* Clear Day — only shown when editing existing record */}
             {record ? (
               <Button
                 variant="danger"
@@ -237,7 +246,7 @@ export function AttendanceEditModal({ open, onClose, employeeId, employeeName, d
                 disabled={remove.isPending}
               >
                 <Trash2 className="w-4 h-4 mr-1" />
-                Delete
+                Clear Day
               </Button>
             ) : <div />}
 
@@ -260,9 +269,9 @@ export function AttendanceEditModal({ open, onClose, employeeId, employeeName, d
         isOpen={confirmDelete}
         onClose={() => setConfirmDelete(false)}
         onConfirm={handleDelete}
-        title="Delete Attendance Record"
-        message={`Delete the attendance record for ${employeeName} on ${displayDate}? This cannot be undone.`}
-        confirmText="Delete"
+        title="Clear Attendance"
+        message={`Clear the attendance record for ${employeeName} on ${displayDate}? The day will be left blank.`}
+        confirmText="Clear Day"
         variant="danger"
         isLoading={remove.isPending}
       />

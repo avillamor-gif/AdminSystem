@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState, useMemo } from 'react'
-import { BarChart3, Calendar, FileText, Download, Printer, ChevronLeft, ChevronRight, Plus, Edit2 } from 'lucide-react'
+import { BarChart3, Calendar, FileText, Download, Printer, ChevronLeft, ChevronRight, Plus, Edit2, Trash2 } from 'lucide-react'
 import { Card, Button, Badge } from '@/components/ui'
 import { useQuery } from '@tanstack/react-query'
 import { attendanceService } from '@/services'
@@ -10,6 +10,8 @@ import { useLeaveRequests } from '@/hooks/useLeaveRequests'
 import { useHolidays } from '@/hooks/useLeaveAbsence'
 import { localDateStr } from '@/lib/utils'
 import { AttendanceEditModal } from '@/components/admin/AttendanceEditModal'
+import { useDeleteAttendanceRecord } from '@/hooks/useAttendance'
+import { useRemoveLeaveDay } from '@/hooks/useLeaveRequests'
 import type { AttendanceRecord } from '@/services/attendance.service'
 
 // ─── helpers ────────────────────────────────────────────────────────────────
@@ -112,6 +114,20 @@ export default function AttendanceReportsPage() {
   const openEditModal = (dateStr: string, record: AttendanceRecord | null) => {
     if (!calEmployee) return // require employee selection first
     setEditModal({ open: true, dateStr, record })
+  }
+
+  const deleteRecord = useDeleteAttendanceRecord()
+  const quickDelete = (e: React.MouseEvent, record: AttendanceRecord) => {
+    e.stopPropagation()
+    if (!window.confirm('Delete this attendance record and make the day blank?')) return
+    deleteRecord.mutate({ id: record.id, employee_id: record.employee_id, date: record.date })
+  }
+
+  const deleteLeave = useRemoveLeaveDay()
+  const quickDeleteLeave = (e: React.MouseEvent, leaveId: string, dateStr: string) => {
+    e.stopPropagation()
+    if (!window.confirm('Remove this day from the leave request? The balance will be restored by 1 day.')) return
+    deleteLeave.mutate({ leaveRequestId: leaveId, dateStr })
   }
 
   const calMonthStart = `${calMonth.getFullYear()}-${String(calMonth.getMonth() + 1).padStart(2, '0')}-01`
@@ -813,17 +829,35 @@ body{font-family:Arial,sans-serif;font-size:11px;padding:12px;}
                               <div className={`text-sm ${attendance || leave || holiday ? 'font-medium' : 'text-gray-500'}`}>
                                 {day}
                               </div>
-                              {/* Edit/Add button shown on hover when employee is selected */}
+                              {/* Edit/Add/Delete buttons shown on hover when employee is selected */}
                               {!holiday && calEmployee && (
-                                <button
-                                  onClick={e => { e.stopPropagation(); openEditModal(dateStr, attendance) }}
-                                  className={`opacity-0 group-hover:opacity-100 transition-opacity p-0.5 rounded ${
-                                    attendance ? 'text-gray-400 hover:text-orange' : 'text-gray-300 hover:text-orange'
-                                  }`}
-                                  title={attendance ? 'Edit attendance' : 'Add attendance'}
-                                >
-                                  {attendance ? <Edit2 className="w-3 h-3" /> : <Plus className="w-3 h-3" />}
-                                </button>
+                                <div className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-0.5">
+                                  <button
+                                    onClick={e => { e.stopPropagation(); openEditModal(dateStr, attendance) }}
+                                    className={`p-0.5 rounded ${attendance ? 'text-gray-400 hover:text-orange' : 'text-gray-300 hover:text-orange'}`}
+                                    title={attendance ? 'Edit attendance' : 'Add attendance'}
+                                  >
+                                    {attendance ? <Edit2 className="w-3 h-3" /> : <Plus className="w-3 h-3" />}
+                                  </button>
+                                  {attendance && (
+                                    <button
+                                      onClick={e => quickDelete(e, attendance)}
+                                      className="p-0.5 rounded text-gray-400 hover:text-red-500"
+                                      title="Delete attendance — make day blank"
+                                    >
+                                      <Trash2 className="w-3 h-3" />
+                                    </button>
+                                  )}
+                                  {!attendance && leave && (
+                                    <button
+                                      onClick={e => quickDeleteLeave(e, leave.id, dateStr)}
+                                      className="p-0.5 rounded text-gray-400 hover:text-red-500"
+                                      title="Remove this day from leave — restores 1 day to balance"
+                                    >
+                                      <Trash2 className="w-3 h-3" />
+                                    </button>
+                                  )}
+                                </div>
                               )}
                             </div>
 

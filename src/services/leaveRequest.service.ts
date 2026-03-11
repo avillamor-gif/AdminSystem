@@ -299,8 +299,118 @@ export const leaveRequestService = {
       .from('leave_requests')
       .delete()
       .eq('id', id)
-
     if (error) throw error
+  },
+
+  /**
+   * Remove a single calendar day from a leave request without touching other days.
+   * - If the day is the only day  → delete the whole request & restore full balance
+   * - If the day is start or end  → shrink the date range by 1 day
+   * - If the day is in the middle → split into two requests around the removed day
+   * In all cases, used_days / pending_days on leave_balances are decremented by 1.
+   */
+  async removeSingleDay(leaveRequestId: string, dateStr: string) {
+    const supabase = createClient()
+
+    // 1. Fetch the full request
+    const { data: req, error: fetchErr } = await supabase
+      .from('leave_requests')
+      .select('*')
+      .eq('id', leaveRequestId)
+      .single()
+    if (fetchErr || !req) throw fetchErr ?? new Error('Leave request not found')
+
+    const start = req.start_date as string
+    const end   = req.end_date   as string
+
+    // Helper: next/prev calendar day
+    const nextDay = (d: string) => {
+      const dt = new Date(d + 'T00:00:00')
+      dt.setDate(dt.getDate() + 1)
+      return dt.toISOString().split('T')[0]
+    }
+    const prevDay = (d: string) => {
+      const dt = new Date(d + 'T00:00:00')
+      dt.setDate(dt.getDate() - 1)
+      return dt.toISOString().split('T')[0]
+    }
+
+    // Working days for a range (no holidays for simplicity — consistent with original booking)
+    const wdays = (s: string, e: string) => countWorkingDays(s, e)
+
+    // 2. Determine case and mutate
+    if (start === end) {
+      // Only day — delete entire request
+      const { error } = await supabase.from('leave_requests').delete().eq('id', leaveRequestId)
+      if (error) throw error
+    } else if (dateStr === start) {
+      // Shrink from the front
+      const newStart = nextDay(start)
+      const newDays  = wdays(newStart, end)
+      const { error } = await supabase
+        .from('leave_requests')
+        .update({ start_date: newStart, total_days: newDays })
+        .eq('id', leaveRequestId)
+      if (error) throw error
+    } else if (dateStr === end) {
+      // Shrink from the back
+      const newEnd  = prevDay(end)
+      const newDays = wdays(start, newEnd)
+      const { error } = await supabase
+        .from('leave_requests')
+        .update({ end_date: newEnd, total_days: newDays })
+        .eq('id', leaveRequestId)
+      if (error) throw error
+    } else {
+      // Middle day — split into two requests
+      const beforeEnd   = prevDay(dateStr)
+      const afterStart  = nextDay(dateStr)
+      const beforeDays  = wdays(start, beforeEnd)
+      const afterDays   = wdays(afterStart, end)
+
+      // Shrink original to the "before" segment
+      const { error: e1 } = await supabase
+        .from('leave_requests')
+        .update({ end_date: beforeEnd, total_days: beforeDays })
+        .eq('id', leaveRequestId)
+      if (e1) throw e1
+
+      // Insert a new request for the "after" segment (same status/type)
+      const { error: e2 } = await supabase
+        .from('leave_requests')
+        .insert({
+          employee_id:   req.employee_id,
+          leave_type_id: req.leave_type_id,
+          start_date:    afterStart,
+          end_date:      end,
+          total_days:    afterDays,
+          reason:        req.reason,
+          status:        req.status,
+          workflow_id:   req.workflow_id ?? null,
+        })
+      if (e2) throw e2
+    }
+
+    // 3. Restore exactly 1 day from the leave balance
+    const year = new Date(dateStr).getFullYear()
+    const { data: bal } = await supabase
+      .from('leave_balances')
+      .select('id, used_days, pending_days')
+      .eq('employee_id', req.employee_id)
+      .eq('leave_type_id', req.leave_type_id)
+      .eq('year', year)
+      .single()
+
+    if (bal) {
+      const wasApproved = req.status === 'approved'
+      await supabase
+        .from('leave_balances')
+        .update({
+          used_days:    wasApproved  ? Math.max(0, (bal.used_days    ?? 0) - 1) : bal.used_days,
+          pending_days: !wasApproved ? Math.max(0, (bal.pending_days ?? 0) - 1) : bal.pending_days,
+        })
+        .eq('id', bal.id)
+    }
   },
 
   // Get pending approvals for current user (via leave_approvals workflow table)

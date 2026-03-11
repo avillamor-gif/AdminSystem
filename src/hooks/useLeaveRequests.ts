@@ -114,8 +114,24 @@ export function useDeleteLeaveRequest() {
       toast.success('Leave request deleted successfully')
     },
     onError: (error: any) => {
-      console.error('Delete leave request error:', error)
       toast.error(`Failed to delete leave request: ${error.message || 'Unknown error'}`)
+    },
+  })
+}
+
+/** Remove a single calendar day from a leave request, restoring exactly 1 day to the balance */
+export function useRemoveLeaveDay() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ leaveRequestId, dateStr }: { leaveRequestId: string; dateStr: string }) =>
+      leaveRequestService.removeSingleDay(leaveRequestId, dateStr),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: leaveRequestKeys.lists() })
+      queryClient.invalidateQueries({ queryKey: ['leaveBalances'] })
+      toast.success('Leave day removed and balance restored')
+    },
+    onError: (error: any) => {
+      toast.error(`Failed to remove leave day: ${error.message || 'Unknown error'}`)
     },
   })
 }
