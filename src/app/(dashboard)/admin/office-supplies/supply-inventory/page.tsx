@@ -147,7 +147,7 @@ export default function SupplyInventoryPage() {
           <ModalHeader><h2 className="text-lg font-semibold">{selected ? 'Edit Supply' : 'Add Supply'}</h2></ModalHeader>
           <ModalBody>
             <div className="grid grid-cols-2 gap-4">
-              <div className="col-span-2"><label className="block text-sm font-medium text-gray-700 mb-1">Name *</label><Input required value={form.name} onChange={e => set('name', e.target.value)} /></div>
+              <div><label className="block text-sm font-medium text-gray-700 mb-1">Name *</label><Input required value={form.name} onChange={e => set('name', e.target.value)} /></div>
               <div><label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
                 <select value={form.category_id} onChange={e => set('category_id', e.target.value)} className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-orange-400">
                   <option value="">-- None --</option>{categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
