@@ -2,7 +2,7 @@
 
 import { Users, Calendar, Clock, Briefcase, UserCheck, CalendarX } from 'lucide-react'
 import { Card, Avatar } from '@/components/ui'
-import { useEmployeesOnLeaveToday } from '@/hooks/useLeave'
+import { useEmployeesWorkStatusToday } from '@/hooks/useLeave'
 import { useHolidays } from '@/hooks/useLeaveAbsence'
 import { useRouter } from 'next/navigation'
 import { localDateStr } from '@/lib/utils'
@@ -11,7 +11,7 @@ import { PunchInOutCard } from '@/components/dashboard/PunchInOutCard'
 
 export default function DashboardPage() {
   const router = useRouter()
-  const { data: employeesOnLeave = [], isLoading: leaveLoading } = useEmployeesOnLeaveToday()
+  const { data: workStatusList = [], isLoading: leaveLoading } = useEmployeesWorkStatusToday()
 
   const today = localDateStr()
   const { data: allHolidays = [], isLoading: holidaysLoading } = useHolidays({ is_active: true })
@@ -88,13 +88,13 @@ export default function DashboardPage() {
 
       {/* Second Row */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Employees on Leave Today */}
+        {/* Employees' Work Status Today */}
         <Card className="bg-white border border-gray-200 p-5">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-semibold text-gray-700">Employees on Leave Today</h3>
+            <h3 className="text-sm font-semibold text-gray-700">Employees' Work Status Today</h3>
             {!leaveLoading && (
               <span className="px-2 py-0.5 bg-orange/10 text-orange text-xs font-medium rounded">
-                {employeesOnLeave.length}
+                {workStatusList.length}
               </span>
             )}
           </div>
@@ -110,23 +110,30 @@ export default function DashboardPage() {
                 </div>
               ))}
             </div>
-          ) : employeesOnLeave.length === 0 ? (
+          ) : workStatusList.length === 0 ? (
             <div className="text-center py-8 text-gray-500">
               <UserCheck className="w-10 h-10 mx-auto mb-2 text-gray-300" />
-              <p className="text-sm">No employees on leave today</p>
+              <p className="text-sm">No status recorded for today yet</p>
             </div>
           ) : (
             <div className="space-y-3 max-h-64 overflow-y-auto">
-              {employeesOnLeave.map((item) => {
+              {workStatusList.map((item) => {
                 const firstName = item.employee?.first_name ?? ''
                 const lastName = item.employee?.last_name ?? ''
                 const fullName = firstName || lastName ? `${firstName} ${lastName}`.trim() : 'Unknown'
-                const dept = (item.employee as any)?.department?.name ?? ''
-                const leaveType = item.leave_type?.name ?? 'Leave'
+                const dept = item.employee?.department?.name ?? ''
+                const badgeStyles: Record<string, string> = {
+                  'work-home':    'bg-green-100 text-green-700',
+                  'work-offsite': 'bg-purple-100 text-purple-700',
+                  'work-travel':  'bg-indigo-100 text-indigo-700',
+                  'work-onsite':  'bg-blue-100 text-blue-700',
+                  'on-leave':     'bg-orange/10 text-orange',
+                }
+                const badgeCls = badgeStyles[item.statusType] ?? 'bg-gray-100 text-gray-600'
                 return (
                   <div key={item.id} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
                     <Avatar
-                      src={(item.employee as any)?.avatar_url}
+                      src={item.employee?.avatar_url}
                       firstName={firstName || '?'}
                       lastName={lastName}
                       size="md"
@@ -136,8 +143,8 @@ export default function DashboardPage() {
                       <p className="text-sm font-medium text-gray-900 truncate">{fullName}</p>
                       {dept && <p className="text-xs text-gray-500 truncate">{dept}</p>}
                     </div>
-                    <span className="px-2 py-1 bg-orange/10 text-orange text-xs font-medium rounded whitespace-nowrap">
-                      {leaveType}
+                    <span className={`px-2 py-1 text-xs font-medium rounded whitespace-nowrap ${badgeCls}`}>
+                      {item.statusLabel}
                     </span>
                   </div>
                 )

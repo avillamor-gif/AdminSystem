@@ -22,6 +22,20 @@ export type LeaveRequestWithRelations = LeaveRequest & {
   } | null
 }
 
+export type WorkStatusEntry = {
+  id: string
+  employee: {
+    id: string
+    first_name: string
+    last_name: string
+    email: string
+    avatar_url?: string | null
+    department?: { id: string; name: string } | null
+  } | null
+  statusType: 'work-home' | 'work-offsite' | 'work-travel' | 'work-onsite' | 'on-leave'
+  statusLabel: string
+}
+
 export const leaveService = {
   async getRequests(employeeId?: string): Promise<LeaveRequestWithRelations[]> {
     const supabase = createClient()
@@ -121,6 +135,106 @@ export const leaveService = {
       employee: employeeMap.get(request.employee_id) || null,
       leave_type: leaveTypeMap.get(request.leave_type_id) || null
     })) as unknown as LeaveRequestWithRelations[]
+  },
+
+  async getEmployeesWorkStatusToday(): Promise<WorkStatusEntry[]> {
+    const supabase = createClient()
+    const today = new Date().toLocaleDateString('en-CA') // YYYY-MM-DD in local TZ
+
+    // 1. Approved leave requests covering today
+    const { data: leaveReqs } = await supabase
+      .from('leave_requests')
+      .select('*')
+      .eq('status', 'approved')
+      .lte('start_date', today)
+      .gte('end_date', today)
+
+    // 2. Today's attendance records for WFH / offsite / travel / onsite
+    const workStatuses = ['work-home', 'work-offsite', 'work-travel', 'work-onsite']
+    const { data: attRecords } = await supabase
+      .from('attendance_records')
+      .select('*')
+      .eq('date', today)
+
+    // Collect all unique employee IDs
+    const leaveEmpIds = (leaveReqs || []).map(r => r.employee_id)
+    const attEmpIds = (attRecords || [])
+      .filter(r => {
+        const status = r.notes ? r.notes.split(':')[0].trim() : r.status
+        return workStatuses.includes(status)
+      })
+      .map(r => r.employee_id)
+    const allEmpIds = [...new Set([...leaveEmpIds, ...attEmpIds])]
+
+    if (allEmpIds.length === 0) return []
+
+    const { data: employees } = await supabase
+      .from('employees')
+      .select('id, first_name, last_name, email, avatar_url, department_id')
+      .in('id', allEmpIds)
+
+    const deptIds = [...new Set((employees || []).map(e => e.department_id).filter((x): x is string => !!x))]
+    const { data: departments } = deptIds.length
+      ? await supabase.from('departments').select('id, name').in('id', deptIds)
+      : { data: [] }
+
+    const leaveTypeIds = [...new Set((leaveReqs || []).map(r => r.leave_type_id).filter((x): x is string => !!x))]
+    const { data: leaveTypes } = leaveTypeIds.length
+      ? await supabase.from('leave_types').select('id, leave_type_name').in('id', leaveTypeIds)
+      : { data: [] }
+
+    const deptMap = new Map((departments || []).map(d => [d.id, d]))
+    const empMap = new Map((employees || []).map(e => ([
+      e.id,
+      { ...e, department: e.department_id ? deptMap.get(e.department_id) || null : null }
+    ])))
+    const leaveTypeMap = new Map((leaveTypes || []).map(lt => [lt.id, lt.leave_type_name as string]))
+
+    // Build result — attendance records take priority over leave for the same employee
+    const seen = new Set<string>()
+    const results: WorkStatusEntry[] = []
+
+    // Attendance-based statuses first (more specific)
+    for (const rec of (attRecords || [])) {
+      const rawStatus = rec.notes ? rec.notes.split(':')[0].trim() : rec.status
+      if (!workStatuses.includes(rawStatus)) continue
+      if (seen.has(rec.employee_id)) continue
+      seen.add(rec.employee_id)
+      const emp = empMap.get(rec.employee_id)
+      if (!emp) continue
+      const labelMap: Record<string, string> = {
+        'work-home': 'Work from Home',
+        'work-offsite': 'Work Off-site',
+        'work-travel': 'Work on Travel',
+        'work-onsite': 'On-site',
+      }
+      results.push({
+        id: rec.id,
+        employee: emp,
+        statusType: rawStatus as WorkStatusEntry['statusType'],
+        statusLabel: labelMap[rawStatus] ?? rawStatus,
+      })
+    }
+
+    // Leave requests for employees not already covered
+    for (const req of (leaveReqs || [])) {
+      if (seen.has(req.employee_id)) continue
+      seen.add(req.employee_id)
+      const emp = empMap.get(req.employee_id)
+      if (!emp) continue
+      results.push({
+        id: req.id,
+        employee: emp,
+        statusType: 'on-leave',
+        statusLabel: leaveTypeMap.get(req.leave_type_id) ?? 'On Leave',
+      })
+    }
+
+    return results.sort((a, b) => {
+      const nameA = `${a.employee?.first_name} ${a.employee?.last_name}`
+      const nameB = `${b.employee?.first_name} ${b.employee?.last_name}`
+      return nameA.localeCompare(nameB)
+    })
   },
 
   async getLeaveTypes(): Promise<LeaveType[]> {

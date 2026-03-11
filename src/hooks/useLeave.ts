@@ -1,6 +1,9 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { leaveService, type LeaveRequestInsert, type LeaveTypeInsert, type LeaveTypeUpdate } from '@/services'
+import type { WorkStatusEntry } from '@/services/leave.service'
 import toast from 'react-hot-toast'
+
+export type { WorkStatusEntry }
 
 export const leaveKeys = {
   all: ['leave'] as const,
@@ -8,6 +11,7 @@ export const leaveKeys = {
   requestsByEmployee: (id: string) => [...leaveKeys.requests(), id] as const,
   types: () => [...leaveKeys.all, 'types'] as const,
   onLeaveToday: () => [...leaveKeys.all, 'on_leave_today'] as const,
+  workStatusToday: () => [...leaveKeys.all, 'work_status_today'] as const,
 }
 
 export function useLeaveRequests(employeeId?: string) {
@@ -29,6 +33,14 @@ export function useEmployeesOnLeaveToday() {
     queryKey: leaveKeys.onLeaveToday(),
     queryFn: () => leaveService.getEmployeesOnLeaveToday(),
     staleTime: 5 * 60 * 1000, // 5 minutes
+  })
+}
+
+export function useEmployeesWorkStatusToday() {
+  return useQuery({
+    queryKey: leaveKeys.workStatusToday(),
+    queryFn: () => leaveService.getEmployeesWorkStatusToday(),
+    staleTime: 5 * 60 * 1000,
   })
 }
 export function useCreateLeaveRequest() {
