@@ -1,6 +1,9 @@
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
+const SESSION_TIMEOUT_MS = 24 * 60 * 1000 // 24 minutes
+const LAST_ACTIVE_COOKIE = 'last_active'
+
 export async function updateSession(request: NextRequest) {
   let response = NextResponse.next({
     request: {
@@ -39,10 +42,39 @@ export async function updateSession(request: NextRequest) {
   // Protect routes
   const isAuthPage = request.nextUrl.pathname.startsWith('/login')
   const isSetupPage = request.nextUrl.pathname.startsWith('/setup')
-  const isProtectedRoute = !isAuthPage && !isSetupPage && !request.nextUrl.pathname.startsWith('/api')
+  const isApiRoute = request.nextUrl.pathname.startsWith('/api')
+  const isProtectedRoute = !isAuthPage && !isSetupPage && !isApiRoute
 
   if (!user && isProtectedRoute) {
     return NextResponse.redirect(new URL('/login', request.url))
+  }
+
+  // Inactivity session timeout — only enforced on authenticated protected routes
+  if (user && isProtectedRoute) {
+    const lastActiveRaw = request.cookies.get(LAST_ACTIVE_COOKIE)?.value
+    const now = Date.now()
+
+    if (lastActiveRaw) {
+      const lastActive = parseInt(lastActiveRaw, 10)
+      if (!isNaN(lastActive) && now - lastActive > SESSION_TIMEOUT_MS) {
+        // Session expired — sign out and redirect
+        await supabase.auth.signOut()
+        const redirectUrl = new URL('/login', request.url)
+        redirectUrl.searchParams.set('reason', 'timeout')
+        const timeoutResponse = NextResponse.redirect(redirectUrl)
+        timeoutResponse.cookies.delete(LAST_ACTIVE_COOKIE)
+        return timeoutResponse
+      }
+    }
+
+    // Stamp / refresh the last_active cookie on every request
+    response.cookies.set(LAST_ACTIVE_COOKIE, String(now), {
+      httpOnly: true,
+      sameSite: 'lax',
+      secure: process.env.NODE_ENV === 'production',
+      path: '/',
+      maxAge: 60 * 60, // 1 hour max (inactivity check is the real gate)
+    })
   }
 
   if (user && isAuthPage) {

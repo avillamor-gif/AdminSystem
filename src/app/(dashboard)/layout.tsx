@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useQueryClient } from '@tanstack/react-query'
 import { createClient } from '../../lib/supabase/client'
-import { Sidebar, Header } from '@/components/layout'
+import { Sidebar, Header, SessionTimeoutProvider } from '@/components/layout'
 import { SidebarProvider, useSidebar } from '@/contexts/SidebarContext'
 import { employeeService } from '@/services/employee.service'
 import type { User } from '@supabase/supabase-js'
@@ -103,9 +103,11 @@ export default function DashboardLayout({
 
   return (
     <SidebarProvider>
-      <DashboardContent user={user} employeeAvatarUrl={employeeAvatarUrl} employeeName={employeeName}>
-        {children}
-      </DashboardContent>
+      <SessionTimeoutProvider>
+        <DashboardContent user={user} employeeAvatarUrl={employeeAvatarUrl} employeeName={employeeName}>
+          {children}
+        </DashboardContent>
+      </SessionTimeoutProvider>
     </SidebarProvider>
   )
 }
