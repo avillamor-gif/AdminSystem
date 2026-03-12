@@ -10,6 +10,7 @@ interface Category { id: string; name: string }
 interface Vendor { id: string; name: string }
 interface Brand { id: string; name: string }
 interface SupplyLocation { id: string; name: string }
+interface SupplyUnit { id: string; name: string; abbreviation: string | null }
 interface Item {
   id: string; name: string; description: string | null; category_id: string | null
   unit: string | null; unit_cost: number | null; quantity_on_hand: number | null; reorder_point: number | null
@@ -26,6 +27,7 @@ export default function SupplyInventoryPage() {
   const [vendors, setVendors] = useState<Vendor[]>([])
   const [brands, setBrands] = useState<Brand[]>([])
   const [locations, setLocations] = useState<SupplyLocation[]>([])
+  const [units, setUnits] = useState<SupplyUnit[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [modalOpen, setModalOpen] = useState(false)
@@ -35,12 +37,13 @@ export default function SupplyInventoryPage() {
 
   const load = async () => {
     const supabase = createClient()
-    const [itemsRes, catsRes, vendorsRes, brandsRes, locsRes] = await Promise.all([
+    const [itemsRes, catsRes, vendorsRes, brandsRes, locsRes, unitsRes] = await Promise.all([
       supabase.from('supply_items').select('*').order('name'),
       supabase.from('supply_categories').select('id, name').eq('is_active', true).order('name'),
       supabase.from('supply_vendors').select('id, name').eq('is_active', true).order('name'),
       supabase.from('supply_brands').select('id, name').eq('is_active', true).order('name'),
       supabase.from('supply_locations').select('id, name').eq('is_active', true).order('name'),
+      supabase.from('supply_units' as any).select('id, name, abbreviation').eq('is_active', true).order('name'),
     ])
     if (itemsRes.error) { toast.error('Failed to load inventory'); return }
     const catMap = Object.fromEntries((catsRes.data ?? []).map((c: Category) => [c.id, c]))
@@ -52,6 +55,7 @@ export default function SupplyInventoryPage() {
     setVendors(vendorsRes.data ?? [])
     setBrands(brandsRes.data ?? [])
     setLocations(locsRes.data ?? [])
+    setUnits((unitsRes.data ?? []) as unknown as SupplyUnit[])
     setLoading(false)
   }
   useEffect(() => { load() }, [])
@@ -165,7 +169,11 @@ export default function SupplyInventoryPage() {
               </div>
               <div><label className="block text-sm font-medium text-gray-700 mb-1">Unit</label>
                 <select value={form.unit} onChange={e => set('unit', e.target.value)} className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-orange-400">
-                  {['Piece','Box','Pack','Ream','Roll','Set','Bottle','Can'].map(u => <option key={u} value={u.toLowerCase()}>{u}</option>)}
+                  <option value="">-- Select Unit --</option>
+                  {units.length > 0
+                    ? units.map(u => <option key={u.id} value={u.name.toLowerCase()}>{u.name}{u.abbreviation ? ` (${u.abbreviation})` : ''}</option>)
+                    : ['Piece','Box','Pack','Ream','Roll','Set','Bottle','Can'].map(u => <option key={u} value={u.toLowerCase()}>{u}</option>)
+                  }
                 </select>
               </div>
               <div><label className="block text-sm font-medium text-gray-700 mb-1">Unit Cost (₱)</label><Input type="number" min={0} step="0.01" value={form.unit_cost} onChange={e => set('unit_cost', Number(e.target.value))} /></div>

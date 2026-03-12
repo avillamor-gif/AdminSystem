@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
-import { Plus, Edit, Trash2, Tag, Truck, Star, MapPin } from 'lucide-react'
+import { Plus, Edit, Trash2, Tag, Truck, Star, MapPin, Ruler } from 'lucide-react'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
@@ -26,8 +26,11 @@ interface SupplyBrand {
 interface SupplyLocation {
   id: string; name: string; description: string | null; is_active: boolean | null
 }
+interface SupplyUnit {
+  id: string; name: string; abbreviation: string | null; description: string | null; is_active: boolean | null
+}
 
-type TabType = 'categories' | 'vendors' | 'brands' | 'locations'
+type TabType = 'categories' | 'vendors' | 'brands' | 'locations' | 'units'
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -35,6 +38,7 @@ const emptyCategory = { name: '', description: '', is_active: true }
 const emptyVendor = { name: '', contact_person: '', email: '', phone: '', address: '', payment_terms: '', is_active: true, notes: '' }
 const emptyBrand = { name: '', description: '', is_active: true }
 const emptyLocation = { name: '', description: '', is_active: true }
+const emptyUnit = { name: '', abbreviation: '', description: '', is_active: true }
 
 function stats<T extends { is_active: boolean | null }>(items: T[]) {
   return { total: items.length, active: items.filter(i => i.is_active).length, inactive: items.filter(i => !i.is_active).length }
@@ -73,6 +77,7 @@ export default function OfficeSuppliesSetupPage() {
   const [vendors, setVendors] = useState<SupplyVendor[]>([])
   const [brands, setBrands] = useState<SupplyBrand[]>([])
   const [locations, setLocations] = useState<SupplyLocation[]>([])
+  const [units, setUnits] = useState<SupplyUnit[]>([])
   const [loading, setLoading] = useState(true)
 
   // Search (vendors only)
@@ -83,16 +88,18 @@ export default function OfficeSuppliesSetupPage() {
   const [vendorForm, setVendorForm] = useState(emptyVendor)
   const [brandForm, setBrandForm] = useState(emptyBrand)
   const [locationForm, setLocationForm] = useState(emptyLocation)
+  const [unitForm, setUnitForm] = useState(emptyUnit)
 
   // ── Load all ──────────────────────────────────────────────────────────────
 
   const load = async () => {
     const supabase = createClient()
-    const [cat, ven, bra, loc] = await Promise.all([
+    const [cat, ven, bra, loc, uni] = await Promise.all([
       supabase.from('supply_categories').select('*').order('name'),
       supabase.from('supply_vendors').select('*').order('name'),
       supabase.from('supply_brands').select('*').order('name'),
       supabase.from('supply_locations').select('*').order('name'),
+      supabase.from('supply_units' as any).select('*').order('name'),
     ])
     if (cat.error) toast.error('Failed to load categories')
     else setCategories(cat.data ?? [])
@@ -102,6 +109,8 @@ export default function OfficeSuppliesSetupPage() {
     else setBrands(bra.data ?? [])
     if (loc.error) toast.error('Failed to load locations')
     else setLocations(loc.data ?? [])
+    if (uni.error) toast.error('Failed to load units')
+    else setUnits((uni.data ?? []) as unknown as SupplyUnit[])
     setLoading(false)
   }
 
@@ -123,6 +132,8 @@ export default function OfficeSuppliesSetupPage() {
       setBrandForm(item ? { name: item.name, description: item.description ?? '', is_active: item.is_active ?? true } : emptyBrand)
     } else if (activeTab === 'locations') {
       setLocationForm(item ? { name: item.name, description: item.description ?? '', is_active: item.is_active ?? true } : emptyLocation)
+    } else if (activeTab === 'units') {
+      setUnitForm(item ? { name: item.name, abbreviation: item.abbreviation ?? '', description: item.description ?? '', is_active: item.is_active ?? true } : emptyUnit)
     }
     setShowModal(true)
   }
@@ -175,6 +186,14 @@ export default function OfficeSuppliesSetupPage() {
           : await supabase.from('supply_locations').insert(payload)
         if (error) { toast.error(error.message); return }
         toast.success(selectedItem ? 'Location updated' : 'Location added')
+      } else if (activeTab === 'units') {
+        if (!unitForm.name.trim()) { toast.error('Name is required'); return }
+        const payload = { name: unitForm.name.trim(), abbreviation: unitForm.abbreviation.trim() || null, description: unitForm.description.trim() || null, is_active: unitForm.is_active }
+        const { error } = selectedItem
+          ? await (supabase.from('supply_units' as any) as any).update({ ...payload, updated_at: new Date().toISOString() }).eq('id', selectedItem.id)
+          : await (supabase.from('supply_units' as any) as any).insert(payload)
+        if (error) { toast.error(error.message); return }
+        toast.success(selectedItem ? 'Unit updated' : 'Unit added')
       }
       setShowModal(false)
       load()
@@ -186,10 +205,10 @@ export default function OfficeSuppliesSetupPage() {
   // ── Delete ────────────────────────────────────────────────────────────────
 
   const handleDelete = async (id: string) => {
-    const label = activeTab === 'categories' ? 'category' : activeTab === 'vendors' ? 'vendor' : activeTab === 'brands' ? 'brand' : 'location'
+    const label = activeTab === 'categories' ? 'category' : activeTab === 'vendors' ? 'vendor' : activeTab === 'brands' ? 'brand' : activeTab === 'units' ? 'unit' : 'location'
     if (!confirm(`Delete this ${label}?`)) return
     const supabase = createClient()
-    const table = activeTab === 'categories' ? 'supply_categories' : activeTab === 'vendors' ? 'supply_vendors' : activeTab === 'brands' ? 'supply_brands' : 'supply_locations'
+    const table = activeTab === 'categories' ? 'supply_categories' : activeTab === 'vendors' ? 'supply_vendors' : activeTab === 'brands' ? 'supply_brands' : activeTab === 'units' ? 'supply_units' : 'supply_locations'
     const { error } = await supabase.from(table as any).delete().eq('id', id)
     if (error) { toast.error(error.message); return }
     toast.success(`${label.charAt(0).toUpperCase() + label.slice(1)} deleted`)
@@ -377,6 +396,48 @@ export default function OfficeSuppliesSetupPage() {
     </div>
   )
 
+  const renderUnits = () => (
+    <div className="space-y-4">
+      <StatCards icon={Ruler} color="orange" s={stats(units)} label="Units" />
+      <Card className="overflow-hidden p-0">
+        <div className="px-6 py-4 border-b border-gray-200">
+          <h3 className="font-semibold text-gray-900">Supply Units</h3>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead className="bg-gray-50 border-b border-gray-200">
+              <tr>
+                {['Name', 'Abbreviation', 'Description', 'Status', 'Actions'].map(h => (
+                  <th key={h} className={`px-6 py-3 text-xs font-medium text-gray-500 uppercase ${h === 'Actions' ? 'text-right' : 'text-left'}`}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-200">
+              {units.length === 0 ? (
+                <tr><td colSpan={5} className="px-6 py-8 text-center text-sm text-gray-400">No units yet. Click &quot;Add Unit&quot; to get started.</td></tr>
+              ) : units.map(u => (
+                <tr key={u.id} className="hover:bg-gray-50">
+                  <td className="px-6 py-4 text-sm font-medium text-gray-900 whitespace-nowrap">{u.name}</td>
+                  <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">{u.abbreviation ? <span className="inline-block bg-gray-100 text-gray-600 rounded px-2 py-0.5 text-xs font-mono">{u.abbreviation}</span> : '—'}</td>
+                  <td className="px-6 py-4 text-sm text-gray-500">{u.description ?? '—'}</td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <Badge className={u.is_active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}>{u.is_active ? 'Active' : 'Inactive'}</Badge>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="flex items-center justify-end gap-1">
+                      <button onClick={() => handleOpenModal(u)} className="p-1 text-gray-400 hover:text-gray-600 rounded hover:bg-gray-100"><Edit className="h-4 w-4" /></button>
+                      <button onClick={() => handleDelete(u.id)} className="p-1 text-gray-400 hover:text-red-600 rounded hover:bg-red-50"><Trash2 className="h-4 w-4" /></button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </Card>
+    </div>
+  )
+
   // ── Tabs config ───────────────────────────────────────────────────────────
 
   const tabs: { id: TabType; label: string; icon: React.ElementType }[] = [
@@ -384,9 +445,10 @@ export default function OfficeSuppliesSetupPage() {
     { id: 'vendors', label: 'Vendors', icon: Truck },
     { id: 'brands', label: 'Brands', icon: Star },
     { id: 'locations', label: 'Locations', icon: MapPin },
+    { id: 'units', label: 'Units', icon: Ruler },
   ]
 
-  const addLabel = activeTab === 'categories' ? 'Category' : activeTab === 'vendors' ? 'Vendor' : activeTab === 'brands' ? 'Brand' : 'Location'
+  const addLabel = activeTab === 'categories' ? 'Category' : activeTab === 'vendors' ? 'Vendor' : activeTab === 'brands' ? 'Brand' : activeTab === 'units' ? 'Unit' : 'Location'
 
   // ── Render ────────────────────────────────────────────────────────────────
 
@@ -433,6 +495,7 @@ export default function OfficeSuppliesSetupPage() {
           {activeTab === 'vendors' && renderVendors()}
           {activeTab === 'brands' && renderBrands()}
           {activeTab === 'locations' && renderLocations()}
+          {activeTab === 'units' && renderUnits()}
         </>
       )}
 
@@ -504,6 +567,26 @@ export default function OfficeSuppliesSetupPage() {
                   <div className="flex items-center gap-2">
                     <input type="checkbox" id="loc_active" checked={locationForm.is_active} onChange={e => setLocationForm(p => ({ ...p, is_active: e.target.checked }))} className="w-4 h-4 text-orange-600" />
                     <label htmlFor="loc_active" className="text-sm text-gray-700">Active</label>
+                  </div>
+                </>
+              )}
+
+              {/* Units */}
+              {activeTab === 'units' && (
+                <>
+                  <div className="grid grid-cols-2 gap-4">
+                    <Input label="Name *" required value={unitForm.name} onChange={e => setUnitForm(p => ({ ...p, name: e.target.value }))} placeholder="e.g. Piece, Box, Ream" />
+                    <Input label="Abbreviation" value={unitForm.abbreviation} onChange={e => setUnitForm(p => ({ ...p, abbreviation: e.target.value }))} placeholder="e.g. pc, box, rm" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                    <textarea rows={2} value={unitForm.description} onChange={e => setUnitForm(p => ({ ...p, description: e.target.value }))}
+                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-orange-400"
+                      placeholder="Optional description" />
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <input type="checkbox" id="unit_active" checked={unitForm.is_active} onChange={e => setUnitForm(p => ({ ...p, is_active: e.target.checked }))} className="w-4 h-4 text-orange-600" />
+                    <label htmlFor="unit_active" className="text-sm text-gray-700">Active</label>
                   </div>
                 </>
               )}
