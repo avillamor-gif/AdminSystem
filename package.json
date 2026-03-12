@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "next build && node scripts/append-sw-push.js",
     "start": "next start",
     "lint": "next lint",
     "db:types": "supabase gen types typescript --project-id agzwhsymweevikhauavm > src/lib/supabase/database.types.ts"

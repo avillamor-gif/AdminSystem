@@ -4,7 +4,6 @@ const withPWA = require('next-pwa')({
   skipWaiting: true,
   disable: process.env.NODE_ENV === 'development', // only active in production
   buildExcludes: [/middleware-manifest\.json$/],
-  customWorkerDir: 'worker',
 })
 
 /** @type {import('next').NextConfig} */
