@@ -33,6 +33,14 @@ export function usePushNotifications() {
   }, [isSupported])
 
   const subscribe = useCallback(async () => {
+    // Debug: show support status regardless
+    const swSupported = 'serviceWorker' in navigator
+    const pmSupported = 'PushManager' in window
+    const notifSupported = 'Notification' in window
+    if (!swSupported || !pmSupported || !notifSupported) {
+      alert(`❌ Not supported:\n- ServiceWorker: ${swSupported}\n- PushManager: ${pmSupported}\n- Notification: ${notifSupported}`)
+      return
+    }
     if (!isSupported) { alert('❌ Push not supported on this browser/device'); return }
     setIsLoading(true)
     try {
