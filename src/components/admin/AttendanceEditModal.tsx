@@ -114,6 +114,19 @@ export function AttendanceEditModal({ open, onClose, employeeId, employeeName, d
   const updateSession = (idx: number, field: keyof Session, value: string) =>
     setSessions(s => s.map((row, i) => i === idx ? { ...row, [field]: value } : row))
 
+  /** Map UI attendance type → DB-level status enum value */
+  function uiTypeToStatus(type: string): string {
+    const onLeave = ['vacation', 'sick', 'days-off', 'rest-day', 'on_leave']
+    const absent  = ['absent']
+    const late    = ['late']
+    const halfDay = ['half_day']
+    if (onLeave.includes(type)) return 'on_leave'
+    if (absent.includes(type))  return 'absent'
+    if (late.includes(type))    return 'late'
+    if (halfDay.includes(type)) return 'half_day'
+    return 'present'  // work-onsite, work-home, work-offsite, work-travel, etc.
+  }
+
   const handleSave = async () => {
     const firstIn  = sessions[0]?.timeIn  ? localTimeToISO(dateStr, sessions[0].timeIn)  : null
     const lastOut  = sessions[sessions.length - 1]?.timeOut
@@ -127,23 +140,31 @@ export function AttendanceEditModal({ open, onClose, employeeId, employeeName, d
         })))
       : null
 
-    await upsert.mutateAsync({
-      id:          record?.id,
-      employee_id: employeeId,
-      date:        dateStr,
-      status:      sessions[0]?.type ?? 'present',
-      clock_in:    firstIn,
-      clock_out:   lastOut,
-      notes,
-    })
-    onClose()
+    try {
+      await upsert.mutateAsync({
+        id:          record?.id,
+        employee_id: employeeId,
+        date:        dateStr,
+        status:      uiTypeToStatus(sessions[0]?.type ?? 'work-onsite'),
+        clock_in:    firstIn,
+        clock_out:   lastOut,
+        notes,
+      })
+      onClose()
+    } catch {
+      // Error is already surfaced via toast from the mutation's onError
+    }
   }
 
   const handleDelete = async () => {
     if (!record) return
-    await remove.mutateAsync({ id: record.id, employee_id: employeeId, date: dateStr })
-    setConfirmDelete(false)
-    onClose()
+    try {
+      await remove.mutateAsync({ id: record.id, employee_id: employeeId, date: dateStr })
+      setConfirmDelete(false)
+      onClose()
+    } catch {
+      setConfirmDelete(false)
+    }
   }
 
   const displayDate = new Date(dateStr + 'T00:00:00').toLocaleDateString('en-US', {
