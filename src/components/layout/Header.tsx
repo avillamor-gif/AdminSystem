@@ -104,15 +104,23 @@ export function Header({ user }: HeaderProps) {
 
       {/* Right side - User actions */}
       <div className="flex items-center gap-2">
-        {/* Push Notifications Toggle */}
-        {pushSupported && permission !== 'denied' && (
+        {/* Push Notifications Toggle — always visible so user can subscribe from any device */}
+        {pushSupported && (
           <button
             onClick={isSubscribed ? unsubscribe : subscribe}
-            disabled={pushLoading}
-            title={isSubscribed ? 'Disable push notifications' : 'Enable push notifications'}
+            disabled={pushLoading || permission === 'denied'}
+            title={
+              permission === 'denied'
+                ? 'Notifications blocked — enable in browser settings'
+                : isSubscribed
+                ? 'Disable push notifications on this device'
+                : 'Enable push notifications on this device'
+            }
             className={`p-2 rounded-full transition-colors ${
               isSubscribed
                 ? 'text-white hover:bg-white/10'
+                : permission === 'denied'
+                ? 'text-white/20 cursor-not-allowed'
                 : 'text-white/50 hover:text-white hover:bg-white/10'
             }`}
           >
@@ -129,7 +137,7 @@ export function Header({ user }: HeaderProps) {
               if (res.ok && json.ok) {
                 alert('✅ Push sent to ' + json.subscriptionsFound + ' device(s)! Check your phone.')
               } else {
-                alert('⚠️ ' + (json.error ?? JSON.stringify(json)))
+                alert('⚠️ ' + (json.error ?? JSON.stringify(json)) + (json.userId ? '\n\nYour user ID: ' + json.userId : ''))
               }
             } catch (e) {
               alert('❌ Error: ' + String(e))
