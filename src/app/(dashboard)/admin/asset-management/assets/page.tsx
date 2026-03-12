@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useMemo } from 'react'
 import { createPortal } from 'react-dom'
 import { useAssets, useAssetCategories, useAssetBrands, useAssetVendors, useAssetLocations, useCreateAsset, useUpdateAsset, useDeleteAsset, useReturnAsset, useAssetAssignments, type Asset, type AssetAssignment } from '@/hooks/useAssets'
 import { useEmployees } from '@/hooks/useEmployees'
@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Select } from '@/components/ui/Select'
 import { Modal, ModalHeader, ModalBody, ModalFooter } from '@/components/ui/Modal'
-import { Package, Plus, Search, Edit, Trash2, Laptop, Armchair, Car, Wrench, Smartphone, QrCode, Download, Upload, X, RotateCcw, Printer, ChevronRight, CheckCircle, AlertTriangle, DollarSign } from 'lucide-react'
+import { Package, Plus, Search, Edit, Trash2, Laptop, Armchair, Car, Wrench, Smartphone, QrCode, Download, Upload, X, RotateCcw, Printer, ChevronRight, CheckCircle, AlertTriangle, DollarSign, ChevronUp, ChevronDown } from 'lucide-react'
 import QRCode from 'qrcode'
 
 const statusColors = {
@@ -41,6 +41,8 @@ export default function AssetsPage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [categoryFilter, setCategoryFilter] = useState('')
   const [statusFilter, setStatusFilter] = useState('')
+  const [sortKey, setSortKey] = useState<'asset_tag' | 'name' | 'category' | 'brand' | 'status' | 'condition' | 'assigned_to' | 'location'>('asset_tag')
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc')
   const [showModal, setShowModal] = useState(false)
   const [showAddPanel, setShowAddPanel] = useState(false)
   const [showQRModal, setShowQRModal] = useState(false)
@@ -78,7 +80,6 @@ export default function AssetsPage() {
   const { data: assets = [], isLoading } = useAssets({
     category_id: categoryFilter || undefined,
     status: statusFilter || undefined,
-    search: searchQuery || undefined
   })
   
   const { data: categories = [] } = useAssetCategories()
@@ -103,6 +104,50 @@ export default function AssetsPage() {
     maintenance: assets.filter(a => a.status === 'maintenance').length,
     totalValue: assets.reduce((sum, a) => sum + (a.purchase_price || 0), 0)
   }
+
+  const handleSort = (key: typeof sortKey) => {
+    if (sortKey === key) {
+      setSortDir(d => d === 'asc' ? 'desc' : 'asc')
+    } else {
+      setSortKey(key)
+      setSortDir('asc')
+    }
+  }
+
+  const displayedAssets = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase()
+    const filtered = q
+      ? assets.filter(a =>
+          (a.asset_tag ?? '').toLowerCase().includes(q) ||
+          (a.name ?? '').toLowerCase().includes(q) ||
+          (a.category?.name ?? '').toLowerCase().includes(q) ||
+          (a.brand?.name ?? '').toLowerCase().includes(q) ||
+          (a.model ?? '').toLowerCase().includes(q) ||
+          (a.location ?? '').toLowerCase().includes(q) ||
+          (a.employee ? `${a.employee.first_name} ${a.employee.last_name}`.toLowerCase().includes(q) : false)
+        )
+      : assets
+
+    return [...filtered].sort((a, b) => {
+      let av = ''
+      let bv = ''
+      switch (sortKey) {
+        case 'asset_tag': av = a.asset_tag ?? ''; bv = b.asset_tag ?? ''; break
+        case 'name':      av = a.name ?? '';      bv = b.name ?? '';      break
+        case 'category':  av = a.category?.name ?? ''; bv = b.category?.name ?? ''; break
+        case 'brand':     av = a.brand?.name ?? '';    bv = b.brand?.name ?? '';    break
+        case 'status':    av = a.status ?? '';   bv = b.status ?? '';   break
+        case 'condition': av = a.condition ?? ''; bv = b.condition ?? ''; break
+        case 'assigned_to':
+          av = a.employee ? `${a.employee.first_name} ${a.employee.last_name}` : ''
+          bv = b.employee ? `${b.employee.first_name} ${b.employee.last_name}` : ''
+          break
+        case 'location':  av = a.location ?? ''; bv = b.location ?? ''; break
+      }
+      const cmp = av.localeCompare(bv)
+      return sortDir === 'asc' ? cmp : -cmp
+    })
+  }, [assets, searchQuery, sortKey, sortDir])
 
   const handleOpenModal = (asset?: Asset) => {
     setEditTab('details')
@@ -464,20 +509,41 @@ export default function AssetsPage() {
       {/* Assets Table */}
       <Card className="overflow-hidden p-0">
         <div className="px-6 py-4 border-b border-gray-200">
-          <h3 className="font-semibold text-gray-900">Assets ({assets.length})</h3>
+          <h3 className="font-semibold text-gray-900">Assets ({displayedAssets.length}{displayedAssets.length !== assets.length ? ` of ${assets.length}` : ''})</h3>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Asset Tag</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Category</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Brand / Model</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Condition</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Assigned To</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Location</th>
+                {([
+                  { key: 'asset_tag',   label: 'Asset Tag' },
+                  { key: 'name',        label: 'Name' },
+                  { key: 'category',    label: 'Category' },
+                  { key: 'brand',       label: 'Brand / Model' },
+                  { key: 'status',      label: 'Status' },
+                  { key: 'condition',   label: 'Condition' },
+                  { key: 'assigned_to', label: 'Assigned To' },
+                  { key: 'location',    label: 'Location' },
+                ] as const).map(({ key, label }) => (
+                  <th
+                    key={key}
+                    onClick={() => handleSort(key)}
+                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer select-none hover:bg-gray-100 group"
+                  >
+                    <div className="flex items-center gap-1">
+                      {label}
+                      <span className="flex flex-col opacity-0 group-hover:opacity-60 transition-opacity">
+                        {sortKey === key ? (
+                          sortDir === 'asc'
+                            ? <ChevronUp className="w-3 h-3 opacity-100 text-orange-500" />
+                            : <ChevronDown className="w-3 h-3 opacity-100 text-orange-500" />
+                        ) : (
+                          <ChevronUp className="w-3 h-3" />
+                        )}
+                      </span>
+                    </div>
+                  </th>
+                ))}
                 <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Actions</th>
               </tr>
             </thead>
@@ -490,12 +556,12 @@ export default function AssetsPage() {
                     </div>
                   </td>
                 </tr>
-              ) : assets.length === 0 ? (
+              ) : displayedAssets.length === 0 ? (
                 <tr>
                   <td colSpan={9} className="px-6 py-12 text-center text-gray-500">No assets found</td>
                 </tr>
               ) : (
-                assets.map(asset => {
+                displayedAssets.map(asset => {
                   const Icon = categoryIcons[asset.category?.name || ''] || Package
                   return (
                     <tr key={asset.id} className="hover:bg-gray-50">
