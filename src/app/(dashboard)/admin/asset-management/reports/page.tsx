@@ -499,7 +499,7 @@ export default function ReportsPage() {
 
       {/* Print Selection Modal */}
       {showPrintModal && (
-        <Modal isOpen={showPrintModal} onClose={() => setShowPrintModal(false)} size="lg">
+        <Modal open={showPrintModal} onClose={() => setShowPrintModal(false)} size="lg">
           <ModalHeader>
             <div className="flex items-center gap-2">
               <Printer className="h-5 w-5 text-gray-600" />
