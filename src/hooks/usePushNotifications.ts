@@ -51,7 +51,10 @@ export function usePushNotifications() {
       setPermission(perm as PushPermission)
       if (perm !== 'granted') { alert('⚠️ Permission not granted: ' + perm); return }
 
-      const reg = await navigator.serviceWorker.ready
+      const reg = await Promise.race([
+        navigator.serviceWorker.ready,
+        new Promise<never>((_, reject) => setTimeout(() => reject(new Error('Service worker timed out after 10s — try reloading the page')), 10000))
+      ])
       alert('✓ SW ready. Subscribing... (VAPID key: ' + vapidKey.slice(0, 10) + '...)')
       const sub = await reg.pushManager.subscribe({
         userVisibleOnly: true,
