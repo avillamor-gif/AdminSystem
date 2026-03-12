@@ -1,15 +1,35 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useRef } from 'react'
 import { useAssets, useAssetAssignments, useAssetMaintenance } from '@/hooks/useAssets'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Select } from '@/components/ui/Select'
-import { Package, TrendingUp, DollarSign, Wrench, Users, BarChart3, PieChart, Download } from 'lucide-react'
+import { Modal, ModalHeader, ModalBody, ModalFooter } from '@/components/ui/Modal'
+import { Package, TrendingUp, DollarSign, Wrench, Users, BarChart3, PieChart, Download, Printer, CheckSquare, Square } from 'lucide-react'
+
+const PRINTABLE_FIELDS = [
+  { key: 'asset_tag',     label: 'Asset Tag' },
+  { key: 'name',          label: 'Asset Name' },
+  { key: 'category',      label: 'Category' },
+  { key: 'brand',         label: 'Brand / Model' },
+  { key: 'status',        label: 'Status' },
+  { key: 'condition',     label: 'Condition' },
+  { key: 'assigned_to',   label: 'Assigned To' },
+  { key: 'location',      label: 'Location' },
+  { key: 'purchase_price',label: 'Purchase Price' },
+  { key: 'purchase_date', label: 'Purchase Date' },
+  { key: 'warranty_end',  label: 'Warranty End' },
+  { key: 'serial_number', label: 'Serial Number' },
+]
 
 export default function ReportsPage() {
   const [dateRange, setDateRange] = useState('30') // days
   const [exportFormat, setExportFormat] = useState<'csv' | 'pdf'>('csv')
+  const [showPrintModal, setShowPrintModal] = useState(false)
+  const [selectedCategories, setSelectedCategories] = useState<Set<string>>(new Set())
+  const [selectedFields, setSelectedFields] = useState<Set<string>>(new Set(PRINTABLE_FIELDS.map(f => f.key)))
+  const printFrameRef = useRef<HTMLIFrameElement>(null)
 
   const { data: assets = [] } = useAssets()
   const { data: assignments = [] } = useAssetAssignments()
@@ -126,6 +146,88 @@ export default function ReportsPage() {
     })
   }, [assets])
 
+  const openPrintModal = () => {
+    // Pre-select all categories by default
+    setSelectedCategories(new Set(assetsByCategory.map(c => c.name)))
+    setSelectedFields(new Set(PRINTABLE_FIELDS.map(f => f.key)))
+    setShowPrintModal(true)
+  }
+
+  const toggleCategory = (name: string) => {
+    setSelectedCategories(prev => {
+      const next = new Set(prev)
+      next.has(name) ? next.delete(name) : next.add(name)
+      return next
+    })
+  }
+
+  const toggleField = (key: string) => {
+    setSelectedFields(prev => {
+      const next = new Set(prev)
+      next.has(key) ? next.delete(key) : next.add(key)
+      return next
+    })
+  }
+
+  const handlePrint = () => {
+    const filteredAssets = assets.filter(a => {
+      const cat = a.category?.name || 'Uncategorized'
+      return selectedCategories.has(cat)
+    })
+
+    const fields = PRINTABLE_FIELDS.filter(f => selectedFields.has(f.key))
+
+    const headerCells = fields.map(f => `<th>${f.label}</th>`).join('')
+
+    const rows = filteredAssets.map(asset => {
+      const cells = fields.map(f => {
+        let val = ''
+        switch (f.key) {
+          case 'asset_tag':      val = asset.asset_tag ?? ''; break
+          case 'name':           val = asset.name ?? ''; break
+          case 'category':       val = asset.category?.name ?? ''; break
+          case 'brand':          val = [asset.brand?.name, asset.model].filter(Boolean).join(' / '); break
+          case 'status':         val = asset.status ?? ''; break
+          case 'condition':      val = asset.condition ?? ''; break
+          case 'assigned_to':    val = asset.employee ? `${asset.employee.first_name} ${asset.employee.last_name}` : ''; break
+          case 'location':       val = asset.location ?? ''; break
+          case 'purchase_price': val = asset.purchase_price != null ? `₱${Number(asset.purchase_price).toLocaleString()}` : ''; break
+          case 'purchase_date':  val = asset.purchase_date ? new Date(asset.purchase_date).toLocaleDateString() : ''; break
+          case 'warranty_end':   val = asset.warranty_end_date ? new Date(asset.warranty_end_date).toLocaleDateString() : ''; break
+          case 'serial_number':  val = asset.serial_number ?? ''; break
+        }
+        return `<td>${val}</td>`
+      }).join('')
+      return `<tr>${cells}</tr>`
+    }).join('')
+
+    const html = `<!DOCTYPE html><html><head><title>Asset Report</title>
+<style>
+  body { font-family: Arial, sans-serif; font-size: 11px; color: #111; margin: 20px; }
+  h1 { font-size: 16px; margin-bottom: 4px; }
+  p.sub { color: #666; margin-bottom: 12px; font-size: 10px; }
+  table { width: 100%; border-collapse: collapse; }
+  th { background: #1e3a5f; color: #fff; padding: 6px 8px; text-align: left; font-size: 10px; }
+  td { padding: 5px 8px; border-bottom: 1px solid #e5e7eb; }
+  tr:nth-child(even) td { background: #f9fafb; }
+  @media print { @page { margin: 15mm; } }
+</style></head><body>
+<h1>Asset Management Report</h1>
+<p class="sub">Generated: ${new Date().toLocaleString()} &nbsp;|&nbsp; Total assets printed: ${filteredAssets.length}</p>
+<table><thead><tr>${headerCells}</tr></thead><tbody>${rows}</tbody></table>
+</body></html>`
+
+    const iframe = printFrameRef.current!
+    const doc = iframe.contentDocument || iframe.contentWindow?.document
+    if (!doc) return
+    doc.open()
+    doc.write(html)
+    doc.close()
+    iframe.contentWindow?.focus()
+    iframe.contentWindow?.print()
+    setShowPrintModal(false)
+  }
+
   const handleExport = () => {
     if (exportFormat === 'csv') {
       // Simple CSV export
@@ -161,6 +263,10 @@ export default function ReportsPage() {
           <p className="text-gray-600">Analytics and insights for asset management</p>
         </div>
         <div className="flex gap-2">
+          <Button variant="secondary" onClick={openPrintModal}>
+            <Printer className="h-4 w-4 mr-2" />
+            Print
+          </Button>
           <Select value={exportFormat} onChange={(e) => setExportFormat(e.target.value as 'csv' | 'pdf')}>
             <option value="csv">CSV</option>
             <option value="pdf">PDF</option>
@@ -387,6 +493,114 @@ export default function ReportsPage() {
           </div>
         </div>
       </Card>
+
+      {/* Hidden print iframe */}
+      <iframe ref={printFrameRef} style={{ display: 'none' }} title="print-frame" />
+
+      {/* Print Selection Modal */}
+      {showPrintModal && (
+        <Modal isOpen={showPrintModal} onClose={() => setShowPrintModal(false)} size="lg">
+          <ModalHeader>
+            <div className="flex items-center gap-2">
+              <Printer className="h-5 w-5 text-gray-600" />
+              <span>Print Report</span>
+            </div>
+          </ModalHeader>
+          <ModalBody>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Categories */}
+              <div>
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">Categories</h3>
+                  <div className="flex gap-2 text-xs">
+                    <button
+                      className="text-indigo-600 hover:underline"
+                      onClick={() => setSelectedCategories(new Set(assetsByCategory.map(c => c.name)))}
+                    >Select all</button>
+                    <span className="text-gray-300">|</span>
+                    <button
+                      className="text-gray-500 hover:underline"
+                      onClick={() => setSelectedCategories(new Set())}
+                    >Clear</button>
+                  </div>
+                </div>
+                <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
+                  {assetsByCategory.map(cat => (
+                    <label key={cat.name} className="flex items-center gap-2 cursor-pointer group">
+                      <span className="text-indigo-600">
+                        {selectedCategories.has(cat.name)
+                          ? <CheckSquare className="h-4 w-4" />
+                          : <Square className="h-4 w-4 text-gray-400 group-hover:text-indigo-400" />}
+                      </span>
+                      <input
+                        type="checkbox"
+                        className="sr-only"
+                        checked={selectedCategories.has(cat.name)}
+                        onChange={() => toggleCategory(cat.name)}
+                      />
+                      <span className="text-sm text-gray-800">{cat.name}</span>
+                      <span className="ml-auto text-xs text-gray-400">{cat.count}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              {/* Fields */}
+              <div>
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">Fields</h3>
+                  <div className="flex gap-2 text-xs">
+                    <button
+                      className="text-indigo-600 hover:underline"
+                      onClick={() => setSelectedFields(new Set(PRINTABLE_FIELDS.map(f => f.key)))}
+                    >Select all</button>
+                    <span className="text-gray-300">|</span>
+                    <button
+                      className="text-gray-500 hover:underline"
+                      onClick={() => setSelectedFields(new Set())}
+                    >Clear</button>
+                  </div>
+                </div>
+                <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
+                  {PRINTABLE_FIELDS.map(field => (
+                    <label key={field.key} className="flex items-center gap-2 cursor-pointer group">
+                      <span className="text-indigo-600">
+                        {selectedFields.has(field.key)
+                          ? <CheckSquare className="h-4 w-4" />
+                          : <Square className="h-4 w-4 text-gray-400 group-hover:text-indigo-400" />}
+                      </span>
+                      <input
+                        type="checkbox"
+                        className="sr-only"
+                        checked={selectedFields.has(field.key)}
+                        onChange={() => toggleField(field.key)}
+                      />
+                      <span className="text-sm text-gray-800">{field.label}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-4 p-3 bg-gray-50 rounded-lg text-sm text-gray-600">
+              <strong>{[...selectedCategories].reduce((sum, cat) => {
+                const c = assetsByCategory.find(x => x.name === cat)
+                return sum + (c?.count ?? 0)
+              }, 0)}</strong> assets will be printed across <strong>{selectedCategories.size}</strong> categor{selectedCategories.size === 1 ? 'y' : 'ies'} with <strong>{selectedFields.size}</strong> field{selectedFields.size === 1 ? '' : 's'}.
+            </div>
+          </ModalBody>
+          <ModalFooter>
+            <Button variant="secondary" onClick={() => setShowPrintModal(false)}>Cancel</Button>
+            <Button
+              onClick={handlePrint}
+              disabled={selectedCategories.size === 0 || selectedFields.size === 0}
+            >
+              <Printer className="h-4 w-4 mr-2" />
+              Print
+            </Button>
+          </ModalFooter>
+        </Modal>
+      )}
     </div>
   )
 }
