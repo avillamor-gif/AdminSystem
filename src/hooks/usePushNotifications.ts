@@ -33,14 +33,18 @@ export function usePushNotifications() {
   }, [isSupported])
 
   const subscribe = useCallback(async () => {
-    if (!isSupported) return
+    if (!isSupported) { alert('❌ Push not supported on this browser/device'); return }
     setIsLoading(true)
     try {
+      const vapidKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY
+      if (!vapidKey) { alert('❌ VAPID key missing — check Vercel env vars'); return }
+
       const perm = await Notification.requestPermission()
       setPermission(perm as PushPermission)
-      if (perm !== 'granted') return
+      if (perm !== 'granted') { alert('⚠️ Permission not granted: ' + perm); return }
 
       const reg = await navigator.serviceWorker.ready
+      alert('✓ SW ready. Subscribing... (VAPID key: ' + vapidKey.slice(0, 10) + '...)')
       const sub = await reg.pushManager.subscribe({
         userVisibleOnly: true,
         applicationServerKey: urlBase64ToUint8Array(
@@ -49,13 +53,20 @@ export function usePushNotifications() {
       })
 
       const json = sub.toJSON()
-      await fetch('/api/push/subscribe', {
+      const res = await fetch('/api/push/subscribe', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ endpoint: json.endpoint, keys: json.keys }),
       })
-      setIsSubscribed(true)
+      const data = await res.json()
+      if (!res.ok) {
+        alert('❌ Subscribe failed: ' + (data.error ?? res.status))
+      } else {
+        alert('✅ Subscribed! You will now receive push notifications on this device.')
+        setIsSubscribed(true)
+      }
     } catch (err) {
+      alert('❌ Subscribe error: ' + String(err))
       console.error('Push subscribe error:', err)
     } finally {
       setIsLoading(false)
