@@ -1,9 +1,9 @@
 // Custom service worker additions — merged by next-pwa into sw.js
 // Handles incoming Web Push notifications and notification click events.
 
-declare const self: ServiceWorkerGlobalScope
+const sw = self as unknown as ServiceWorkerGlobalScope
 
-self.addEventListener('push', (event: PushEvent) => {
+sw.addEventListener('push', (event: PushEvent) => {
   if (!event.data) return
 
   let data: { title?: string; body?: string; url?: string; icon?: string } = {}
@@ -18,22 +18,22 @@ self.addEventListener('push', (event: PushEvent) => {
     requireInteraction: false,
   }
 
-  event.waitUntil(self.registration.showNotification(title, options))
+  event.waitUntil(sw.registration.showNotification(title, options))
 })
 
-self.addEventListener('notificationclick', (event: NotificationEvent) => {
+sw.addEventListener('notificationclick', (event: NotificationEvent) => {
   event.notification.close()
   const url = event.notification.data?.url ?? '/'
 
   event.waitUntil(
-    (self.clients as any).matchAll({ type: 'window', includeUncontrolled: true }).then((clientList: any[]) => {
+    (sw.clients as any).matchAll({ type: 'window', includeUncontrolled: true }).then((clientList: any[]) => {
       for (const client of clientList) {
-        if (client.url.includes(self.location.origin) && 'focus' in client) {
+        if (client.url.includes(sw.location.origin) && 'focus' in client) {
           client.navigate(url)
           return client.focus()
         }
       }
-      if ((self.clients as any).openWindow) return (self.clients as any).openWindow(url)
+      if ((sw.clients as any).openWindow) return (sw.clients as any).openWindow(url)
     })
   )
 })
