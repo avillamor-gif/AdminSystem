@@ -106,22 +106,13 @@ export function Header({ user }: HeaderProps) {
       <div className="flex items-center gap-2">
         {/* Push Notifications Toggle — always visible so user can subscribe from any device */}
         <button
-          onClick={isSubscribed ? unsubscribe : subscribe}
-          disabled={pushLoading}
-          title={
-            !pushSupported
-              ? 'Push not supported on this browser'
-              : permission === 'denied'
-              ? 'Notifications blocked — enable in browser settings'
-              : isSubscribed
-              ? 'Disable push notifications on this device'
-              : 'Enable push notifications on this device'
-          }
-          className={`p-2 rounded-full transition-colors ${
-            isSubscribed
-              ? 'text-white hover:bg-white/10'
-              : 'text-white/50 hover:text-white hover:bg-white/10'
-          }`}
+          onClick={() => {
+            alert('Bell clicked! isSupported=' + pushSupported + ' isSubscribed=' + isSubscribed + ' loading=' + pushLoading)
+            if (isSubscribed) unsubscribe(); else subscribe()
+          }}
+          disabled={false}
+          title="Push notifications"
+          className="p-2 rounded-full transition-colors text-white/50 hover:text-white hover:bg-white/10"
         >
           <BellRing className="w-5 h-5" />
         </button>
