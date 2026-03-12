@@ -120,16 +120,14 @@ export function Header({ user }: HeaderProps) {
           </button>
         )}
 
-        {/* Test Push (only shown when subscribed) */}
-        {isSubscribed && (
-          <button
-            onClick={() => fetch('/api/push/test', { method: 'POST' })}
-            title="Send test push notification to this device"
-            className="p-2 text-white/60 hover:text-white hover:bg-white/10 rounded-full transition-colors text-xs font-bold"
-          >
-            TEST
-          </button>
-        )}
+        {/* Test Push (visible to all, sends to current user's subscribed devices) */}
+        <button
+          onClick={() => fetch('/api/push/test', { method: 'POST' })}
+          title="Send test push notification to my devices"
+          className="p-2 text-white/60 hover:text-white hover:bg-white/10 rounded-full transition-colors text-xs font-bold"
+        >
+          TEST
+        </button>
 
         {/* Help */}
         <button className="p-2 text-white/80 hover:text-white hover:bg-white/10 rounded-full transition-colors">
