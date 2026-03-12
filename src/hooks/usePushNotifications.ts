@@ -51,39 +51,16 @@ export function usePushNotifications() {
       setPermission(perm as PushPermission)
       if (perm !== 'granted') { alert('⚠️ Permission not granted: ' + perm); return }
 
-      // Don't re-register — next-pwa already handles SW registration.
-      // Just wait for the existing SW to become active.
-      let activeReg: ServiceWorkerRegistration | null = null
+      // Register SW if not already registered, then wait for it to be ready
+      alert('Registering SW...')
+      const reg = await navigator.serviceWorker.register('/sw.js', { scope: '/', updateViaCache: 'none' })
+      alert('SW registered. State: ' + (reg.active?.state ?? reg.installing?.state ?? reg.waiting?.state ?? 'unknown'))
 
-      // Check if already registered
-      const existingRegs = await navigator.serviceWorker.getRegistrations()
-      alert('Found ' + existingRegs.length + ' existing SW(s). Using existing...')
-
-      if (existingRegs.length > 0) {
-        activeReg = existingRegs[0]
-      } else {
-        // No SW yet — wait for next-pwa to register it (page should have done this on load)
-        alert('No SW found — waiting for next-pwa to register...')
-        activeReg = await Promise.race([
-          navigator.serviceWorker.ready,
-          new Promise<never>((_, reject) => setTimeout(() => reject(new Error('SW not found after 15s — try reloading the page first')), 15000))
-        ])
-      }
-
-      // Wait for it to be active if it isn't already
-      if (!activeReg.active) {
-        alert('SW not yet active, waiting...')
-        await new Promise<void>((resolve, reject) => {
-          const sw = activeReg!.installing ?? activeReg!.waiting
-          if (!sw) { reject(new Error('No SW installing or waiting')); return }
-          sw.addEventListener('statechange', function handler() {
-            if (sw.state === 'activated') { sw.removeEventListener('statechange', handler); resolve() }
-            if (sw.state === 'redundant') { sw.removeEventListener('statechange', handler); reject(new Error('SW became redundant — check sw.js for errors')) }
-          })
-          setTimeout(() => reject(new Error('SW activation timed out')), 15000)
-        })
-      }
-
+      // navigator.serviceWorker.ready resolves when a SW is active for this page
+      const activeReg = await Promise.race([
+        navigator.serviceWorker.ready,
+        new Promise<never>((_, reject) => setTimeout(() => reject(new Error('SW took too long to activate')), 30000))
+      ])
       alert('✓ SW active! Subscribing to push...')
       const sub = await activeReg.pushManager.subscribe({
         userVisibleOnly: true,
