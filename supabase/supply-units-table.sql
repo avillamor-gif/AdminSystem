@@ -34,5 +34,6 @@ INSERT INTO supply_units (name, abbreviation, description) VALUES
   ('Bag',      'bag',  'A bag of items'),
   ('Pair',     'pr',   'A pair of items'),
   ('Dozen',    'doz',  '12 pieces'),
-  ('Bundle',   'bdl',  'A bundle of items')
-ON CONFLICT DO NOTHING;
+  ('Bundle',   'bdl',  'A bundle of items'),
+  ('Booklet',  'bkl',  'A booklet of items')
+ON CONFLICT (name) DO NOTHING;
