@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { resend, FROM_ADDRESS } from '@/lib/resend'
 import { leaveDecisionEmail, genericDecisionEmail } from '@/lib/emailTemplates'
+import { sendPushToUsers } from '@/lib/webpush'
 
 export async function POST(req: NextRequest) {
   try {
@@ -130,6 +131,13 @@ export async function POST(req: NextRequest) {
       console.error('[notifications/decision] Insert error:', insertErr)
       return NextResponse.json({ error: insertErr.message }, { status: 500 })
     }
+
+    // ── Fire-and-forget push notification to recipients ───────────────────────
+    sendPushToUsers([...recipientUserIds], {
+      title,
+      body: message,
+      url: '/',
+    }).catch(() => {})
 
     // ── Fire-and-forget email to the requester ────────────────────────────────
     if (process.env.RESEND_API_KEY) {

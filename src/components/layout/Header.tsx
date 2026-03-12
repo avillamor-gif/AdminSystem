@@ -1,11 +1,12 @@
 'use client'
 
-import { Bell, ChevronDown, HelpCircle, MessageSquare, LogOut, Package, Calendar, AlertTriangle, Clock, BookOpen, ShoppingCart, Plane, Award } from 'lucide-react'
+import { Bell, BellRing, ChevronDown, HelpCircle, MessageSquare, LogOut, Package, Calendar, AlertTriangle, Clock, BookOpen, ShoppingCart, Plane, Award } from 'lucide-react'
 import { Avatar } from '@/components/ui'
 import { useState, useMemo, useEffect, useRef } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { useNotifications, type NotificationType } from '@/hooks/useNotifications'
+import { usePushNotifications } from '@/hooks/usePushNotifications'
 
 interface HeaderProps {
   user: {
@@ -26,6 +27,7 @@ export function Header({ user }: HeaderProps) {
 
   const { notifications, timeAgo, markEquipmentNotifRead, markLeaveNotifRead, markLeaveCreditNotifRead, markTravelNotifRead, markPubNotifRead, markSupplyNotifRead } = useNotifications()
   const totalCount = notifications.length
+  const { permission, isSubscribed, isLoading: pushLoading, isSupported: pushSupported, subscribe, unsubscribe } = usePushNotifications()
 
   const handleSignOut = async () => {
     const supabase = createClient()
@@ -102,6 +104,22 @@ export function Header({ user }: HeaderProps) {
 
       {/* Right side - User actions */}
       <div className="flex items-center gap-2">
+        {/* Push Notifications Toggle */}
+        {pushSupported && permission !== 'denied' && (
+          <button
+            onClick={isSubscribed ? unsubscribe : subscribe}
+            disabled={pushLoading}
+            title={isSubscribed ? 'Disable push notifications' : 'Enable push notifications'}
+            className={`p-2 rounded-full transition-colors ${
+              isSubscribed
+                ? 'text-white hover:bg-white/10'
+                : 'text-white/50 hover:text-white hover:bg-white/10'
+            }`}
+          >
+            <BellRing className="w-5 h-5" />
+          </button>
+        )}
+
         {/* Help */}
         <button className="p-2 text-white/80 hover:text-white hover:bg-white/10 rounded-full transition-colors">
           <HelpCircle className="w-5 h-5" />

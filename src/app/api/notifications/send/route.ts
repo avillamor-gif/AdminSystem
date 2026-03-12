@@ -3,6 +3,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
 import { resend, FROM_ADDRESS } from '@/lib/resend'
 import { newLeaveRequestEmail, newGenericRequestEmail } from '@/lib/emailTemplates'
+import { sendPushToUsers } from '@/lib/webpush'
 
 type AdminClient = ReturnType<typeof createAdminClient>
 
@@ -182,6 +183,13 @@ export async function POST(req: NextRequest) {
       console.error('[notifications/send] Insert error:', insertErr)
       return NextResponse.json({ error: insertErr.message }, { status: 500 })
     }
+
+    // ── Fire-and-forget push notifications ───────────────────────────────────
+    sendPushToUsers([...recipientUserIds], {
+      title: title.replace('{name}', name),
+      body: message.replace('{name}', name),
+      url: '/admin/leave-management',
+    }).catch(() => {})
 
     // ── Fire-and-forget emails to recipients who have an email address ──────
     if (process.env.RESEND_API_KEY) {
