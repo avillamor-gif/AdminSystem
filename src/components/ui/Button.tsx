@@ -32,6 +32,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
           sizes[size],
           className
         )}
+        type={props.type ?? 'button'}
         disabled={disabled || loading}
         {...props}
       >

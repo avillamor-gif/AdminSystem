@@ -263,7 +263,7 @@ export default function ReportsPage() {
           <p className="text-gray-600">Analytics and insights for asset management</p>
         </div>
         <div className="flex gap-2">
-          <Button variant="secondary" onClick={openPrintModal}>
+          <Button type="button" variant="secondary" onClick={openPrintModal}>
             <Printer className="h-4 w-4 mr-2" />
             Print
           </Button>
@@ -271,7 +271,7 @@ export default function ReportsPage() {
             <option value="csv">CSV</option>
             <option value="pdf">PDF</option>
           </Select>
-          <Button onClick={handleExport}>
+          <Button type="button" onClick={handleExport}>
             <Download className="h-4 w-4 mr-2" />
             Export
           </Button>

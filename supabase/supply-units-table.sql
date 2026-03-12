@@ -18,8 +18,8 @@ CREATE INDEX IF NOT EXISTS idx_supply_units_name ON supply_units(name);
 ALTER TABLE supply_units ENABLE ROW LEVEL SECURITY;
 
 -- Policy: allow all authenticated users (same as other supply tables)
-CREATE POLICY "Allow authenticated users full access on supply_units"
-  ON supply_units FOR ALL TO authenticated USING (true) WITH CHECK (true);
+-- CREATE POLICY "Allow authenticated users full access on supply_units"
+--   ON supply_units FOR ALL TO authenticated USING (true) WITH CHECK (true);
 
 -- Seed common units
 INSERT INTO supply_units (name, abbreviation, description) VALUES
