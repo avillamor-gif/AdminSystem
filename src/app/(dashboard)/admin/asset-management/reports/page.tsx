@@ -4,7 +4,6 @@ import { useState, useMemo, useRef } from 'react'
 import { useAssets, useAssetAssignments, useAssetMaintenance } from '@/hooks/useAssets'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
-import { Select } from '@/components/ui/Select'
 import { Modal, ModalHeader, ModalBody, ModalFooter } from '@/components/ui/Modal'
 import { Package, TrendingUp, DollarSign, Wrench, Users, BarChart3, PieChart, Download, Printer, CheckSquare, Square } from 'lucide-react'
 
@@ -25,7 +24,6 @@ const PRINTABLE_FIELDS = [
 
 export default function ReportsPage() {
   const [dateRange, setDateRange] = useState('30') // days
-  const [exportFormat, setExportFormat] = useState<'csv' | 'pdf'>('csv')
   const [showPrintModal, setShowPrintModal] = useState(false)
   const [selectedCategories, setSelectedCategories] = useState<Set<string>>(new Set())
   const [selectedFields, setSelectedFields] = useState<Set<string>>(new Set(PRINTABLE_FIELDS.map(f => f.key)))
@@ -228,31 +226,70 @@ export default function ReportsPage() {
     setShowPrintModal(false)
   }
 
+  const [showExportModal, setShowExportModal] = useState(false)
+  const [exportSelectedCategories, setExportSelectedCategories] = useState<Set<string>>(new Set())
+  const [exportSelectedFields, setExportSelectedFields] = useState<Set<string>>(new Set(PRINTABLE_FIELDS.map(f => f.key)))
+
+  const openExportModal = () => {
+    setExportSelectedCategories(new Set(assetsByCategory.map(c => c.name)))
+    setExportSelectedFields(new Set(PRINTABLE_FIELDS.map(f => f.key)))
+    setShowExportModal(true)
+  }
+
+  const toggleExportCategory = (name: string) => {
+    setExportSelectedCategories(prev => {
+      const next = new Set(prev)
+      next.has(name) ? next.delete(name) : next.add(name)
+      return next
+    })
+  }
+
+  const toggleExportField = (key: string) => {
+    setExportSelectedFields(prev => {
+      const next = new Set(prev)
+      next.has(key) ? next.delete(key) : next.add(key)
+      return next
+    })
+  }
+
   const handleExport = () => {
-    if (exportFormat === 'csv') {
-      // Simple CSV export
-      const headers = ['Asset Tag', 'Name', 'Category', 'Status', 'Condition', 'Value', 'Location']
-      const rows = assets.map(asset => [
-        asset.asset_tag,
-        asset.name,
-        asset.category?.name || '',
-        asset.status,
-        asset.condition || '',
-        asset.purchase_price || 0,
-        asset.location || ''
-      ])
-      
-      const csv = [headers, ...rows].map(row => row.join(',')).join('\n')
-      const blob = new Blob([csv], { type: 'text/csv' })
-      const url = window.URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.href = url
-      a.download = `asset-report-${new Date().toISOString().split('T')[0]}.csv`
-      a.click()
-    } else {
-      // PDF export would require a library like jsPDF
-      alert('PDF export functionality would be implemented with a library like jsPDF')
-    }
+    const filteredAssets = assets.filter(a => {
+      const cat = a.category?.name || 'Uncategorized'
+      return exportSelectedCategories.has(cat)
+    })
+
+    const fields = PRINTABLE_FIELDS.filter(f => exportSelectedFields.has(f.key))
+
+    const headers = fields.map(f => f.label)
+    const rows = filteredAssets.map(asset => fields.map(f => {
+      switch (f.key) {
+        case 'asset_tag':      return asset.asset_tag ?? ''
+        case 'name':           return asset.name ?? ''
+        case 'category':       return asset.category?.name ?? ''
+        case 'brand':          return [asset.brand?.name, asset.model].filter(Boolean).join(' / ')
+        case 'status':         return asset.status ?? ''
+        case 'condition':      return asset.condition ?? ''
+        case 'assigned_to':    return asset.employee ? `${asset.employee.first_name} ${asset.employee.last_name}` : ''
+        case 'location':       return asset.location ?? ''
+        case 'purchase_price': return asset.purchase_price != null ? String(asset.purchase_price) : ''
+        case 'purchase_date':  return asset.purchase_date ? new Date(asset.purchase_date).toLocaleDateString() : ''
+        case 'warranty_end':   return asset.warranty_end_date ? new Date(asset.warranty_end_date).toLocaleDateString() : ''
+        case 'serial_number':  return asset.serial_number ?? ''
+        default:               return ''
+      }
+    }))
+
+    const csv = [headers, ...rows]
+      .map(row => row.map(v => `"${String(v).replace(/"/g, '""')}"`).join(','))
+      .join('\n')
+    const blob = new Blob([csv], { type: 'text/csv' })
+    const url = window.URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `asset-report-${new Date().toISOString().split('T')[0]}.csv`
+    a.click()
+    window.URL.revokeObjectURL(url)
+    setShowExportModal(false)
   }
 
   return (
@@ -267,13 +304,9 @@ export default function ReportsPage() {
             <Printer className="h-4 w-4 mr-2" />
             Print
           </Button>
-          <Select value={exportFormat} onChange={(e) => setExportFormat(e.target.value as 'csv' | 'pdf')}>
-            <option value="csv">CSV</option>
-            <option value="pdf">PDF</option>
-          </Select>
-          <Button type="button" onClick={handleExport}>
+          <Button type="button" onClick={openExportModal}>
             <Download className="h-4 w-4 mr-2" />
-            Export
+            Export CSV
           </Button>
         </div>
       </div>
@@ -597,6 +630,88 @@ export default function ReportsPage() {
             >
               <Printer className="h-4 w-4 mr-2" />
               Print
+            </Button>
+          </ModalFooter>
+        </Modal>
+      )}
+      {/* Export Selection Modal */}
+      {showExportModal && (
+        <Modal open={showExportModal} onClose={() => setShowExportModal(false)} size="lg">
+          <ModalHeader>
+            <div className="flex items-center gap-2">
+              <Download className="h-5 w-5 text-gray-600" />
+              <span>Export CSV</span>
+            </div>
+          </ModalHeader>
+          <ModalBody>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Categories */}
+              <div>
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">Categories</h3>
+                  <div className="flex gap-2 text-xs">
+                    <button className="text-indigo-600 hover:underline" onClick={() => setExportSelectedCategories(new Set(assetsByCategory.map(c => c.name)))}>Select all</button>
+                    <span className="text-gray-300">|</span>
+                    <button className="text-gray-500 hover:underline" onClick={() => setExportSelectedCategories(new Set())}>Clear</button>
+                  </div>
+                </div>
+                <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
+                  {assetsByCategory.map(cat => (
+                    <label key={cat.name} className="flex items-center gap-2 cursor-pointer group">
+                      <span className="text-indigo-600">
+                        {exportSelectedCategories.has(cat.name)
+                          ? <CheckSquare className="h-4 w-4" />
+                          : <Square className="h-4 w-4 text-gray-400 group-hover:text-indigo-400" />}
+                      </span>
+                      <input type="checkbox" className="sr-only" checked={exportSelectedCategories.has(cat.name)} onChange={() => toggleExportCategory(cat.name)} />
+                      <span className="text-sm text-gray-800">{cat.name}</span>
+                      <span className="ml-auto text-xs text-gray-400">{cat.count}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              {/* Fields */}
+              <div>
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">Fields</h3>
+                  <div className="flex gap-2 text-xs">
+                    <button className="text-indigo-600 hover:underline" onClick={() => setExportSelectedFields(new Set(PRINTABLE_FIELDS.map(f => f.key)))}>Select all</button>
+                    <span className="text-gray-300">|</span>
+                    <button className="text-gray-500 hover:underline" onClick={() => setExportSelectedFields(new Set())}>Clear</button>
+                  </div>
+                </div>
+                <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
+                  {PRINTABLE_FIELDS.map(field => (
+                    <label key={field.key} className="flex items-center gap-2 cursor-pointer group">
+                      <span className="text-indigo-600">
+                        {exportSelectedFields.has(field.key)
+                          ? <CheckSquare className="h-4 w-4" />
+                          : <Square className="h-4 w-4 text-gray-400 group-hover:text-indigo-400" />}
+                      </span>
+                      <input type="checkbox" className="sr-only" checked={exportSelectedFields.has(field.key)} onChange={() => toggleExportField(field.key)} />
+                      <span className="text-sm text-gray-800">{field.label}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-4 p-3 bg-gray-50 rounded-lg text-sm text-gray-600">
+              <strong>{[...exportSelectedCategories].reduce((sum, cat) => {
+                const c = assetsByCategory.find(x => x.name === cat)
+                return sum + (c?.count ?? 0)
+              }, 0)}</strong> assets will be exported across <strong>{exportSelectedCategories.size}</strong> categor{exportSelectedCategories.size === 1 ? 'y' : 'ies'} with <strong>{exportSelectedFields.size}</strong> field{exportSelectedFields.size === 1 ? '' : 's'}.
+            </div>
+          </ModalBody>
+          <ModalFooter>
+            <Button variant="secondary" onClick={() => setShowExportModal(false)}>Cancel</Button>
+            <Button
+              onClick={handleExport}
+              disabled={exportSelectedCategories.size === 0 || exportSelectedFields.size === 0}
+            >
+              <Download className="h-4 w-4 mr-2" />
+              Download CSV
             </Button>
           </ModalFooter>
         </Modal>
