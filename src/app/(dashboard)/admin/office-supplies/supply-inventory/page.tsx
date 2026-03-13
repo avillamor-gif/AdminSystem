@@ -70,7 +70,18 @@ export default function SupplyInventoryPage() {
     e.preventDefault()
     if (!form.name.trim()) { toast.error('Name is required'); return }
     const supabase = createClient()
-    const payload = { ...form, category_id: form.category_id || null, vendor_id: form.vendor_id || null, brand_id: (form as any).brand_id || null, location_id: (form as any).location_id || null, updated_at: new Date().toISOString() }
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { pieces_per_unit: _ppu, ...formRest } = form as any
+    const payload: Record<string, any> = {
+      ...formRest,
+      category_id: form.category_id || null,
+      vendor_id: form.vendor_id || null,
+      brand_id: (form as any).brand_id || null,
+      location_id: (form as any).location_id || null,
+      updated_at: new Date().toISOString(),
+    }
+    // pieces_per_unit column — only include when a value is set (column may not exist yet)
+    if (_ppu != null) payload.pieces_per_unit = _ppu
     if (selected) {
       const { error } = await supabase.from('supply_items').update(payload).eq('id', selected.id)
       if (error) { toast.error(error.message); return }
