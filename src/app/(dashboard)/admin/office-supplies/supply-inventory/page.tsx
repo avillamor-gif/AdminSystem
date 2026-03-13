@@ -13,7 +13,7 @@ interface SupplyLocation { id: string; name: string }
 interface SupplyUnit { id: string; name: string; abbreviation: string | null }
 interface Item {
   id: string; name: string; description: string | null; category_id: string | null
-  unit: string | null; pieces_per_unit: number | null; unit_cost: number | null; quantity_on_hand: number | null; reorder_point: number | null
+  unit: string | null; pieces_per_unit?: number | null; unit_cost: number | null; quantity_on_hand: number | null; reorder_point: number | null
   max_stock: number | null; location: string | null; location_id: string | null; vendor_id: string | null
   brand_id: string | null; is_active: boolean | null; notes: string | null
   category?: Category; vendor?: Vendor; brand?: Brand; supplyLocation?: SupplyLocation
