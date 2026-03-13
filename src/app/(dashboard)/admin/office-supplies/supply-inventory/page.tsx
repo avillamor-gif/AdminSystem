@@ -13,13 +13,16 @@ interface SupplyLocation { id: string; name: string }
 interface SupplyUnit { id: string; name: string; abbreviation: string | null }
 interface Item {
   id: string; name: string; description: string | null; category_id: string | null
-  unit: string | null; unit_cost: number | null; quantity_on_hand: number | null; reorder_point: number | null
+  unit: string | null; pieces_per_unit: number | null; unit_cost: number | null; quantity_on_hand: number | null; reorder_point: number | null
   max_stock: number | null; location: string | null; location_id: string | null; vendor_id: string | null
   brand_id: string | null; is_active: boolean | null; notes: string | null
   category?: Category; vendor?: Vendor; brand?: Brand; supplyLocation?: SupplyLocation
 }
 
-const empty = { name: '', description: '', category_id: '', brand_id: '', unit: 'piece', unit_cost: 0, quantity_on_hand: 0, reorder_point: 5, max_stock: 100, location_id: '', vendor_id: '', is_active: true, notes: '' }
+const empty = { name: '', description: '', category_id: '', brand_id: '', unit: 'piece', pieces_per_unit: null as number | null, unit_cost: 0, quantity_on_hand: 0, reorder_point: 5, max_stock: 100, location_id: '', vendor_id: '', is_active: true, notes: '' }
+
+// Units that are containers/bundles and should show a "pieces per unit" field
+const BUNDLE_UNITS = ['box', 'pack', 'ream', 'roll', 'set', 'bundle', 'carton', 'case', 'bag', 'dozen']
 
 export default function SupplyInventoryPage() {
   const [items, setItems] = useState<Item[]>([])
@@ -61,7 +64,7 @@ export default function SupplyInventoryPage() {
   useEffect(() => { load() }, [])
 
   const openCreate = () => { setSelected(null); setForm(empty); setModalOpen(true) }
-  const openEdit = (i: Item) => { setSelected(i); setForm({ name: i.name, description: i.description ?? '', category_id: i.category_id ?? '', brand_id: i.brand_id ?? '', unit: i.unit ?? 'piece', unit_cost: i.unit_cost ?? 0, quantity_on_hand: i.quantity_on_hand ?? 0, reorder_point: i.reorder_point ?? 5, max_stock: i.max_stock ?? 100, location_id: i.location_id ?? '', vendor_id: i.vendor_id ?? '', is_active: i.is_active ?? true, notes: i.notes ?? '' }); setModalOpen(true) }
+  const openEdit = (i: Item) => { setSelected(i); setForm({ name: i.name, description: i.description ?? '', category_id: i.category_id ?? '', brand_id: i.brand_id ?? '', unit: i.unit ?? 'piece', pieces_per_unit: i.pieces_per_unit ?? null, unit_cost: i.unit_cost ?? 0, quantity_on_hand: i.quantity_on_hand ?? 0, reorder_point: i.reorder_point ?? 5, max_stock: i.max_stock ?? 100, location_id: i.location_id ?? '', vendor_id: i.vendor_id ?? '', is_active: i.is_active ?? true, notes: i.notes ?? '' }); setModalOpen(true) }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -167,8 +170,9 @@ export default function SupplyInventoryPage() {
                   <option value="">-- None --</option>{brands.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
                 </select>
               </div>
-              <div><label className="block text-sm font-medium text-gray-700 mb-1">Unit</label>
-                <select value={form.unit} onChange={e => set('unit', e.target.value)} className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-orange-400">
+              <div className={BUNDLE_UNITS.includes((form.unit ?? '').toLowerCase()) ? '' : 'col-span-1'}>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Unit</label>
+                <select value={form.unit} onChange={e => { set('unit', e.target.value); if (!BUNDLE_UNITS.includes(e.target.value.toLowerCase())) set('pieces_per_unit', null) }} className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-orange-400">
                   <option value="">-- Select Unit --</option>
                   {units.length > 0
                     ? units.map(u => <option key={u.id} value={u.name.toLowerCase()}>{u.name}{u.abbreviation ? ` (${u.abbreviation})` : ''}</option>)
@@ -176,6 +180,21 @@ export default function SupplyInventoryPage() {
                   }
                 </select>
               </div>
+              {BUNDLE_UNITS.includes((form.unit ?? '').toLowerCase()) && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Pieces per {form.unit.charAt(0).toUpperCase() + form.unit.slice(1)}
+                  </label>
+                  <Input
+                    type="number"
+                    min={1}
+                    placeholder="e.g. 10"
+                    value={(form as any).pieces_per_unit ?? ''}
+                    onChange={e => set('pieces_per_unit', e.target.value ? Number(e.target.value) : null)}
+                  />
+                  <p className="text-xs text-gray-400 mt-1">How many individual pieces are in one {form.unit}?</p>
+                </div>
+              )}
               <div><label className="block text-sm font-medium text-gray-700 mb-1">Unit Cost (₱)</label><Input type="number" min={0} step="0.01" value={form.unit_cost} onChange={e => set('unit_cost', Number(e.target.value))} /></div>
               <div><label className="block text-sm font-medium text-gray-700 mb-1">Qty on Hand</label><Input type="number" min={0} value={form.quantity_on_hand} onChange={e => set('quantity_on_hand', Number(e.target.value))} /></div>
               <div><label className="block text-sm font-medium text-gray-700 mb-1">Reorder Point</label><Input type="number" min={0} value={form.reorder_point} onChange={e => set('reorder_point', Number(e.target.value))} /></div>
