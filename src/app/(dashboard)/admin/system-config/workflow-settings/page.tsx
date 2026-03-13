@@ -6,6 +6,7 @@ import { Card, CardHeader, CardTitle, CardContent, Button, Badge } from '@/compo
 import { useWorkflowConfigs, useUpdateWorkflowConfig } from '@/hooks/useWorkflowConfigs'
 import { ROLE_SLUG_LABELS, ALL_ROLE_SLUGS, type ApprovalStep, type WorkflowConfig } from '@/services/workflowConfig.service'
 import { cn } from '@/lib/utils'
+import toast from 'react-hot-toast'
 
 // ── Small helpers ──────────────────────────────────────────────────────────────
 
@@ -203,6 +204,13 @@ function WorkflowConfigCard({ config }: { config: WorkflowConfig }) {
     JSON.stringify(steps)          !== JSON.stringify(config.approval_steps)
 
   const handleSave = () => {
+    // Validate: all steps must have an approver_role set
+    const blankStep = steps.findIndex((s) => !s.approver_role || s.approver_role.trim() === '')
+    if (blankStep !== -1) {
+      toast.error(`Step ${blankStep + 1} has no approver role selected. Please choose a role or remove the step.`)
+      return
+    }
+
     updateMutation.mutate({
       id: config.id,
       updates: {
@@ -310,7 +318,7 @@ function WorkflowConfigCard({ config }: { config: WorkflowConfig }) {
               <GitBranch className="w-4 h-4 text-gray-500" />
               <h4 className="font-medium text-gray-900 text-sm">Approval Steps</h4>
               <span className="text-xs text-gray-500">
-                (defines ordered approver chain — used when multi-step approval is wired up)
+                (ordered approver chain — applied to all new requests of this type)
               </span>
             </div>
             <ApprovalStepsEditor steps={steps} onChange={setSteps} />
@@ -348,6 +356,7 @@ export default function WorkflowSettingsPage() {
         <h1 className="text-2xl font-bold text-gray-900">Workflow &amp; Notification Settings</h1>
         <p className="text-gray-600 mt-1">
           Configure who gets notified and the approval chain for each request type — no code changes needed.
+          Changes to <strong>Approval Steps</strong> take effect immediately for all new requests.
         </p>
       </div>
 

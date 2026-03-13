@@ -14,6 +14,21 @@ const ROLE_TO_STEP_LABEL: Record<string, string> = {
   'executive director': 'Executive Director',
 }
 
+/**
+ * Maps workflow_configs role slugs → approver_role labels used in
+ * leave_approval_workflows.workflow_steps and roleMatchesStep().
+ * Keep in sync with /api/admin/workflow-configs/route.ts.
+ */
+const SLUG_TO_APPROVER_ROLE: Record<string, string> = {
+  direct_manager:     'Manager',
+  hr:                 'HR',
+  admin:              'HR',
+  ed:                 'Executive Director',
+  finance_dept:       'Finance',
+  admin_dept:         'HR',
+  admin_dept_manager: 'Manager',
+}
+
 function roleMatchesStep(userRole: string, stepRole: string): boolean {
   const normalized = (userRole ?? '').toLowerCase()
   const stepNormalized = (stepRole ?? '').toLowerCase()
@@ -85,95 +100,114 @@ export async function POST(req: NextRequest) {
     // ── Workflow-aware approval ──────────────────────────────────────────────
     let finalStatus: string = action  // default: direct approve/reject
 
+    // Resolve workflow steps — prefer leave_approval_workflows (specific),
+    // fall back to workflow_configs 'leave' entry (managed by /workflow-settings page).
+    let workflowSteps: any[] | null = null
+    let isSequential = true
+
     if (lr.workflow_id) {
-      // Fetch the workflow definition
       const { data: workflow } = await admin
         .from('leave_approval_workflows')
         .select('workflow_steps, is_sequential')
         .eq('id', lr.workflow_id)
         .single()
 
-      const steps: any[] = workflow?.workflow_steps
-        ? (typeof workflow.workflow_steps === 'string'
-            ? JSON.parse(workflow.workflow_steps)
-            : workflow.workflow_steps)
-        : []
+      if (workflow?.workflow_steps) {
+        const raw = typeof workflow.workflow_steps === 'string'
+          ? JSON.parse(workflow.workflow_steps)
+          : workflow.workflow_steps
+        workflowSteps = (raw as any[]).filter((s: any) => (s.approver_role ?? '').trim() !== '')
+        isSequential = workflow.is_sequential ?? true
+      }
+    }
 
-      if (steps.length > 0) {
-        // Find the step this approver's role covers
-        const matchingStep = steps.find((s: any) =>
-          roleMatchesStep(approverRole.role ?? '', s.approver_role ?? '')
-        )
+    // Fallback: read from workflow_configs 'leave' approval_steps
+    if (!workflowSteps || workflowSteps.length === 0) {
+      const { data: wfConfig } = await admin
+        .from('workflow_configs')
+        .select('approval_steps')
+        .eq('request_type', 'leave')
+        .eq('is_active', true)
+        .maybeSingle()
 
-        if (!matchingStep) {
-          // Approver's role is not in the workflow — allow direct approval only for admin/super admin
-          const bypassRoles = ['admin', 'super admin']
-          if (!bypassRoles.includes((approverRole.role ?? '').toLowerCase())) {
-            return NextResponse.json({ error: 'Your role is not part of this approval workflow' }, { status: 403 })
-          }
-          // Admin bypass: falls through to direct approve below
+      if (Array.isArray(wfConfig?.approval_steps) && (wfConfig.approval_steps as any[]).length > 0) {
+        // Convert workflow_configs steps (level + slug) → decision route format (step_order + label)
+        workflowSteps = (wfConfig.approval_steps as any[])
+          .filter((s: any) => (s.approver_role ?? '').trim() !== '')
+          .map((s: any, i: number) => ({
+            step_order:    i + 1,
+            approver_role: SLUG_TO_APPROVER_ROLE[s.approver_role] ?? s.approver_role,
+            is_optional:   s.is_optional ?? false,
+          }))
+      }
+    }
+
+    if (workflowSteps && workflowSteps.length > 0) {
+      const steps = workflowSteps
+
+      // Find the step this approver's role covers
+      const matchingStep = steps.find((s: any) =>
+        roleMatchesStep(approverRole.role ?? '', s.approver_role ?? '')
+      )
+
+      if (!matchingStep) {
+        // Approver's role is not in the workflow — allow direct approval only for admin/super admin
+        const bypassRoles = ['admin', 'super admin']
+        if (!bypassRoles.includes((approverRole.role ?? '').toLowerCase())) {
+          return NextResponse.json({ error: 'Your role is not part of this approval workflow' }, { status: 403 })
+        }
+        // Admin bypass: falls through to direct approve below
+      } else {
+        const stepOrder: number = matchingStep.step_order ?? 1
+
+        if (action === 'rejected') {
+          // Rejection at any step immediately rejects the whole request
+          await admin
+            .from('leave_approvals')
+            .upsert({
+              leave_request_id,
+              step_number: stepOrder,
+              approver_role: matchingStep.approver_role,
+              approver_id: approverRole.employee_id,
+              status: 'rejected',
+              comments: comments ?? null,
+              approved_at: new Date().toISOString(),
+              is_optional: matchingStep.is_optional ?? false,
+            }, { onConflict: 'leave_request_id,step_number' })
+
+          finalStatus = 'rejected'
         } else {
-          const stepOrder: number = matchingStep.step_order ?? 1
+          // Mark this step as approved
+          await admin
+            .from('leave_approvals')
+            .upsert({
+              leave_request_id,
+              step_number: stepOrder,
+              approver_role: matchingStep.approver_role,
+              approver_id: approverRole.employee_id,
+              status: 'approved',
+              comments: comments ?? null,
+              approved_at: new Date().toISOString(),
+              is_optional: matchingStep.is_optional ?? false,
+            }, { onConflict: 'leave_request_id,step_number' })
 
-          if (action === 'rejected') {
-            // Rejection at any step immediately rejects the whole request
-            await admin
-              .from('leave_approvals')
-              .upsert({
-                leave_request_id,
-                step_number: stepOrder,
-                approver_role: matchingStep.approver_role,
-                approver_id: approverRole.employee_id,
-                status: 'rejected',
-                comments: comments ?? null,
-                approved_at: new Date().toISOString(),
-                is_optional: matchingStep.is_optional ?? false,
-              }, { onConflict: 'leave_request_id,step_number' })
+          // Check if all required steps are now approved
+          const { data: existingApprovals } = await admin
+            .from('leave_approvals')
+            .select('step_number, status, is_optional')
+            .eq('leave_request_id', leave_request_id)
 
-            finalStatus = 'rejected'
-          } else {
-            // Mark this step as approved
-            await admin
-              .from('leave_approvals')
-              .upsert({
-                leave_request_id,
-                step_number: stepOrder,
-                approver_role: matchingStep.approver_role,
-                approver_id: approverRole.employee_id,
-                status: 'approved',
-                comments: comments ?? null,
-                approved_at: new Date().toISOString(),
-                is_optional: matchingStep.is_optional ?? false,
-              }, { onConflict: 'leave_request_id,step_number' })
+          const approvedStepNums = new Set(
+            (existingApprovals ?? [])
+              .filter((a: any) => a.status === 'approved' || a.status === 'skipped')
+              .map((a: any) => a.step_number)
+          )
 
-            // Check if all required steps are now approved
-            const { data: existingApprovals } = await admin
-              .from('leave_approvals')
-              .select('step_number, status, is_optional')
-              .eq('leave_request_id', leave_request_id)
-
-            const approvedStepNums = new Set(
-              (existingApprovals ?? [])
-                .filter((a: any) => a.status === 'approved' || a.status === 'skipped')
-                .map((a: any) => a.step_number)
-            )
-
-            if (workflow?.is_sequential) {
-              // Sequential: every required step (in order up to the total) must be approved
-              const requiredSteps = steps.filter((s: any) => !s.is_optional)
-              const allRequiredDone = requiredSteps.every((s: any) =>
-                approvedStepNums.has(s.step_order ?? 1)
-              )
-              finalStatus = allRequiredDone ? 'approved' : 'pending'
-            } else {
-              // Parallel: all required steps must be approved (order doesn't matter)
-              const requiredSteps = steps.filter((s: any) => !s.is_optional)
-              const allRequiredDone = requiredSteps.every((s: any) =>
-                approvedStepNums.has(s.step_order ?? 1)
-              )
-              finalStatus = allRequiredDone ? 'approved' : 'pending'
-            }
-          }
+          const requiredSteps = steps.filter((s: any) => !s.is_optional)
+          const allRequiredDone = requiredSteps.every((s: any) =>
+            approvedStepNums.has(s.step_order ?? 1)
+          )
+          finalStatus = allRequiredDone ? 'approved' : 'pending'
         }
       }
     }
