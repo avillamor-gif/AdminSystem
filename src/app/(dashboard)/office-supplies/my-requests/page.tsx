@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react'
 import { Package, Clock, Ban } from 'lucide-react'
 import { Card, Badge, Button, Modal, ModalHeader, ModalBody, ModalFooter } from '@/components/ui'
 import { createClient } from '@/lib/supabase/client'
+import { notifySupervisorsAndAdmins } from '@/services/requestNotification.helper'
 import toast from 'react-hot-toast'
 
 interface Request {
@@ -65,13 +66,29 @@ export default function MySupplyRequestsPage() {
     if (!req) return
     setIsWithdrawing(true)
     try {
-      const supabase = createClient()
-      const { error } = await supabase
+      const supabaseClient = createClient()
+      const { data: { user } } = await supabaseClient.auth.getUser()
+      const empRes = user ? await supabaseClient.from('employees').select('id, first_name, last_name').eq('email', user.email!).single() : null
+      const { error } = await supabaseClient
         .from('supply_requests')
         .update({ status: 'cancelled' })
         .eq('id', req.id)
       if (error) throw error
       setRequests(prev => prev.map(r => r.id === req.id ? { ...r, status: 'cancelled' } : r))
+      // Notify admins that the request was cancelled by the employee
+      if (empRes?.data) {
+        const name = `${empRes.data.first_name} ${empRes.data.last_name}`
+        notifySupervisorsAndAdmins(
+          'supply_request_notifications',
+          empRes.data.id,
+          req.id,
+          'Supply Request Cancelled',
+          `{name} has cancelled their supply request for ${req.item_name} (${req.request_number}).`,
+          name,
+          req.request_number,
+          'admin_resources'
+        ).catch(() => {})
+      }
       toast.success('Request withdrawn successfully')
       setWithdrawModal({ open: false, req: null })
     } catch {

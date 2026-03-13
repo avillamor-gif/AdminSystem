@@ -218,17 +218,18 @@ export function useNotifications() {
 
     // ── Supply notifications (DB-driven) ──────────────────────────────────
     for (const notif of supplyNotifs) {
-      const isActionRequired = notif.type === 'new_request' || notif.type === 'pending_fulfillment'
-      if (isActionRequired && !isAdmin) continue
+      const isAdminFacing = notif.type === 'new_request' || notif.type === 'pending_fulfillment' || notif.type === 'cancelled'
+      if (isAdminFacing && !isAdmin) continue
       items.push({
         id: `supply-${notif.id}`,
         type: 'supply_request',
         title: notif.title,
         description: notif.message,
-        href: isActionRequired ? '/admin/office-supplies/supply-requests' : '/office-supplies/my-requests',
+        href: isAdminFacing ? '/admin/office-supplies/supply-requests' : '/office-supplies/my-requests',
         createdAt: notif.created_at,
-        urgency: notif.type === 'rejected' ? 'warning' : 'normal',
-        actionRequired: isActionRequired,
+        urgency: notif.type === 'rejected' || notif.type === 'cancelled' ? 'warning' : 'normal',
+        // Supply notifications are always click-to-dismiss (no hard action gate like leave approvals)
+        actionRequired: false,
       })
     }
 
