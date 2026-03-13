@@ -83,11 +83,11 @@ export default function SupplyInventoryPage() {
     // pieces_per_unit column — only include when a value is set (column may not exist yet)
     if (_ppu != null) payload.pieces_per_unit = _ppu
     if (selected) {
-      const { error } = await supabase.from('supply_items').update(payload).eq('id', selected.id)
+      const { error } = await supabase.from('supply_items').update(payload as any).eq('id', selected.id)
       if (error) { toast.error(error.message); return }
       toast.success('Item updated')
     } else {
-      const { error } = await supabase.from('supply_items').insert(payload)
+      const { error } = await supabase.from('supply_items').insert(payload as any)
       if (error) { toast.error(error.message); return }
       toast.success('Item added')
     }
