@@ -5,6 +5,7 @@ const officeSuppliesNavItems = [
   { label: 'Supply Requests', href: '/admin/office-supplies/supply-requests' },
   { label: 'Purchase Orders', href: '/admin/office-supplies/purchase-orders' },
   { label: 'Stock Levels', href: '/admin/office-supplies/stock-levels' },
+  { label: 'Reports', href: '/admin/office-supplies/reports' },
   { label: 'Setup', href: '/admin/office-supplies/setup' },
 ]
 
