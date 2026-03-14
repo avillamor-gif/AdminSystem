@@ -1,12 +1,11 @@
 const withPWA = require('next-pwa')({
   dest: 'public',
-  register: true,
+  register: false,
   skipWaiting: true,
-  disable: process.env.NODE_ENV === 'development', // only active in production
-  buildExcludes: [/middleware-manifest\.json$/],
+  disable: true,  // disable next-pwa — plain sw.js in public/ handles push
 })
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {}
 
-module.exports = withPWA(nextConfig)
+module.exports = nextConfig

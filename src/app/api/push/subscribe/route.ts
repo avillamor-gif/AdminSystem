@@ -14,12 +14,15 @@ export async function POST(req: NextRequest) {
     }
 
     const admin = createAdminClient()
-    const { error } = await admin.from('push_subscriptions' as any).upsert({
+    // Delete all previous subscriptions for this user first — prevents
+    // duplicate pushes when the user re-subscribes after clearing browser data
+    await admin.from('push_subscriptions' as any).delete().eq('user_id', user.id)
+    const { error } = await admin.from('push_subscriptions' as any).insert({
       user_id: user.id,
       endpoint,
       p256dh: keys.p256dh,
       auth: keys.auth,
-    }, { onConflict: 'user_id,endpoint' })
+    })
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
     return NextResponse.json({ ok: true })
