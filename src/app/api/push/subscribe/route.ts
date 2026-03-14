@@ -16,7 +16,11 @@ export async function POST(req: NextRequest) {
     const admin = createAdminClient()
     // Delete all previous subscriptions for this user first — prevents
     // duplicate pushes when the user re-subscribes after clearing browser data
-    await admin.from('push_subscriptions' as any).delete().eq('user_id', user.id)
+    const { count: deletedCount } = await admin
+      .from('push_subscriptions' as any)
+      .delete({ count: 'exact' })
+      .eq('user_id', user.id)
+    console.log('[push/subscribe] Deleted', deletedCount ?? 0, 'old subs for user', user.id)
     const { error } = await admin.from('push_subscriptions' as any).insert({
       user_id: user.id,
       endpoint,

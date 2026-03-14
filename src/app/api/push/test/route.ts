@@ -16,6 +16,9 @@ export async function POST() {
     .eq('user_id', user.id)
 
   console.log('[push/test] userId:', user.id, 'subs found:', subs?.length ?? 0)
+  if (subs && subs.length > 0) {
+    subs.forEach((s: any, i: number) => console.log(`  sub[${i}] id=${s.id} endpoint=...${s.endpoint.slice(-30)}`))
+  }
 
   if (!subs || subs.length === 0) {
     return NextResponse.json({

@@ -30,6 +30,14 @@ export async function sendPushToUsers(userIds: string[], payload: PushPayload) {
 
   if (!subs || subs.length === 0) return
 
+  // Deduplicate by endpoint — safety guard against duplicate rows in DB
+  const seen = new Set<string>()
+  const uniqueSubs = (subs as any[]).filter((s) => {
+    if (seen.has(s.endpoint)) return false
+    seen.add(s.endpoint)
+    return true
+  })
+
   const message = JSON.stringify({
     title: payload.title,
     body: payload.body,
@@ -40,7 +48,7 @@ export async function sendPushToUsers(userIds: string[], payload: PushPayload) {
   const staleIds: string[] = []
 
   await Promise.allSettled(
-    (subs as any[]).map(async (sub) => {
+    uniqueSubs.map(async (sub) => {
       try {
         await webpush.sendNotification(
           { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },
