@@ -13,23 +13,29 @@ export type PushPermission = 'default' | 'granted' | 'denied' | 'unsupported'
 
 /**
  * Wait for a SW registration to have an active worker.
- * Unlike navigator.serviceWorker.ready (which hangs if a SW is stuck in
- * installing/waiting state), this resolves as soon as a worker is activated,
- * or rejects with a clear message after 20 seconds.
+ * Handles the skipWaiting scenario: when a new SW installs and immediately
+ * claims the page (goes installing → activated → redundant on the old ref),
+ * we re-check reg.active rather than rejecting.
+ * Falls back to navigator.serviceWorker.ready with a 25s timeout.
  */
 function waitForActiveSW(reg: ServiceWorkerRegistration): Promise<ServiceWorkerRegistration> {
+  // Already active — done immediately
   if (reg.active) return Promise.resolve(reg)
 
   return new Promise((resolve, reject) => {
     const worker = reg.installing ?? reg.waiting
-    if (!worker) { reject(new Error('No SW worker found in registration')); return }
+    if (!worker) {
+      // No worker at all — fall back to the browser's ready promise with timeout
+      const t = setTimeout(() => reject(new Error('SW not found and ready timed out')), 25000)
+      navigator.serviceWorker.ready.then((r) => { clearTimeout(t); resolve(r) })
+      return
+    }
 
     const timeout = setTimeout(() => {
-      reject(new Error(
-        `SW took too long to activate (state: ${worker.state}). ` +
-        `Try closing ALL tabs of this app then reopening.`
-      ))
-    }, 20000)
+      // Last chance: if reg.active is now set (skipWaiting completed), use it
+      if (reg.active) { resolve(reg); return }
+      reject(new Error(`SW activation timed out (state: ${worker.state}). Close all tabs of this app and try again.`))
+    }, 25000)
 
     worker.addEventListener('statechange', function onStateChange() {
       if (worker.state === 'activated') {
@@ -37,9 +43,19 @@ function waitForActiveSW(reg: ServiceWorkerRegistration): Promise<ServiceWorkerR
         worker.removeEventListener('statechange', onStateChange)
         resolve(reg)
       } else if (worker.state === 'redundant') {
+        // skipWaiting caused the installing SW to become redundant while a
+        // newer version took over as active — reg.active is now the live SW
         clearTimeout(timeout)
         worker.removeEventListener('statechange', onStateChange)
-        reject(new Error('SW became redundant — another SW took over. Please reload.'))
+        if (reg.active) {
+          resolve(reg)
+        } else {
+          // Race: give the browser 500ms to update reg.active then check again
+          setTimeout(() => {
+            if (reg.active) resolve(reg)
+            else reject(new Error('SW became redundant and no active SW found. Please reload.'))
+          }, 500)
+        }
       }
     })
   })
