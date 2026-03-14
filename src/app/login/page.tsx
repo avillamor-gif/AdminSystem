@@ -44,47 +44,24 @@ async function isBiometricAvailable(): Promise<boolean> {
   }
 }
 
-function str2ab(str: string): ArrayBuffer {
-  return Uint8Array.from(str, c => c.charCodeAt(0)).buffer
-}
-
-function ab2b64(buf: ArrayBuffer): string {
-  return btoa(String.fromCharCode(...new Uint8Array(buf)))
-}
-
-// We use a "fake" WebAuthn registration just to trigger Face ID / fingerprint.
-// On success we trust the device and log in with the stored credentials.
+// Trigger the platform authenticator (fingerprint / face / pattern) using get().
+// We never call create() — allowCredentials:[] means the browser asks the platform
+// authenticator directly without needing a pre-registered credential ID.
 async function triggerBiometric(): Promise<boolean> {
   try {
     const challenge = crypto.getRandomValues(new Uint8Array(32))
-    const credential = await navigator.credentials.create({
+    const assertion = await navigator.credentials.get({
       publicKey: {
         challenge,
-        rp: { name: 'IBON Admin', id: window.location.hostname },
-        user: { id: str2ab('ibon-biometric-user'), name: 'biometric', displayName: 'Biometric User' },
-        pubKeyCredParams: [{ type: 'public-key', alg: -7 }, { type: 'public-key', alg: -257 }],
-        authenticatorSelection: { authenticatorAttachment: 'platform', userVerification: 'required' },
+        userVerification: 'required',
         timeout: 60000,
+        rpId: window.location.hostname,
+        allowCredentials: [],
       },
     }) as PublicKeyCredential | null
-    return !!credential
+    return !!assertion
   } catch {
-    // create() fails if already registered — try get() instead
-    try {
-      const challenge = crypto.getRandomValues(new Uint8Array(32))
-      const assertion = await navigator.credentials.get({
-        publicKey: {
-          challenge,
-          userVerification: 'required',
-          timeout: 60000,
-          rpId: window.location.hostname,
-          allowCredentials: [],
-        },
-      }) as PublicKeyCredential | null
-      return !!assertion
-    } catch {
-      return false
-    }
+    return false
   }
 }
 
