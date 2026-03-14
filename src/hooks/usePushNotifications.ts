@@ -12,27 +12,36 @@ function urlBase64ToUint8Array(base64String: string) {
 export type PushPermission = 'default' | 'granted' | 'denied' | 'unsupported'
 
 /**
- * Wait for any active service worker on scope '/'.
- * Uses navigator.serviceWorker.ready which resolves as soon as there is an
- * active+controlling SW — works correctly with skipWaiting because after
- * skipWaiting the new SW calls clients.claim() and ready resolves immediately.
- * We add a hard 30s timeout so it never hangs forever.
+ * Poll for an active SW on the registration every 250ms for up to 30s.
+ * This is more reliable on mobile than navigator.serviceWorker.ready which
+ * requires the SW to be BOTH active AND controlling the current page —
+ * on a fresh load after clearing history the page isn't "controlled" yet
+ * even though the SW is active and perfectly capable of handling push.
  */
-function waitForActiveSW(_reg: ServiceWorkerRegistration): Promise<ServiceWorkerRegistration> {
-  return new Promise((resolve, reject) => {
-    const timeout = setTimeout(() => {
-      reject(new Error('SW activation timed out after 30s. Close all tabs of this app and try again.'))
-    }, 30000)
+function waitForActiveSW(reg: ServiceWorkerRegistration): Promise<ServiceWorkerRegistration> {
+  // Already active — resolve immediately
+  if (reg.active) return Promise.resolve(reg)
 
-    // navigator.serviceWorker.ready resolves with the active registration
-    // once skipWaiting + clients.claim() complete — this is the correct API
-    navigator.serviceWorker.ready.then((activeReg) => {
-      clearTimeout(timeout)
-      resolve(activeReg)
-    }).catch((err) => {
-      clearTimeout(timeout)
-      reject(err)
-    })
+  return new Promise((resolve, reject) => {
+    const deadline = Date.now() + 30000
+    const interval = setInterval(async () => {
+      // Re-fetch the registration each tick so we get the latest state
+      const latest = await navigator.serviceWorker.getRegistration('/').catch(() => null)
+      const active = latest?.active ?? reg.active
+      if (active) {
+        clearInterval(interval)
+        resolve(latest ?? reg)
+        return
+      }
+      if (Date.now() > deadline) {
+        clearInterval(interval)
+        const r = latest ?? reg
+        reject(new Error(
+          `SW not active after 30s (installing:${!!r.installing} waiting:${!!r.waiting}). ` +
+          `Try reloading the page once then subscribing again.`
+        ))
+      }
+    }, 250)
   })
 }
 
@@ -72,7 +81,7 @@ export function usePushNotifications() {
         reg = await navigator.serviceWorker.register('/sw.js', { scope: '/' })
       }
 
-      alert(`SW state — active: ${!!reg.active}  installing: ${!!reg.installing}  waiting: ${!!reg.waiting} — waiting for ready...`)
+      alert(`SW state — active: ${!!reg.active}  installing: ${!!reg.installing}  waiting: ${!!reg.waiting} — polling until active...`)
 
       // Wait for the SW to be fully active (handles skipWaiting + clientsClaim)
       const activeReg = await waitForActiveSW(reg)
