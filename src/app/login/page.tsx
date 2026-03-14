@@ -432,9 +432,9 @@ function LoginContent() {
         )}
 
         <p className="text-center text-gray-300 text-xs mt-8">IBON International · Admin System v1.0</p>
-        </div> {/* end white card */}
-      </div> {/* end mobile flex-col */}
-    </div> {/* end root */}
+        </div>
+      </div>
+    </div>
   )
 }
 
