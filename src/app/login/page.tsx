@@ -283,7 +283,7 @@ function LoginContent() {
 
         {/* Top orange section */}
         <div className="flex flex-col items-center justify-center px-6 pt-8 pb-6 min-h-[38vh]">
-          <div className="w-24 h-24 rounded-3xl overflow-hidden shadow-2xl mb-3 border-4 border-white/30">
+          <div className="w-24 h-24 rounded-3xl overflow-hidden shadow-2xl mb-3 bg-white p-2">
             <Image src="/icons/icon-192x192.png" alt="IBON" width={96} height={96} className="w-full h-full object-cover" priority />
           </div>
           <h1 className="text-3xl font-bold text-white tracking-tight">IBON International</h1>
@@ -291,7 +291,7 @@ function LoginContent() {
         </div>
 
         {/* Bottom white card */}
-        <div className="flex-1 bg-white rounded-t-3xl shadow-2xl px-6 pt-8 pb-10 w-full max-w-lg mx-auto">
+        <div className="flex-1 bg-white rounded-t-3xl shadow-2xl px-6 pt-8 pb-10 w-full">
 
         {/* Session timeout banner */}
         {timedOut && (
