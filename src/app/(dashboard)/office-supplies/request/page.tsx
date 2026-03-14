@@ -1,7 +1,7 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
-import { CheckCircle } from 'lucide-react'
+import React, { useState, useEffect, useRef } from 'react'
+import { CheckCircle, Search, X, ChevronDown } from 'lucide-react'
 import { Card, Button } from '@/components/ui'
 import { createClient } from '@/lib/supabase/client'
 import { notifySupervisorsAndAdmins } from '@/services/requestNotification.helper'
@@ -23,6 +23,11 @@ export default function RequestSuppliesPage() {
   const [lastReqNum, setLastReqNum] = useState('')
   const set = (f: string, v: any) => setForm(p => ({ ...p, [f]: v }))
 
+  // Supply item searchable combobox
+  const [itemSearch, setItemSearch] = useState('')
+  const [itemOpen, setItemOpen] = useState(false)
+  const itemRef = useRef<HTMLDivElement>(null)
+
   const { data: currentEmployee } = useCurrentEmployee()
   const employeeName = currentEmployee
     ? `${currentEmployee.first_name} ${currentEmployee.last_name}`
@@ -41,7 +46,39 @@ export default function RequestSuppliesPage() {
     load()
   }, [])
 
+  // Close dropdown on outside click
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (itemRef.current && !itemRef.current.contains(e.target as Node)) {
+        setItemOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClick)
+    return () => document.removeEventListener('mousedown', handleClick)
+  }, [])
+
   const selectedItem = items.find(i => i.id === form.item_id)
+
+  // Sync search label when item is selected
+  useEffect(() => {
+    if (selectedItem) setItemSearch(selectedItem.name)
+  }, [selectedItem?.id])
+
+  const filteredItems = items.filter(i => {
+    const q = itemSearch.toLowerCase()
+    const cat = categories.find(c => c.id === i.category_id)
+    return (
+      i.name.toLowerCase().includes(q) ||
+      cat?.name.toLowerCase().includes(q)
+    )
+  })
+
+  function selectItem(i: Item) {
+    set('item_id', i.id)
+    set('item_name', '')
+    setItemSearch(i.name)
+    setItemOpen(false)
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -88,6 +125,7 @@ export default function RequestSuppliesPage() {
     }
     setLastReqNum(reqNum)
     setForm(empty)
+    setItemSearch('')
     setSubmitting(false)
     setSubmitted(true)
   }
@@ -125,53 +163,54 @@ export default function RequestSuppliesPage() {
                   className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-lg bg-gray-100 text-gray-500 cursor-not-allowed"
                 />
               </div>
-              <div>
+              <div ref={itemRef} className="relative">
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">
                   Supply Item <span className="text-red-500">*</span>
                 </label>
-                <select
-                  value={form.item_id}
-                  onChange={e => set('item_id', e.target.value)}
-                  className="w-full px-3 py-2.5 text-sm border border-gray-300 rounded-lg bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                >
-                  <option value="">-- Select a supply item --</option>
-                  {categories.map(cat => {
-                    const catItems = items.filter(i => i.category_id === cat.id)
-                    if (!catItems.length) return null
-                    return (
-                      <optgroup key={cat.id} label={cat.name}>
-                        {catItems.map(i => (
-                          <option key={i.id} value={i.id}>
-                            {i.name} ({i.quantity_on_hand} {i.unit} available)
-                          </option>
-                        ))}
-                      </optgroup>
-                    )
-                  })}
-                  {items.filter(i => !i.category_id).map(i => (
-                    <option key={i.id} value={i.id}>
-                      {i.name} ({i.quantity_on_hand} {i.unit} available)
-                    </option>
-                  ))}
-                </select>
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                  <input
+                    type="text"
+                    value={itemSearch}
+                    onChange={e => { setItemSearch(e.target.value); setItemOpen(true); if (!e.target.value) set('item_id', '') }}
+                    onFocus={() => setItemOpen(true)}
+                    placeholder="Search by name or category..."
+                    className="w-full pl-9 pr-9 py-2.5 text-sm border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                  />
+                  {itemSearch ? (
+                    <button type="button" onClick={() => { setItemSearch(''); set('item_id', ''); setItemOpen(true) }} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                      <X className="w-4 h-4" />
+                    </button>
+                  ) : (
+                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                  )}
+                </div>
+                {itemOpen && (
+                  <div className="absolute z-20 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                    {filteredItems.length === 0 ? (
+                      <div className="px-4 py-3 text-sm text-gray-400">No items found</div>
+                    ) : filteredItems.map(i => {
+                      const cat = categories.find(c => c.id === i.category_id)
+                      return (
+                        <button
+                          key={i.id}
+                          type="button"
+                          onClick={() => selectItem(i)}
+                          className={`w-full text-left px-4 py-2.5 text-sm hover:bg-orange-50 flex items-center justify-between gap-2 ${
+                            form.item_id === i.id ? 'bg-orange-50 font-medium text-orange-700' : 'text-gray-800'
+                          }`}
+                        >
+                          <span>{i.name}</span>
+                          <span className="text-xs text-gray-400 shrink-0">
+                            {[cat?.name, `${i.quantity_on_hand} ${i.unit ?? ''} available`.trim()].filter(Boolean).join(' · ')}
+                          </span>
+                        </button>
+                      )
+                    })}
+                  </div>
+                )}
               </div>
             </div>
-
-            {/* Manual item entry when nothing selected */}
-            {!form.item_id && (
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                  Or enter item name manually
-                </label>
-                <input
-                  type="text"
-                  value={form.item_name}
-                  onChange={e => set('item_name', e.target.value)}
-                  placeholder="Can't find the item? Type it here..."
-                  className="w-full px-3 py-2.5 text-sm border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                />
-              </div>
-            )}
 
             {/* Selected item details */}
             {selectedItem && (
