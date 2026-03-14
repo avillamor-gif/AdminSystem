@@ -12,51 +12,26 @@ function urlBase64ToUint8Array(base64String: string) {
 export type PushPermission = 'default' | 'granted' | 'denied' | 'unsupported'
 
 /**
- * Wait for a SW registration to have an active worker.
- * Handles the skipWaiting scenario: when a new SW installs and immediately
- * claims the page (goes installing → activated → redundant on the old ref),
- * we re-check reg.active rather than rejecting.
- * Falls back to navigator.serviceWorker.ready with a 25s timeout.
+ * Wait for any active service worker on scope '/'.
+ * Uses navigator.serviceWorker.ready which resolves as soon as there is an
+ * active+controlling SW — works correctly with skipWaiting because after
+ * skipWaiting the new SW calls clients.claim() and ready resolves immediately.
+ * We add a hard 30s timeout so it never hangs forever.
  */
-function waitForActiveSW(reg: ServiceWorkerRegistration): Promise<ServiceWorkerRegistration> {
-  // Already active — done immediately
-  if (reg.active) return Promise.resolve(reg)
-
+function waitForActiveSW(_reg: ServiceWorkerRegistration): Promise<ServiceWorkerRegistration> {
   return new Promise((resolve, reject) => {
-    const worker = reg.installing ?? reg.waiting
-    if (!worker) {
-      // No worker at all — fall back to the browser's ready promise with timeout
-      const t = setTimeout(() => reject(new Error('SW not found and ready timed out')), 25000)
-      navigator.serviceWorker.ready.then((r) => { clearTimeout(t); resolve(r) })
-      return
-    }
-
     const timeout = setTimeout(() => {
-      // Last chance: if reg.active is now set (skipWaiting completed), use it
-      if (reg.active) { resolve(reg); return }
-      reject(new Error(`SW activation timed out (state: ${worker.state}). Close all tabs of this app and try again.`))
-    }, 25000)
+      reject(new Error('SW activation timed out after 30s. Close all tabs of this app and try again.'))
+    }, 30000)
 
-    worker.addEventListener('statechange', function onStateChange() {
-      if (worker.state === 'activated') {
-        clearTimeout(timeout)
-        worker.removeEventListener('statechange', onStateChange)
-        resolve(reg)
-      } else if (worker.state === 'redundant') {
-        // skipWaiting caused the installing SW to become redundant while a
-        // newer version took over as active — reg.active is now the live SW
-        clearTimeout(timeout)
-        worker.removeEventListener('statechange', onStateChange)
-        if (reg.active) {
-          resolve(reg)
-        } else {
-          // Race: give the browser 500ms to update reg.active then check again
-          setTimeout(() => {
-            if (reg.active) resolve(reg)
-            else reject(new Error('SW became redundant and no active SW found. Please reload.'))
-          }, 500)
-        }
-      }
+    // navigator.serviceWorker.ready resolves with the active registration
+    // once skipWaiting + clients.claim() complete — this is the correct API
+    navigator.serviceWorker.ready.then((activeReg) => {
+      clearTimeout(timeout)
+      resolve(activeReg)
+    }).catch((err) => {
+      clearTimeout(timeout)
+      reject(err)
     })
   })
 }
@@ -91,16 +66,15 @@ export function usePushNotifications() {
       setPermission(perm as PushPermission)
       if (perm !== 'granted') { alert('⚠️ Permission not granted: ' + perm); return }
 
-      // Get existing registration (next-pwa registers sw.js at scope '/')
+      // Get existing registration — next-pwa registers sw.js at scope '/'
       let reg = await navigator.serviceWorker.getRegistration('/')
       if (!reg) {
-        // Not registered yet — register manually
         reg = await navigator.serviceWorker.register('/sw.js', { scope: '/' })
       }
 
-      alert(`SW state — active: ${!!reg.active}  installing: ${!!reg.installing}  waiting: ${!!reg.waiting}`)
+      alert(`SW state — active: ${!!reg.active}  installing: ${!!reg.installing}  waiting: ${!!reg.waiting} — waiting for ready...`)
 
-      // Wait for an active worker without hanging indefinitely
+      // Wait for the SW to be fully active (handles skipWaiting + clientsClaim)
       const activeReg = await waitForActiveSW(reg)
 
       alert('✓ SW active! Subscribing to push...')
