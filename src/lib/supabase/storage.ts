@@ -4,7 +4,39 @@ export const BUCKETS = {
   EMPLOYEE_PHOTOS: 'employee-photos',
   DOCUMENTS: 'documents',
   ATTACHMENTS: 'attachments',
+  ASSET_IMAGES: 'asset-images',
 } as const
+
+export async function uploadAssetImage(file: File, assetId: string, index: number): Promise<string> {
+  const supabase = createClient()
+  const fileExt = file.name.split('.').pop() ?? 'jpg'
+  const fileName = `${assetId}-${index}-${Date.now()}.${fileExt}`
+  const filePath = `${assetId}/${fileName}`
+
+  const { error } = await supabase.storage
+    .from(BUCKETS.ASSET_IMAGES)
+    .upload(filePath, file, { cacheControl: '3600', upsert: true })
+
+  if (error) throw error
+
+  const { data: { publicUrl } } = supabase.storage
+    .from(BUCKETS.ASSET_IMAGES)
+    .getPublicUrl(filePath)
+
+  return publicUrl
+}
+
+export async function deleteAssetImage(imageUrl: string): Promise<void> {
+  const supabase = createClient()
+  try {
+    const url = new URL(imageUrl)
+    const pathParts = url.pathname.split(`/${BUCKETS.ASSET_IMAGES}/`)
+    if (pathParts.length < 2) return
+    await supabase.storage.from(BUCKETS.ASSET_IMAGES).remove([pathParts[1]])
+  } catch {
+    // Ignore deletion errors (URL may be external/invalid)
+  }
+}
 
 export async function uploadEmployeePhoto(file: File, employeeId: string): Promise<string> {
   const supabase = createClient()

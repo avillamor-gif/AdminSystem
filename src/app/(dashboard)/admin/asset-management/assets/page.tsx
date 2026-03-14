@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useEffect, useMemo } from 'react'
+import { useState, useRef, useEffect, useMemo, useCallback } from 'react'
 import { createPortal } from 'react-dom'
 import { useAssets, useAssetCategories, useAssetBrands, useAssetVendors, useAssetLocations, useCreateAsset, useUpdateAsset, useDeleteAsset, useReturnAsset, useAssetAssignments, type Asset, type AssetAssignment } from '@/hooks/useAssets'
 import { useEmployees } from '@/hooks/useEmployees'
@@ -9,8 +9,10 @@ import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Select } from '@/components/ui/Select'
 import { Modal, ModalHeader, ModalBody, ModalFooter } from '@/components/ui/Modal'
-import { Package, Plus, Search, Edit, Trash2, Laptop, Armchair, Car, Wrench, Smartphone, QrCode, Download, Upload, X, RotateCcw, Printer, ChevronRight, CheckCircle, AlertTriangle, DollarSign, ChevronUp, ChevronDown } from 'lucide-react'
+import { Package, Plus, Search, Edit, Trash2, Laptop, Armchair, Car, Wrench, Smartphone, QrCode, Download, Upload, X, RotateCcw, Printer, ChevronRight, CheckCircle, AlertTriangle, DollarSign, ChevronUp, ChevronDown, ChevronLeft, Wifi, Camera } from 'lucide-react'
 import QRCode from 'qrcode'
+import { createClient } from '@/lib/supabase/client'
+import { uploadAssetImage } from '@/lib/supabase/storage'
 
 const statusColors = {
   available: 'bg-green-100 text-green-800',
@@ -50,9 +52,19 @@ export default function AssetsPage() {
   const [qrCodeDataUrl, setQrCodeDataUrl] = useState('')
   const qrCanvasRef = useRef<HTMLCanvasElement>(null)
   const [editTab, setEditTab] = useState<'details' | 'history'>('details')
-  const [imageFile, setImageFile] = useState<File | null>(null)
-  const [imagePreview, setImagePreview] = useState<string>('')
+  // Multi-image state (up to 4)
+  const MAX_IMAGES = 4
+  const [imageFiles, setImageFiles]     = useState<(File | null)[]>(Array(MAX_IMAGES).fill(null))
+  const [imagePreviews, setImagePreviews] = useState<string[]>(Array(MAX_IMAGES).fill(''))
+  const [activeImageSlot, setActiveImageSlot] = useState(0)
+  const [sliderIndex, setSliderIndex]   = useState(0)
   const imageInputRef = useRef<HTMLInputElement>(null)
+  // Mobile pairing
+  const [mobileSession, setMobileSession]       = useState<string>('')
+  const [showMobileQR, setShowMobileQR]         = useState(false)
+  const [mobileQRDataUrl, setMobileQRDataUrl]   = useState('')
+  const [mobileQRMode, setMobileQRMode]         = useState<'photo' | 'barcode'>('photo')
+  const [mobileConnected, setMobileConnected]   = useState(false)
   const [formData, setFormData] = useState({
     name: '',
     serial_number: '',
@@ -149,10 +161,19 @@ export default function AssetsPage() {
     })
   }, [assets, searchQuery, sortKey, sortDir])
 
+  const resetImageState = () => {
+    setImageFiles(Array(MAX_IMAGES).fill(null))
+    setImagePreviews(Array(MAX_IMAGES).fill(''))
+    setActiveImageSlot(0)
+    setSliderIndex(0)
+    setMobileSession('')
+    setShowMobileQR(false)
+    setMobileConnected(false)
+  }
+
   const handleOpenModal = (asset?: Asset) => {
     setEditTab('details')
-    setImageFile(null)
-    setImagePreview('')
+    resetImageState()
     if (asset) {
       setSelectedAsset(asset)
       setFormData({
@@ -178,7 +199,13 @@ export default function AssetsPage() {
         assigned_to: asset.assigned_to || '',
         assigned_date: asset.assigned_date || ''
       })
-      if (asset.image_url) setImagePreview(asset.image_url)
+      // Populate previews from image_urls (or fall back to single image_url)
+      const urls: string[] = Array.isArray((asset as any).image_urls) && (asset as any).image_urls.length > 0
+        ? (asset as any).image_urls
+        : asset.image_url ? [asset.image_url] : []
+      const previews = Array(MAX_IMAGES).fill('')
+      urls.slice(0, MAX_IMAGES).forEach((u, i) => { previews[i] = u })
+      setImagePreviews(previews)
     } else {
       setSelectedAsset(null)
       setFormData({
@@ -215,15 +242,13 @@ export default function AssetsPage() {
   const handleCloseModal = () => {
     setShowModal(false)
     setSelectedAsset(null)
-    setImageFile(null)
-    setImagePreview('')
+    resetImageState()
     setEditTab('details')
   }
 
   const handleClosePanel = () => {
     setShowAddPanel(false)
-    setImageFile(null)
-    setImagePreview('')
+    resetImageState()
     setFormData({
       name: '',
       serial_number: '',
@@ -252,10 +277,56 @@ export default function AssetsPage() {
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
-    setImageFile(file)
+    const slot = activeImageSlot
+    setImageFiles(prev => { const n = [...prev]; n[slot] = file; return n })
     const reader = new FileReader()
-    reader.onloadend = () => setImagePreview(reader.result as string)
+    reader.onloadend = () => {
+      setImagePreviews(prev => { const n = [...prev]; n[slot] = reader.result as string; return n })
+      setSliderIndex(slot)
+    }
     reader.readAsDataURL(file)
+    // Reset input so same file can be re-selected
+    e.target.value = ''
+  }
+
+  const removeImage = (slot: number) => {
+    setImageFiles(prev  => { const n = [...prev]; n[slot] = null; return n })
+    setImagePreviews(prev => { const n = [...prev]; n[slot] = ''; return n })
+    if (sliderIndex >= slot && sliderIndex > 0) setSliderIndex(s => s - 1)
+  }
+
+  // Mobile pairing: generate a session token and QR code
+  const openMobilePairing = async (mode: 'photo' | 'barcode', slot = 0) => {
+    const token = `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`
+    setMobileSession(token)
+    setMobileQRMode(mode)
+    setActiveImageSlot(slot)
+
+    const url = `${window.location.origin}/mobile-capture?session=${token}&mode=${mode}&slot=${slot}`
+    const qr  = await QRCode.toDataURL(url, { width: 280, margin: 2 })
+    setMobileQRDataUrl(qr)
+    setShowMobileQR(true)
+
+    // Subscribe to Realtime for this session
+    const supabase = createClient()
+    const channel = supabase.channel(`mobile-capture-${token}`)
+    channel
+      .on('broadcast', { event: 'photo' }, ({ payload }: any) => {
+        const s: number = payload.slot ?? 0
+        setImagePreviews(prev => { const n = [...prev]; n[s] = payload.url; return n })
+        setSliderIndex(s)
+        setMobileConnected(true)
+        setShowMobileQR(false)
+        supabase.removeChannel(channel)
+      })
+      .on('broadcast', { event: 'barcode' }, ({ payload }: any) => {
+        // Fill serial_number with scanned barcode
+        setFormData(prev => ({ ...prev, serial_number: payload.barcode }))
+        setMobileConnected(true)
+        setShowMobileQR(false)
+        supabase.removeChannel(channel)
+      })
+      .subscribe()
   }
 
   const handleReturnAsset = async () => {
@@ -285,7 +356,22 @@ export default function AssetsPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    
+
+    // Upload any new image files (those that are File objects, not yet URLs)
+    const tmpId = selectedAsset?.id ?? `tmp-${Date.now()}`
+    const finalPreviews = [...imagePreviews]
+    for (let i = 0; i < MAX_IMAGES; i++) {
+      if (imageFiles[i]) {
+        try {
+          const url = await uploadAssetImage(imageFiles[i]!, tmpId, i)
+          finalPreviews[i] = url
+        } catch (err: any) {
+          console.error(`Image upload slot ${i} failed:`, err)
+        }
+      }
+    }
+    const uploadedUrls = finalPreviews.filter(Boolean)
+
     // Auto-derive status from assigned_to when editing, unless user explicitly set a non-assignment status
     const nonAssignmentStatuses = ['maintenance', 'retired', 'lost', 'damaged']
     let resolvedStatus = formData.status
@@ -316,7 +402,8 @@ export default function AssetsPage() {
       salvage_value: formData.salvage_value ? parseFloat(formData.salvage_value) : undefined,
       depreciation_method: formData.depreciation_method || undefined,
       notes: formData.notes || undefined,
-      image_url: formData.image_url || undefined,
+      image_url: uploadedUrls[0] || formData.image_url || undefined,
+      image_urls: uploadedUrls.length > 0 ? uploadedUrls : undefined,
       status: resolvedStatus,
       condition: formData.condition,
       assigned_to: formData.assigned_to || (null as unknown as string),
@@ -807,44 +894,90 @@ export default function AssetsPage() {
                     </div>
                   </div>
 
-                  {/* Image upload */}
+                  {/* Image upload — multi-slot (up to 4) */}
                   <div className="col-span-1">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Asset Image</label>
-                    <div
-                      className="border-2 border-dashed border-gray-300 rounded-lg p-4 flex flex-col items-center justify-center cursor-pointer hover:border-orange-400 transition-colors min-h-[200px]"
-                      onClick={() => imageInputRef.current?.click()}
-                    >
-                      {imagePreview ? (
-                        <div className="relative w-full">
-                          <img src={imagePreview} alt="Asset preview" className="w-full h-48 object-contain rounded" />
-                          <button
-                            type="button"
-                            className="absolute top-1 right-1 bg-white rounded-full p-1 shadow text-gray-500 hover:text-red-500"
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              setImagePreview('')
-                              setImageFile(null)
-                              setFormData({ ...formData, image_url: '' })
-                            }}
-                          >
-                            <X className="h-4 w-4" />
-                          </button>
-                        </div>
+                    <div className="flex items-center justify-between mb-2">
+                      <label className="block text-sm font-medium text-gray-700">Asset Images ({imagePreviews.filter(Boolean).length}/{MAX_IMAGES})</label>
+                      <div className="flex gap-1">
+                        <button type="button" title="Scan barcode / serial" onClick={() => openMobilePairing('barcode')}
+                          className="p-1.5 rounded-md text-gray-500 hover:text-[#ff7e15] hover:bg-[#fff4ec] transition-colors">
+                          <QrCode className="h-4 w-4" />
+                        </button>
+                        <button type="button" title="Connect phone for photo" onClick={() => openMobilePairing('photo', imagePreviews.findIndex(p => !p) === -1 ? 0 : imagePreviews.findIndex(p => !p))}
+                          className={`p-1.5 rounded-md transition-colors ${
+                            mobileConnected ? 'text-green-500 bg-green-50' : 'text-gray-500 hover:text-[#ff7e15] hover:bg-[#fff4ec]'
+                          }`}>
+                          <Wifi className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Slider / main preview */}
+                    <div className="relative border-2 border-dashed border-gray-300 rounded-lg overflow-hidden min-h-[180px] flex items-center justify-center bg-gray-50 hover:border-[#ff7e15] transition-colors">
+                      {imagePreviews.filter(Boolean).length === 0 ? (
+                        <button type="button" className="flex flex-col items-center gap-2 py-6 text-gray-400 w-full"
+                          onClick={() => { setActiveImageSlot(0); imageInputRef.current?.click() }}>
+                          <Upload className="h-8 w-8" />
+                          <span className="text-sm">Click to upload image</span>
+                          <span className="text-xs">PNG, JPG up to 5MB</span>
+                        </button>
                       ) : (
                         <>
-                          <Upload className="h-8 w-8 text-gray-400 mb-2" />
-                          <p className="text-sm text-gray-500 text-center">Click to upload image</p>
-                          <p className="text-xs text-gray-400 mt-1">PNG, JPG up to 5MB</p>
+                          <img src={imagePreviews[sliderIndex] || imagePreviews.find(Boolean) || ''}
+                            alt="Asset" className="w-full h-44 object-contain" />
+                          <button type="button"
+                            className="absolute top-1.5 right-1.5 bg-white/90 rounded-full p-1 shadow text-gray-500 hover:text-red-500"
+                            onClick={(e) => { e.stopPropagation(); removeImage(sliderIndex) }}>
+                            <X className="h-3.5 w-3.5" />
+                          </button>
+                          {imagePreviews.filter(Boolean).length > 1 && (
+                            <>
+                              <button type="button" onClick={() => setSliderIndex(i => (i - 1 + MAX_IMAGES) % MAX_IMAGES)}
+                                className="absolute left-1 top-1/2 -translate-y-1/2 bg-white/80 rounded-full p-1 shadow hover:bg-white">
+                                <ChevronLeft className="h-4 w-4" />
+                              </button>
+                              <button type="button" onClick={() => setSliderIndex(i => (i + 1) % MAX_IMAGES)}
+                                className="absolute right-1 top-1/2 -translate-y-1/2 bg-white/80 rounded-full p-1 shadow hover:bg-white">
+                                <ChevronRight className="h-4 w-4" />
+                              </button>
+                            </>
+                          )}
+                          <div className="absolute bottom-1.5 inset-x-0 flex justify-center gap-1">
+                            {imagePreviews.map((p, i) => p ? (
+                              <button key={i} type="button" onClick={() => setSliderIndex(i)}
+                                className={`w-1.5 h-1.5 rounded-full transition-colors ${
+                                  sliderIndex === i ? 'bg-[#ff7e15]' : 'bg-gray-300'
+                                }`} />
+                            ) : null)}
+                          </div>
                         </>
                       )}
                     </div>
-                    <input
-                      ref={imageInputRef}
-                      type="file"
-                      accept="image/*"
-                      className="hidden"
-                      onChange={handleImageChange}
-                    />
+
+                    {/* Thumbnail row */}
+                    <div className="grid grid-cols-4 gap-1.5 mt-2">
+                      {Array.from({ length: MAX_IMAGES }).map((_, i) => (
+                        <button key={i} type="button"
+                          onClick={() => {
+                            if (imagePreviews[i]) { setSliderIndex(i) }
+                            else { setActiveImageSlot(i); imageInputRef.current?.click() }
+                          }}
+                          className={`relative aspect-square rounded-md border-2 overflow-hidden flex items-center justify-center transition-colors ${
+                            imagePreviews[i]
+                              ? sliderIndex === i ? 'border-[#ff7e15]' : 'border-gray-200'
+                              : 'border-dashed border-gray-200 hover:border-[#ff7e15] bg-gray-50'
+                          }`}>
+                          {imagePreviews[i] ? (
+                            <img src={imagePreviews[i]} alt={`slot ${i + 1}`} className="w-full h-full object-cover" />
+                          ) : (
+                            <Plus className="h-4 w-4 text-gray-300" />
+                          )}
+                          <span className="absolute bottom-0 right-0 text-[9px] bg-black/30 text-white px-0.5 rounded-tl">{i + 1}</span>
+                        </button>
+                      ))}
+                    </div>
+
+                    <input ref={imageInputRef} type="file" accept="image/*" className="hidden" onChange={handleImageChange} />
                   </div>
                 </div>
               </div>
@@ -1239,48 +1372,90 @@ export default function AssetsPage() {
                     </div>
                   </div>
 
-                  {/* Right column: Image upload */}
+                  {/* Right column: Image upload — multi-slot */}
                   <div className="col-span-1">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Asset Image</label>
-                    <div
-                      className="border-2 border-dashed border-gray-300 rounded-lg p-4 flex flex-col items-center justify-center cursor-pointer hover:border-orange-400 transition-colors min-h-[200px]"
-                      onClick={() => imageInputRef.current?.click()}
-                    >
-                      {imagePreview ? (
-                        <div className="relative w-full">
-                          <img
-                            src={imagePreview}
-                            alt="Asset preview"
-                            className="w-full h-48 object-contain rounded"
-                          />
-                          <button
-                            type="button"
-                            className="absolute top-1 right-1 bg-white rounded-full p-1 shadow text-gray-500 hover:text-red-500"
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              setImagePreview('')
-                              setImageFile(null)
-                              setFormData({ ...formData, image_url: '' })
-                            }}
-                          >
-                            <X className="h-4 w-4" />
-                          </button>
-                        </div>
+                    <div className="flex items-center justify-between mb-2">
+                      <label className="block text-sm font-medium text-gray-700">Asset Images ({imagePreviews.filter(Boolean).length}/{MAX_IMAGES})</label>
+                      <div className="flex gap-1">
+                        <button type="button" title="Scan barcode / serial" onClick={() => openMobilePairing('barcode')}
+                          className="p-1.5 rounded-md text-gray-500 hover:text-[#ff7e15] hover:bg-[#fff4ec] transition-colors">
+                          <QrCode className="h-4 w-4" />
+                        </button>
+                        <button type="button" title="Connect phone for photo" onClick={() => openMobilePairing('photo', imagePreviews.findIndex(p => !p) === -1 ? 0 : imagePreviews.findIndex(p => !p))}
+                          className={`p-1.5 rounded-md transition-colors ${
+                            mobileConnected ? 'text-green-500 bg-green-50' : 'text-gray-500 hover:text-[#ff7e15] hover:bg-[#fff4ec]'
+                          }`}>
+                          <Wifi className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Slider / main preview */}
+                    <div className="relative border-2 border-dashed border-gray-300 rounded-lg overflow-hidden min-h-[180px] flex items-center justify-center bg-gray-50 hover:border-[#ff7e15] transition-colors">
+                      {imagePreviews.filter(Boolean).length === 0 ? (
+                        <button type="button" className="flex flex-col items-center gap-2 py-6 text-gray-400 w-full"
+                          onClick={() => { setActiveImageSlot(0); imageInputRef.current?.click() }}>
+                          <Upload className="h-8 w-8" />
+                          <span className="text-sm">Click to upload image</span>
+                          <span className="text-xs">PNG, JPG up to 5MB</span>
+                        </button>
                       ) : (
                         <>
-                          <Upload className="h-8 w-8 text-gray-400 mb-2" />
-                          <p className="text-sm text-gray-500 text-center">Click to upload image</p>
-                          <p className="text-xs text-gray-400 mt-1">PNG, JPG up to 5MB</p>
+                          <img src={imagePreviews[sliderIndex] || imagePreviews.find(Boolean) || ''}
+                            alt="Asset" className="w-full h-44 object-contain" />
+                          <button type="button"
+                            className="absolute top-1.5 right-1.5 bg-white/90 rounded-full p-1 shadow text-gray-500 hover:text-red-500"
+                            onClick={(e) => { e.stopPropagation(); removeImage(sliderIndex) }}>
+                            <X className="h-3.5 w-3.5" />
+                          </button>
+                          {imagePreviews.filter(Boolean).length > 1 && (
+                            <>
+                              <button type="button" onClick={() => setSliderIndex(i => (i - 1 + MAX_IMAGES) % MAX_IMAGES)}
+                                className="absolute left-1 top-1/2 -translate-y-1/2 bg-white/80 rounded-full p-1 shadow hover:bg-white">
+                                <ChevronLeft className="h-4 w-4" />
+                              </button>
+                              <button type="button" onClick={() => setSliderIndex(i => (i + 1) % MAX_IMAGES)}
+                                className="absolute right-1 top-1/2 -translate-y-1/2 bg-white/80 rounded-full p-1 shadow hover:bg-white">
+                                <ChevronRight className="h-4 w-4" />
+                              </button>
+                            </>
+                          )}
+                          <div className="absolute bottom-1.5 inset-x-0 flex justify-center gap-1">
+                            {imagePreviews.map((p, i) => p ? (
+                              <button key={i} type="button" onClick={() => setSliderIndex(i)}
+                                className={`w-1.5 h-1.5 rounded-full transition-colors ${
+                                  sliderIndex === i ? 'bg-[#ff7e15]' : 'bg-gray-300'
+                                }`} />
+                            ) : null)}
+                          </div>
                         </>
                       )}
                     </div>
-                    <input
-                      ref={imageInputRef}
-                      type="file"
-                      accept="image/*"
-                      className="hidden"
-                      onChange={handleImageChange}
-                    />
+
+                    {/* Thumbnail row */}
+                    <div className="grid grid-cols-4 gap-1.5 mt-2">
+                      {Array.from({ length: MAX_IMAGES }).map((_, i) => (
+                        <button key={i} type="button"
+                          onClick={() => {
+                            if (imagePreviews[i]) { setSliderIndex(i) }
+                            else { setActiveImageSlot(i); imageInputRef.current?.click() }
+                          }}
+                          className={`relative aspect-square rounded-md border-2 overflow-hidden flex items-center justify-center transition-colors ${
+                            imagePreviews[i]
+                              ? sliderIndex === i ? 'border-[#ff7e15]' : 'border-gray-200'
+                              : 'border-dashed border-gray-200 hover:border-[#ff7e15] bg-gray-50'
+                          }`}>
+                          {imagePreviews[i] ? (
+                            <img src={imagePreviews[i]} alt={`slot ${i + 1}`} className="w-full h-full object-cover" />
+                          ) : (
+                            <Plus className="h-4 w-4 text-gray-300" />
+                          )}
+                          <span className="absolute bottom-0 right-0 text-[9px] bg-black/30 text-white px-0.5 rounded-tl">{i + 1}</span>
+                        </button>
+                      ))}
+                    </div>
+
+                    <input ref={imageInputRef} type="file" accept="image/*" className="hidden" onChange={handleImageChange} />
                   </div>
                 </div>
               </div>
@@ -1301,6 +1476,35 @@ export default function AssetsPage() {
             </form>
           )}
         </div>
+      </Modal>
+
+      {/* Mobile Pairing Modal */}
+      <Modal open={showMobileQR} onClose={() => setShowMobileQR(false)}>
+        <ModalHeader onClose={() => setShowMobileQR(false)}>
+          {mobileQRMode === 'barcode' ? 'Scan Barcode / Serial Number' : `Connect Phone — Image ${activeImageSlot + 1}`}
+        </ModalHeader>
+        <ModalBody>
+          <div className="flex flex-col items-center space-y-4">
+            <div className="p-3 bg-white rounded-xl border-2 border-gray-200">
+              {mobileQRDataUrl && <img src={mobileQRDataUrl} alt="Pairing QR" className="w-64 h-64" />}
+            </div>
+            <div className="text-center space-y-1">
+              <p className="text-sm font-medium text-gray-900">
+                {mobileQRMode === 'barcode'
+                  ? 'Scan this QR code on your phone, then scan the asset barcode / serial number'
+                  : 'Scan this QR code on your phone to open the camera and take a photo'}
+              </p>
+              <p className="text-xs text-gray-500">The result will appear here automatically.</p>
+            </div>
+            <div className="flex items-center gap-2 text-sm text-amber-600 bg-amber-50 px-3 py-2 rounded-lg">
+              <Wifi className="h-4 w-4 shrink-0 animate-pulse" />
+              Waiting for phone…
+            </div>
+          </div>
+        </ModalBody>
+        <ModalFooter>
+          <Button variant="secondary" onClick={() => setShowMobileQR(false)}>Cancel</Button>
+        </ModalFooter>
       </Modal>
 
       {/* QR Code Modal */}
