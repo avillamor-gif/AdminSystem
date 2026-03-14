@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, Suspense } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useSearchParams } from 'next/navigation'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -20,6 +20,7 @@ type LoginForm = z.infer<typeof loginSchema>
 // ── Biometric helpers (WebAuthn + localStorage credential cache) ──────────────
 
 const BIOMETRIC_KEY = 'biometric_email'
+const BIOMETRIC_ENABLED_KEY = 'biometric_enabled'
 
 async function isBiometricAvailable(): Promise<boolean> {
   try {
@@ -75,7 +76,6 @@ async function triggerBiometric(): Promise<boolean> {
 }
 
 function LoginContent() {
-  const router = useRouter()
   const searchParams = useSearchParams()
   const [loading, setLoading] = useState(false)
   const [bioLoading, setBioLoading] = useState(false)
@@ -85,6 +85,7 @@ function LoginContent() {
   const [bioAvailable, setBioAvailable] = useState(false)
   const [bioEmail, setBioEmail] = useState<string | null>(null)
   const [showForm, setShowForm] = useState(false)
+  const [bioEnabled, setBioEnabled] = useState(true)
   const supabase = createClient()
 
   useEffect(() => {
@@ -100,7 +101,9 @@ function LoginContent() {
     isBiometricAvailable().then(available => {
       setBioAvailable(available)
       const saved = localStorage.getItem(BIOMETRIC_KEY)
-      if (available && saved) {
+      const enabled = localStorage.getItem(BIOMETRIC_ENABLED_KEY) !== 'false'
+      setBioEnabled(enabled)
+      if (available && saved && enabled) {
         setBioEmail(saved)
       } else {
         setShowForm(true)
@@ -119,8 +122,9 @@ function LoginContent() {
     const { error } = await supabase.auth.signInWithPassword({ email, password })
     if (error) throw error
     try { await fetch('/api/sessions/create', { method: 'POST' }) } catch {}
-    router.push('/')
-    router.refresh()
+    // Use hard redirect for reliability on mobile PWA — router.push can silently
+    // fail if the session cookie hasn't propagated to the middleware yet
+    window.location.href = '/'
   }
 
   async function onSubmit(data: LoginForm) {
@@ -169,7 +173,7 @@ function LoginContent() {
     if (typeof window !== 'undefined') window.history.replaceState({}, '', '/login')
     try {
       await doLogin(data.email, data.password)
-      if (bioAvailable) {
+      if (bioAvailable && bioEnabled) {
         localStorage.setItem(BIOMETRIC_KEY, data.email)
         sessionStorage.setItem('bio_pwd', data.password)
         setBioEmail(data.email)
@@ -195,8 +199,8 @@ function LoginContent() {
     }
   }
 
-  // Show biometric screen when email is saved and form is hidden
-  const showBiometricScreen = bioAvailable && !!bioEmail && !showForm
+  // Show biometric screen when email is saved, form is hidden, and biometrics is enabled
+  const showBiometricScreen = bioAvailable && !!bioEmail && !showForm && bioEnabled
 
   return (
     <div className="min-h-screen flex">
@@ -432,6 +436,39 @@ function LoginContent() {
         )}
 
         <p className="text-center text-gray-300 text-xs mt-8">IBON International · Admin System v1.0</p>
+
+        {/* Biometrics / Pattern toggle — only shown when platform supports it */}
+        {bioAvailable && (
+          <div className="mt-4 flex items-center justify-between px-1">
+            <div className="flex items-center gap-2">
+              <Fingerprint className="w-4 h-4 text-gray-400" />
+              <span className="text-xs text-gray-500">Biometrics / Pattern unlock</span>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                const next = !bioEnabled
+                setBioEnabled(next)
+                localStorage.setItem(BIOMETRIC_ENABLED_KEY, String(next))
+                if (!next) {
+                  localStorage.removeItem(BIOMETRIC_KEY)
+                  sessionStorage.removeItem('bio_pwd')
+                  setBioEmail(null)
+                  setShowForm(true)
+                } else if (bioEmail) {
+                  setShowForm(false)
+                }
+              }}
+              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${
+                bioEnabled ? 'bg-orange-500' : 'bg-gray-200'
+              }`}
+            >
+              <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${
+                bioEnabled ? 'translate-x-6' : 'translate-x-1'
+              }`} />
+            </button>
+          </div>
+        )}
         </div>
       </div>
     </div>
