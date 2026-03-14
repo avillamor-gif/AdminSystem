@@ -35,9 +35,23 @@ module.exports = {
         },
         // Legacy orange colors (for gradual migration)
         orange: {
-          DEFAULT: '#ff7e00',
+          DEFAULT: '#ff7e15',
           light: '#ff9b40',
-          dark: '#e66c00',
+          dark: '#e06a08',
+        },
+        // Brand orange (exact)
+        brand: {
+          DEFAULT: '#ff7e15',
+          light: '#ff9b40',
+          dark: '#e06a08',
+          50:  '#fff4ec',
+          100: '#ffe5cc',
+          200: '#ffc999',
+          300: '#ffad66',
+          400: '#ff9133',
+          500: '#ff7e15',
+          600: '#e06a08',
+          700: '#b85506',
         },
       },
     },

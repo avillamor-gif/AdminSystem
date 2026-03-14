@@ -223,7 +223,7 @@ function LoginContent() {
     <div className="min-h-screen flex">
 
       {/* ── Desktop: left orange branding panel ────────────────────── */}
-      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-orange-500 via-orange-600 to-amber-700 items-center justify-center p-12">
+      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-[#ff7e15] via-[#e06a08] to-[#b85506] items-center justify-center p-12">
         <div className="max-w-md text-center">
           <div className="w-32 h-32 rounded-xl overflow-hidden shadow-2xl mx-auto mb-6 bg-white p-2">
             <Image src="/ibon-icon.png" alt="IBON" width={128} height={128} className="w-full h-full object-contain" priority />
@@ -256,7 +256,7 @@ function LoginContent() {
             <div>
               <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Email</label>
               <input type="email" autoComplete="email" placeholder="you@iboninternational.org"
-                className="w-full px-4 py-3.5 border border-gray-200 rounded-xl bg-gray-50 text-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent focus:bg-white transition-all"
+                className="w-full px-4 py-3.5 border border-gray-200 rounded-xl bg-gray-50 text-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-[#ff7e15] focus:border-transparent focus:bg-white transition-all"
                 {...register('email')} />
               {errors.email && <p className="mt-1 text-xs text-red-500">{errors.email.message}</p>}
             </div>
@@ -264,7 +264,7 @@ function LoginContent() {
               <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Password</label>
               <div className="relative">
                 <input type={showPassword ? 'text' : 'password'} autoComplete="current-password" placeholder="••••••••"
-                  className="w-full px-4 py-3.5 pr-12 border border-gray-200 rounded-xl bg-gray-50 text-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent focus:bg-white transition-all"
+                  className="w-full px-4 py-3.5 pr-12 border border-gray-200 rounded-xl bg-gray-50 text-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-[#ff7e15] focus:border-transparent focus:bg-white transition-all"
                   {...register('password')} />
                 <button type="button" onClick={() => setShowPassword(v => !v)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600" tabIndex={-1}>
                   {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
@@ -273,10 +273,10 @@ function LoginContent() {
               {errors.password && <p className="mt-1 text-xs text-red-500">{errors.password.message}</p>}
             </div>
             <div className="flex justify-end">
-              <a href="#" className="text-xs text-orange-600 font-medium hover:underline">Forgot password?</a>
+              <a href="#" className="text-xs text-[#ff7e15] font-medium hover:underline">Forgot password?</a>
             </div>
             <button type="submit" disabled={loading || !hydrated}
-              className="w-full py-3.5 bg-orange-600 text-white font-semibold rounded-xl hover:bg-orange-700 active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-lg shadow-orange-200 mt-2">
+              className="w-full py-3.5 bg-[#ff7e15] text-white font-semibold rounded-xl hover:bg-[#e06a08] active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-lg shadow-[#ffc999] mt-2">
               {loading || !hydrated ? <Loader2 className="animate-spin h-5 w-5" /> : 'Sign In'}
             </button>
           </form>
@@ -300,7 +300,7 @@ function LoginContent() {
       </div>
 
       {/* ── Mobile: full-screen orange + white card ─────────────────── */}
-      <div className="flex lg:hidden flex-col w-full bg-orange-600 overflow-hidden min-h-screen">
+      <div className="flex lg:hidden flex-col w-full bg-[#ff7e15] overflow-hidden min-h-screen">
 
         {/* Top orange section */}
         <div className="flex flex-col items-center justify-center px-6 pt-8 pb-6 min-h-[38vh]">
@@ -338,18 +338,18 @@ function LoginContent() {
             <button
               onClick={handleBiometric}
               disabled={bioLoading}
-              className="w-24 h-24 rounded-full bg-orange-50 border-4 border-orange-200 flex items-center justify-center mb-3 hover:bg-orange-100 active:scale-95 transition-all disabled:opacity-50 shadow-lg"
+              className="w-24 h-24 rounded-full bg-[#fff4ec] border-4 border-[#ffc999] flex items-center justify-center mb-3 hover:bg-[#ffe5cc] active:scale-95 transition-all disabled:opacity-50 shadow-lg"
             >
               {bioLoading
-                ? <Loader2 className="w-10 h-10 text-orange-500 animate-spin" />
-                : <Fingerprint className="w-12 h-12 text-orange-500" />
+                ? <Loader2 className="w-10 h-10 text-[#ff7e15] animate-spin" />
+                : <Fingerprint className="w-12 h-12 text-[#ff7e15]" />
               }
             </button>
             <p className="text-sm text-gray-500 mb-8">{bioLoading ? 'Verifying…' : 'Tap to authenticate'}</p>
 
             <button
               onClick={() => setShowForm(true)}
-              className="text-sm text-orange-600 font-medium hover:underline"
+              className="text-sm text-[#ff7e15] font-medium hover:underline"
             >
               Use password instead
             </button>
@@ -369,7 +369,7 @@ function LoginContent() {
                   type="email"
                   autoComplete="email"
                   placeholder="you@iboninternational.org"
-                  className="w-full px-4 py-3.5 border border-gray-200 rounded-xl bg-gray-50 text-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent focus:bg-white transition-all"
+                  className="w-full px-4 py-3.5 border border-gray-200 rounded-xl bg-gray-50 text-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-[#ff7e15] focus:border-transparent focus:bg-white transition-all"
                   {...register('email')}
                 />
                 {errors.email && <p className="mt-1 text-xs text-red-500">{errors.email.message}</p>}
@@ -382,7 +382,7 @@ function LoginContent() {
                     type={showPassword ? 'text' : 'password'}
                     autoComplete="current-password"
                     placeholder="••••••••"
-                    className="w-full px-4 py-3.5 pr-12 border border-gray-200 rounded-xl bg-gray-50 text-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent focus:bg-white transition-all"
+                    className="w-full px-4 py-3.5 pr-12 border border-gray-200 rounded-xl bg-gray-50 text-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-[#ff7e15] focus:border-transparent focus:bg-white transition-all"
                     {...register('password')}
                   />
                   <button
@@ -398,13 +398,13 @@ function LoginContent() {
               </div>
 
               <div className="flex justify-end">
-                <a href="#" className="text-xs text-orange-600 font-medium hover:underline">Forgot password?</a>
+                <a href="#" className="text-xs text-[#ff7e15] font-medium hover:underline">Forgot password?</a>
               </div>
 
               <button
                 type="submit"
                 disabled={loading || !hydrated}
-                className="w-full py-3.5 bg-orange-600 text-white font-semibold rounded-xl hover:bg-orange-700 active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-lg shadow-orange-200 mt-2"
+                className="w-full py-3.5 bg-[#ff7e15] text-white font-semibold rounded-xl hover:bg-[#e06a08] active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-lg shadow-[#ffc999] mt-2"
               >
                 {loading || !hydrated
                   ? <Loader2 className="animate-spin h-5 w-5" />
@@ -442,7 +442,7 @@ function LoginContent() {
                 <button
                   type="button"
                   onClick={() => setShowForm(false)}
-                  className="flex items-center justify-center gap-2 py-3 px-4 border border-orange-200 rounded-xl bg-orange-50 text-orange-600 text-sm font-medium hover:bg-orange-100 active:scale-[0.98] transition-all"
+                  className="flex items-center justify-center gap-2 py-3 px-4 border border-[#ffc999] rounded-xl bg-[#fff4ec] text-[#ff7e15] text-sm font-medium hover:bg-[#ffe5cc] active:scale-[0.98] transition-all"
                 >
                   <Fingerprint className="w-4 h-4" />
                   Biometrics
@@ -480,7 +480,7 @@ function LoginContent() {
                 }
               }}
               className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${
-                bioEnabled ? 'bg-orange-500' : 'bg-gray-200'
+                bioEnabled ? 'bg-[#ff7e15]' : 'bg-gray-200'
               }`}
             >
               <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${
@@ -498,7 +498,7 @@ function LoginContent() {
 export default function LoginPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen bg-orange-600 flex flex-col items-center justify-center gap-4">
+      <div className="min-h-screen bg-[#ff7e15] flex flex-col items-center justify-center gap-4">
         <div className="w-16 h-16 rounded-2xl overflow-hidden">
           <Image src="/ibon-icon.png" alt="IBON" width={64} height={64} className="w-full h-full object-contain" />
         </div>
