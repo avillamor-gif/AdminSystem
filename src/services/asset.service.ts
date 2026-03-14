@@ -64,6 +64,7 @@ export interface Asset {
   specifications?: any
   qr_code?: string | null
   image_url?: string | null
+  image_urls?: string[] | null
   notes?: string | null
   location_id?: string | null
   created_at: string | null
