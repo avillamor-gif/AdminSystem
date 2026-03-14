@@ -1479,7 +1479,7 @@ export default function AssetsPage() {
       </Modal>
 
       {/* Mobile Pairing Modal */}
-      <Modal open={showMobileQR} onClose={() => setShowMobileQR(false)}>
+      <Modal open={showMobileQR} onClose={() => setShowMobileQR(false)} centered size="sm">
         <ModalHeader onClose={() => setShowMobileQR(false)}>
           {mobileQRMode === 'barcode' ? 'Scan Barcode / Serial Number' : `Connect Phone — Image ${activeImageSlot + 1}`}
         </ModalHeader>

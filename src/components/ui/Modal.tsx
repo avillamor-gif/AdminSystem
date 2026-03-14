@@ -11,9 +11,10 @@ interface ModalProps {
   children: React.ReactNode
   className?: string
   size?: 'sm' | 'md' | 'lg' | 'xl'
+  centered?: boolean
 }
 
-export function Modal({ open, onClose, children, className, size = 'md' }: ModalProps) {
+export function Modal({ open, onClose, children, className, size = 'md', centered = false }: ModalProps) {
   if (!open) return null
 
   const sizeClasses = {
@@ -23,7 +24,23 @@ export function Modal({ open, onClose, children, className, size = 'md' }: Modal
     xl: 'max-w-4xl',
   }
 
-  const modal = (
+  const modal = centered ? (
+    <div
+      className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 animate-[fadeIn_0.15s_ease] p-4"
+      onClick={onClose}
+    >
+      <div
+        className={cn(
+          'bg-white shadow-2xl w-full rounded-xl flex flex-col max-h-[90vh] overflow-hidden animate-[fadeIn_0.2s_ease]',
+          sizeClasses[size],
+          className
+        )}
+        onClick={(e) => e.stopPropagation()}
+      >
+        {children}
+      </div>
+    </div>
+  ) : (
     <div
       className="fixed inset-0 z-[9990] flex justify-end bg-black/40 animate-[fadeIn_0.2s_ease]"
       onClick={onClose}
