@@ -147,7 +147,7 @@ export function Header({ user }: HeaderProps) {
           </button>
 
           {showNotifications && (
-            <div className="absolute right-0 mt-2 w-96 bg-white rounded-xl shadow-xl border border-gray-200 z-50 overflow-hidden">
+            <div className="fixed inset-x-2 top-[4.5rem] sm:absolute sm:inset-x-auto sm:right-0 sm:top-auto sm:mt-2 sm:w-96 bg-white rounded-xl shadow-xl border border-gray-200 z-50 overflow-hidden">
               {/* Header */}
               <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
                 <h3 className="text-sm font-semibold text-gray-900">Notifications</h3>
@@ -159,7 +159,7 @@ export function Header({ user }: HeaderProps) {
               </div>
 
               {/* Notification list */}
-              <div className="max-h-96 overflow-y-auto divide-y divide-gray-50">
+              <div className="max-h-[70vh] sm:max-h-96 overflow-y-auto divide-y divide-gray-50">
                 {totalCount === 0 ? (
                   <div className="px-4 py-10 text-center">
                     <Bell className="w-8 h-8 text-gray-200 mx-auto mb-2" />
