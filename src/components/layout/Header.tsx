@@ -127,27 +127,6 @@ export function Header({ user }: HeaderProps) {
           <Smartphone className="w-5 h-5" />
         </button>
 
-        {/* Test Push (visible to all, sends to current user's subscribed devices) */}
-        <button
-          onClick={async () => {
-            try {
-              const res = await fetch('/api/push/test', { method: 'POST' })
-              const json = await res.json()
-              if (res.ok && json.ok) {
-                alert('✅ Push sent to ' + json.subscriptionsFound + ' device(s)! Check your phone.')
-              } else {
-                alert('⚠️ ' + (json.error ?? JSON.stringify(json)) + (json.userId ? '\n\nYour user ID: ' + json.userId : ''))
-              }
-            } catch (e) {
-              alert('❌ Error: ' + String(e))
-            }
-          }}
-          title="Send test push notification to my devices"
-          className="p-2 text-white/60 hover:text-white hover:bg-white/10 rounded-full transition-colors text-xs font-bold"
-        >
-          TEST
-        </button>
-
         {/* Help */}
         <button className="p-2 text-white/80 hover:text-white hover:bg-white/10 rounded-full transition-colors">
           <HelpCircle className="w-5 h-5" />
