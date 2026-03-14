@@ -32,6 +32,7 @@ export async function POST() {
     title: '🔔 IBON Admin',
     body: 'Push notifications are working!',
     url: '/',
+    badge_count: 1,
   })
 
   return NextResponse.json({ ok: true, subscriptionsFound: subs.length })
