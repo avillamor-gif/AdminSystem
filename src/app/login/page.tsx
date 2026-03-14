@@ -44,22 +44,62 @@ async function isBiometricAvailable(): Promise<boolean> {
   }
 }
 
-// Trigger the platform authenticator (fingerprint / face / pattern) using get().
-// We never call create() — allowCredentials:[] means the browser asks the platform
-// authenticator directly without needing a pre-registered credential ID.
+// Trigger the platform authenticator (fingerprint / face / pattern).
+// Strategy:
+//   1. Try credentials.get() with stored credential ID first (works after first registration)
+//   2. If no passkey exists yet, register one with credentials.create() to enroll the device
+//   3. After create() succeeds the passkey is saved — subsequent logins use get()
+// This way the biometric prompt always appears and never shows "No passkeys available".
+
+const PASSKEY_ID_KEY = 'bio_passkey_id'
+
+function str2ab(str: string): ArrayBuffer {
+  return Uint8Array.from(str, c => c.charCodeAt(0)).buffer
+}
+
 async function triggerBiometric(): Promise<boolean> {
+  const challenge = crypto.getRandomValues(new Uint8Array(32))
+  const storedId = localStorage.getItem(PASSKEY_ID_KEY)
+
+  // If we have a registered credential, use get() directly
+  if (storedId) {
+    try {
+      const idBytes = Uint8Array.from(atob(storedId), c => c.charCodeAt(0))
+      const assertion = await navigator.credentials.get({
+        publicKey: {
+          challenge,
+          userVerification: 'required',
+          timeout: 60000,
+          rpId: window.location.hostname,
+          allowCredentials: [{ type: 'public-key', id: idBytes }],
+        },
+      }) as PublicKeyCredential | null
+      if (assertion) return true
+    } catch {
+      // Credential may have been cleared — fall through to re-register
+      localStorage.removeItem(PASSKEY_ID_KEY)
+    }
+  }
+
+  // No stored credential — register a new passkey to enroll the device biometric
   try {
-    const challenge = crypto.getRandomValues(new Uint8Array(32))
-    const assertion = await navigator.credentials.get({
+    const cred = await navigator.credentials.create({
       publicKey: {
         challenge,
-        userVerification: 'required',
+        rp: { name: 'IBON Admin', id: window.location.hostname },
+        user: { id: str2ab('ibon-bio-user'), name: 'biometric', displayName: 'IBON Biometric' },
+        pubKeyCredParams: [{ type: 'public-key', alg: -7 }, { type: 'public-key', alg: -257 }],
+        authenticatorSelection: { authenticatorAttachment: 'platform', userVerification: 'required', residentKey: 'preferred' },
         timeout: 60000,
-        rpId: window.location.hostname,
-        allowCredentials: [],
       },
     }) as PublicKeyCredential | null
-    return !!assertion
+    if (cred) {
+      // Store the credential ID so future logins use get() instead of create()
+      const idB64 = btoa(String.fromCharCode(...new Uint8Array(cred.rawId)))
+      localStorage.setItem(PASSKEY_ID_KEY, idB64)
+      return true
+    }
+    return false
   } catch {
     return false
   }
@@ -74,6 +114,7 @@ function LoginContent() {
   const [showPassword, setShowPassword] = useState(false)
   const [bioAvailable, setBioAvailable] = useState(false)
   const [bioEmail, setBioEmail] = useState<string | null>(null)
+  const [bioReady, setBioReady] = useState(false)  // true only when both email + password are cached
   const [showForm, setShowForm] = useState(false)
   const [bioEnabled, setBioEnabled] = useState(true)
   const supabase = createClient()
@@ -91,10 +132,12 @@ function LoginContent() {
     isBiometricAvailable().then(available => {
       setBioAvailable(available)
       const saved = localStorage.getItem(BIOMETRIC_KEY)
+      const pwdSaved = !!localStorage.getItem(BIO_PWD_KEY)
       const enabled = localStorage.getItem(BIOMETRIC_ENABLED_KEY) !== 'false'
       setBioEnabled(enabled)
-      if (available && saved && enabled) {
+      if (available && saved && enabled && pwdSaved) {
         setBioEmail(saved)
+        setBioReady(true)
       } else {
         setShowForm(true)
       }
@@ -115,24 +158,6 @@ function LoginContent() {
     // Use hard redirect for reliability on mobile PWA — router.push can silently
     // fail if the session cookie hasn't propagated to the middleware yet
     window.location.href = '/'
-  }
-
-  async function onSubmit(data: LoginForm) {
-    setLoading(true)
-    if (typeof window !== 'undefined') window.history.replaceState({}, '', '/login')
-    try {
-      await doLogin(data.email, data.password)
-      toast.success('Logged in successfully')
-      // Offer to save biometric after successful password login
-      if (bioAvailable) {
-        localStorage.setItem(BIOMETRIC_KEY, data.email)
-        setBioEmail(data.email)
-      }
-    } catch (err: any) {
-      toast.error(err.message ?? 'Login failed')
-    } finally {
-      setLoading(false)
-    }
   }
 
   async function handleBiometric() {
@@ -168,6 +193,7 @@ function LoginContent() {
         localStorage.setItem(BIOMETRIC_KEY, data.email)
         localStorage.setItem(BIO_PWD_KEY, obfuscate(data.password))
         setBioEmail(data.email)
+        setBioReady(true)
       }
       toast.success('Logged in successfully')
     } catch (err: any) {
@@ -190,8 +216,8 @@ function LoginContent() {
     }
   }
 
-  // Show biometric screen when email is saved, form is hidden, and biometrics is enabled
-  const showBiometricScreen = bioAvailable && !!bioEmail && !showForm && bioEnabled
+  // Show biometric screen only when both email + password are cached and the form is hidden
+  const showBiometricScreen = bioAvailable && bioReady && !!bioEmail && !showForm && bioEnabled
 
   return (
     <div className="min-h-screen flex">
@@ -444,8 +470,10 @@ function LoginContent() {
                 if (!next) {
                   localStorage.removeItem(BIOMETRIC_KEY)
                   localStorage.removeItem(BIO_PWD_KEY)
+                  localStorage.removeItem(PASSKEY_ID_KEY)
                   sessionStorage.removeItem('bio_pwd')
                   setBioEmail(null)
+                  setBioReady(false)
                   setShowForm(true)
                 } else if (bioEmail) {
                   setShowForm(false)
