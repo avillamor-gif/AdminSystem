@@ -514,7 +514,7 @@ export function EmployeeDetailContent({
             </div>
             <div className="border-t border-gray-200 mb-6"></div>
             <div className="space-y-4">
-              <div className="grid grid-cols-[1fr_1fr_1fr_120px] gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-[1fr_1fr_1fr_120px] gap-4">
                 <Input 
                   label="First Name" 
                   value={formData.first_name} 
@@ -541,7 +541,7 @@ export function EmployeeDetailContent({
                   disabled={!isEditMode} 
                 />
               </div>
-              <div className="grid grid-cols-[1fr_auto_1fr] gap-4 items-start">
+              <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto_1fr] gap-4 items-start">
                 <Input 
                   label="Date of Birth" 
                   type="date" 
@@ -2553,39 +2553,100 @@ export function EmployeeDetailContent({
     }
   }
 
+  // Service length helper (reused in both mobile and desktop profile cards)
+  const serviceLength = employee.hire_date ? (() => {
+    const start = new Date(employee.hire_date)
+    const now = new Date()
+    const months = (now.getFullYear() - start.getFullYear()) * 12 + (now.getMonth() - start.getMonth())
+    const y = Math.floor(months / 12)
+    const m = months % 12
+    if (y === 0) return `${m}mo`
+    if (m === 0) return `${y}yr${y > 1 ? 's' : ''}`
+    return `${y}yr${y > 1 ? 's' : ''} ${m}mo`
+  })() : 'N/A'
+
   return (
-    <div className="space-y-6">
-      {/* Header */}
+    <div className="space-y-4 sm:space-y-6 pb-24 sm:pb-0">
+      {/* Header — desktop only (back button + name) */}
       {!hideBackButton && (
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <Link
-            href={backHref}
-            className="p-2 hover:bg-gray-100 rounded-lg text-gray-500"
-          >
-            <ArrowLeft className="w-5 h-5" />
-          </Link>
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">
-              {employee.first_name} {employee.last_name}
-            </h1>
-            <p className="text-sm text-gray-500">{employee.job_title?.title || 'No title'} • {employee.department?.name || 'No department'}</p>
+        <div className="hidden sm:flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <Link href={backHref} className="p-2 hover:bg-gray-100 rounded-lg text-gray-500">
+              <ArrowLeft className="w-5 h-5" />
+            </Link>
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">
+                {employee.first_name} {employee.last_name}
+              </h1>
+              <p className="text-sm text-gray-500">{employee.job_title?.title || 'No title'} • {employee.department?.name || 'No department'}</p>
+            </div>
           </div>
+          {getStatusBadge(employee.status ?? '')}
         </div>
-        {getStatusBadge(employee.status ?? '')}
-      </div>
       )}
 
-      {/* Profile Summary Card */}
-      <Card>
+      {/* ── MOBILE Profile card ─────────────────────────────────────── */}
+      <div className="sm:hidden">
+        <Card className="p-4">
+          <div className="flex items-center gap-4">
+            {/* Avatar with upload */}
+            <div className="relative flex-shrink-0 group">
+              <Avatar
+                src={employee.avatar_url}
+                firstName={employee.first_name}
+                lastName={employee.last_name}
+                size="lg"
+              />
+              {isAdmin && !readOnly && (
+                <label
+                  htmlFor="photo-upload-mobile"
+                  className="absolute inset-0 rounded-full flex items-center justify-center bg-black/0 group-hover:bg-black/40 transition-all cursor-pointer"
+                >
+                  <Camera className="w-5 h-5 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                  <input id="photo-upload-mobile" type="file" accept="image/*" onChange={handlePhotoUpload} disabled={isUploadingPhoto} className="hidden" />
+                </label>
+              )}
+              {isUploadingPhoto && (
+                <div className="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center">
+                  <div className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                </div>
+              )}
+            </div>
+            {/* Name + meta */}
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 flex-wrap">
+                <h2 className="text-base font-bold text-gray-900 leading-tight">
+                  {employee.first_name} {employee.last_name}
+                </h2>
+                {getStatusBadge(employee.status ?? '')}
+              </div>
+              <p className="text-xs text-gray-500 mt-0.5 truncate">{employee.job_title?.title || 'No title'}</p>
+              <p className="text-xs text-gray-400 truncate">{employee.department?.name || 'No department'}</p>
+            </div>
+          </div>
+          {/* Stats row */}
+          <div className="grid grid-cols-3 gap-2 mt-4 pt-4 border-t border-gray-100">
+            <div className="text-center">
+              <div className="text-xs text-gray-400">ID</div>
+              <div className="text-xs font-semibold text-gray-700 mt-0.5">{employee.employee_id}</div>
+            </div>
+            <div className="text-center">
+              <div className="text-xs text-gray-400">Hired</div>
+              <div className="text-xs font-semibold text-gray-700 mt-0.5">{formatDate(employee.hire_date)}</div>
+            </div>
+            <div className="text-center">
+              <div className="text-xs text-gray-400">Service</div>
+              <div className="text-xs font-semibold text-gray-700 mt-0.5">{serviceLength}</div>
+            </div>
+          </div>
+        </Card>
+      </div>
+
+      {/* ── DESKTOP Profile summary card ────────────────────────────── */}
+      <Card className="hidden sm:block">
         <div className="flex items-center gap-6">
           <div className="relative flex-shrink-0 group">
-            <Avatar
-              src={employee.avatar_url}
-              firstName={employee.first_name}
-              lastName={employee.last_name}
-              size="xl"
-            />
+            <Avatar src={employee.avatar_url} firstName={employee.first_name} lastName={employee.last_name} size="xl" />
             {isAdmin && !readOnly && (
               <label
                 htmlFor="photo-upload"
@@ -2593,14 +2654,7 @@ export function EmployeeDetailContent({
                 title="Change photo"
               >
                 <Camera className="w-6 h-6 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
-                <input
-                  id="photo-upload"
-                  type="file"
-                  accept="image/*"
-                  onChange={handlePhotoUpload}
-                  disabled={isUploadingPhoto}
-                  className="hidden"
-                />
+                <input id="photo-upload" type="file" accept="image/*" onChange={handlePhotoUpload} disabled={isUploadingPhoto} className="hidden" />
               </label>
             )}
             {isUploadingPhoto && (
@@ -2628,26 +2682,38 @@ export function EmployeeDetailContent({
             </div>
             <div>
               <div className="text-xs text-gray-500">Length of Service</div>
-              <div className="text-sm font-medium text-gray-900">
-                {employee.hire_date ? (() => {
-                  const start = new Date(employee.hire_date)
-                  const now = new Date()
-                  const months = (now.getFullYear() - start.getFullYear()) * 12 + (now.getMonth() - start.getMonth())
-                  const y = Math.floor(months / 12)
-                  const m = months % 12
-                  if (y === 0) return `${m}mo`
-                  if (m === 0) return `${y}yr${y > 1 ? 's' : ''}`
-                  return `${y}yr${y > 1 ? 's' : ''} ${m}mo`
-                })() : 'N/A'}
-              </div>
+              <div className="text-sm font-medium text-gray-900">{serviceLength}</div>
             </div>
           </div>
         </div>
       </Card>
 
-      {/* Main Content with Sidebar */}
-      <div className="flex gap-6">
-        {/* Sidebar Navigation */}
+      {/* ── MOBILE: horizontal pill tab strip ──────────────────────── */}
+      <div className="sm:hidden overflow-x-auto -mx-4 px-4">
+        <div className="flex gap-2 w-max pb-1">
+          {tabs.map((tab) => {
+            const Icon = tab.icon
+            const isActive = activeTab === tab.key
+            return (
+              <button
+                key={tab.key}
+                onClick={() => setActiveTab(tab.key)}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors ${
+                  isActive
+                    ? 'bg-orange text-white shadow-sm'
+                    : 'bg-white text-gray-600 border border-gray-200'
+                }`}
+              >
+                <Icon className="w-3.5 h-3.5" />
+                {tab.label}
+              </button>
+            )
+          })}
+        </div>
+      </div>
+
+      {/* ── DESKTOP: sidebar + content ──────────────────────────────── */}
+      <div className="hidden sm:flex gap-6">
         <div className="w-64 flex-shrink-0">
           <Card className="p-0">
             <nav className="flex flex-col">
@@ -2674,13 +2740,14 @@ export function EmployeeDetailContent({
             </nav>
           </Card>
         </div>
-
-        {/* Tab Content */}
         <div className="flex-1">
-          <Card>
-            {renderTabContent()}
-          </Card>
+          <Card>{renderTabContent()}</Card>
         </div>
+      </div>
+
+      {/* ── MOBILE: full-width content card ─────────────────────────── */}
+      <div className="sm:hidden">
+        <Card>{renderTabContent()}</Card>
       </div>
 
       {/* Emergency Contact Modal */}
