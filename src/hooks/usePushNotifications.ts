@@ -81,12 +81,9 @@ export function usePushNotifications() {
         reg = await navigator.serviceWorker.register('/sw.js', { scope: '/' })
       }
 
-      alert(`SW state — active: ${!!reg.active}  installing: ${!!reg.installing}  waiting: ${!!reg.waiting} — polling until active...`)
-
       // Wait for the SW to be fully active (handles skipWaiting + clientsClaim)
       const activeReg = await waitForActiveSW(reg)
 
-      alert('✓ SW active! Subscribing to push...')
       const sub = await activeReg.pushManager.subscribe({
         userVisibleOnly: true,
         applicationServerKey: urlBase64ToUint8Array(vapidKey),

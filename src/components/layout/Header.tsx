@@ -107,7 +107,6 @@ export function Header({ user }: HeaderProps) {
         {/* Push Notifications Toggle — always visible so user can subscribe from any device */}
         <button
           onClick={() => {
-            alert('Bell clicked! isSupported=' + pushSupported + ' isSubscribed=' + isSubscribed + ' loading=' + pushLoading)
             if (isSubscribed) unsubscribe(); else subscribe()
           }}
           disabled={false}
