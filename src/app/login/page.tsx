@@ -204,8 +204,8 @@ function LoginContent() {
       {/* ── Desktop: left orange branding panel ────────────────────── */}
       <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-orange-500 via-orange-600 to-amber-700 items-center justify-center p-12">
         <div className="max-w-md text-center">
-          <div className="w-32 h-32 rounded-3xl overflow-hidden shadow-2xl mx-auto mb-6 border-4 border-white/30">
-            <Image src="/icons/icon-192x192.png" alt="IBON" width={128} height={128} className="w-full h-full object-cover" priority />
+          <div className="w-32 h-32 rounded-xl overflow-hidden shadow-2xl mx-auto mb-6 bg-white p-2">
+            <Image src="/ibon-icon.png" alt="IBON" width={128} height={128} className="w-full h-full object-contain" priority />
           </div>
           <h1 className="text-4xl font-bold text-white mb-2">IBON International</h1>
           <p className="text-white/70 text-base tracking-wide uppercase">Admin System</p>
@@ -443,7 +443,7 @@ export default function LoginPage() {
     <Suspense fallback={
       <div className="min-h-screen bg-orange-600 flex flex-col items-center justify-center gap-4">
         <div className="w-16 h-16 rounded-2xl overflow-hidden">
-          <Image src="/icons/icon-192x192.png" alt="IBON" width={64} height={64} className="w-full h-full" />
+          <Image src="/ibon-icon.png" alt="IBON" width={64} height={64} className="w-full h-full object-contain" />
         </div>
         <Loader2 className="animate-spin w-6 h-6 text-white/60" />
       </div>
