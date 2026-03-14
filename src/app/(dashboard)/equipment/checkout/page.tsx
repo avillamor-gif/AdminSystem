@@ -1,11 +1,12 @@
 'use client'
 
-import { useState, useEffect, Suspense } from 'react'
+import { useState, useEffect, useRef, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
-import { Monitor, Search, X, CheckCircle } from 'lucide-react'
+import { Monitor, Search, X, CheckCircle, ChevronDown } from 'lucide-react'
 import { Card, Button, Input } from '@/components/ui'
 import { useAssets, useAssetCategories, useCreateAssetRequest } from '@/hooks/useAssets'
 import { useCurrentEmployee } from '@/hooks/useEmployees'
+import { localDateStr } from '@/lib/utils'
 import type { Asset } from '@/services/asset.service'
 import toast from 'react-hot-toast'
 
@@ -17,7 +18,7 @@ interface CheckoutFormData {
   notes: string
 }
 
-const today = new Date().toISOString().split('T')[0]
+const today = localDateStr(new Date())
 
 function CheckoutPageInner() {
   const searchParams = useSearchParams()
@@ -31,6 +32,11 @@ function CheckoutPageInner() {
     notes: '',
   })
   const [submitted, setSubmitted] = useState(false)
+
+  // Equipment search combobox state
+  const [equipSearch, setEquipSearch] = useState('')
+  const [equipOpen, setEquipOpen] = useState(false)
+  const equipRef = useRef<HTMLDivElement>(null)
 
   // If the URL changes (e.g. user navigates from browse with a different asset)
   useEffect(() => {
@@ -51,8 +57,43 @@ function CheckoutPageInner() {
     | (Asset & { category?: { name: string }; brand?: { name: string } })
     | undefined
 
+  // Sync search label when asset is preselected or changed externally
+  useEffect(() => {
+    if (selectedAsset) {
+      setEquipSearch(selectedAsset.name)
+    }
+  }, [selectedAsset?.id])
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (equipRef.current && !equipRef.current.contains(e.target as Node)) {
+        setEquipOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClick)
+    return () => document.removeEventListener('mousedown', handleClick)
+  }, [])
+
+  // Filtered asset list based on search input
+  const filteredAssets = assets.filter(a => {
+    const q = equipSearch.toLowerCase()
+    return (
+      a.name?.toLowerCase().includes(q) ||
+      a.asset_tag?.toLowerCase().includes(q) ||
+      (a as any).category?.name?.toLowerCase().includes(q)
+    )
+  })
+
+  function selectAsset(a: Asset) {
+    setFormData(p => ({ ...p, asset_id: a.id }))
+    setEquipSearch(a.name)
+    setEquipOpen(false)
+  }
+
   function resetForm() {
     setFormData({ asset_id: '', purpose: '', borrowed_date: today, expected_return_date: '', notes: '' })
+    setEquipSearch('')
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -112,27 +153,51 @@ function CheckoutPageInner() {
                   className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-lg bg-gray-100 text-gray-500 cursor-not-allowed"
                 />
               </div>
-              <div>
+              <div ref={equipRef} className="relative">
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">
                   Equipment <span className="text-red-500">*</span>
                 </label>
-                <select
-                  value={formData.asset_id}
-                  onChange={e => setFormData(p => ({ ...p, asset_id: e.target.value }))}
-                  required
-                  className="w-full px-3 py-2.5 text-sm border border-gray-300 rounded-lg bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                >
-                  <option value="">-- Select Equipment --</option>
-                  {assets.map(a => {
-                    const cat = (a as any).category?.name
-                    const cond = a.condition ? `- ${a.condition.charAt(0).toUpperCase() + a.condition.slice(1)}` : ''
-                    return (
-                      <option key={a.id} value={a.id}>
-                        {[a.name, cat ? `(${cat})` : '', cond].filter(Boolean).join(' ')}
-                      </option>
-                    )
-                  })}
-                </select>
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                  <input
+                    type="text"
+                    value={equipSearch}
+                    onChange={e => { setEquipSearch(e.target.value); setEquipOpen(true); if (!e.target.value) setFormData(p => ({ ...p, asset_id: '' })) }}
+                    onFocus={() => setEquipOpen(true)}
+                    placeholder="Search by name, tag or category..."
+                    className="w-full pl-9 pr-9 py-2.5 text-sm border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  />
+                  {equipSearch ? (
+                    <button type="button" onClick={() => { setEquipSearch(''); setFormData(p => ({ ...p, asset_id: '' })); setEquipOpen(true) }} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                      <X className="w-4 h-4" />
+                    </button>
+                  ) : (
+                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                  )}
+                </div>
+                {equipOpen && (
+                  <div className="absolute z-20 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg max-h-56 overflow-y-auto">
+                    {filteredAssets.length === 0 ? (
+                      <div className="px-4 py-3 text-sm text-gray-400">No equipment found</div>
+                    ) : filteredAssets.map(a => {
+                      const cat = (a as any).category?.name
+                      const cond = a.condition ? a.condition.charAt(0).toUpperCase() + a.condition.slice(1) : ''
+                      return (
+                        <button
+                          key={a.id}
+                          type="button"
+                          onClick={() => selectAsset(a)}
+                          className={`w-full text-left px-4 py-2.5 text-sm hover:bg-green-50 flex items-center justify-between gap-2 ${
+                            formData.asset_id === a.id ? 'bg-green-50 font-medium text-green-700' : 'text-gray-800'
+                          }`}
+                        >
+                          <span>{a.name}{a.asset_tag ? ` · ${a.asset_tag}` : ''}</span>
+                          <span className="text-xs text-gray-400 shrink-0">{[cat, cond].filter(Boolean).join(' · ')}</span>
+                        </button>
+                      )
+                    })}
+                  </div>
+                )}
               </div>
             </div>
 
@@ -163,14 +228,13 @@ function CheckoutPageInner() {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                  Borrowed Date <span className="text-red-500">*</span>
+                  Borrowed Date
                 </label>
                 <input
-                  type="date"
-                  value={formData.borrowed_date}
-                  onChange={e => setFormData(p => ({ ...p, borrowed_date: e.target.value }))}
-                  required
-                  className="w-full px-3 py-2.5 text-sm border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  type="text"
+                  value={new Date(formData.borrowed_date + 'T00:00:00').toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' })}
+                  disabled
+                  className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-lg bg-gray-100 text-gray-500 cursor-not-allowed"
                 />
               </div>
               <div>
