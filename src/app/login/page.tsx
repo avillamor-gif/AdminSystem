@@ -21,6 +21,19 @@ type LoginForm = z.infer<typeof loginSchema>
 
 const BIOMETRIC_KEY = 'biometric_email'
 const BIOMETRIC_ENABLED_KEY = 'biometric_enabled'
+const BIO_PWD_KEY = 'bio_credential'
+
+// Simple reversible obfuscation — NOT encryption, just prevents plaintext
+// exposure in localStorage to casual snooping. The real security is WebAuthn.
+function obfuscate(s: string): string {
+  return btoa(s.split('').map((c, i) => String.fromCharCode(c.charCodeAt(0) ^ (i % 97) ^ 42)).join(''))
+}
+function deobfuscate(s: string): string {
+  try {
+    const decoded = atob(s)
+    return decoded.split('').map((c, i) => String.fromCharCode(c.charCodeAt(0) ^ (i % 97) ^ 42)).join('')
+  } catch { return '' }
+}
 
 async function isBiometricAvailable(): Promise<boolean> {
   try {
@@ -152,13 +165,14 @@ function LoginContent() {
       const verified = await triggerBiometric()
       if (!verified) { toast.error('Biometric verification failed'); return }
       // Biometric passed — we need a stored password. Prompt if not cached.
-      const stored = sessionStorage.getItem('bio_pwd')
-      if (!stored) {
+      const stored = localStorage.getItem(BIO_PWD_KEY)
+      const pwd = stored ? deobfuscate(stored) : ''
+      if (!pwd) {
         toast('Enter your password once to enable biometric login.', { icon: '🔒' })
         setShowForm(true)
         return
       }
-      await doLogin(bioEmail, stored)
+      await doLogin(bioEmail, pwd)
       toast.success('Biometric login successful')
     } catch (err: any) {
       toast.error(err.message ?? 'Biometric login failed')
@@ -175,7 +189,7 @@ function LoginContent() {
       await doLogin(data.email, data.password)
       if (bioAvailable && bioEnabled) {
         localStorage.setItem(BIOMETRIC_KEY, data.email)
-        sessionStorage.setItem('bio_pwd', data.password)
+        localStorage.setItem(BIO_PWD_KEY, obfuscate(data.password))
         setBioEmail(data.email)
       }
       toast.success('Logged in successfully')
@@ -452,6 +466,7 @@ function LoginContent() {
                 localStorage.setItem(BIOMETRIC_ENABLED_KEY, String(next))
                 if (!next) {
                   localStorage.removeItem(BIOMETRIC_KEY)
+                  localStorage.removeItem(BIO_PWD_KEY)
                   sessionStorage.removeItem('bio_pwd')
                   setBioEmail(null)
                   setShowForm(true)
