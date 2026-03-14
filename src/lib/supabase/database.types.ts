@@ -697,6 +697,7 @@ export type Database = {
           depreciation_method: string | null
           id: string
           image_url: string | null
+          image_urls: Json | null
           location: string | null
           location_id: string | null
           model: string | null
@@ -728,6 +729,7 @@ export type Database = {
           depreciation_method?: string | null
           id?: string
           image_url?: string | null
+          image_urls?: Json | null
           location?: string | null
           location_id?: string | null
           model?: string | null
@@ -759,6 +761,7 @@ export type Database = {
           depreciation_method?: string | null
           id?: string
           image_url?: string | null
+          image_urls?: Json | null
           location?: string | null
           location_id?: string | null
           model?: string | null
