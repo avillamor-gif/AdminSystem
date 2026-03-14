@@ -1,6 +1,6 @@
 'use client'
 
-import { Bell, BellRing, ChevronDown, HelpCircle, MessageSquare, LogOut, Package, Calendar, AlertTriangle, Clock, BookOpen, ShoppingCart, Plane, Award } from 'lucide-react'
+import { Bell, Smartphone, ChevronDown, HelpCircle, LogOut, Package, Calendar, AlertTriangle, Clock, BookOpen, ShoppingCart, Plane, Award } from 'lucide-react'
 import { Avatar } from '@/components/ui'
 import { useState, useMemo, useEffect, useRef } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
@@ -121,10 +121,10 @@ export function Header({ user }: HeaderProps) {
             if (isSubscribed) unsubscribe(); else subscribe()
           }}
           disabled={false}
-          title="Push notifications"
-          className="p-2 rounded-full transition-colors text-white/50 hover:text-white hover:bg-white/10"
+          title={isSubscribed ? 'Disable push notifications' : 'Enable push notifications'}
+          className={`p-2 rounded-full transition-colors hover:bg-white/10 ${isSubscribed ? 'text-white' : 'text-white/40'}`}
         >
-          <BellRing className="w-5 h-5" />
+          <Smartphone className="w-5 h-5" />
         </button>
 
         {/* Test Push (visible to all, sends to current user's subscribed devices) */}
@@ -151,11 +151,6 @@ export function Header({ user }: HeaderProps) {
         {/* Help */}
         <button className="p-2 text-white/80 hover:text-white hover:bg-white/10 rounded-full transition-colors">
           <HelpCircle className="w-5 h-5" />
-        </button>
-
-        {/* Messages */}
-        <button className="relative p-2 text-white/80 hover:text-white hover:bg-white/10 rounded-full transition-colors">
-          <MessageSquare className="w-5 h-5" />
         </button>
 
         {/* Notifications */}
