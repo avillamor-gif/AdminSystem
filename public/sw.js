@@ -15,12 +15,23 @@ self.addEventListener('push', function (event) {
   try { data = event.data.json() } catch (e) { data = { title: 'IBON Admin', body: event.data.text() } }
 
   // Set app icon badge — use count from payload if provided, otherwise 1
-  // Android Chrome supports navigator.setAppBadge (preferred) or self.registration.setAppBadge
   var badgeCount = (data.badge_count && typeof data.badge_count === 'number') ? data.badge_count : 1
+  var badgeApi = 'setAppBadge' in navigator ? 'navigator' : ('setAppBadge' in self.registration ? 'registration' : 'none')
+  console.log('[sw] badge api available:', badgeApi, '| count:', badgeCount)
   if ('setAppBadge' in navigator) {
-    navigator.setAppBadge(badgeCount).catch(function () {})
+    navigator.setAppBadge(badgeCount).then(function () {
+      console.log('[sw] setAppBadge(' + badgeCount + ') SUCCESS via navigator')
+    }).catch(function (err) {
+      console.error('[sw] setAppBadge FAILED via navigator:', err)
+    })
   } else if ('setAppBadge' in self.registration) {
-    self.registration.setAppBadge(badgeCount).catch(function () {})
+    self.registration.setAppBadge(badgeCount).then(function () {
+      console.log('[sw] setAppBadge(' + badgeCount + ') SUCCESS via registration')
+    }).catch(function (err) {
+      console.error('[sw] setAppBadge FAILED via registration:', err)
+    })
+  } else {
+    console.warn('[sw] setAppBadge NOT supported on this device')
   }
 
   // tag: collapses duplicate notifications (same tag = replace, not stack)
