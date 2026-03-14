@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useQueryClient } from '@tanstack/react-query'
 import { createClient } from '../../lib/supabase/client'
-import { Sidebar, Header, SessionTimeoutProvider } from '@/components/layout'
+import { Sidebar, Header, SessionTimeoutProvider, MobileBottomNav } from '@/components/layout'
 import { SidebarProvider, useSidebar } from '@/contexts/SidebarContext'
 import { employeeService } from '@/services/employee.service'
 import type { User } from '@supabase/supabase-js'
@@ -128,7 +128,7 @@ function DashboardContent({
   return (
     <div className="min-h-screen bg-gray-50">
       <Sidebar />
-      <div className={isCollapsed ? "pl-[70px]" : "pl-[260px]"} style={{ transition: 'padding-left 300ms' }}>
+      <div className={isCollapsed ? "md:pl-[70px]" : "md:pl-[260px]"} style={{ transition: 'padding-left 300ms' }}>
         <Header
           user={
             user
@@ -141,8 +141,9 @@ function DashboardContent({
               : null
           }
         />
-        <main className="p-6 bg-gray-100 min-h-[calc(100vh-64px)]">{children}</main>
+        <main className="p-4 md:p-6 bg-gray-100 min-h-[calc(100vh-64px)] pb-20 md:pb-6">{children}</main>
       </div>
+      <MobileBottomNav />
     </div>
   )
 }
