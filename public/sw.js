@@ -15,8 +15,11 @@ self.addEventListener('push', function (event) {
   try { data = event.data.json() } catch (e) { data = { title: 'IBON Admin', body: event.data.text() } }
 
   // Set app icon badge — use count from payload if provided, otherwise 1
-  if ('setAppBadge' in self.registration) {
-    var badgeCount = (data.badge_count && typeof data.badge_count === 'number') ? data.badge_count : 1
+  // Android Chrome supports navigator.setAppBadge (preferred) or self.registration.setAppBadge
+  var badgeCount = (data.badge_count && typeof data.badge_count === 'number') ? data.badge_count : 1
+  if ('setAppBadge' in navigator) {
+    navigator.setAppBadge(badgeCount).catch(function () {})
+  } else if ('setAppBadge' in self.registration) {
     self.registration.setAppBadge(badgeCount).catch(function () {})
   }
 
@@ -41,7 +44,9 @@ self.addEventListener('notificationclick', function (event) {
   event.notification.close()
 
   // Clear the app icon badge when user taps the notification
-  if ('clearAppBadge' in self.registration) {
+  if ('clearAppBadge' in navigator) {
+    navigator.clearAppBadge().catch(function () {})
+  } else if ('clearAppBadge' in self.registration) {
     self.registration.clearAppBadge().catch(function () {})
   }
 
