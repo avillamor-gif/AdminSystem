@@ -137,6 +137,7 @@ export async function POST(req: NextRequest) {
       title,
       body: message,
       url: '/',
+      tag: `decision-${requestId}`,
     }).catch(() => {})
 
     // ── Fire-and-forget email to the requester ────────────────────────────────

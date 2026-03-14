@@ -12,6 +12,7 @@ export interface PushPayload {
   body: string
   url?: string
   icon?: string
+  tag?: string
 }
 
 /**
@@ -49,6 +50,7 @@ export async function sendPushToUsers(userIds: string[], payload: PushPayload) {
     body: payload.body,
     url: payload.url ?? '/',
     icon: payload.icon ?? '/icons/icon-192x192.png',
+    tag: payload.tag ?? 'ibon-admin',
   })
 
   const staleIds: string[] = []

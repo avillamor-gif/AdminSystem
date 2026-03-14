@@ -189,6 +189,7 @@ export async function POST(req: NextRequest) {
       title: title.replace('{name}', name),
       body: message.replace('{name}', name),
       url: '/admin/leave-management',
+      tag: `new-request-${requestId}`,
     }).catch(() => {})
 
     // ── Fire-and-forget emails to recipients who have an email address ──────
