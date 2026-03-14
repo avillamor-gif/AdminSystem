@@ -11,6 +11,40 @@ function urlBase64ToUint8Array(base64String: string) {
 
 export type PushPermission = 'default' | 'granted' | 'denied' | 'unsupported'
 
+/**
+ * Wait for a SW registration to have an active worker.
+ * Unlike navigator.serviceWorker.ready (which hangs if a SW is stuck in
+ * installing/waiting state), this resolves as soon as a worker is activated,
+ * or rejects with a clear message after 20 seconds.
+ */
+function waitForActiveSW(reg: ServiceWorkerRegistration): Promise<ServiceWorkerRegistration> {
+  if (reg.active) return Promise.resolve(reg)
+
+  return new Promise((resolve, reject) => {
+    const worker = reg.installing ?? reg.waiting
+    if (!worker) { reject(new Error('No SW worker found in registration')); return }
+
+    const timeout = setTimeout(() => {
+      reject(new Error(
+        `SW took too long to activate (state: ${worker.state}). ` +
+        `Try closing ALL tabs of this app then reopening.`
+      ))
+    }, 20000)
+
+    worker.addEventListener('statechange', function onStateChange() {
+      if (worker.state === 'activated') {
+        clearTimeout(timeout)
+        worker.removeEventListener('statechange', onStateChange)
+        resolve(reg)
+      } else if (worker.state === 'redundant') {
+        clearTimeout(timeout)
+        worker.removeEventListener('statechange', onStateChange)
+        reject(new Error('SW became redundant — another SW took over. Please reload.'))
+      }
+    })
+  })
+}
+
 export function usePushNotifications() {
   const [permission, setPermission] = useState<PushPermission>('default')
   const [isSubscribed, setIsSubscribed] = useState(false)
@@ -24,23 +58,13 @@ export function usePushNotifications() {
 
   useEffect(() => {
     if (!isSupported) { setPermission('unsupported'); return }
-
     setPermission(Notification.permission as PushPermission)
-
-    navigator.serviceWorker.ready.then((reg) =>
-      reg.pushManager.getSubscription().then((sub) => setIsSubscribed(!!sub))
-    )
+    navigator.serviceWorker.getRegistration('/').then((reg) => {
+      if (reg) reg.pushManager.getSubscription().then((sub) => setIsSubscribed(!!sub))
+    })
   }, [isSupported])
 
   const subscribe = useCallback(async () => {
-    // Debug: show support status regardless
-    const swSupported = 'serviceWorker' in navigator
-    const pmSupported = 'PushManager' in window
-    const notifSupported = 'Notification' in window
-    if (!swSupported || !pmSupported || !notifSupported) {
-      alert(`❌ Not supported:\n- ServiceWorker: ${swSupported}\n- PushManager: ${pmSupported}\n- Notification: ${notifSupported}`)
-      return
-    }
     if (!isSupported) { alert('❌ Push not supported on this browser/device'); return }
     setIsLoading(true)
     try {
@@ -51,16 +75,18 @@ export function usePushNotifications() {
       setPermission(perm as PushPermission)
       if (perm !== 'granted') { alert('⚠️ Permission not granted: ' + perm); return }
 
-      // Register SW if not already registered, then wait for it to be ready
-      alert('Registering SW...')
-      const reg = await navigator.serviceWorker.register('/sw.js', { scope: '/', updateViaCache: 'none' })
-      alert('SW registered. State: ' + (reg.active?.state ?? reg.installing?.state ?? reg.waiting?.state ?? 'unknown'))
+      // Get existing registration (next-pwa registers sw.js at scope '/')
+      let reg = await navigator.serviceWorker.getRegistration('/')
+      if (!reg) {
+        // Not registered yet — register manually
+        reg = await navigator.serviceWorker.register('/sw.js', { scope: '/' })
+      }
 
-      // navigator.serviceWorker.ready resolves when a SW is active for this page
-      const activeReg = await Promise.race([
-        navigator.serviceWorker.ready,
-        new Promise<never>((_, reject) => setTimeout(() => reject(new Error('SW took too long to activate')), 30000))
-      ])
+      alert(`SW state — active: ${!!reg.active}  installing: ${!!reg.installing}  waiting: ${!!reg.waiting}`)
+
+      // Wait for an active worker without hanging indefinitely
+      const activeReg = await waitForActiveSW(reg)
+
       alert('✓ SW active! Subscribing to push...')
       const sub = await activeReg.pushManager.subscribe({
         userVisibleOnly: true,
@@ -92,15 +118,17 @@ export function usePushNotifications() {
     if (!isSupported) return
     setIsLoading(true)
     try {
-      const reg = await navigator.serviceWorker.ready
-      const sub = await reg.pushManager.getSubscription()
-      if (sub) {
-        await fetch('/api/push/subscribe', {
-          method: 'DELETE',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ endpoint: sub.endpoint }),
-        })
-        await sub.unsubscribe()
+      const reg = await navigator.serviceWorker.getRegistration('/')
+      if (reg) {
+        const sub = await reg.pushManager.getSubscription()
+        if (sub) {
+          await fetch('/api/push/subscribe', {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ endpoint: sub.endpoint }),
+          })
+          await sub.unsubscribe()
+        }
       }
       setIsSubscribed(false)
     } catch (err) {
