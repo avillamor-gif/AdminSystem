@@ -14,9 +14,10 @@ self.addEventListener('push', function (event) {
   var data = {}
   try { data = event.data.json() } catch (e) { data = { title: 'IBON Admin', body: event.data.text() } }
 
-  // Increment the app icon badge
+  // Set app icon badge — use count from payload if provided, otherwise 1
   if ('setAppBadge' in self.registration) {
-    self.registration.setAppBadge().catch(function () {})
+    var badgeCount = (data.badge_count && typeof data.badge_count === 'number') ? data.badge_count : 1
+    self.registration.setAppBadge(badgeCount).catch(function () {})
   }
 
   // tag: collapses duplicate notifications (same tag = replace, not stack)

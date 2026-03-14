@@ -13,6 +13,7 @@ export interface PushPayload {
   url?: string
   icon?: string
   tag?: string
+  badge_count?: number
 }
 
 /**
@@ -51,6 +52,7 @@ export async function sendPushToUsers(userIds: string[], payload: PushPayload) {
     url: payload.url ?? '/',
     icon: payload.icon ?? '/icons/icon-192x192.png',
     tag: payload.tag ?? 'ibon-admin',
+    badge_count: payload.badge_count ?? 1,
   })
 
   const staleIds: string[] = []
