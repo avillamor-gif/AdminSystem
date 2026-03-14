@@ -283,8 +283,8 @@ function LoginContent() {
 
         {/* Top orange section */}
         <div className="flex flex-col items-center justify-center px-6 pt-8 pb-6 min-h-[38vh]">
-          <div className="w-24 h-24 rounded-3xl overflow-hidden shadow-2xl mb-3 bg-white p-2">
-            <Image src="/icons/icon-192x192.png" alt="IBON" width={96} height={96} className="w-full h-full object-cover" priority />
+          <div className="w-24 h-24 rounded-xl overflow-hidden shadow-2xl mb-3 bg-white p-2">
+            <Image src="/ibon-icon.png" alt="IBON" width={96} height={96} className="w-full h-full object-contain" priority />
           </div>
           <h1 className="text-3xl font-bold text-white tracking-tight">IBON International</h1>
           <p className="text-white/70 text-sm mt-1 tracking-wide uppercase">Admin System</p>
