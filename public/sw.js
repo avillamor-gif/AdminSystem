@@ -13,6 +13,12 @@ self.addEventListener('push', function (event) {
   if (!event.data) return
   var data = {}
   try { data = event.data.json() } catch (e) { data = { title: 'IBON Admin', body: event.data.text() } }
+
+  // Increment the app icon badge
+  if ('setAppBadge' in self.registration) {
+    self.registration.setAppBadge().catch(function () {})
+  }
+
   // tag: collapses duplicate notifications (same tag = replace, not stack)
   // requireInteraction: keeps notification visible until user taps it
   // — both are key to avoiding Chrome's spam detection on mobile
@@ -32,6 +38,12 @@ self.addEventListener('push', function (event) {
 
 self.addEventListener('notificationclick', function (event) {
   event.notification.close()
+
+  // Clear the app icon badge when user taps the notification
+  if ('clearAppBadge' in self.registration) {
+    self.registration.clearAppBadge().catch(function () {})
+  }
+
   var url = (event.notification.data && event.notification.data.url) ? event.notification.data.url : '/'
   event.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function (list) {

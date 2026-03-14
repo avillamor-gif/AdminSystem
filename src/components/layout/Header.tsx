@@ -29,6 +29,17 @@ export function Header({ user }: HeaderProps) {
   const totalCount = notifications.length
   const { permission, isSubscribed, isLoading: pushLoading, isSupported: pushSupported, subscribe, unsubscribe } = usePushNotifications()
 
+  // Update the PWA app icon badge whenever the unread count changes
+  useEffect(() => {
+    if ('setAppBadge' in navigator) {
+      if (totalCount > 0) {
+        (navigator as any).setAppBadge(totalCount).catch(() => {})
+      } else {
+        (navigator as any).clearAppBadge().catch(() => {})
+      }
+    }
+  }, [totalCount])
+
   const handleSignOut = async () => {
     const supabase = createClient()
     await supabase.auth.signOut()
