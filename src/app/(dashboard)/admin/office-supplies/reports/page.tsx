@@ -10,6 +10,7 @@ import {
   BarChart3, PieChart, Download, Printer, CheckSquare, Square,
 } from 'lucide-react'
 import toast from 'react-hot-toast'
+import * as XLSX from 'xlsx'
 
 // ── Field definitions ──────────────────────────────────────────────────────────
 const ALL_FIELDS = [
@@ -229,6 +230,27 @@ export default function SupplyReportsPage() {
     a.download = `supply-inventory-${new Date().toISOString().split('T')[0]}.csv`
     a.click()
     window.URL.revokeObjectURL(url)
+    setShowExportModal(false)
+  }
+
+  // ── Export XLSX ───────────────────────────────────────────────────────────────
+  const handleExportXLSX = () => {
+    const filtered = items.filter(i => exportCategories.has(i.categoryName ?? 'Uncategorized'))
+    const fields   = ALL_FIELDS.filter(f => exportFields.has(f.key))
+
+    const headerRow = fields.map(f => f.label)
+    const dataRows  = filtered.map(item => fields.map(f => {
+      switch (f.key) {
+        case 'unit_cost':   return item.unit_cost ?? ''
+        case 'total_value': return (item.unit_cost ?? 0) * (item.quantity_on_hand ?? 0)
+        default:            return getFieldValue(item, f.key)
+      }
+    }))
+
+    const ws = XLSX.utils.aoa_to_sheet([headerRow, ...dataRows])
+    const wb = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(wb, ws, 'Supply Inventory')
+    XLSX.writeFile(wb, `supply-inventory-${new Date().toISOString().split('T')[0]}.xlsx`)
     setShowExportModal(false)
   }
 
@@ -508,8 +530,11 @@ export default function SupplyReportsPage() {
           </ModalBody>
           <ModalFooter>
             <Button variant="secondary" onClick={() => setShowExportModal(false)}>Cancel</Button>
-            <Button onClick={handleExport} disabled={exportCategories.size === 0 || exportFields.size === 0}>
-              <Download className="h-4 w-4 mr-2" /> Download CSV
+            <Button variant="secondary" onClick={handleExport} disabled={exportCategories.size === 0 || exportFields.size === 0}>
+              <Download className="h-4 w-4 mr-2" /> CSV
+            </Button>
+            <Button onClick={handleExportXLSX} disabled={exportCategories.size === 0 || exportFields.size === 0}>
+              <Download className="h-4 w-4 mr-2" /> Excel
             </Button>
           </ModalFooter>
         </Modal>

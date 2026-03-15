@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/Button'
 import { Modal, ModalHeader, ModalBody, ModalFooter } from '@/components/ui/Modal'
 import { usePublicationRequests } from '@/hooks/usePublications'
 import toast from 'react-hot-toast'
+import * as XLSX from 'xlsx'
 import {
   BookOpen, DollarSign, Clock, CheckCircle, XCircle, BarChart3,
   PieChart, Download, Printer, CheckSquare, Square, TrendingUp,
@@ -232,6 +233,40 @@ export default function PublicationReportsPage() {
     a.download = `publication-requests-${new Date().toISOString().split('T')[0]}.csv`
     a.click()
     URL.revokeObjectURL(url)
+    setShowExportModal(false)
+  }
+
+  // ── Export XLSX ────────────────────────────────────────────────────────────
+  const handleExportXLSX = () => {
+    const filtered = requests.filter(r => exportStatuses.has(r.status ?? 'unknown'))
+    const fields   = ALL_FIELDS.filter(f => exportFields.has(f.key))
+
+    const headerRow = fields.map(f => f.label)
+    const dataRows  = filtered.map(r => fields.map(f => {
+      switch (f.key) {
+        case 'estimated_cost': return r.estimated_cost ?? ''
+        case 'total_cost':     return (r.estimated_cost ?? 0) * (r.quantity ?? 1)
+        case 'cover_url':      return r.cover_url ? 'View Cover' : ''
+        default:               return getFieldValue(r, f.key)
+      }
+    }))
+
+    const ws = XLSX.utils.aoa_to_sheet([headerRow, ...dataRows])
+
+    // Add real clickable hyperlinks to cover_url cells
+    const coverColIdx = fields.findIndex(f => f.key === 'cover_url')
+    if (coverColIdx >= 0) {
+      filtered.forEach((r, rowIdx) => {
+        if (r.cover_url) {
+          const cellRef = XLSX.utils.encode_cell({ r: rowIdx + 1, c: coverColIdx })
+          if (ws[cellRef]) ws[cellRef].l = { Target: r.cover_url, Tooltip: 'View Cover' }
+        }
+      })
+    }
+
+    const wb = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(wb, ws, 'Publication Requests')
+    XLSX.writeFile(wb, `publication-requests-${new Date().toISOString().split('T')[0]}.xlsx`)
     setShowExportModal(false)
   }
 
@@ -523,8 +558,11 @@ export default function PublicationReportsPage() {
           </ModalBody>
           <ModalFooter>
             <Button variant="secondary" onClick={() => setShowExportModal(false)}>Cancel</Button>
-            <Button onClick={handleExport} disabled={exportStatuses.size === 0 || exportFields.size === 0}>
-              <Download className="h-4 w-4 mr-2" /> Download CSV
+            <Button variant="secondary" onClick={handleExport} disabled={exportStatuses.size === 0 || exportFields.size === 0}>
+              <Download className="h-4 w-4 mr-2" /> CSV
+            </Button>
+            <Button onClick={handleExportXLSX} disabled={exportStatuses.size === 0 || exportFields.size === 0}>
+              <Download className="h-4 w-4 mr-2" /> Excel
             </Button>
           </ModalFooter>
         </Modal>

@@ -6,6 +6,7 @@ import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Modal, ModalHeader, ModalBody, ModalFooter } from '@/components/ui/Modal'
 import { Package, TrendingUp, DollarSign, Wrench, Users, BarChart3, PieChart, Download, Printer, CheckSquare, Square } from 'lucide-react'
+import * as XLSX from 'xlsx'
 
 const PRINTABLE_FIELDS = [
   { key: 'asset_tag',     label: 'Asset Tag' },
@@ -289,6 +290,39 @@ export default function ReportsPage() {
     a.download = `asset-report-${new Date().toISOString().split('T')[0]}.csv`
     a.click()
     window.URL.revokeObjectURL(url)
+    setShowExportModal(false)
+  }
+
+  const handleExportXLSX = () => {
+    const filteredAssets = assets.filter(a => {
+      const cat = a.category?.name || 'Uncategorized'
+      return exportSelectedCategories.has(cat)
+    })
+    const fields = PRINTABLE_FIELDS.filter(f => exportSelectedFields.has(f.key))
+
+    const headerRow = fields.map(f => f.label)
+    const dataRows = filteredAssets.map(asset => fields.map(f => {
+      switch (f.key) {
+        case 'asset_tag':      return asset.asset_tag ?? ''
+        case 'name':           return asset.name ?? ''
+        case 'category':       return asset.category?.name ?? ''
+        case 'brand':          return [asset.brand?.name, asset.model].filter(Boolean).join(' / ')
+        case 'status':         return asset.status ?? ''
+        case 'condition':      return asset.condition ?? ''
+        case 'assigned_to':    return asset.employee ? `${asset.employee.first_name} ${asset.employee.last_name}` : ''
+        case 'location':       return asset.location ?? ''
+        case 'purchase_price': return asset.purchase_price ?? ''
+        case 'purchase_date':  return asset.purchase_date ? new Date(asset.purchase_date).toLocaleDateString() : ''
+        case 'warranty_end':   return asset.warranty_end_date ? new Date(asset.warranty_end_date).toLocaleDateString() : ''
+        case 'serial_number':  return asset.serial_number ?? ''
+        default:               return ''
+      }
+    }))
+
+    const ws = XLSX.utils.aoa_to_sheet([headerRow, ...dataRows])
+    const wb = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(wb, ws, 'Asset Report')
+    XLSX.writeFile(wb, `asset-report-${new Date().toISOString().split('T')[0]}.xlsx`)
     setShowExportModal(false)
   }
 
@@ -707,11 +741,19 @@ export default function ReportsPage() {
           <ModalFooter>
             <Button variant="secondary" onClick={() => setShowExportModal(false)}>Cancel</Button>
             <Button
+              variant="secondary"
               onClick={handleExport}
               disabled={exportSelectedCategories.size === 0 || exportSelectedFields.size === 0}
             >
               <Download className="h-4 w-4 mr-2" />
-              Download CSV
+              CSV
+            </Button>
+            <Button
+              onClick={handleExportXLSX}
+              disabled={exportSelectedCategories.size === 0 || exportSelectedFields.size === 0}
+            >
+              <Download className="h-4 w-4 mr-2" />
+              Excel
             </Button>
           </ModalFooter>
         </Modal>
