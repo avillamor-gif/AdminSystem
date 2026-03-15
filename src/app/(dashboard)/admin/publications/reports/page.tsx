@@ -205,18 +205,26 @@ export default function PublicationReportsPage() {
     const filtered = requests.filter(r => exportStatuses.has(r.status ?? 'unknown'))
     const fields   = ALL_FIELDS.filter(f => exportFields.has(f.key))
     const headers  = fields.map(f => f.label)
-    const rows     = filtered.map(r => fields.map(f => {
+    // Each cell is either a raw formula string (no quoting) or a quoted string
+    type Cell = { raw: true; value: string } | { raw: false; value: string }
+    const rows: Cell[][] = filtered.map(r => fields.map(f => {
       switch (f.key) {
-        case 'estimated_cost': return r.estimated_cost != null ? String(r.estimated_cost) : ''
-        case 'total_cost':     return String((r.estimated_cost ?? 0) * (r.quantity ?? 1))
-        case 'cover_url':      return r.cover_url ? 'View Cover' : ''
-        default:               return getFieldValue(r, f.key)
+        case 'estimated_cost': return { raw: false, value: r.estimated_cost != null ? String(r.estimated_cost) : '' }
+        case 'total_cost':     return { raw: false, value: String((r.estimated_cost ?? 0) * (r.quantity ?? 1)) }
+        case 'cover_url':      return r.cover_url
+          ? { raw: true,  value: `=HYPERLINK("${r.cover_url}","View Cover")` }
+          : { raw: false, value: '' }
+        default:               return { raw: false, value: getFieldValue(r, f.key) }
       }
     }))
 
-    const csv = [headers, ...rows]
-      .map(row => row.map(v => `"${String(v).replace(/"/g, '""')}"`).join(','))
-      .join('\n')
+    const serializeCell = (cell: Cell) =>
+      cell.raw ? cell.value : `"${cell.value.replace(/"/g, '""')}"`
+
+    const csv = [
+      headers.map(h => `"${h.replace(/"/g, '""')}"`).join(','),
+      ...rows.map(row => row.map(serializeCell).join(',')),
+    ].join('\n')
     const blob = new Blob([csv], { type: 'text/csv' })
     const url  = URL.createObjectURL(blob)
     const a    = document.createElement('a')
