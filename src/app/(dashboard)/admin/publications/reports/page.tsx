@@ -28,7 +28,7 @@ const ALL_FIELDS = [
   { key: 'purpose',           label: 'Purpose / Description' },
   { key: 'notes',             label: 'Notes (incl. system entries)' },
   { key: 'created_at',        label: 'Date Requested' },
-  { key: 'cover_url',         label: 'Cover Image URL' },
+  { key: 'cover_url',         label: 'Cover Image' },
 ]
 
 type Row = {
