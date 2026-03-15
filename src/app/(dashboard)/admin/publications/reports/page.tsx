@@ -1,10 +1,11 @@
 'use client'
 
-import { useState, useMemo, useRef } from 'react'
+import { useState, useMemo } from 'react'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Modal, ModalHeader, ModalBody, ModalFooter } from '@/components/ui/Modal'
 import { usePublicationRequests } from '@/hooks/usePublications'
+import toast from 'react-hot-toast'
 import {
   BookOpen, DollarSign, Clock, CheckCircle, XCircle, BarChart3,
   PieChart, Download, Printer, CheckSquare, Square, TrendingUp,
@@ -79,7 +80,7 @@ function getFieldValue(row: Row, key: string): string {
     case 'purpose':           return row.purpose ?? ''
     case 'notes':             return row.notes ?? ''
     case 'created_at':        return fmtDate(row.created_at)
-    case 'cover_url':         return row.cover_url ?? ''
+    case 'cover_url':         return row.cover_url ? 'View Cover' : '—'
     default:                  return ''
   }
 }
@@ -88,8 +89,6 @@ function getFieldValue(row: Row, key: string): string {
 export default function PublicationReportsPage() {
   const { data: rawRequests = [], isLoading } = usePublicationRequests({})
   const requests = rawRequests as Row[]
-  const printFrameRef = useRef<HTMLIFrameElement>(null)
-
   // Print modal state
   const [showPrintModal, setShowPrintModal]   = useState(false)
   const [printStatuses, setPrintStatuses]     = useState<Set<string>>(new Set())
@@ -164,7 +163,7 @@ export default function PublicationReportsPage() {
         if (f.key === 'cover_url') {
           const url = r.cover_url
           return url
-            ? `<td><a href="${url}" target="_blank" style="color:#ff7e15;text-decoration:underline;">View Cover</a></td>`
+            ? `<td><a href="${encodeURI(url)}" target="_blank" style="color:#ff7e15;text-decoration:underline;font-weight:600;">View Cover</a></td>`
             : `<td>—</td>`
         }
         return `<td>${getFieldValue(r, f.key)}</td>`
@@ -187,12 +186,11 @@ export default function PublicationReportsPage() {
 <table><thead><tr>${headerCells}</tr></thead><tbody>${rows}</tbody></table>
 </body></html>`
 
-    const iframe = printFrameRef.current!
-    const doc = iframe.contentDocument || iframe.contentWindow?.document
-    if (!doc) return
-    doc.open(); doc.write(html); doc.close()
-    iframe.contentWindow?.focus()
-    iframe.contentWindow?.print()
+    const win = window.open('', '_blank', 'width=1100,height=800')
+    if (!win) { toast.error('Pop-up blocked — please allow pop-ups for this site'); return }
+    win.document.open(); win.document.write(html); win.document.close()
+    win.focus()
+    setTimeout(() => { win.print(); win.close() }, 400)
     setShowPrintModal(false)
   }
 
@@ -471,9 +469,6 @@ export default function PublicationReportsPage() {
           </div>
         </>
       )}
-
-      {/* Hidden print iframe */}
-      <iframe ref={printFrameRef} style={{ display: 'none' }} title="print-frame" />
 
       {/* Print Modal */}
       {showPrintModal && (
