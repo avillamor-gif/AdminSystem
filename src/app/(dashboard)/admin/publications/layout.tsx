@@ -5,6 +5,7 @@ const publicationNavItems = [
   { label: 'Add Publication', href: '/admin/publications/add-publication' },
   { label: 'Printing Presses', href: '/admin/publications/printing-presses' },
   { label: 'Distribution Lists', href: '/admin/publications/distribution-lists' },
+  { label: 'Reports', href: '/admin/publications/reports' },
 ]
 
 export default function AdminPublicationsLayout({
