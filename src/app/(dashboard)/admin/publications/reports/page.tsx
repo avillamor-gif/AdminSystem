@@ -28,6 +28,7 @@ const ALL_FIELDS = [
   { key: 'purpose',           label: 'Purpose' },
   { key: 'notes',             label: 'Notes' },
   { key: 'created_at',        label: 'Date Requested' },
+  { key: 'cover_url',         label: 'Cover Image URL' },
 ]
 
 type Row = {
@@ -47,6 +48,7 @@ type Row = {
   purpose: string
   notes: string | null
   created_at: string | null
+  cover_url: string | null
 }
 
 function fmtDate(d: string | null) {
@@ -77,6 +79,7 @@ function getFieldValue(row: Row, key: string): string {
     case 'purpose':           return row.purpose ?? ''
     case 'notes':             return row.notes ?? ''
     case 'created_at':        return fmtDate(row.created_at)
+    case 'cover_url':         return row.cover_url ?? ''
     default:                  return ''
   }
 }
@@ -153,7 +156,15 @@ export default function PublicationReportsPage() {
     const fields   = ALL_FIELDS.filter(f => printFields.has(f.key))
     const headerCells = fields.map(f => `<th>${f.label}</th>`).join('')
     const rows = filtered.map(r =>
-      `<tr>${fields.map(f => `<td>${getFieldValue(r, f.key)}</td>`).join('')}</tr>`
+      `<tr>${fields.map(f => {
+        if (f.key === 'cover_url') {
+          const url = r.cover_url
+          return url
+            ? `<td><img src="${url}" alt="cover" style="width:48px;height:64px;object-fit:cover;border-radius:3px;" /></td>`
+            : `<td>—</td>`
+        }
+        return `<td>${getFieldValue(r, f.key)}</td>`
+      }).join('')}</tr>`
     ).join('')
 
     const html = `<!DOCTYPE html><html><head><title>Publication Requests Report</title>
@@ -163,7 +174,7 @@ export default function PublicationReportsPage() {
   p.sub { color: #666; margin-bottom: 12px; font-size: 10px; }
   table { width: 100%; border-collapse: collapse; }
   th { background: #ff7e15; color: #fff; padding: 6px 8px; text-align: left; font-size: 10px; }
-  td { padding: 5px 8px; border-bottom: 1px solid #e5e7eb; }
+  td { padding: 5px 8px; border-bottom: 1px solid #e5e7eb; vertical-align: middle; }
   tr:nth-child(even) td { background: #f9fafb; }
   @media print { @page { margin: 15mm; size: landscape; } }
 </style></head><body>
@@ -196,6 +207,7 @@ export default function PublicationReportsPage() {
       switch (f.key) {
         case 'estimated_cost': return r.estimated_cost != null ? String(r.estimated_cost) : ''
         case 'total_cost':     return String((r.estimated_cost ?? 0) * (r.quantity ?? 1))
+        case 'cover_url':      return r.cover_url ?? ''
         default:               return getFieldValue(r, f.key)
       }
     }))
