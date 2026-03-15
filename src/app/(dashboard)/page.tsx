@@ -1,6 +1,6 @@
 'use client'
 
-import { Users, Calendar, Clock, Briefcase, UserCheck, CalendarX } from 'lucide-react'
+import { Users, Calendar, Clock, Briefcase, UserCheck, CalendarX, CheckCircle, FileText, ClipboardList } from 'lucide-react'
 import { Card, Avatar } from '@/components/ui'
 import { useEmployeesWorkStatusToday } from '@/hooks/useLeave'
 import { useHolidays } from '@/hooks/useLeaveAbsence'
@@ -8,10 +8,23 @@ import { useRouter } from 'next/navigation'
 import { localDateStr } from '@/lib/utils'
 import { MyScheduleCard } from '@/components/dashboard/MyScheduleCard'
 import { PunchInOutCard } from '@/components/dashboard/PunchInOutCard'
+import { useCurrentEmployee } from '@/hooks/useEmployees'
+import { usePendingApprovals, useTeamPendingRequests } from '@/hooks/useLeaveRequests'
+import { useIsAdmin } from '@/hooks/usePermissions'
 
 export default function DashboardPage() {
   const router = useRouter()
   const { data: workStatusList = [], isLoading: leaveLoading } = useEmployeesWorkStatusToday()
+  const { data: currentEmployee } = useCurrentEmployee()
+  const isAdmin = useIsAdmin()
+  const employeeId = currentEmployee?.id ?? ''
+
+  // Pending leave requests where I am an approver (my own pending approvals step)
+  const { data: pendingApprovals = [] } = usePendingApprovals(employeeId)
+  // Pending requests from my team (I'm the manager)
+  const { data: teamPending = [] } = useTeamPendingRequests(employeeId)
+
+  const leaveActionsCount = pendingApprovals.length + teamPending.length
 
   const today = localDateStr()
   const { data: allHolidays = [], isLoading: holidaysLoading } = useHolidays({ is_active: true })
@@ -62,26 +75,72 @@ export default function DashboardPage() {
 
         {/* My Actions */}
         <Card className="bg-white border border-gray-200 p-5">
-          <h3 className="text-sm font-semibold text-gray-700 mb-4">My Actions</h3>
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-sm font-semibold text-gray-700">My Actions</h3>
+            {leaveActionsCount > 0 && (
+              <span className="px-2 py-0.5 bg-red-500 text-white text-xs font-bold rounded-full animate-pulse">
+                {leaveActionsCount}
+              </span>
+            )}
+          </div>
           <div className="space-y-3">
-            <div className="flex items-center justify-between p-3 bg-orange/5 rounded-lg">
+            {/* Leave approvals */}
+            <button
+              onClick={() => router.push('/admin/leave-management/leave-requests')}
+              className="w-full flex items-center justify-between p-3 rounded-lg transition-colors hover:bg-orange/5 bg-orange/5 text-left"
+            >
               <div className="flex items-center gap-3">
                 <div className="w-8 h-8 bg-orange/20 rounded-full flex items-center justify-center">
                   <Calendar className="w-4 h-4 text-orange" />
                 </div>
-                <span className="text-sm text-gray-700">Leave Requests</span>
-              </div>
-              <span className="px-2 py-0.5 bg-orange text-white text-xs font-medium rounded-full">3</span>
-            </div>
-            <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
-                  <Clock className="w-4 h-4 text-gray-500" />
+                <div>
+                  <span className="text-sm font-medium text-gray-700">Leave Requests</span>
+                  <p className="text-xs text-gray-400">
+                    {leaveActionsCount === 0 ? 'No pending approvals' : `${leaveActionsCount} awaiting your approval`}
+                  </p>
                 </div>
-                <span className="text-sm text-gray-700">Timesheets to Approve</span>
               </div>
-              <span className="px-2 py-0.5 bg-gray-300 text-gray-700 text-xs font-medium rounded-full">0</span>
-            </div>
+              {leaveActionsCount > 0 ? (
+                <span className="px-2 py-0.5 bg-orange text-white text-xs font-bold rounded-full">{leaveActionsCount}</span>
+              ) : (
+                <CheckCircle className="w-4 h-4 text-green-400" />
+              )}
+            </button>
+
+            {/* Timesheets — visible to managers/admins */}
+            {(isAdmin || (currentEmployee?.id)) && (
+              <button
+                onClick={() => router.push('/attendance-tracker?tab=approvals')}
+                className="w-full flex items-center justify-between p-3 rounded-lg transition-colors hover:bg-gray-50 bg-gray-50 text-left"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
+                    <Clock className="w-4 h-4 text-gray-500" />
+                  </div>
+                  <div>
+                    <span className="text-sm font-medium text-gray-700">Timesheets to Approve</span>
+                    <p className="text-xs text-gray-400">Go to attendance tracker</p>
+                  </div>
+                </div>
+                <ClipboardList className="w-4 h-4 text-gray-400" />
+              </button>
+            )}
+
+            {/* View all notifications */}
+            <button
+              onClick={() => router.push('/leave/my-requests')}
+              className="w-full flex items-center justify-between p-3 rounded-lg transition-colors hover:bg-gray-50 bg-gray-50 text-left"
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                  <FileText className="w-4 h-4 text-blue-500" />
+                </div>
+                <div>
+                  <span className="text-sm font-medium text-gray-700">My Leave Requests</span>
+                  <p className="text-xs text-gray-400">View your submitted requests</p>
+                </div>
+              </div>
+            </button>
           </div>
         </Card>
       </div>
