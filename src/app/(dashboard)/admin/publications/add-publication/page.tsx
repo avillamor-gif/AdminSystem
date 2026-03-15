@@ -198,7 +198,7 @@ export default function AddPublicationPage() {
       request_type: 'catalogue',
       publisher: form.publisher || undefined,
       isbn: form.isbn || undefined,
-      purpose: form.description || form.title,
+      purpose: form.description || '',
       quantity: form.quantity_available || undefined,
       estimated_cost: form.price_per_copy > 0 ? form.price_per_copy : undefined,
       notes: notesLines || undefined,

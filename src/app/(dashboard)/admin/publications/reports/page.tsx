@@ -25,8 +25,8 @@ const ALL_FIELDS = [
   { key: 'priority',          label: 'Priority' },
   { key: 'delivery_method',   label: 'Delivery Method' },
   { key: 'deadline',          label: 'Deadline' },
-  { key: 'purpose',           label: 'Purpose' },
-  { key: 'notes',             label: 'Notes' },
+  { key: 'purpose',           label: 'Purpose / Description' },
+  { key: 'notes',             label: 'Notes (incl. system entries)' },
   { key: 'created_at',        label: 'Date Requested' },
   { key: 'cover_url',         label: 'Cover Image URL' },
 ]
@@ -93,12 +93,16 @@ export default function PublicationReportsPage() {
   // Print modal state
   const [showPrintModal, setShowPrintModal]   = useState(false)
   const [printStatuses, setPrintStatuses]     = useState<Set<string>>(new Set())
-  const [printFields, setPrintFields]         = useState<Set<string>>(new Set(ALL_FIELDS.map(f => f.key)))
+  const [printFields, setPrintFields]         = useState<Set<string>>(new Set(
+    ALL_FIELDS.filter(f => f.key !== 'notes' && f.key !== 'cover_url').map(f => f.key)
+  ))
 
   // Export modal state
   const [showExportModal, setShowExportModal] = useState(false)
   const [exportStatuses, setExportStatuses]   = useState<Set<string>>(new Set())
-  const [exportFields, setExportFields]       = useState<Set<string>>(new Set(ALL_FIELDS.map(f => f.key)))
+  const [exportFields, setExportFields]       = useState<Set<string>>(new Set(
+    ALL_FIELDS.filter(f => f.key !== 'notes' && f.key !== 'cover_url').map(f => f.key)
+  ))
 
   // ── Derived stats ─────────────────────────────────────────────────────────
   const stats = useMemo(() => {
@@ -160,7 +164,7 @@ export default function PublicationReportsPage() {
         if (f.key === 'cover_url') {
           const url = r.cover_url
           return url
-            ? `<td><img src="${url}" alt="cover" style="width:48px;height:64px;object-fit:cover;border-radius:3px;" /></td>`
+            ? `<td><a href="${url}" target="_blank" style="color:#ff7e15;text-decoration:underline;">View Cover</a></td>`
             : `<td>—</td>`
         }
         return `<td>${getFieldValue(r, f.key)}</td>`
@@ -207,7 +211,7 @@ export default function PublicationReportsPage() {
       switch (f.key) {
         case 'estimated_cost': return r.estimated_cost != null ? String(r.estimated_cost) : ''
         case 'total_cost':     return String((r.estimated_cost ?? 0) * (r.quantity ?? 1))
-        case 'cover_url':      return r.cover_url ?? ''
+        case 'cover_url':      return r.cover_url ? r.cover_url : ''
         default:               return getFieldValue(r, f.key)
       }
     }))
