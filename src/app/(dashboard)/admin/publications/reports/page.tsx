@@ -209,7 +209,7 @@ export default function PublicationReportsPage() {
       switch (f.key) {
         case 'estimated_cost': return r.estimated_cost != null ? String(r.estimated_cost) : ''
         case 'total_cost':     return String((r.estimated_cost ?? 0) * (r.quantity ?? 1))
-        case 'cover_url':      return r.cover_url ? r.cover_url : ''
+        case 'cover_url':      return r.cover_url ? 'View Cover' : ''
         default:               return getFieldValue(r, f.key)
       }
     }))
