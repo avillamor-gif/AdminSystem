@@ -67,28 +67,6 @@ export function useCreateLeaveRequest() {
   })
 }
 
-export function useCreateLeaveRequest() {
-  const queryClient = useQueryClient()
-  return useMutation({
-    mutationFn: (data: Parameters<typeof leaveRequestService.create>[0]) =>
-      leaveRequestService.create(data),
-    onSuccess: (result) => {
-      queryClient.invalidateQueries({ queryKey: leaveRequestKeys.lists() })
-      queryClient.invalidateQueries({ queryKey: ['leaveBalances'] })
-      logAction({
-        employee_id: result.employee_id,
-        action: 'Leave Request Submitted',
-        details: `Submitted a leave request (status: pending)`,
-      })
-      toast.success('Leave request submitted successfully')
-    },
-    onError: (error: any) => {
-      console.error('Create leave request error:', error)
-      toast.error(`Failed to submit leave request: ${error.message || 'Unknown error'}`)
-    },
-  })
-}
-
 /**
  * Admin direct-entry: creates a leave record already set to 'approved'
  * (no workflow) and immediately increments used_days on leave_balances.
