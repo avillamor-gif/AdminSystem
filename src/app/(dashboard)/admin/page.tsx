@@ -90,13 +90,23 @@ export default function AdminPage() {
       requiresPermission: 'time_attendance.manage',
     },
     {
-      id: 'leave-policies',
-      title: 'Leave & Absence Management',
-      description: 'Configure leave types and policies',
+      id: 'leave-management',
+      title: 'Leave Management',
+      description: 'Manage leave requests and approvals',
       icon: Calendar,
       color: 'bg-indigo-500',
+      href: '/admin/leave-management',
+      items: ['All Leave Requests', 'Leave Credit Approvals'],
+      requiresPermission: 'leave.manage_types',
+    },
+    {
+      id: 'leave-policies',
+      title: 'Leave & Absence Policies',
+      description: 'Configure leave types, rules and policies',
+      icon: Calendar,
+      color: 'bg-violet-500',
       href: '/admin/leave-policies',
-      items: ['Leave Types', 'Accrual Rules', 'Leave Policies', 'Leave Balances', 'Holiday Calendar', 'Absence Categories', 'Approval Workflows', 'Leave Credit Approvals'],
+      items: ['Leave Types', 'Accrual Rules', 'Leave Policies', 'Leave Balances', 'Holiday Calendar', 'Absence Categories', 'Approval Workflows'],
       requiresPermission: 'leave.manage_types',
     },
     {
@@ -417,13 +427,14 @@ export default function AdminPage() {
                           'Attendance Reports': '/admin/time-attendance/reports',
                           
                           // Leave & Absence Management routes
-                          'Leave Types': '/admin/leave-policies/leave-types',
-                          'Accrual Rules': '/admin/leave-policies/accrual-rules',
-                          'Leave Policies': '/admin/leave-policies/leave-policies',
-                          'Leave Balances': '/admin/leave-policies/leave-balances',
-                          'Holiday Calendar': '/admin/leave-policies/holiday-calendar',
-                          'Absence Categories': '/admin/leave-policies/absence-categories',
-                          'Approval Workflows': '/admin/leave-policies/approval-workflows',
+                          'All Leave Requests': '/admin/leave-management',
+                          'Leave Types': '/admin/leave-management/leave-types',
+                          'Accrual Rules': '/admin/leave-management/accrual-rules',
+                          'Leave Policies': '/admin/leave-management/leave-policies',
+                          'Leave Balances': '/admin/leave-management/leave-balances',
+                          'Holiday Calendar': '/admin/leave-management/holiday-calendar',
+                          'Absence Categories': '/admin/leave-management/absence-categories',
+                          'Approval Workflows': '/admin/leave-management/approval-workflows',
                           'Leave Credit Approvals': '/admin/leave-management/credit-approvals',
                           
                           // Payroll & Benefits routes
@@ -636,7 +647,7 @@ export default function AdminPage() {
             variant="outline" 
             className="justify-start"
             aria-label="Leave Policies"
-            onClick={() => router.push('/admin/leave-policies')}
+            onClick={() => router.push('/admin/leave-management')}
           >
             <FileText className="w-4 h-4 mr-2" />
             Leave Policies
