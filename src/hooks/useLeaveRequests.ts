@@ -1,6 +1,8 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'react-hot-toast'
 import { logAction } from '@/services/auditLog.service'
+import { createClient } from '@/lib/supabase/client'
+import { countWorkingDays } from '@/lib/dateUtils'
 import {
   leaveRequestService,
   leaveApprovalService,
@@ -61,6 +63,116 @@ export function useCreateLeaveRequest() {
     onError: (error: any) => {
       console.error('Create leave request error:', error)
       toast.error(`Failed to submit leave request: ${error.message || 'Unknown error'}`)
+    },
+  })
+}
+
+export function useCreateLeaveRequest() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (data: Parameters<typeof leaveRequestService.create>[0]) =>
+      leaveRequestService.create(data),
+    onSuccess: (result) => {
+      queryClient.invalidateQueries({ queryKey: leaveRequestKeys.lists() })
+      queryClient.invalidateQueries({ queryKey: ['leaveBalances'] })
+      logAction({
+        employee_id: result.employee_id,
+        action: 'Leave Request Submitted',
+        details: `Submitted a leave request (status: pending)`,
+      })
+      toast.success('Leave request submitted successfully')
+    },
+    onError: (error: any) => {
+      console.error('Create leave request error:', error)
+      toast.error(`Failed to submit leave request: ${error.message || 'Unknown error'}`)
+    },
+  })
+}
+
+/**
+ * Admin direct-entry: creates a leave record already set to 'approved'
+ * (no workflow) and immediately increments used_days on leave_balances.
+ */
+export function useAdminCreateLeave() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async ({
+      employee_id,
+      leave_type_id,
+      start_date,
+      end_date,
+      reason,
+    }: {
+      employee_id: string
+      leave_type_id: string
+      start_date: string
+      end_date: string
+      reason?: string
+    }) => {
+      const supabase = createClient()
+      const year = new Date(start_date).getFullYear()
+
+      // Calculate working days (exclude weekends + holidays)
+      const { data: hols } = await supabase
+        .from('holidays')
+        .select('holiday_date')
+        .eq('year', year)
+        .eq('is_active', true)
+      const holidayDates = new Set<string>(
+        (hols ?? []).map((h: any) => (h.holiday_date ?? '').slice(0, 10)).filter(Boolean)
+      )
+      const totalDays = countWorkingDays(start_date, end_date, holidayDates)
+
+      // Insert leave request as already approved (bypass workflow)
+      const { data: lr, error: lrErr } = await supabase
+        .from('leave_requests')
+        .insert({
+          employee_id,
+          leave_type_id,
+          start_date,
+          end_date,
+          total_days: totalDays,
+          reason: reason ?? null,
+          status: 'approved',
+          workflow_id: null,
+          resolved_at: new Date().toISOString(),
+        } as any)
+        .select('*')
+        .single()
+      if (lrErr) throw lrErr
+
+      // Upsert leave balance — increment used_days
+      const { data: bal } = await supabase
+        .from('leave_balances')
+        .select('id, used_days, total_allocated')
+        .eq('employee_id', employee_id)
+        .eq('leave_type_id', leave_type_id)
+        .eq('year', year)
+        .maybeSingle()
+
+      if (bal) {
+        await supabase
+          .from('leave_balances')
+          .update({ used_days: (bal.used_days ?? 0) + totalDays })
+          .eq('id', bal.id)
+      }
+      // (If no balance row exists yet, skip — admin can allocate separately)
+
+      return lr
+    },
+    onSuccess: (result: any) => {
+      queryClient.invalidateQueries({ queryKey: leaveRequestKeys.lists() })
+      queryClient.invalidateQueries({ queryKey: ['leaveBalances'] })
+      logAction({
+        employee_id: result.employee_id,
+        action: 'Admin Leave Entry',
+        details: `Admin directly recorded an approved leave (${result.total_days} day${result.total_days !== 1 ? 's' : ''})`,
+      })
+      toast.success('Leave recorded and approved successfully')
+    },
+    onError: (error: any) => {
+      console.error('Admin create leave error:', error)
+      toast.error(`Failed to record leave: ${error.message || 'Unknown error'}`)
     },
   })
 }

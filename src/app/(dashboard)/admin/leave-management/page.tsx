@@ -6,11 +6,12 @@ import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
 import { Input } from '@/components/ui/Input'
 import { Modal, ModalHeader, ModalBody, ModalFooter } from '@/components/ui/Modal'
-import { useLeaveRequests, useAllocateLeaveBalance, type LeaveRequest } from '@/hooks/useLeaveRequests'
-import { useLeaveTypes } from '@/hooks/useLeaveAbsence'
+import { useLeaveRequests, useAllocateLeaveBalance, useAdminCreateLeave, type LeaveRequest } from '@/hooks/useLeaveRequests'
+import { useLeaveTypes, useHolidays } from '@/hooks/useLeaveAbsence'
 import { useEmployees } from '@/hooks/useEmployees'
-import { Calendar, Users, Clock, CheckCircle, XCircle, Search, Plus } from 'lucide-react'
+import { Calendar, Users, Clock, CheckCircle, XCircle, Search, Plus, ClipboardList } from 'lucide-react'
 import { format } from 'date-fns'
+import { countWorkingDays } from '@/lib/dateUtils'
 
 export default function HRLeaveManagementPage() {
   const currentYear = new Date().getFullYear()
@@ -21,10 +22,31 @@ export default function HRLeaveManagementPage() {
   const [selectedLeaveType, setSelectedLeaveType] = useState('')
   const [allocationDays, setAllocationDays] = useState('')
 
+  // Create Leave modal state
+  const [showCreateModal, setShowCreateModal]     = useState(false)
+  const [createEmployee, setCreateEmployee]       = useState('')
+  const [createLeaveType, setCreateLeaveType]     = useState('')
+  const [createStartDate, setCreateStartDate]     = useState('')
+  const [createEndDate, setCreateEndDate]         = useState('')
+  const [createReason, setCreateReason]           = useState('')
+
   const { data: allRequests = [], isLoading } = useLeaveRequests()
   const { data: employees = [] } = useEmployees({ status: 'active' })
   const { data: leaveTypes = [] } = useLeaveTypes({ is_active: true })
+  const { data: holidays = [] } = useHolidays({ is_active: true })
   const allocateMutation = useAllocateLeaveBalance()
+  const adminCreateMutation = useAdminCreateLeave()
+
+  const holidayDates = useMemo(
+    () => new Set((holidays ?? []).map((h: any) => (h.holiday_date ?? '').slice(0, 10)).filter(Boolean)),
+    [holidays]
+  )
+
+  const createTotalDays = useMemo(() => {
+    if (createStartDate && createEndDate && createEndDate >= createStartDate)
+      return countWorkingDays(createStartDate, createEndDate, holidayDates)
+    return 0
+  }, [createStartDate, createEndDate, holidayDates])
 
   const filteredRequests = useMemo(() => {
     return allRequests.filter(req => {
@@ -54,6 +76,21 @@ export default function HRLeaveManagementPage() {
 
     return { total, pending, approved, rejected, thisMonth }
   }, [allRequests])
+
+  const handleCreateLeave = async () => {
+    if (!createEmployee || !createLeaveType || !createStartDate || !createEndDate) return
+    if (createEndDate < createStartDate) return
+    await adminCreateMutation.mutateAsync({
+      employee_id:   createEmployee,
+      leave_type_id: createLeaveType,
+      start_date:    createStartDate,
+      end_date:      createEndDate,
+      reason:        createReason || undefined,
+    })
+    setShowCreateModal(false)
+    setCreateEmployee(''); setCreateLeaveType('')
+    setCreateStartDate(''); setCreateEndDate(''); setCreateReason('')
+  }
 
   const handleAllocate = async () => {
     if (!selectedEmployee || !selectedLeaveType || !allocationDays) {
@@ -92,10 +129,16 @@ export default function HRLeaveManagementPage() {
           <h1 className="text-2xl font-bold text-gray-900">Leave Management</h1>
           <p className="text-gray-600 mt-1">Manage all employee leave requests and balances</p>
         </div>
-        <Button onClick={() => setShowAllocateModal(true)}>
-          <Plus className="w-4 h-4 mr-2" />
-          Allocate Leave
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="secondary" onClick={() => setShowAllocateModal(true)}>
+            <Plus className="w-4 h-4 mr-2" />
+            Allocate Leave
+          </Button>
+          <Button onClick={() => setShowCreateModal(true)}>
+            <ClipboardList className="w-4 h-4 mr-2" />
+            Create Leave
+          </Button>
+        </div>
       </div>
 
       {/* Statistics */}
@@ -245,6 +288,107 @@ export default function HRLeaveManagementPage() {
           </div>
         )}
       </Card>
+
+      {/* Create Leave for Employee Modal */}
+      <Modal open={showCreateModal} onClose={() => setShowCreateModal(false)} size="lg" centered>
+        <ModalHeader onClose={() => setShowCreateModal(false)}>
+          Create Leave for Employee
+        </ModalHeader>
+        <ModalBody>
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Employee</label>
+              <select
+                value={createEmployee}
+                onChange={e => setCreateEmployee(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="">Select employee</option>
+                {employees.map(emp => (
+                  <option key={emp.id} value={emp.id}>
+                    {emp.first_name} {emp.last_name} ({emp.employee_id})
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Leave Type</label>
+              <select
+                value={createLeaveType}
+                onChange={e => setCreateLeaveType(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="">Select leave type</option>
+                {leaveTypes.map(type => (
+                  <option key={type.id} value={type.id}>
+                    {type.leave_type_name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Start Date</label>
+                <input
+                  type="date"
+                  value={createStartDate}
+                  onChange={e => setCreateStartDate(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">End Date</label>
+                <input
+                  type="date"
+                  value={createEndDate}
+                  min={createStartDate || undefined}
+                  onChange={e => setCreateEndDate(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+            </div>
+
+            {createTotalDays > 0 && (
+              <div className="flex items-center gap-2 px-3 py-2 bg-blue-50 border border-blue-200 rounded-md text-sm text-blue-800">
+                <Calendar className="w-4 h-4 flex-shrink-0" />
+                <span><strong>{createTotalDays}</strong> working day{createTotalDays !== 1 ? 's' : ''} (weekends &amp; holidays excluded)</span>
+              </div>
+            )}
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Reason <span className="text-gray-400 font-normal">(optional)</span></label>
+              <textarea
+                value={createReason}
+                onChange={e => setCreateReason(e.target.value)}
+                rows={3}
+                placeholder="Enter reason for leave..."
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+              />
+            </div>
+
+            <div className="bg-amber-50 border border-amber-200 rounded p-3 text-sm text-amber-800">
+              This will create a leave record with status <strong>Approved</strong> immediately, bypassing the normal approval workflow.
+            </div>
+          </div>
+        </ModalBody>
+        <ModalFooter>
+          <Button variant="secondary" onClick={() => setShowCreateModal(false)}>Cancel</Button>
+          <Button
+            onClick={handleCreateLeave}
+            disabled={
+              adminCreateMutation.isPending ||
+              !createEmployee || !createLeaveType ||
+              !createStartDate || !createEndDate ||
+              createEndDate < createStartDate ||
+              createTotalDays === 0
+            }
+          >
+            {adminCreateMutation.isPending ? 'Saving...' : 'Create & Approve Leave'}
+          </Button>
+        </ModalFooter>
+      </Modal>
 
       {/* Allocate Leave Balance Modal */}
       <Modal open={showAllocateModal} onClose={() => setShowAllocateModal(false)}>
