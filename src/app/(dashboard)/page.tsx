@@ -86,7 +86,7 @@ export default function DashboardPage() {
           <div className="space-y-3">
             {/* Leave approvals */}
             <button
-              onClick={() => router.push('/admin/leave-management/leave-requests')}
+              onClick={() => router.push('/admin/leave-management')}
               className="w-full flex items-center justify-between p-3 rounded-lg transition-colors hover:bg-orange/5 bg-orange/5 text-left"
             >
               <div className="flex items-center gap-3">
