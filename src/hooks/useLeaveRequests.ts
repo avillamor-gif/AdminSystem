@@ -113,7 +113,6 @@ export function useAdminCreateLeave() {
           reason: reason ?? null,
           status: 'approved',
           workflow_id: null,
-          resolved_at: new Date().toISOString(),
         } as any)
         .select('*')
         .single()

@@ -290,7 +290,7 @@ export default function HRLeaveManagementPage() {
       </Card>
 
       {/* Create Leave for Employee Modal */}
-      <Modal open={showCreateModal} onClose={() => setShowCreateModal(false)} size="lg" centered>
+      <Modal open={showCreateModal} onClose={() => setShowCreateModal(false)} size="lg">
         <ModalHeader onClose={() => setShowCreateModal(false)}>
           Create Leave for Employee
         </ModalHeader>
