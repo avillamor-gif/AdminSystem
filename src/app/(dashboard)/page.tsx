@@ -282,7 +282,7 @@ export default function DashboardPage() {
       <MyScheduleCard />
 
       {/* All Holidays Modal */}
-      <Modal open={showAllHolidays} onClose={() => setShowAllHolidays(false)} size="lg" centered>
+      <Modal open={showAllHolidays} onClose={() => setShowAllHolidays(false)} size="lg">
         <ModalHeader onClose={() => setShowAllHolidays(false)}>
           Holidays — {currentYear}
         </ModalHeader>
