@@ -1,7 +1,9 @@
 'use client'
 
+import { useState } from 'react'
 import { Users, Calendar, Clock, Briefcase, UserCheck, CalendarX, CheckCircle, FileText, ClipboardList } from 'lucide-react'
 import { Card, Avatar } from '@/components/ui'
+import { Modal, ModalHeader, ModalBody } from '@/components/ui/Modal'
 import { useEmployeesWorkStatusToday } from '@/hooks/useLeave'
 import { useHolidays } from '@/hooks/useLeaveAbsence'
 import { useRouter } from 'next/navigation'
@@ -31,6 +33,12 @@ export default function DashboardPage() {
   const upcomingHolidays = allHolidays
     .filter(h => h.holiday_date >= today)
     .slice(0, 5)
+
+  const [showAllHolidays, setShowAllHolidays] = useState(false)
+  const currentYear = new Date().getFullYear()
+  const yearHolidays = allHolidays
+    .filter(h => new Date(h.holiday_date + 'T00:00:00').getFullYear() === currentYear)
+    .sort((a, b) => a.holiday_date.localeCompare(b.holiday_date))
 
   return (
     <div className="space-y-6">
@@ -216,7 +224,7 @@ export default function DashboardPage() {
         <Card className="bg-white border border-gray-200 p-5">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-sm font-semibold text-gray-700">Upcoming Holidays</h3>
-            <a href="/admin/leave-management/holidays" className="text-orange text-xs hover:underline">View All</a>
+            <button onClick={() => setShowAllHolidays(true)} className="text-orange text-xs hover:underline">View All</button>
           </div>
           {holidaysLoading ? (
             <div className="space-y-3">
@@ -272,6 +280,70 @@ export default function DashboardPage() {
 
       {/* My Schedule — full width */}
       <MyScheduleCard />
+
+      {/* All Holidays Modal */}
+      <Modal open={showAllHolidays} onClose={() => setShowAllHolidays(false)} size="lg" centered>
+        <ModalHeader onClose={() => setShowAllHolidays(false)}>
+          Holidays — {currentYear}
+        </ModalHeader>
+        <ModalBody>
+          {yearHolidays.length === 0 ? (
+            <div className="text-center py-10 text-gray-500">
+              <CalendarX className="w-10 h-10 mx-auto mb-2 text-gray-300" />
+              <p className="text-sm">No holidays found for {currentYear}</p>
+            </div>
+          ) : (
+            <div className="overflow-y-auto max-h-[60vh] space-y-2 pr-1">
+              {yearHolidays.map((holiday) => {
+                const d = new Date(holiday.holiday_date + 'T00:00:00')
+                const monthShort = d.toLocaleDateString('en-US', { month: 'short' })
+                const day = d.getDate()
+                const dayName = d.toLocaleDateString('en-US', { weekday: 'long' })
+                const fullDate = d.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
+                const isPast = holiday.holiday_date < today
+                const typeLabel =
+                  holiday.holiday_type === 'regular' ? 'Regular' :
+                  holiday.holiday_type === 'special_non_working' ? 'Special Non-Working' : 'Special Working'
+                const typeBg =
+                  holiday.holiday_type === 'regular' ? 'bg-red-50 text-red-600' :
+                  holiday.holiday_type === 'special_non_working' ? 'bg-amber-50 text-amber-600' :
+                  'bg-blue-50 text-blue-600'
+                return (
+                  <div
+                    key={holiday.id}
+                    className={`flex items-center gap-3 p-3 border rounded-lg ${
+                      isPast ? 'border-gray-100 opacity-50' : 'border-gray-200'
+                    }`}
+                  >
+                    <div className={`w-12 h-12 rounded-lg flex flex-col items-center justify-center flex-shrink-0 ${
+                      isPast ? 'bg-gray-100' : 'bg-orange/10'
+                    }`}>
+                      <span className={`text-xs font-medium uppercase leading-none ${
+                        isPast ? 'text-gray-400' : 'text-orange'
+                      }`}>{monthShort}</span>
+                      <span className={`text-lg font-bold leading-tight ${
+                        isPast ? 'text-gray-400' : 'text-orange'
+                      }`}>{day}</span>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-gray-900">{holiday.holiday_name}</p>
+                      <p className="text-xs text-gray-500">{dayName} · {fullDate}</p>
+                    </div>
+                    <div className="flex flex-col items-end gap-1">
+                      <span className={`px-2 py-0.5 text-xs font-medium rounded whitespace-nowrap ${typeBg}`}>
+                        {typeLabel}
+                      </span>
+                      {isPast && (
+                        <span className="text-xs text-gray-400">Past</span>
+                      )}
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          )}
+        </ModalBody>
+      </Modal>
     </div>
   )
 }
