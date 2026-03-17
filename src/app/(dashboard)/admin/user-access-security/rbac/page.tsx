@@ -127,6 +127,13 @@ export default function RBACPage() {
 
   // ── Edit helpers ──────────────────────────────────────────────────────────
   function openEdit(role: RoleWithPermissions) {
+    setEditingRole(role)
+    setEditName(role.name)
+    setEditDescription(role.description || '')
+    setSelectedPermissionIds(new Set(role.permissions.map(p => p.id)))
+  }
+
+  async function handleSaveEdit() {
     if (!editingRole) return
     await updateRole.mutateAsync({
       id: editingRole.id,
