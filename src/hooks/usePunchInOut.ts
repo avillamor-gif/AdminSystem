@@ -155,12 +155,21 @@ export function usePunchInOut({ onPunchedIn, onPunchedOut }: UsePunchInOutOption
           '',
         )
 
+        // Preserve the existing clock_out from previous closed sessions.
+        // Only clear it back to null if there are no previously closed sessions.
+        const prevLatestOut = sessions
+          .slice(0, -1) // exclude the new open session we just pushed
+          .reduce(
+            (max, s) => (s.timeOut && (!max || s.timeOut > max) ? s.timeOut : max),
+            '' as string,
+          )
+
         const { error } = await supabase.from('attendance_records').upsert(
           {
             employee_id: userRole.employee_id,
             date: today,
             clock_in: earliestIn || now.toISOString(),
-            clock_out: null,
+            clock_out: prevLatestOut || null,
             status: mapAttendanceTypeToStatus(type),
             notes: serializeSessions(sessions),
           },
