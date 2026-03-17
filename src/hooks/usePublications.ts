@@ -26,7 +26,9 @@ export function usePublicationCategories(activeOnly = false) {
     queryKey: [...pubCatKeys.list(), { activeOnly }],
     queryFn: async () => {
       const supabase = createClient()
-      let q = supabase.from('publication_categories').select('*').order('name', { ascending: true })
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const db = supabase as any
+      let q = db.from('publication_categories').select('*').order('name', { ascending: true })
       if (activeOnly) q = q.eq('is_active', true)
       const { data, error } = await q
       if (error) throw error
@@ -40,7 +42,8 @@ export function useCreatePublicationCategory() {
   return useMutation({
     mutationFn: async (data: Omit<PublicationCategory, 'id' | 'created_at' | 'updated_at'>) => {
       const supabase = createClient()
-      const { data: result, error } = await supabase.from('publication_categories').insert(data).select('*').single()
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: result, error } = await (supabase as any).from('publication_categories').insert(data).select('*').single()
       if (error) throw error
       return result
     },
@@ -57,7 +60,8 @@ export function useUpdatePublicationCategory() {
   return useMutation({
     mutationFn: async ({ id, data }: { id: string; data: Partial<Omit<PublicationCategory, 'id' | 'created_at' | 'updated_at'>> }) => {
       const supabase = createClient()
-      const { data: result, error } = await supabase
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: result, error } = await (supabase as any)
         .from('publication_categories')
         .update({ ...data, updated_at: new Date().toISOString() })
         .eq('id', id)
@@ -79,7 +83,8 @@ export function useDeletePublicationCategory() {
   return useMutation({
     mutationFn: async (id: string) => {
       const supabase = createClient()
-      const { error } = await supabase.from('publication_categories').delete().eq('id', id)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { error } = await (supabase as any).from('publication_categories').delete().eq('id', id)
       if (error) throw error
     },
     onSuccess: () => {
