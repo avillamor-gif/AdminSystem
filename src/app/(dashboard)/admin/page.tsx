@@ -230,7 +230,6 @@ export default function AdminPage() {
       color: 'bg-teal-600',
       href: '/admin/internship-volunteer',
       items: ['Partner Institutions', 'Enrollments', 'Hours Monitoring', 'Certificates'],
-      requiresPermission: 'internship.manage',
     },
   ]
 

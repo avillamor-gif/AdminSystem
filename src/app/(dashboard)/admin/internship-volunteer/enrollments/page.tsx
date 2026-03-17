@@ -273,7 +273,7 @@ export default function EnrollmentsPage() {
         <ModalHeader onClose={() => setIsFormOpen(false)}>
           {selected ? 'Edit Enrollment' : 'Add Enrollment'}
         </ModalHeader>
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={handleSubmit} className="flex flex-col min-h-0 flex-1">
           <ModalBody>
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
