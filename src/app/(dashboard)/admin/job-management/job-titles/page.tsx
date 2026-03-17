@@ -1,15 +1,15 @@
 'use client'
 
 import { useState } from 'react'
-import { Plus, Edit2, Trash2, Search, X } from 'lucide-react'
-import { Card, Button, Input, Badge } from '@/components/ui'
-import toast from 'react-hot-toast'
+import { Plus, Edit2, Trash2 } from 'lucide-react'
+import { Card, Button, Input, Badge, Modal, ModalHeader, ModalBody, ModalFooter } from '@/components/ui'
 import { 
   useJobTitles, 
   useCreateJobTitle, 
   useUpdateJobTitle, 
-  useDeleteJobTitle 
-} from '@/hooks/useJobTitles'
+  useDeleteJobTitle,
+  useEmploymentTypes,
+} from '@/hooks'
 import type { JobTitleInsert, JobTitleUpdate } from '@/services/jobTitle.service'
 
 interface JobTitleForm {
@@ -43,6 +43,7 @@ export default function JobTitlesPage() {
   const createMutation = useCreateJobTitle()
   const updateMutation = useUpdateJobTitle()
   const deleteMutation = useDeleteJobTitle()
+  const { data: employmentTypes = [] } = useEmploymentTypes()
 
   const filteredTitles = jobTitles
 
@@ -102,12 +103,10 @@ export default function JobTitlesPage() {
   }
 
   const handleDelete = async (id: string) => {
-    if (confirm('Are you sure you want to delete this job title?')) {
-      try {
-        await deleteMutation.mutateAsync(id)
-      } catch (error) {
-        console.error('Delete error:', error)
-      }
+    try {
+      await deleteMutation.mutateAsync(id)
+    } catch (error) {
+      console.error('Delete error:', error)
     }
   }
 
@@ -233,10 +232,143 @@ export default function JobTitlesPage() {
       </Card>
 
       {/* Form Modal */}
-      {isFormOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl mx-4">
-            <div className="flex items-center justify-between p-6 border-b border-gray-200">
+      <Modal open={isFormOpen} onClose={handleCloseForm} size="lg">
+        <ModalHeader onClose={handleCloseForm}>
+          {selectedTitleId ? 'Edit Job Title' : 'Add New Job Title'}
+        </ModalHeader>
+        <form onSubmit={handleSubmit} className="flex flex-col min-h-0 flex-1">
+          <ModalBody>
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Job Title *</label>
+                  <Input
+                    type="text"
+                    required
+                    value={formData.title}
+                    onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                    placeholder="e.g., Software Engineer"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Code *</label>
+                  <Input
+                    type="text"
+                    required
+                    value={formData.code}
+                    onChange={(e) => setFormData({ ...formData, code: e.target.value })}
+                    placeholder="e.g., SE001"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                <textarea
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
+                  rows={3}
+                  value={formData.description}
+                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  placeholder="Brief description of the role"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Experience Level *</label>
+                  <select
+                    required
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
+                    value={formData.experience_level}
+                    onChange={(e) => setFormData({ ...formData, experience_level: e.target.value })}
+                  >
+                    <option value="">Select Level</option>
+                    <option value="Entry-Level">Entry-Level</option>
+                    <option value="Junior">Junior</option>
+                    <option value="Mid-Level">Mid-Level</option>
+                    <option value="Senior">Senior</option>
+                    <option value="Lead">Lead</option>
+                    <option value="Manager">Manager</option>
+                    <option value="Director">Director</option>
+                    <option value="Executive">Executive</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Employment Type</label>
+                  <select
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
+                    value={formData.employment_type}
+                    onChange={(e) => setFormData({ ...formData, employment_type: e.target.value })}
+                  >
+                    <option value="">Select Type</option>
+                    {employmentTypes.map((et) => (
+                      <option key={et.id} value={et.name}>{et.name}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Min Salary</label>
+                  <Input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={formData.min_salary || ''}
+                    onChange={(e) => setFormData({ ...formData, min_salary: e.target.value ? parseFloat(e.target.value) : null })}
+                    placeholder="0.00"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Max Salary</label>
+                  <Input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={formData.max_salary || ''}
+                    onChange={(e) => setFormData({ ...formData, max_salary: e.target.value ? parseFloat(e.target.value) : null })}
+                    placeholder="0.00"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Status *</label>
+                <select
+                  required
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
+                  value={formData.is_active ? 'active' : 'inactive'}
+                  onChange={(e) => setFormData({ ...formData, is_active: e.target.value === 'active' })}
+                >
+                  <option value="active">Active</option>
+                  <option value="inactive">Inactive</option>
+                </select>
+              </div>
+            </div>
+          </ModalBody>
+          <ModalFooter>
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={handleCloseForm}
+              disabled={createMutation.isPending || updateMutation.isPending}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              disabled={createMutation.isPending || updateMutation.isPending}
+            >
+              {createMutation.isPending || updateMutation.isPending ? 'Saving…' : selectedTitleId ? 'Update' : 'Create'} Job Title
+            </Button>
+          </ModalFooter>
+        </form>
+      </Modal>
+    </div>
+  )
+}
+
               <h2 className="text-xl font-semibold text-gray-900">
                 {selectedTitleId ? 'Edit Job Title' : 'Add New Job Title'}
               </h2>
