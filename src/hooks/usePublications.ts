@@ -2,6 +2,93 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { publicationService, publicationKeys, PublicationRequestFilters, PublicationRequestInsert, PublicationRequestUpdate } from '@/services/publication.service'
 import { logAction } from '@/services/auditLog.service'
 import { toast } from 'react-hot-toast'
+import { createClient } from '@/lib/supabase/client'
+
+// ── Publication Categories ──────────────────────────────────────────────────
+
+export interface PublicationCategory {
+  id: string
+  name: string
+  description: string | null
+  icon: string | null
+  is_active: boolean
+  created_at: string
+  updated_at: string
+}
+
+const pubCatKeys = {
+  all: ['publication_categories'] as const,
+  list: () => [...pubCatKeys.all, 'list'] as const,
+}
+
+export function usePublicationCategories(activeOnly = false) {
+  return useQuery({
+    queryKey: [...pubCatKeys.list(), { activeOnly }],
+    queryFn: async () => {
+      const supabase = createClient()
+      let q = supabase.from('publication_categories').select('*').order('name', { ascending: true })
+      if (activeOnly) q = q.eq('is_active', true)
+      const { data, error } = await q
+      if (error) throw error
+      return (data ?? []) as PublicationCategory[]
+    },
+  })
+}
+
+export function useCreatePublicationCategory() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async (data: Omit<PublicationCategory, 'id' | 'created_at' | 'updated_at'>) => {
+      const supabase = createClient()
+      const { data: result, error } = await supabase.from('publication_categories').insert(data).select('*').single()
+      if (error) throw error
+      return result
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: pubCatKeys.all })
+      toast.success('Category created')
+    },
+    onError: (e: Error) => toast.error(e.message),
+  })
+}
+
+export function useUpdatePublicationCategory() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: Partial<Omit<PublicationCategory, 'id' | 'created_at' | 'updated_at'>> }) => {
+      const supabase = createClient()
+      const { data: result, error } = await supabase
+        .from('publication_categories')
+        .update({ ...data, updated_at: new Date().toISOString() })
+        .eq('id', id)
+        .select('*')
+        .single()
+      if (error) throw error
+      return result
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: pubCatKeys.all })
+      toast.success('Category updated')
+    },
+    onError: (e: Error) => toast.error(e.message),
+  })
+}
+
+export function useDeletePublicationCategory() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const supabase = createClient()
+      const { error } = await supabase.from('publication_categories').delete().eq('id', id)
+      if (error) throw error
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: pubCatKeys.all })
+      toast.success('Category deleted')
+    },
+    onError: (e: Error) => toast.error(e.message),
+  })
+}
 
 // Get all publication requests
 export function usePublicationRequests(filters: PublicationRequestFilters = {}) {

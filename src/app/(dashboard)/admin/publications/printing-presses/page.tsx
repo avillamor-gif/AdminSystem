@@ -1,4 +1,8 @@
-'use client'
+import { redirect } from 'next/navigation'
+
+export default function PrintingPressesPage() {
+  redirect('/admin/publications/setup')
+}
 
 import React, { useState, useEffect } from 'react'
 import { Plus, Edit, Trash2, Search, Printer, MapPin, Phone, Mail, Globe, CheckCircle, XCircle } from 'lucide-react'

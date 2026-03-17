@@ -1,4 +1,8 @@
-'use client'
+import { redirect } from 'next/navigation'
+
+export default function DistributionListsPage() {
+  redirect('/admin/publications/setup')
+}
 
 import React, { useState } from 'react'
 import { Plus, Edit, Trash2, Search, Users, Mail, Tag } from 'lucide-react'

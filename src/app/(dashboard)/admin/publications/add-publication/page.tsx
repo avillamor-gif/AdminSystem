@@ -4,7 +4,7 @@ import React, { useRef, useState, useEffect } from 'react'
 import { ImageIcon, Loader2, PlusCircle, Upload, X } from 'lucide-react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Card, Button, Input } from '@/components/ui'
-import { useCreatePublicationRequest, useUpdatePublicationRequest, usePublicationRequest } from '@/hooks/usePublications'
+import { useCreatePublicationRequest, useUpdatePublicationRequest, usePublicationRequest, usePublicationCategories } from '@/hooks/usePublications'
 import { createClient } from '@/lib/supabase/client'
 import toast from 'react-hot-toast'
 
@@ -20,6 +20,7 @@ export default function AddPublicationPage() {
   const { data: existing } = usePublicationRequest(editId ?? '')
   const fileInputRef = useRef<HTMLInputElement>(null)
 
+  const { data: pubCategories = [] } = usePublicationCategories(true)
   const [printingPresses, setPrintingPresses] = useState<{ id: string; name: string }[]>([])
 
   useEffect(() => {
@@ -44,7 +45,7 @@ export default function AddPublicationPage() {
     author: '',
     isbn: '',
     publisher: '',
-    category: 'book',
+    category: '',
     publication_year: String(new Date().getFullYear()),
     description: '',
     quantity_available: 0,
@@ -272,12 +273,19 @@ export default function AddPublicationPage() {
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Category <span className="text-red-500">*</span></label>
-              <Input
+              <select
                 required
                 value={form.category}
                 onChange={e => set('category', e.target.value)}
-                placeholder="e.g., Newsletter, Magazine, Book"
-              />
+                className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
+              >
+                <option value="">Select category...</option>
+                {pubCategories.map(c => (
+                  <option key={c.id} value={c.name.toLowerCase()}>
+                    {c.icon ? `${c.icon} ${c.name}` : c.name}
+                  </option>
+                ))}
+              </select>
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Publication Year</label>
