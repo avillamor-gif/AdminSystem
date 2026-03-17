@@ -6,7 +6,7 @@ import {
   Users, Building2, Briefcase, Settings, Globe, Shield, 
   FileText, Languages, Mail, Database, ChevronRight, TrendingUp,
   Calendar, Clock, DollarSign, AlertTriangle, Lock, Eye,
-  BarChart3, BookOpen, Award, Zap, UserCheck, Gavel, Package, UserPlus
+  BarChart3, BookOpen, Award, Zap, UserCheck, Gavel, Package, UserPlus, GraduationCap
 } from 'lucide-react'
 import { Card, Button } from '@/components/ui'
 import { useRecentAuditLogs } from '@/hooks/useAuditLogs'
@@ -221,6 +221,16 @@ export default function AdminPage() {
       href: '/admin/publications',
       items: ['Publication Management', 'Add Publication', 'Printing Presses', 'Distribution Lists'],
       requiresPermission: 'publications.manage',
+    },
+    {
+      id: 'internship-volunteer',
+      title: 'Internship & Volunteer',
+      description: 'Manage partner institutions, MOAs, enrollments, and certificates',
+      icon: GraduationCap,
+      color: 'bg-teal-600',
+      href: '/admin/internship-volunteer',
+      items: ['Partner Institutions', 'Enrollments', 'Hours Monitoring', 'Certificates'],
+      requiresPermission: 'internship.manage',
     },
   ]
 
@@ -475,6 +485,12 @@ export default function AdminPage() {
                           'Add Publication': '/admin/publications/add-publication',
                           'Printing Presses': '/admin/publications/printing-presses',
                           'Distribution Lists': '/admin/publications/distribution-lists',
+
+                          // Internship & Volunteer routes
+                          'Partner Institutions': '/admin/internship-volunteer/partner-institutions',
+                          'Enrollments': '/admin/internship-volunteer/enrollments',
+                          'Hours Monitoring': '/admin/internship-volunteer/hours-monitoring',
+                          'Certificates': '/admin/internship-volunteer/certificates',
                                                   }
                         const route = routeMap[item]
                         if (route) router.push(route)
