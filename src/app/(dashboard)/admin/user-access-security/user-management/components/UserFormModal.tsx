@@ -223,7 +223,7 @@ export function UserFormModal({ open, onClose, user }: UserFormModalProps) {
   const selectedEmployeeData = employees.find(emp => emp.id === selectedEmployee)
 
   return (
-    <Modal open={open} onClose={handleClose} className="max-w-2xl">
+    <Modal open={open} onClose={handleClose} size="lg">
       <div className="flex items-center justify-between p-6 border-b">
         <div className="flex items-center gap-3">
           <div className="p-2 bg-orange-100 rounded-lg">

@@ -96,7 +96,7 @@ export function DepartmentFormModal({ open, onClose, department }: DepartmentFor
   }
 
   return (
-    <Modal open={open} onClose={handleClose} className="max-w-lg">
+    <Modal open={open} onClose={handleClose} size="lg">
       <ModalHeader onClose={handleClose}>
         {isEdit ? 'Edit Department' : 'Add Department'}
       </ModalHeader>

@@ -391,7 +391,7 @@ export default function HRLeaveManagementPage() {
       </Modal>
 
       {/* Allocate Leave Balance Modal */}
-      <Modal open={showAllocateModal} onClose={() => setShowAllocateModal(false)}>
+      <Modal open={showAllocateModal} onClose={() => setShowAllocateModal(false)} size="lg">
         <ModalHeader onClose={() => setShowAllocateModal(false)}>
           Allocate Leave Balance
         </ModalHeader>

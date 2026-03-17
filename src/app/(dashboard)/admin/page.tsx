@@ -91,22 +91,12 @@ export default function AdminPage() {
     },
     {
       id: 'leave-management',
-      title: 'Leave Management',
-      description: 'Manage leave requests and approvals',
+      title: 'Leave & Absence Management',
+      description: 'Manage leave requests, approvals, types, rules and policies',
       icon: Calendar,
       color: 'bg-indigo-500',
       href: '/admin/leave-management',
-      items: ['All Leave Requests', 'Leave Credit Approvals'],
-      requiresPermission: 'leave.manage_types',
-    },
-    {
-      id: 'leave-policies',
-      title: 'Leave & Absence Policies',
-      description: 'Configure leave types, rules and policies',
-      icon: Calendar,
-      color: 'bg-violet-500',
-      href: '/admin/leave-policies',
-      items: ['Leave Types', 'Accrual Rules', 'Leave Policies', 'Leave Balances', 'Holiday Calendar', 'Absence Categories', 'Approval Workflows'],
+      items: ['All Leave Requests', 'Leave Credit Approvals', 'Leave Types', 'Accrual Rules', 'Leave Policies', 'Leave Balances', 'Holiday Calendar', 'Absence Categories', 'Approval Workflows'],
       requiresPermission: 'leave.manage_types',
     },
     {
@@ -274,48 +264,6 @@ export default function AdminPage() {
           </Card>
         ))}
       </div>
-
-      {/* System Health Monitor (placeholder, ideally fetch real metrics) */}
-      <Card className="p-6">
-        <h3 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
-          <Zap className="w-5 h-5 text-orange" />
-          System Health Monitor
-        </h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="bg-green-50 p-4 rounded-lg" aria-label="Database status">
-            <div className="flex items-center gap-2 mb-2">
-              <div className="w-3 h-3 bg-green-500 rounded-full" aria-hidden="true"></div>
-              <span className="text-sm font-medium text-green-800">Database</span>
-            </div>
-            <p className="text-xs text-green-600">Response: --</p>
-            <p className="text-xs text-green-600">Uptime: --</p>
-          </div>
-          <div className="bg-green-50 p-4 rounded-lg" aria-label="API status">
-            <div className="flex items-center gap-2 mb-2">
-              <div className="w-3 h-3 bg-green-500 rounded-full" aria-hidden="true"></div>
-              <span className="text-sm font-medium text-green-800">API Services</span>
-            </div>
-            <p className="text-xs text-green-600">Response: --</p>
-            <p className="text-xs text-green-600">Success Rate: --</p>
-          </div>
-          <div className="bg-yellow-50 p-4 rounded-lg" aria-label="Storage status">
-            <div className="flex items-center gap-2 mb-2">
-              <div className="w-3 h-3 bg-yellow-500 rounded-full animate-pulse" aria-hidden="true"></div>
-              <span className="text-sm font-medium text-yellow-800">Storage</span>
-            </div>
-            <p className="text-xs text-yellow-600">Used: --</p>
-            <p className="text-xs text-yellow-600">Free: --</p>
-          </div>
-          <div className="bg-blue-50 p-4 rounded-lg" aria-label="Memory status">
-            <div className="flex items-center gap-2 mb-2">
-              <div className="w-3 h-3 bg-blue-500 rounded-full" aria-hidden="true"></div>
-              <span className="text-sm font-medium text-blue-800">Memory</span>
-            </div>
-            <p className="text-xs text-blue-600">Used: --</p>
-            <p className="text-xs text-blue-600">Available: --</p>
-          </div>
-        </div>
-      </Card>
 
       {/* Admin Modules */}
       <div>

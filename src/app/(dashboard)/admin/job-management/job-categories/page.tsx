@@ -239,7 +239,7 @@ export default function JobCategoriesPage() {
       )}
 
       {/* Add/Edit Modal */}
-      <Modal open={showModal} onClose={handleCloseModal}>
+      <Modal open={showModal} onClose={handleCloseModal} size="lg">
         <ModalHeader onClose={handleCloseModal}>
           {editingCategory ? 'Edit Category' : 'Add New Category'}
         </ModalHeader>

@@ -516,7 +516,7 @@ export default function SetupPage() {
       {activeTab === 'locations' && renderLocations()}
 
       {/* Modal */}
-      <Modal open={showModal} onClose={() => setShowModal(false)}>
+      <Modal open={showModal} onClose={() => setShowModal(false)} size="lg">
         <form onSubmit={handleSubmit}>
           <ModalHeader onClose={() => setShowModal(false)}>
             {selectedItem ? 'Edit' : 'Add'} {activeTab === 'categories' ? 'Category' : activeTab === 'brands' ? 'Brand' : activeTab === 'vendors' ? 'Vendor' : 'Location'}

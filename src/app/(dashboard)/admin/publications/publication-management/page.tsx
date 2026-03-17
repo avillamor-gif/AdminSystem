@@ -454,7 +454,7 @@ export default function PublicationManagementPage() {
       </Modal>
 
       {/* Return Modal */}
-      <Modal open={returnModal.open} onClose={() => setReturnModal({ open: false, req: null })}>
+      <Modal open={returnModal.open} onClose={() => setReturnModal({ open: false, req: null })} size="lg">
         <ModalHeader>
           <h2 className="text-lg font-semibold text-gray-900">Return Publication</h2>
         </ModalHeader>

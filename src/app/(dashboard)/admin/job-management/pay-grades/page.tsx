@@ -326,7 +326,7 @@ export default function PayGradesPage() {
       </Card>
 
       {/* Add/Edit Modal */}
-      <Modal open={showModal} onClose={handleCloseModal}>
+      <Modal open={showModal} onClose={handleCloseModal} size="lg">
         <form onSubmit={handleSubmit}>
           <ModalHeader onClose={handleCloseModal}>
             {editingId ? 'Edit Pay Grade' : 'Add Pay Grade'}

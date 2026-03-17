@@ -255,7 +255,7 @@ export default function ApprovalDashboardPage() {
       </Card>
 
       {/* Approval Modal */}
-      <Modal open={showModal} onClose={handleCloseModal}>
+      <Modal open={showModal} onClose={handleCloseModal} size="lg">
         <form onSubmit={handleSubmit(onSubmit)}>
           <ModalHeader onClose={handleCloseModal}>
             {approvalAction === 'approve' ? 'Approve Leave Request' : 'Reject Leave Request'}

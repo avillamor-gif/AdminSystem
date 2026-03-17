@@ -88,7 +88,7 @@ export default function SupplyCategoriesPage() {
         )}
       </Card>
 
-      <Modal open={modalOpen} onClose={() => setModalOpen(false)}>
+      <Modal open={modalOpen} onClose={() => setModalOpen(false)} size="lg">
         <form onSubmit={handleSubmit}>
           <ModalHeader><h2 className="text-lg font-semibold">{selected ? 'Edit Category' : 'Add Category'}</h2></ModalHeader>
           <ModalBody>

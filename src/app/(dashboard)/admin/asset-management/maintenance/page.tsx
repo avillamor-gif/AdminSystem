@@ -250,7 +250,7 @@ export default function MaintenancePage() {
       </Card>
 
       {/* Maintenance Modal */}
-      <Modal open={showModal} onClose={() => setShowModal(false)}>
+      <Modal open={showModal} onClose={() => setShowModal(false)} size="lg">
         <form onSubmit={handleSubmit}>
           <ModalHeader onClose={() => setShowModal(false)}>
             {selectedMaintenance ? 'Edit Maintenance Record' : 'Schedule Maintenance'}

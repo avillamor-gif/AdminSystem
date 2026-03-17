@@ -367,7 +367,7 @@ export default function ApprovalWorkflowsPage() {
       </Card>
 
       {/* Modal */}
-      <Modal open={showModal} onClose={handleCloseModal}>
+      <Modal open={showModal} onClose={handleCloseModal} size="lg">
         <form onSubmit={handleSubmit(onSubmit)}>
           <ModalHeader onClose={handleCloseModal}>
             {editingWorkflow ? 'Edit Approval Workflow' : 'Create Approval Workflow'}

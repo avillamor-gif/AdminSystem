@@ -290,7 +290,7 @@ export default function RequestsPage() {
       </Card>
 
       {/* Request Modal */}
-      <Modal open={showModal} onClose={() => setShowModal(false)}>
+      <Modal open={showModal} onClose={() => setShowModal(false)} size="lg">
         <form onSubmit={handleSubmit}>
           <ModalHeader onClose={() => setShowModal(false)}>
             {selectedRequest ? 'Edit Request' : 'New Asset Request'}
@@ -356,7 +356,7 @@ export default function RequestsPage() {
       </Modal>
 
       {/* Action Modal */}
-      <Modal open={showActionModal} onClose={() => setShowActionModal(false)}>
+      <Modal open={showActionModal} onClose={() => setShowActionModal(false)} size="lg">
         <form onSubmit={handleAction}>
           <ModalHeader onClose={() => setShowActionModal(false)}>
             {actionType === 'approve' && 'Approve Request'}

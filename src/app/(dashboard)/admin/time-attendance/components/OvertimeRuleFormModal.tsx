@@ -57,7 +57,7 @@ export function OvertimeRuleFormModal({ isOpen, onClose, rule }: OvertimeRuleFor
   }
 
   return (
-    <Modal open={isOpen} onClose={onClose} className="max-w-lg">
+    <Modal open={isOpen} onClose={onClose} size="lg">
       <ModalHeader onClose={onClose}>{isEditing ? 'Edit Overtime Rule' : 'Add Overtime Rule'}</ModalHeader>
       <form onSubmit={handleSubmit(onSubmit)}>
         <ModalBody className="space-y-6">

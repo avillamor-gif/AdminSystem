@@ -53,7 +53,7 @@ export function PayComponentForm({ open, onClose, onSave, initialData, loading }
   }
 
   return (
-    <Modal open={open} onClose={onClose}>
+    <Modal open={open} onClose={onClose} size="lg">
       <form onSubmit={handleSubmit}>
         <ModalHeader onClose={onClose}>
           {initialData ? 'Edit Pay Component' : 'Add Pay Component'}

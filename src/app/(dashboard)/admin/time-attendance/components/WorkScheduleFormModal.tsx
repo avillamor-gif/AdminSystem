@@ -77,7 +77,7 @@ export function WorkScheduleFormModal({ isOpen, onClose, schedule }: WorkSchedul
   }
 
   return (
-    <Modal open={isOpen} onClose={onClose} className="max-w-lg">
+    <Modal open={isOpen} onClose={onClose} size="lg">
       <ModalHeader onClose={onClose}>{isEditing ? 'Edit Work Schedule' : 'Add Work Schedule'}</ModalHeader>
       <form onSubmit={handleSubmit(onSubmit)}>
         <ModalBody className="space-y-6">

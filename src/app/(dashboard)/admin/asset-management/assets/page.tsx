@@ -1508,7 +1508,7 @@ export default function AssetsPage() {
       </Modal>
 
       {/* QR Code Modal */}
-      <Modal open={showQRModal} onClose={() => setShowQRModal(false)}>
+      <Modal open={showQRModal} onClose={() => setShowQRModal(false)} size="lg">
         <ModalHeader onClose={() => setShowQRModal(false)}>
           QR Code - {selectedAsset?.asset_tag}
         </ModalHeader>

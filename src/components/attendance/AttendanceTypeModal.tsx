@@ -40,7 +40,7 @@ export function AttendanceTypeModal({
   onCancel,
 }: Props) {
   return (
-    <Modal open={open} onClose={onCancel} className="max-w-lg">
+    <Modal open={open} onClose={onCancel} size="lg">
       <ModalHeader onClose={onCancel}>{title}</ModalHeader>
 
       <ModalBody>

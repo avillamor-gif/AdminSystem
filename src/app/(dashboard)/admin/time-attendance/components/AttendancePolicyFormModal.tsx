@@ -60,7 +60,7 @@ export function AttendancePolicyFormModal({ isOpen, onClose, policy }: Attendanc
   }
 
   return (
-    <Modal open={isOpen} onClose={onClose} className="max-w-lg">
+    <Modal open={isOpen} onClose={onClose} size="lg">
       <ModalHeader onClose={onClose}>{isEditing ? 'Edit Attendance Policy' : 'Add Attendance Policy'}</ModalHeader>
       <form onSubmit={handleSubmit(onSubmit)}>
         <ModalBody className="space-y-6">

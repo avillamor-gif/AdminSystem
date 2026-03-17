@@ -347,7 +347,7 @@ export default function AbsenceCategoriesPage() {
       </Card>
 
       {/* Modal */}
-      <Modal open={showModal} onClose={handleCloseModal}>
+      <Modal open={showModal} onClose={handleCloseModal} size="lg">
         <form onSubmit={handleSubmit(onSubmit)}>
           <ModalHeader onClose={handleCloseModal}>
             {editingCategory ? 'Edit Absence Category' : 'Create Absence Category'}

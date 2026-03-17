@@ -309,7 +309,7 @@ export default function LeaveBalancesPage() {
       </Card>
 
       {/* ── Initialize Year Modal ── */}
-      <Modal open={showInitModal} onClose={() => setShowInitModal(false)}>
+      <Modal open={showInitModal} onClose={() => setShowInitModal(false)} size="lg">
         <ModalHeader onClose={() => setShowInitModal(false)}>
           Initialize Leave Balances — {yearFilter}
         </ModalHeader>
@@ -356,7 +356,7 @@ export default function LeaveBalancesPage() {
       </Modal>
 
       {/* ── Allocate Balance Modal ── */}
-      <Modal open={showAllocateModal} onClose={() => setShowAllocateModal(false)}>
+      <Modal open={showAllocateModal} onClose={() => setShowAllocateModal(false)} size="lg">
         <ModalHeader onClose={() => setShowAllocateModal(false)}>Allocate Leave Balance</ModalHeader>
         <ModalBody>
           <div className="space-y-4">

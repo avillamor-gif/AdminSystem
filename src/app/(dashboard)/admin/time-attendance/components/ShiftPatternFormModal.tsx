@@ -68,7 +68,7 @@ export function ShiftPatternFormModal({ isOpen, onClose, shift }: ShiftPatternFo
   }
 
   return (
-    <Modal open={isOpen} onClose={onClose} className="max-w-lg">
+    <Modal open={isOpen} onClose={onClose} size="lg">
       <ModalHeader onClose={onClose}>{isEditing ? 'Edit Shift Pattern' : 'Add Shift Pattern'}</ModalHeader>
       <form onSubmit={handleSubmit(onSubmit)}>
         <ModalBody className="space-y-6">

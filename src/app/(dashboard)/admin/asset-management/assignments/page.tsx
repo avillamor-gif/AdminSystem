@@ -221,7 +221,7 @@ export default function AssignmentsPage() {
       </Card>
 
       {/* Assign Asset Modal */}
-      <Modal open={showAssignModal} onClose={() => setShowAssignModal(false)}>
+      <Modal open={showAssignModal} onClose={() => setShowAssignModal(false)} size="lg">
         <form onSubmit={handleAssign}>
           <ModalHeader onClose={() => setShowAssignModal(false)}>
             Assign Asset to Employee
@@ -278,7 +278,7 @@ export default function AssignmentsPage() {
       </Modal>
 
       {/* Return Asset Modal */}
-      <Modal open={showReturnModal} onClose={() => setShowReturnModal(false)}>
+      <Modal open={showReturnModal} onClose={() => setShowReturnModal(false)} size="lg">
         <form onSubmit={handleReturn}>
           <ModalHeader onClose={() => setShowReturnModal(false)}>
             Return Asset

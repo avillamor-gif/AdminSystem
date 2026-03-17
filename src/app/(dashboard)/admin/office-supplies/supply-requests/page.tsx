@@ -187,7 +187,7 @@ export default function SupplyRequestsPage() {
       </Card>
 
       {selected && (
-        <Modal open={detailOpen} onClose={() => setDetailOpen(false)}>
+        <Modal open={detailOpen} onClose={() => setDetailOpen(false)} size="lg">
           <ModalHeader><h2 className="text-lg font-semibold">Request {selected.request_number}</h2></ModalHeader>
           <ModalBody>
             <div className="space-y-3 text-sm">

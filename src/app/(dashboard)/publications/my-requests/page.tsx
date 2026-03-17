@@ -238,7 +238,7 @@ export default function MyPublicationRequestsPage() {
       </Card>
 
       {/* Withdraw Modal */}
-      <Modal open={withdrawModal.open} onClose={() => setWithdrawModal({ open: false, req: null })}>
+      <Modal open={withdrawModal.open} onClose={() => setWithdrawModal({ open: false, req: null })} size="lg">
         <ModalHeader>
           <h2 className="text-lg font-semibold text-gray-900">Withdraw Request</h2>
         </ModalHeader>
@@ -259,7 +259,7 @@ export default function MyPublicationRequestsPage() {
       </Modal>
 
       {/* Return Modal */}
-      <Modal open={returnModal.open} onClose={() => setReturnModal({ open: false, req: null })}>
+      <Modal open={returnModal.open} onClose={() => setReturnModal({ open: false, req: null })} size="lg">
         <ModalHeader>
           <h2 className="text-lg font-semibold text-gray-900">Return Publication</h2>
         </ModalHeader>

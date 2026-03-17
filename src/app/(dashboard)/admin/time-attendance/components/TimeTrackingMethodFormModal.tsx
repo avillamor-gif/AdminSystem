@@ -71,7 +71,7 @@ export function TimeTrackingMethodFormModal({ isOpen, onClose, method }: TimeTra
   }
 
   return (
-    <Modal open={isOpen} onClose={onClose} className="max-w-lg">
+    <Modal open={isOpen} onClose={onClose} size="lg">
       <ModalHeader onClose={onClose}>{isEditing ? 'Edit Time Tracking Method' : 'Add Time Tracking Method'}</ModalHeader>
       <form onSubmit={handleSubmit(onSubmit)}>
         <ModalBody className="space-y-6">

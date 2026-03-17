@@ -500,7 +500,7 @@ export default function OfficeSuppliesSetupPage() {
       )}
 
       {/* Modal */}
-      <Modal open={showModal} onClose={() => setShowModal(false)} size={activeTab === 'vendors' ? 'lg' : 'md'}>
+      <Modal open={showModal} onClose={() => setShowModal(false)} size="lg">
         <form onSubmit={handleSubmit}>
           <ModalHeader onClose={() => setShowModal(false)}>
             {selectedItem ? 'Edit' : 'Add'} {addLabel}

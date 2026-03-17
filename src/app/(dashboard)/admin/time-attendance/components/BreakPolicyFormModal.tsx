@@ -55,7 +55,7 @@ export function BreakPolicyFormModal({ isOpen, onClose, policy }: BreakPolicyFor
   }
 
   return (
-    <Modal open={isOpen} onClose={onClose} className="max-w-lg">
+    <Modal open={isOpen} onClose={onClose} size="lg">
       <ModalHeader onClose={onClose}>{isEditing ? 'Edit Break Policy' : 'Add Break Policy'}</ModalHeader>
       <form onSubmit={handleSubmit(onSubmit)}>
         <ModalBody className="space-y-6">

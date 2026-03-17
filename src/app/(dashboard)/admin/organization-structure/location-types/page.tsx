@@ -193,7 +193,7 @@ export default function LocationTypesPage() {
       </div>
 
       {/* Form Modal */}
-      <Modal open={isFormOpen} onClose={() => setIsFormOpen(false)}>
+      <Modal open={isFormOpen} onClose={() => setIsFormOpen(false)} size="lg">
         <form onSubmit={handleSubmit}>
           <ModalHeader onClose={() => setIsFormOpen(false)}>
             {selectedType ? 'Edit Location Type' : 'Add New Location Type'}

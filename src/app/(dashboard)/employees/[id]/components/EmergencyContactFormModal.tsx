@@ -123,7 +123,7 @@ export function EmergencyContactFormModal({
   }
 
   return (
-    <Modal open={open} onClose={handleClose} className="max-w-lg">
+    <Modal open={open} onClose={handleClose} size="lg">
       <form onSubmit={handleSubmit(onSubmit)}>
         <ModalHeader>
           {isEdit ? 'Edit Emergency Contact' : 'Add Emergency Contact'}

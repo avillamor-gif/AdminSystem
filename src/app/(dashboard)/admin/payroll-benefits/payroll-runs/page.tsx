@@ -287,7 +287,7 @@ export default function PayrollRunsPage() {
       )}
 
       {/* Create Modal */}
-      <Modal open={showModal} onClose={() => setShowModal(false)} size="md">
+      <Modal open={showModal} onClose={() => setShowModal(false)} size="lg">
         <form onSubmit={handleSubmit}>
           <ModalHeader onClose={() => setShowModal(false)}>
             New Payroll Run
