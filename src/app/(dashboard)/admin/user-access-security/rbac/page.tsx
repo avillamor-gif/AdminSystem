@@ -4,7 +4,86 @@ import { useState } from 'react'
 import { Card, Button, Badge, Modal, ModalHeader, ModalBody, ModalFooter, Input, ConfirmModal } from '@/components/ui'
 import { useRoles, usePermissions, useCreateRole, useUpdateRole, useDeleteRole, useAssignPermissions } from '@/hooks'
 import { Shield, Plus, Edit2, Trash2, Users, CheckCircle } from 'lucide-react'
-import type { RoleWithPermissions } from '@/services/rbac.service'
+import type { RoleWithPermissions, Permission } from '@/services/rbac.service'
+
+// ── Helpers (module-level so they never change identity between renders) ─────
+
+function togglePermission(id: string, setFn: React.Dispatch<React.SetStateAction<Set<string>>>) {
+  setFn(prev => {
+    const next = new Set(prev)
+    next.has(id) ? next.delete(id) : next.add(id)
+    return next
+  })
+}
+
+function toggleCategory(
+  categoryPerms: Permission[],
+  current: Set<string>,
+  setFn: React.Dispatch<React.SetStateAction<Set<string>>>
+) {
+  const ids = categoryPerms.map(p => p.id)
+  const allSelected = ids.every(id => current.has(id))
+  setFn(prev => {
+    const next = new Set(prev)
+    if (allSelected) {
+      ids.forEach(id => next.delete(id))
+    } else {
+      ids.forEach(id => next.add(id))
+    }
+    return next
+  })
+}
+
+// ── PermissionPanel (module-level to prevent remount on parent re-render) ────
+
+function PermissionPanel({
+  groupedPermissions,
+  selected,
+  setSelected,
+}: {
+  groupedPermissions: Record<string, Permission[]>
+  selected: Set<string>
+  setSelected: React.Dispatch<React.SetStateAction<Set<string>>>
+}) {
+  return (
+    <div className="space-y-3 overflow-y-auto pr-1" style={{ maxHeight: '360px' }}>
+      {Object.entries(groupedPermissions).map(([category, perms]) => {
+        const allChecked = perms.every(p => selected.has(p.id))
+        const someChecked = perms.some(p => selected.has(p.id))
+        return (
+          <div key={category} className="border border-gray-100 rounded-lg p-3">
+            <label className="flex items-center gap-2 mb-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={allChecked}
+                ref={(el) => { if (el) el.indeterminate = someChecked && !allChecked }}
+                onChange={() => toggleCategory(perms, selected, setSelected)}
+                className="w-4 h-4 rounded"
+              />
+              <span className="text-sm font-semibold text-gray-800">{category}</span>
+              <span className="text-xs text-gray-400 ml-auto">
+                {perms.filter(p => selected.has(p.id)).length}/{perms.length}
+              </span>
+            </label>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-1 pl-6">
+              {perms.map(p => (
+                <label key={p.id} className="flex items-center gap-2 cursor-pointer py-0.5 group">
+                  <input
+                    type="checkbox"
+                    checked={selected.has(p.id)}
+                    onChange={() => togglePermission(p.id, setSelected)}
+                    className="w-4 h-4 rounded"
+                  />
+                  <span className="text-sm text-gray-700 group-hover:text-gray-900">{p.name}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+        )
+      })}
+    </div>
+  )
+}
 
 export default function RBACPage() {
   const { data: roles = [], isLoading: rolesLoading } = useRoles()
@@ -48,39 +127,6 @@ export default function RBACPage() {
 
   // ── Edit helpers ──────────────────────────────────────────────────────────
   function openEdit(role: RoleWithPermissions) {
-    setEditingRole(role)
-    setEditName(role.name)
-    setEditDescription(role.description || '')
-    setSelectedPermissionIds(new Set(role.permissions.map(p => p.id)))
-  }
-
-  function togglePermission(id: string, setFn: React.Dispatch<React.SetStateAction<Set<string>>>) {
-    setFn(prev => {
-      const next = new Set(prev)
-      next.has(id) ? next.delete(id) : next.add(id)
-      return next
-    })
-  }
-
-  function toggleCategory(
-    categoryPerms: typeof permissions,
-    current: Set<string>,
-    setFn: React.Dispatch<React.SetStateAction<Set<string>>>
-  ) {
-    const ids = categoryPerms.map(p => p.id)
-    const allSelected = ids.every(id => current.has(id))
-    setFn(prev => {
-      const next = new Set(prev)
-      if (allSelected) {
-        ids.forEach(id => next.delete(id))
-      } else {
-        ids.forEach(id => next.add(id))
-      }
-      return next
-    })
-  }
-
-  async function handleSaveEdit() {
     if (!editingRole) return
     await updateRole.mutateAsync({
       id: editingRole.id,
@@ -126,53 +172,6 @@ export default function RBACPage() {
   const isCreating = createRole.isPending || assignPermissions.isPending
   const isDeleting = deleteRole.isPending
 
-  // ── Permission checkbox panel (shared by create + edit) ───────────────────
-  function PermissionPanel({
-    selected,
-    setSelected,
-  }: {
-    selected: Set<string>
-    setSelected: React.Dispatch<React.SetStateAction<Set<string>>>
-  }) {
-    return (
-      <div className="space-y-3 overflow-y-auto pr-1" style={{ maxHeight: '360px' }}>
-        {Object.entries(groupedPermissions).map(([category, perms]) => {
-          const allChecked = perms.every(p => selected.has(p.id))
-          const someChecked = perms.some(p => selected.has(p.id))
-          return (
-            <div key={category} className="border border-gray-100 rounded-lg p-3">
-              <label className="flex items-center gap-2 mb-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={allChecked}
-                  ref={(el) => { if (el) el.indeterminate = someChecked && !allChecked }}
-                  onChange={() => toggleCategory(perms, selected, setSelected)}
-                  className="w-4 h-4 rounded"
-                />
-                <span className="text-sm font-semibold text-gray-800">{category}</span>
-                <span className="text-xs text-gray-400 ml-auto">
-                  {perms.filter(p => selected.has(p.id)).length}/{perms.length}
-                </span>
-              </label>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-1 pl-6">
-                {perms.map(p => (
-                  <label key={p.id} className="flex items-center gap-2 cursor-pointer py-0.5 group">
-                    <input
-                      type="checkbox"
-                      checked={selected.has(p.id)}
-                      onChange={() => togglePermission(p.id, setSelected)}
-                      className="w-4 h-4 rounded"
-                    />
-                    <span className="text-sm text-gray-700 group-hover:text-gray-900">{p.name}</span>
-                  </label>
-                ))}
-              </div>
-            </div>
-          )
-        })}
-      </div>
-    )
-  }
 
   return (
     <div className="space-y-6">
@@ -367,7 +366,7 @@ export default function RBACPage() {
                     {newPermissionIds.size} selected
                   </span>
                 </p>
-                <PermissionPanel selected={newPermissionIds} setSelected={setNewPermissionIds} />
+                <PermissionPanel groupedPermissions={groupedPermissions} selected={newPermissionIds} setSelected={setNewPermissionIds} />
               </div>
             </div>
           </ModalBody>
@@ -428,7 +427,7 @@ export default function RBACPage() {
                     {selectedPermissionIds.size} selected
                   </span>
                 </p>
-                <PermissionPanel selected={selectedPermissionIds} setSelected={setSelectedPermissionIds} />
+                <PermissionPanel groupedPermissions={groupedPermissions} selected={selectedPermissionIds} setSelected={setSelectedPermissionIds} />
               </div>
             </div>
           </ModalBody>
