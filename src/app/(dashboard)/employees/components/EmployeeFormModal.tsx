@@ -6,7 +6,7 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { Modal, ModalHeader, ModalBody, ModalFooter, Button, Input, Select } from '@/components/ui'
-import { useCreateEmployee, useUpdateEmployee, useDepartments, useJobTitles, useLocations } from '@/hooks'
+import { useCreateEmployee, useUpdateEmployee, useDepartments, useJobTitles, useLocations, useEmploymentTypes } from '@/hooks'
 import { generateEmployeeId } from '@/lib/utils'
 import { logAction } from '@/services/auditLog.service'
 import type { Employee, Department, JobTitle, Location } from '@/services'
@@ -19,6 +19,7 @@ const employeeSchema = z.object({
   department_id: z.string().optional(),
   job_title_id: z.string().optional(),
   location_id: z.string().optional(),
+  employment_type_id: z.string().optional(),
   status: z.enum(['active', 'inactive', 'terminated']),
 })
 
@@ -36,6 +37,7 @@ export function EmployeeFormModal({ open, onClose, employee }: EmployeeFormModal
   const { data: departments } = useDepartments()
   const { data: jobTitles } = useJobTitles()
   const { data: locations } = useLocations()
+  const { data: employmentTypes = [] } = useEmploymentTypes()
   const createEmployee = useCreateEmployee()
   const updateEmployee = useUpdateEmployee()
 
@@ -60,6 +62,7 @@ export function EmployeeFormModal({ open, onClose, employee }: EmployeeFormModal
           department_id: employee.department_id || '',
           job_title_id: employee.job_title_id || '',
           location_id: employee.location_id || '',
+          employment_type_id: (employee as any).employment_type_id || '',
           status: (employee.status ?? 'active') as 'active' | 'inactive' | 'terminated',
         }
       : {
@@ -83,6 +86,11 @@ export function EmployeeFormModal({ open, onClose, employee }: EmployeeFormModal
     ...typedLocations.map((loc) => ({ value: loc.id, label: loc.name })),
   ]
 
+  const employmentTypeOptions = [
+    { value: '', label: 'Select Employment Type' },
+    ...employmentTypes.map((et) => ({ value: et.id, label: et.name })),
+  ]
+
   const statusOptions = [
     { value: 'active', label: 'Active' },
     { value: 'inactive', label: 'Inactive' },
@@ -101,6 +109,7 @@ export function EmployeeFormModal({ open, onClose, employee }: EmployeeFormModal
           department_id: employee.department_id || '',
           job_title_id: employee.job_title_id || '',
           location_id: employee.location_id || '',
+          employment_type_id: (employee as any).employment_type_id || '',
           status: (employee.status ?? 'active') as 'active' | 'inactive' | 'terminated',
         })
       } else {
@@ -112,6 +121,7 @@ export function EmployeeFormModal({ open, onClose, employee }: EmployeeFormModal
           department_id: '',
           job_title_id: '',
           location_id: '',
+          employment_type_id: '',
           status: 'active',
         })
       }
@@ -126,6 +136,7 @@ export function EmployeeFormModal({ open, onClose, employee }: EmployeeFormModal
         department_id: data.department_id || null,
         job_title_id: data.job_title_id || null,
         location_id: data.location_id || null,
+        employment_type_id: data.employment_type_id || null,
       }
       
       if (isEdit && employee) {
@@ -213,6 +224,12 @@ export function EmployeeFormModal({ open, onClose, employee }: EmployeeFormModal
             options={locationOptions}
             error={errors.location_id?.message}
             {...register('location_id')}
+          />
+          <Select
+            label="Employment Type"
+            options={employmentTypeOptions}
+            error={errors.employment_type_id?.message}
+            {...register('employment_type_id')}
           />
           <Select
             label="Status"
