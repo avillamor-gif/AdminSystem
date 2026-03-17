@@ -237,8 +237,17 @@ export const permissionService = {
         'supplies.view',
         'travel.apply', 'travel.view',
       ],
-      // ── Board Member ─────────────────────────────────────────────────────
+      // ── Board of Trustees ──────────────────────────────────────────────────
       'board member': [
+        'analytics.export', 'analytics.view',
+        'directory.view',
+        'employees.view',
+        'leave.view',
+        'org.view',
+        'performance.view',
+        'reports.view',
+      ],
+      'board of trustees': [
         'analytics.export', 'analytics.view',
         'directory.view',
         'employees.view',
@@ -295,8 +304,8 @@ export const permissionService = {
         'ed': 'Executive Director',
         'executive director': 'Executive Director',
         'super admin': 'Super Admin',
-        'board_member': 'Board Member',
-        'board member': 'Board Member',
+        'board_member': 'Board of Trustees',
+        'board member': 'Board of Trustees',
       }
       const roleName = roleDisplayNames[userRole.role.toLowerCase()] ?? userRole.role
 
@@ -310,8 +319,8 @@ export const permissionService = {
         'ed': 'Executive Director',
         'executive director': 'Executive Director',
         'super admin': 'Super Admin',
-        'board_member': 'Board Member',
-        'board member': 'Board Member',
+        'board_member': 'Board of Trustees',
+        'board member': 'Board of Trustees',
       }
       // For unknown/future roles, capitalise each word so "new role" → "New Role"
       const rolesTableName = roleNameMap[userRole.role.toLowerCase()]

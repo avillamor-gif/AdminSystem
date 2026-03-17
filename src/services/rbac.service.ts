@@ -87,6 +87,7 @@ export const rbacService = {
         'employee': 'employee',
         'executive director': 'ed',
         'board member': 'board_member',
+        'board of trustees': 'board_member',
       }
 
       // Transform data
