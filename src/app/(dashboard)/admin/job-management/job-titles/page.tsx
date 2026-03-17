@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Plus, Edit2, Trash2 } from 'lucide-react'
+import { Plus, Edit2, Trash2, Search } from 'lucide-react'
 import { Card, Button, Input, Badge, Modal, ModalHeader, ModalBody, ModalFooter } from '@/components/ui'
 import { 
   useJobTitles, 
