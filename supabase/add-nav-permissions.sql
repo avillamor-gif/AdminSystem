@@ -5,7 +5,6 @@
 -- ============================================================
 
 INSERT INTO permissions (name, code, category, description) VALUES
-  ('Employees Menu',        'nav.employees',   'Navigation', 'Show Employees link in sidebar'),
   ('Leave Menu',            'nav.leave',       'Navigation', 'Show Leave link in sidebar'),
   ('Attendance Menu',       'nav.attendance',  'Navigation', 'Show Attendance Tracker link in sidebar'),
   ('Travel Menu',           'nav.travel',      'Navigation', 'Show Travel link in sidebar'),

@@ -9,7 +9,6 @@ import {
   Settings,
   Building2,
   UserCircle,
-  Users,
   Briefcase,
   FileText,
   Search,
@@ -39,7 +38,6 @@ interface NavigationItem {
 const navigationItems: NavigationItem[] = [
   { name: 'Dashboard',         href: '/',                      icon: LayoutDashboard },
   { name: 'Admin',             href: '/admin',                 icon: Settings,   requiresPermission: 'admin.any',        activeBase: '/admin' },
-  { name: 'Employees',         href: '/employees',             icon: Users,      requiresPermission: 'nav.employees',    activeBase: '/employees' },
   { name: 'Leave',             href: '/leave/my-requests',     icon: Calendar,   requiresPermission: 'nav.leave',        activeBase: '/leave' },
   { name: 'Attendance Tracker',href: '/attendance-tracker',    icon: Clock,      requiresPermission: 'nav.attendance' },
   { name: 'Travel',            href: '/travel/travel-request', icon: Plane,      requiresPermission: 'nav.travel',       activeBase: '/travel' },
