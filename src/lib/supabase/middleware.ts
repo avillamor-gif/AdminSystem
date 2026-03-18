@@ -105,15 +105,45 @@ export async function updateSession(request: NextRequest) {
     if (isAdminRoute || isSuperAdminRoute) {
       const role = userRole.role
 
-      // Check permissions
-      // Super admin routes are only for admin role (highest privilege)
+      // Super admin routes: only 'admin' enum role
       if (isSuperAdminRoute && role !== 'admin') {
         return NextResponse.redirect(new URL('/', request.url))
       }
 
-      // Admin routes accessible by admin and hr roles
-      if (isAdminRoute && !['admin', 'hr'].includes(role || '')) {
-        return NextResponse.redirect(new URL('/', request.url))
+      if (isAdminRoute) {
+        // Always allow legacy admin/hr roles
+        const hasLegacyAdminRole = ['admin', 'hr', 'super admin', 'ed'].includes(role || '')
+
+        if (!hasLegacyAdminRole) {
+          // Check if user has ANY admin module permission via their role assignments
+          const { data: assignments } = await supabase
+            .from('user_role_assignments')
+            .select('role_id')
+            .eq('user_id', user.id)
+
+          if (!assignments || assignments.length === 0) {
+            return NextResponse.redirect(new URL('/', request.url))
+          }
+
+          const roleIds = assignments.map(a => a.role_id)
+
+          const { data: adminPerms } = await supabase
+            .from('role_permissions')
+            .select('permission:permissions(code)')
+            .in('role_id', roleIds)
+
+          const permCodes: string[] = (adminPerms || [])
+            .map((rp: any) => rp.permission?.code)
+            .filter(Boolean)
+
+          const hasAdminAccess = permCodes.some(
+            (code: string) => code.startsWith('admin.') || code === 'admin.manage'
+          )
+
+          if (!hasAdminAccess) {
+            return NextResponse.redirect(new URL('/', request.url))
+          }
+        }
       }
     }
   }

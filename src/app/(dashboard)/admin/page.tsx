@@ -38,7 +38,7 @@ export default function AdminPage() {
       color: 'bg-red-500',
       items: ['User Management', 'Role-Based Access Control', 'Security Policies', 'Session Management', 'Two-Factor Authentication', 'Password Policies'],
       href: '/admin/user-access-security',
-      requiresPermission: 'user.view',
+      requiresPermission: 'admin.user_access',
     },
     {
       id: 'organization',
@@ -48,7 +48,7 @@ export default function AdminPage() {
       color: 'bg-blue-500',
       href: '/admin/organization-structure',
       items: ['Company Structure', 'Locations Management', 'Location Types', 'Department Hierarchy', 'International Operations', 'Organizational Chart'],
-      requiresPermission: 'org.view',
+      requiresPermission: 'admin.organization',
     },
     {
       id: 'job-management',
@@ -58,7 +58,7 @@ export default function AdminPage() {
       color: 'bg-green-500',
       href: '/admin/job-management',
       items: ['Job Titles', 'Job Descriptions', 'Pay Grades', 'Salary Structures', 'Employment Types', 'Job Categories', 'Career Paths'],
-      requiresPermission: 'jobs.view',
+      requiresPermission: 'admin.job_management',
     },
     {
       id: 'employee-data',
@@ -77,7 +77,7 @@ export default function AdminPage() {
         'Generate ID',
         'Termination & Activation'
       ],
-      requiresPermission: 'employees.view',
+      requiresPermission: 'admin.employee_data',
     },
     {
       id: 'time-attendance',
@@ -87,7 +87,7 @@ export default function AdminPage() {
       color: 'bg-orange',
       href: '/admin/time-attendance',
       items: ['Work Schedules', 'Shift Patterns', 'Overtime Rules', 'Break Policies', 'Time Tracking Methods', 'Attendance Policies', 'Attendance Reports'],
-      requiresPermission: 'time_attendance.manage',
+      requiresPermission: 'admin.time_attendance',
     },
     {
       id: 'leave-management',
@@ -97,7 +97,7 @@ export default function AdminPage() {
       color: 'bg-indigo-500',
       href: '/admin/leave-management',
       items: ['All Leave Requests', 'Leave Credit Approvals', 'Leave Types', 'Accrual Rules', 'Leave Policies', 'Leave Balances', 'Holiday Calendar', 'Absence Categories', 'Approval Workflows'],
-      requiresPermission: 'leave.manage_types',
+      requiresPermission: 'admin.leave_management',
     },
     {
       id: 'payroll-benefits',
@@ -107,7 +107,7 @@ export default function AdminPage() {
       color: 'bg-emerald-500',
       href: '/admin/payroll-benefits',
       items: ['Pay Components', 'Tax Configuration', 'Benefits Plans', 'Deductions', 'Bonus Structures', 'Reimbursements'],
-      requiresPermission: 'system.config',
+      requiresPermission: 'admin.payroll_benefits',
     },
     {
       id: 'performance',
@@ -117,7 +117,7 @@ export default function AdminPage() {
       color: 'bg-cyan-500',
       href: '/admin/performance',
       items: ['Review Cycles', 'Rating Scales', 'Goal Templates', 'Competency Models', 'KPI Frameworks', '360 Feedback'],
-      requiresPermission: 'performance.manage_goals',
+      requiresPermission: 'admin.performance',
     },
     {
       id: 'learning-development',
@@ -127,7 +127,7 @@ export default function AdminPage() {
       color: 'bg-pink-500',
       href: '/admin/learning-development',
       items: ['Training Programs', 'Certifications', 'Skills Matrix', 'Learning Paths', 'External Training', 'Compliance Training'],
-      requiresPermission: 'learning.manage',
+      requiresPermission: 'admin.learning',
     },
     {
       id: 'recruitment',
@@ -150,7 +150,7 @@ export default function AdminPage() {
         'Talent Pool',
         'Screening Questions'
       ],
-      requiresPermission: 'recruitment.manage',
+      requiresPermission: 'admin.recruitment',
     },
     {
       id: 'compliance-audit',
@@ -160,7 +160,7 @@ export default function AdminPage() {
       color: 'bg-amber-500',
       href: '/admin/compliance-audit',
       items: ['Regulatory Compliance', 'Audit Trails', 'Data Retention Policies', 'Privacy Settings', 'GDPR Compliance', 'Labor Law Compliance'],
-      requiresPermission: 'compliance.view',
+      requiresPermission: 'admin.compliance',
     },
     {
       id: 'analytics-reports',
@@ -170,7 +170,7 @@ export default function AdminPage() {
       color: 'bg-teal-500',
       href: '/admin/analytics-reports',
       items: ['Standard Reports', 'Custom Reports', 'Dashboard Configuration', 'Data Analytics', 'KPI Metrics', 'Export Settings'],
-      requiresPermission: 'analytics.view',
+      requiresPermission: 'admin.analytics',
     },
     {
       id: 'system-config',
@@ -180,7 +180,7 @@ export default function AdminPage() {
       color: 'bg-gray-600',
       href: '/admin/system-config',
       items: ['General Settings', 'Email Configuration', 'Workflow Settings', 'API Settings', 'Integration Management', 'Backup & Recovery', 'System Maintenance'],
-      requiresPermission: 'system.config',
+      requiresPermission: 'admin.system_config',
     },
     {
       id: 'travel',
@@ -190,7 +190,7 @@ export default function AdminPage() {
       color: 'bg-blue-600',
       href: '/admin/travel',
       items: ['Travel Requests', 'Travel Booking', 'Expense Management', 'Travel Policies', 'Travel Vendor Management', 'Travel Analytics'],
-      requiresPermission: 'travel.manage',
+      requiresPermission: 'admin.travel',
     },
     {
       id: 'asset-management',
@@ -200,7 +200,7 @@ export default function AdminPage() {
       color: 'bg-slate-600',
       href: '/admin/asset-management',
       items: ['Assets', 'Assignments', 'Maintenance', 'Requests', 'Setup', 'Reports'],
-      requiresPermission: 'assets.manage',
+      requiresPermission: 'admin.assets',
     },
     {
       id: 'office-supplies',
@@ -210,7 +210,7 @@ export default function AdminPage() {
       color: 'bg-green-600',
       href: '/admin/office-supplies',
       items: ['Supply Inventory', 'Supply Requests', 'Purchase Orders', 'Stock Levels', 'Setup'],
-      requiresPermission: 'supplies.manage',
+      requiresPermission: 'admin.supplies',
     },
     {
       id: 'publications',
@@ -220,7 +220,7 @@ export default function AdminPage() {
       color: 'bg-purple-600',
       href: '/admin/publications',
       items: ['Publication Management', 'Add Publication', 'Printing Presses', 'Distribution Lists'],
-      requiresPermission: 'publications.manage',
+      requiresPermission: 'admin.publications',
     },
     {
       id: 'internship-volunteer',
@@ -230,6 +230,7 @@ export default function AdminPage() {
       color: 'bg-teal-600',
       href: '/admin/internship-volunteer',
       items: ['Partner Institutions', 'Enrollments', 'Hours Monitoring', 'Certificates'],
+      requiresPermission: 'admin.internship',
     },
   ]
 

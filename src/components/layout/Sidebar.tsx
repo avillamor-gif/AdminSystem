@@ -38,7 +38,7 @@ interface NavigationItem {
 
 const navigationItems: NavigationItem[] = [
   { name: 'Dashboard', href: '/', icon: LayoutDashboard },
-  { name: 'Admin', href: '/admin', icon: Settings, requiresPermission: 'admin.manage' },
+  { name: 'Admin', href: '/admin', icon: Settings, requiresPermission: 'admin.any', activeBase: '/admin' },
   { name: 'Leave', href: '/leave/my-requests', icon: Calendar, requiresPermission: 'leave.view', activeBase: '/leave' },
   { name: 'Attendance Tracker', href: '/attendance-tracker', icon: Clock },
   { name: 'Travel', href: '/travel/travel-request', icon: Plane, activeBase: '/travel' },
@@ -61,7 +61,13 @@ export function Sidebar() {
   const navigation = navigationItems.filter(item => {
     if (!item.requiresPermission && !item.requiresAdmin) return true
     if (isLoading) return false
-    if (item.requiresPermission && roleInfo) return roleInfo.permissions.includes(item.requiresPermission)
+    if (item.requiresPermission && roleInfo) {
+      // Special sentinel: show if user has admin.manage OR any admin.* module permission
+      if (item.requiresPermission === 'admin.any') {
+        return roleInfo.permissions.some(p => p === 'admin.manage' || p.startsWith('admin.'))
+      }
+      return roleInfo.permissions.includes(item.requiresPermission)
+    }
     return false
   })
 

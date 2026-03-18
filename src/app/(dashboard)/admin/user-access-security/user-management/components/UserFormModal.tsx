@@ -38,6 +38,7 @@ export function UserFormModal({ open, onClose, user }: UserFormModalProps) {
   const [selectedEmployee, setSelectedEmployee] = useState<string>('')
   const [showPassword, setShowPassword] = useState(false)
   const [showPermissions, setShowPermissions] = useState(false)
+  const [selectedRoleNames, setSelectedRoleNames] = useState<Set<string>>(new Set(['Employee']))
   
   const { data: employees = [] } = useEmployees()
   const { data: departments = [] } = useDepartments()
@@ -129,11 +130,25 @@ export function UserFormModal({ open, onClose, user }: UserFormModalProps) {
       if (user) {
         // Edit mode - populate with user data
         setValue('email', user.email)
-        setValue('role', mapEnumToRole(user.role)) // Map database enum to RBAC role name
+        const primaryRole = mapEnumToRole(user.role)
+        setValue('role', primaryRole)
         setValue('status', user.status)
         setValue('employee_id', user.employee?.id || user.employee_id || '')
         setSelectedEmployee(user.employee?.id || user.employee_id || '')
         setShowPassword(false)
+
+        // Fetch all assigned roles for this user
+        fetch(`/api/admin/users/assign-roles?user_id=${user.id}`)
+          .then(r => r.json())
+          .then(({ roles: assignedRoles }) => {
+            if (assignedRoles && assignedRoles.length > 0) {
+              setSelectedRoleNames(new Set(assignedRoles))
+            } else {
+              // Fallback to primary role only
+              setSelectedRoleNames(new Set([primaryRole]))
+            }
+          })
+          .catch(() => setSelectedRoleNames(new Set([primaryRole])))
       } else {
         // Add mode - clear all fields
         reset({
@@ -144,6 +159,7 @@ export function UserFormModal({ open, onClose, user }: UserFormModalProps) {
           employee_id: '',
         })
         setSelectedEmployee('')
+        setSelectedRoleNames(new Set(['Employee']))
         setShowPassword(false)
       }
     }
@@ -178,10 +194,20 @@ export function UserFormModal({ open, onClose, user }: UserFormModalProps) {
       }
     }
 
+    // Determine primary role — role priority order
+    const rolePriority = [
+      'Super Admin', 'Admin', 'Executive Director', 'HR Manager',
+      'Manager', 'Board of Trustees', 'Employee', 'Intern', 'Volunteer', 'Consultant',
+    ]
+    const orderedSelected = rolePriority.filter(r => selectedRoleNames.has(r))
+    const primaryRoleName = orderedSelected[0] || Array.from(selectedRoleNames)[0] || 'Employee'
+    // Sync primary role back to react-hook-form field
+    setValue('role', primaryRoleName)
+
     try {
       const submitData: any = {
         email: data.email,
-        role: mapRoleToEnum(data.role),
+        role: mapRoleToEnum(primaryRoleName),
         status: data.status === 'suspended' ? 'inactive' : data.status as 'active' | 'inactive',
         employee_id: data.employee_id || null,
       }
@@ -190,31 +216,43 @@ export function UserFormModal({ open, onClose, user }: UserFormModalProps) {
         submitData.password = data.password
       }
 
+      let savedUserId = user?.id
       if (user) {
         await updateUser.mutateAsync({ id: user.id, data: submitData })
         if (submitData.employee_id) {
           await logAction({
             employee_id: submitData.employee_id,
             action: 'System User Updated',
-            details: `User account updated: ${submitData.email} (role: ${submitData.role})`,
+            details: `User account updated: ${submitData.email} (roles: ${Array.from(selectedRoleNames).join(', ')})`,
           })
         }
-        if (user.role !== submitData.role) {
-          alert('Role updated successfully! The user must log out and log back in for the new role to take effect.')
-        }
       } else {
-        await createUser.mutateAsync(submitData)
+        const created = await createUser.mutateAsync(submitData)
+        savedUserId = created.id
         if (submitData.employee_id) {
           await logAction({
             employee_id: submitData.employee_id,
             action: 'System User Created',
-            details: `New user account created: ${submitData.email} (role: ${submitData.role})`,
+            details: `New user account created: ${submitData.email} (roles: ${Array.from(selectedRoleNames).join(', ')})`,
           })
         }
       }
 
+      // Sync all role assignments
+      if (savedUserId) {
+        await fetch('/api/admin/users/assign-roles', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            user_id: savedUserId,
+            role_names: Array.from(selectedRoleNames),
+          }),
+        })
+      }
+
       onClose()
       reset()
+      setSelectedRoleNames(new Set(['Employee']))
     } catch (error) {
       console.error('Form submission error:', error)
       throw error
@@ -225,6 +263,7 @@ export function UserFormModal({ open, onClose, user }: UserFormModalProps) {
     onClose()
     reset()
     setSelectedEmployee('')
+    setSelectedRoleNames(new Set(['Employee']))
   }
 
   const selectedEmployeeData = employees.find(emp => emp.id === selectedEmployee)
@@ -393,62 +432,82 @@ export function UserFormModal({ open, onClose, user }: UserFormModalProps) {
             </div>
           ) : (
             <>
+              <p className="text-xs text-gray-500 mb-2">
+                Select one or more roles. The highest-priority role determines system access level.
+                {selectedRoleNames.size > 0 && (
+                  <span className="ml-1 font-medium text-orange-600">
+                    {selectedRoleNames.size} role{selectedRoleNames.size > 1 ? 's' : ''} selected
+                  </span>
+                )}
+              </p>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                {roles.filter(role => role.status === 'active').map(role => (
-                  <label
-                    key={role.id}
-                    className={`relative flex items-start p-4 border rounded-lg cursor-pointer transition-colors ${
-                      watchedRole?.toLowerCase() === role.name.toLowerCase()
-                        ? 'border-orange bg-orange-50'
-                        : 'border-gray-300 hover:bg-gray-50'
-                    }`}
-                  >
-                    <input
-                      {...register('role')}
-                      type="radio"
-                      value={role.name}
-                      className="sr-only"
-                    />
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2">
-                        <div className={`w-2 h-2 rounded-full ${
-                          watchedRole?.toLowerCase() === role.name.toLowerCase() ? 'bg-orange' : 'bg-gray-300'
-                        }`} />
-                        <span className="font-medium text-gray-900">{role.name}</span>
-                        {role.is_system_role && (
-                          <Badge variant="info" className="text-xs">System</Badge>
-                        )}
-                      </div>
-                      <p className="text-sm text-gray-500 mt-1">{role.description || 'No description available'}</p>
-                      <div className="flex items-center gap-2 mt-2">
-                        <span className="text-xs text-gray-400">
-                          {role.permissions?.length || 0} permissions
-                        </span>
-                        {role.user_count !== undefined && (
+                {roles.filter(role => role.status === 'active').map(role => {
+                  const isChecked = selectedRoleNames.has(role.name)
+                  return (
+                    <label
+                      key={role.id}
+                      className={`relative flex items-start p-4 border rounded-lg cursor-pointer transition-colors ${
+                        isChecked
+                          ? 'border-orange bg-orange-50'
+                          : 'border-gray-300 hover:bg-gray-50'
+                      }`}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={isChecked}
+                        onChange={() => {
+                          setSelectedRoleNames(prev => {
+                            const next = new Set(prev)
+                            if (next.has(role.name)) {
+                              next.delete(role.name)
+                              // Ensure at least one role is always selected
+                              if (next.size === 0) return prev
+                            } else {
+                              next.add(role.name)
+                            }
+                            return next
+                          })
+                        }}
+                        className="mt-0.5 w-4 h-4 rounded accent-orange-500 flex-shrink-0"
+                      />
+                      <div className="ml-3 flex-1">
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium text-gray-900">{role.name}</span>
+                          {role.is_system_role && (
+                            <Badge variant="info" className="text-xs">System</Badge>
+                          )}
+                        </div>
+                        <p className="text-sm text-gray-500 mt-1">{role.description || 'No description available'}</p>
+                        <div className="flex items-center gap-2 mt-2">
                           <span className="text-xs text-gray-400">
-                            • {role.user_count} users
+                            {role.permissions?.length || 0} permissions
                           </span>
-                        )}
+                          {role.user_count !== undefined && (
+                            <span className="text-xs text-gray-400">
+                              • {role.user_count} users
+                            </span>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  </label>
-                ))}
+                    </label>
+                  )
+                })}
               </div>
-              {errors.role && (
-                <p className="text-sm text-red-600">{errors.role.message}</p>
-              )}
 
-              {/* Show permissions for selected role */}
-              {selectedRoleData && selectedRoleData.permissions && selectedRoleData.permissions.length > 0 && (
+              {/* Combined permissions preview */}
+              {selectedRoleNames.size > 0 && (
                 <Card className="p-4 bg-blue-50 border-blue-200">
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-2">
                       <Shield className="w-4 h-4 text-blue-600" />
                       <span className="font-medium text-blue-900">
-                        {selectedRoleData.name} Permissions
+                        Combined Permissions
                       </span>
                       <Badge variant="info">
-                        {selectedRoleData.permissions.length}
+                        {Array.from(selectedRoleNames).reduce((total, rn) => {
+                          const r = roles.find(r => r.name === rn)
+                          return total + (r?.permissions?.length || 0)
+                        }, 0)}
                       </Badge>
                     </div>
                     <button
@@ -459,38 +518,43 @@ export function UserFormModal({ open, onClose, user }: UserFormModalProps) {
                       {showPermissions ? 'Hide' : 'View All'}
                     </button>
                   </div>
-                  
-                  {showPermissions && (
-                    <div className="space-y-2 mt-3 max-h-48 overflow-y-auto">
-                      {Object.entries(
-                        selectedRoleData.permissions.reduce((acc, perm) => {
-                          if (!acc[perm.category]) acc[perm.category] = []
-                          acc[perm.category].push(perm)
-                          return acc
-                        }, {} as Record<string, typeof selectedRoleData.permissions>)
-                      ).map(([category, perms]) => (
-                        <div key={category} className="space-y-1">
-                          <p className="text-xs font-semibold text-blue-800 uppercase tracking-wide">
-                            {category}
-                          </p>
-                          <div className="space-y-1">
-                            {perms.map(perm => (
-                              <div key={perm.id} className="flex items-start gap-2 text-sm">
-                                <div className="w-1.5 h-1.5 rounded-full bg-blue-400 mt-1.5 flex-shrink-0" />
-                                <div>
+
+                  {showPermissions && (() => {
+                    // Union all permissions from all selected roles
+                    const allPerms = new Map<string, typeof roles[0]['permissions'][0]>()
+                    for (const rn of selectedRoleNames) {
+                      const r = roles.find(r => r.name === rn)
+                      for (const perm of r?.permissions || []) {
+                        allPerms.set(perm.id, perm)
+                      }
+                    }
+                    const grouped = Array.from(allPerms.values()).reduce((acc, perm) => {
+                      if (!acc[perm.category]) acc[perm.category] = []
+                      acc[perm.category].push(perm)
+                      return acc
+                    }, {} as Record<string, typeof roles[0]['permissions']>)
+
+                    return (
+                      <div className="space-y-2 mt-3 max-h-48 overflow-y-auto">
+                        {Object.entries(grouped).map(([category, perms]) => (
+                          <div key={category} className="space-y-1">
+                            <p className="text-xs font-semibold text-blue-800 uppercase tracking-wide">
+                              {category}
+                            </p>
+                            <div className="space-y-1">
+                              {perms.map(perm => (
+                                <div key={perm.id} className="flex items-start gap-2 text-sm">
+                                  <div className="w-1.5 h-1.5 rounded-full bg-blue-400 mt-1.5 flex-shrink-0" />
                                   <span className="text-blue-900 font-medium">{perm.name}</span>
-                                  <span className="text-blue-700 text-xs ml-2">({perm.code})</span>
-                                  {perm.description && (
-                                    <p className="text-blue-600 text-xs mt-0.5">{perm.description}</p>
-                                  )}
+                                  <span className="text-blue-700 text-xs ml-1">({perm.code})</span>
                                 </div>
-                              </div>
-                            ))}
+                              ))}
+                            </div>
                           </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
+                        ))}
+                      </div>
+                    )
+                  })()}
                 </Card>
               )}
             </>
