@@ -34,27 +34,27 @@ function toggleCategory(
   })
 }
 
-// ── Admin Module sub-item descriptions ───────────────────────────────────────
-const ADMIN_MODULE_SUBMENUS: Record<string, string[]> = {
-  'admin.user_access':    ['User Management', 'Role-Based Access Control', 'Security Policies', 'Password Policies'],
-  'admin.organization':   ['Company Structure', 'Departments', 'Locations', 'Location Types', 'Org Chart'],
-  'admin.job_management': ['Job Titles', 'Job Descriptions', 'Pay Grades', 'Employment Types', 'Job Categories'],
-  'admin.employee_data':  ['Employee Profiles', 'PIM Configuration', 'Data Import/Export', 'Generate ID', 'Termination & Activation'],
-  'admin.time_attendance':['Work Schedules', 'Shift Patterns', 'Overtime Rules', 'Attendance Policies'],
-  'admin.leave_management':['All Leave Requests', 'Leave Credit Approvals', 'Leave Types', 'Accrual Rules', 'Holiday Calendar', 'Approval Workflows'],
-  'admin.payroll_benefits':['Pay Components', 'Benefits Plans', 'Deductions', 'Bonus Structures', 'Reimbursements'],
-  'admin.performance':    ['Review Cycles', 'Rating Scales', 'Goal Templates', 'Competency Models', 'KPI Frameworks'],
-  'admin.learning':       ['Training Programs', 'Certifications', 'Skills Matrix', 'Learning Paths'],
-  'admin.recruitment':    ['Job Postings', 'Candidate Management', 'Interview Scheduling', 'Hiring Workflows', 'Offer Management'],
-  'admin.compliance':     ['Regulatory Compliance', 'Audit Trails', 'Data Retention Policies', 'Privacy Settings'],
-  'admin.analytics':      ['Standard Reports', 'Custom Reports', 'Dashboard Configuration', 'KPI Metrics'],
-  'admin.system_config':  ['General Settings', 'Email Configuration', 'Workflow Settings', 'API & Integrations'],
-  'admin.travel':         ['Travel Requests', 'Expense Management', 'Travel Policies', 'Travel Analytics'],
-  'admin.assets':         ['Assets', 'Assignments', 'Maintenance', 'Requests', 'Reports'],
-  'admin.supplies':       ['Supply Inventory', 'Supply Requests', 'Purchase Orders', 'Stock Levels'],
-  'admin.publications':   ['Publication Management', 'Add Publication', 'Printing Presses', 'Distribution Lists'],
-  'admin.internship':     ['Partner Institutions', 'Enrollments', 'Hours Monitoring', 'Certificates'],
-}
+// ── Admin Module card → submenu permission code prefix mapping ────────────────
+const ADMIN_CARD_PREFIXES: { code: string; label: string }[] = [
+  { code: 'admin.user_access',     label: 'User Access & Security' },
+  { code: 'admin.organization',    label: 'Organization Structure' },
+  { code: 'admin.job_management',  label: 'Job & Position Management' },
+  { code: 'admin.employee_data',   label: 'Employee Data Management' },
+  { code: 'admin.time_attendance', label: 'Time & Attendance' },
+  { code: 'admin.leave_management',label: 'Leave & Absence Management' },
+  { code: 'admin.payroll_benefits',label: 'Payroll & Benefits' },
+  { code: 'admin.performance',     label: 'Performance Management' },
+  { code: 'admin.learning',        label: 'Learning & Development' },
+  { code: 'admin.recruitment',     label: 'Recruitment Management' },
+  { code: 'admin.compliance',      label: 'Compliance & Audit' },
+  { code: 'admin.analytics',       label: 'Analytics & Reporting' },
+  { code: 'admin.system_config',   label: 'System Configuration' },
+  { code: 'admin.travel',          label: 'Travel Management' },
+  { code: 'admin.assets',          label: 'Asset Management' },
+  { code: 'admin.supplies',        label: 'Office Supplies' },
+  { code: 'admin.publications',    label: 'Publications' },
+  { code: 'admin.internship',      label: 'Internship & Volunteer' },
+]
 
 // ── PermissionPanel (module-level to prevent remount on parent re-render) ────
 
@@ -75,13 +75,23 @@ function PermissionPanel({
   })
 
   return (
-    <div className="space-y-3 overflow-y-auto pr-1" style={{ maxHeight: '360px' }}>
+    <div className="space-y-3 overflow-y-auto pr-1" style={{ maxHeight: '420px' }}>
       {sortedEntries.map(([category, perms]) => {
         const allChecked = perms.every(p => selected.has(p.id))
         const someChecked = perms.some(p => selected.has(p.id))
         const isAdminModules = category === 'Admin Modules'
+
+        // Split Admin Modules into card-level (no dot after prefix) and submenu-level
+        const cardPerms = isAdminModules
+          ? perms.filter(p => (p.code.match(/\./g) ?? []).length === 1)
+          : []
+        const submenuPerms = isAdminModules
+          ? perms.filter(p => (p.code.match(/\./g) ?? []).length === 2)
+          : []
+
         return (
           <div key={category} className={`border rounded-lg p-3 ${isAdminModules ? 'border-indigo-200 bg-indigo-50/40' : 'border-gray-100'}`}>
+            {/* Category header with select-all */}
             <label className="flex items-center gap-2 mb-2 cursor-pointer">
               <input
                 type="checkbox"
@@ -95,32 +105,88 @@ function PermissionPanel({
               </span>
               {isAdminModules && (
                 <span className="text-xs text-indigo-500 bg-indigo-100 px-1.5 py-0.5 rounded-full">
-                  Controls Admin card visibility
+                  Card + submenu access
                 </span>
               )}
               <span className="text-xs text-gray-400 ml-auto">
                 {perms.filter(p => selected.has(p.id)).length}/{perms.length}
               </span>
             </label>
+
             {isAdminModules ? (
-              <div className="grid grid-cols-1 gap-2 pl-6">
-                {perms.map(p => {
-                  const submenus = ADMIN_MODULE_SUBMENUS[p.code] ?? []
+              // Render each card as a collapsible group with its submenus nested below
+              <div className="space-y-2 pl-2">
+                {ADMIN_CARD_PREFIXES.map(({ code: cardCode, label: cardLabel }) => {
+                  const cardPerm = cardPerms.find(p => p.code === cardCode)
+                  const subs = submenuPerms.filter(p => p.code.startsWith(cardCode + '.'))
+                  if (!cardPerm && subs.length === 0) return null
+
+                  const allSubsChecked = subs.every(p => selected.has(p.id))
+                  const someSubsChecked = subs.some(p => selected.has(p.id))
+                  const cardChecked = cardPerm ? selected.has(cardPerm.id) : false
+
+                  // Select-all for this card: toggles card-level + all submenus
+                  const toggleCard = () => {
+                    const allOn = cardChecked && allSubsChecked
+                    setSelected(prev => {
+                      const next = new Set(prev)
+                      const targets = [...(cardPerm ? [cardPerm] : []), ...subs]
+                      if (allOn) targets.forEach(p => next.delete(p.id))
+                      else targets.forEach(p => next.add(p.id))
+                      return next
+                    })
+                  }
+
+                  const allGroupChecked = cardChecked && allSubsChecked
+                  const someGroupChecked = cardChecked || someSubsChecked
+
                   return (
-                    <label key={p.id} className="flex items-start gap-2 cursor-pointer py-1 group">
-                      <input
-                        type="checkbox"
-                        checked={selected.has(p.id)}
-                        onChange={() => togglePermission(p.id, setSelected)}
-                        className="w-4 h-4 rounded mt-0.5"
-                      />
-                      <div>
-                        <span className="text-sm font-medium text-gray-800 group-hover:text-gray-900">{p.name}</span>
-                        {submenus.length > 0 && (
-                          <p className="text-xs text-gray-400 mt-0.5">{submenus.join(' · ')}</p>
-                        )}
-                      </div>
-                    </label>
+                    <div key={cardCode} className="border border-indigo-100 rounded-md bg-white">
+                      {/* Card-level row */}
+                      <label className="flex items-center gap-2 px-3 py-2 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={allGroupChecked}
+                          ref={(el) => { if (el) el.indeterminate = someGroupChecked && !allGroupChecked }}
+                          onChange={toggleCard}
+                          className="w-4 h-4 rounded"
+                        />
+                        <span className="text-sm font-semibold text-indigo-700">{cardLabel}</span>
+                        <span className="text-xs text-gray-400 ml-auto">
+                          {(cardChecked ? 1 : 0) + subs.filter(p => selected.has(p.id)).length}/{(cardPerm ? 1 : 0) + subs.length}
+                        </span>
+                      </label>
+                      {/* Card-level permission (show card in admin page) */}
+                      {cardPerm && (
+                        <div className="px-3 pb-1 border-t border-indigo-50">
+                          <label className="flex items-center gap-2 py-1 cursor-pointer group">
+                            <input
+                              type="checkbox"
+                              checked={selected.has(cardPerm.id)}
+                              onChange={() => togglePermission(cardPerm.id, setSelected)}
+                              className="w-3.5 h-3.5 rounded ml-5"
+                            />
+                            <span className="text-xs font-medium text-indigo-600">Show card in Admin page</span>
+                          </label>
+                        </div>
+                      )}
+                      {/* Submenu permissions */}
+                      {subs.length > 0 && (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-0.5 px-3 pb-2 border-t border-indigo-50">
+                          {subs.map(p => (
+                            <label key={p.id} className="flex items-center gap-2 py-0.5 cursor-pointer group">
+                              <input
+                                type="checkbox"
+                                checked={selected.has(p.id)}
+                                onChange={() => togglePermission(p.id, setSelected)}
+                                className="w-3.5 h-3.5 rounded ml-5"
+                              />
+                              <span className="text-xs text-gray-700 group-hover:text-gray-900">{p.name}</span>
+                            </label>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                   )
                 })}
               </div>

@@ -3,10 +3,12 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
+import { useCurrentUserPermissions } from '@/hooks/usePermissions'
 
 interface NavItem {
   label: string
   href: string
+  requiresPermission?: string
 }
 
 interface SecondaryNavProps {
@@ -16,6 +18,13 @@ interface SecondaryNavProps {
 
 export default function SecondaryNav({ items, title }: SecondaryNavProps) {
   const pathname = usePathname()
+  const { data: roleInfo, isLoading } = useCurrentUserPermissions()
+
+  const visibleItems = items.filter(item => {
+    if (!item.requiresPermission) return true
+    if (isLoading) return false
+    return roleInfo?.permissions.includes(item.requiresPermission) ?? false
+  })
 
   return (
     <div className="bg-white border-b border-gray-200 sticky top-16 z-30">
@@ -24,7 +33,7 @@ export default function SecondaryNav({ items, title }: SecondaryNavProps) {
           <h2 className="text-sm font-medium text-gray-500 uppercase tracking-wide mb-3">{title}</h2>
         )}
         <nav className="flex gap-2 overflow-x-auto">
-          {items.map((item) => {
+          {visibleItems.map((item) => {
             const isActive = pathname === item.href || pathname.startsWith(item.href + '/')
             return (
               <Link
