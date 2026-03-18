@@ -351,7 +351,6 @@ export const permissionService = {
           .from('roles' as any)
           .select('id, name, description, role_permissions(permission:permissions(code))')
           .in('id', roleIds)
-          .eq('status', 'active')
 
         if (rolesData && (rolesData as any[]).length > 0) {
           const allCodes = new Set<string>()
@@ -388,7 +387,6 @@ export const permissionService = {
           .from('roles' as any)
           .select('id, name, description, role_permissions(permission:permissions(code))')
           .eq('name', rolesTableName)
-          .eq('status', 'active')
           .single()
 
         if (roleRow) {
