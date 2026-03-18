@@ -37,18 +37,18 @@ interface NavigationItem {
 }
 
 const navigationItems: NavigationItem[] = [
-  { name: 'Dashboard', href: '/', icon: LayoutDashboard },
-  { name: 'Admin', href: '/admin', icon: Settings, requiresPermission: 'admin.any', activeBase: '/admin' },
-  { name: 'Leave', href: '/leave/my-requests', icon: Calendar, requiresPermission: 'leave.view', activeBase: '/leave' },
-  { name: 'Attendance Tracker', href: '/attendance-tracker', icon: Clock },
-  { name: 'Travel', href: '/travel/travel-request', icon: Plane, activeBase: '/travel' },
-  { name: 'Publications', href: '/publications/library', icon: BookOpen, activeBase: '/publications' },
-  { name: 'Office Equipment', href: '/equipment/browse', icon: Monitor, activeBase: '/equipment' },
-  { name: 'Office Supplies', href: '/office-supplies', icon: Package },
-
-  { name: 'My Info', href: '/my-info', icon: UserCircle, badge: 'Personal Info' },
-  { name: 'Performance', href: '/performance', icon: FileText, requiresPermission: 'performance.view' },
-  { name: 'Directory', href: '/directory', icon: Building2 },
+  { name: 'Dashboard',         href: '/',                      icon: LayoutDashboard },
+  { name: 'Admin',             href: '/admin',                 icon: Settings,   requiresPermission: 'admin.any',        activeBase: '/admin' },
+  { name: 'Employees',         href: '/employees',             icon: Users,      requiresPermission: 'nav.employees',    activeBase: '/employees' },
+  { name: 'Leave',             href: '/leave/my-requests',     icon: Calendar,   requiresPermission: 'nav.leave',        activeBase: '/leave' },
+  { name: 'Attendance Tracker',href: '/attendance-tracker',    icon: Clock,      requiresPermission: 'nav.attendance' },
+  { name: 'Travel',            href: '/travel/travel-request', icon: Plane,      requiresPermission: 'nav.travel',       activeBase: '/travel' },
+  { name: 'Publications',      href: '/publications/library',  icon: BookOpen,   requiresPermission: 'nav.publications', activeBase: '/publications' },
+  { name: 'Office Equipment',  href: '/equipment/browse',      icon: Monitor,    requiresPermission: 'nav.equipment',    activeBase: '/equipment' },
+  { name: 'Office Supplies',   href: '/office-supplies',       icon: Package,    requiresPermission: 'nav.supplies' },
+  { name: 'My Info',           href: '/my-info',               icon: UserCircle, requiresPermission: 'nav.my_info',      badge: 'Personal Info' },
+  { name: 'Performance',       href: '/performance',           icon: FileText,   requiresPermission: 'nav.performance' },
+  { name: 'Directory',         href: '/directory',             icon: Building2,  requiresPermission: 'nav.directory' },
 ]
 
 export function Sidebar() {
@@ -59,16 +59,14 @@ export function Sidebar() {
 
   // Filter navigation items based on user permissions
   const navigation = navigationItems.filter(item => {
-    if (!item.requiresPermission && !item.requiresAdmin) return true
+    if (!item.requiresPermission) return true
     if (isLoading) return false
-    if (item.requiresPermission && roleInfo) {
-      // Special sentinel: show if user has admin.manage OR any admin.* module permission
-      if (item.requiresPermission === 'admin.any') {
-        return roleInfo.permissions.some(p => p === 'admin.manage' || p.startsWith('admin.'))
-      }
-      return roleInfo.permissions.includes(item.requiresPermission)
+    if (!roleInfo) return false
+    // Special sentinel: show Admin if user has admin.manage OR any admin.* permission
+    if (item.requiresPermission === 'admin.any') {
+      return roleInfo.permissions.some(p => p === 'admin.manage' || p.startsWith('admin.'))
     }
-    return false
+    return roleInfo.permissions.includes(item.requiresPermission)
   })
 
   return (

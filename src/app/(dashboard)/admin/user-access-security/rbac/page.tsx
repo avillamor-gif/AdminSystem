@@ -67,10 +67,12 @@ function PermissionPanel({
   selected: Set<string>
   setSelected: React.Dispatch<React.SetStateAction<Set<string>>>
 }) {
-  // Sort: Admin Modules first, then alphabetical
+  // Sort: Admin Modules first, Navigation second, then alphabetical
   const sortedEntries = Object.entries(groupedPermissions).sort(([a], [b]) => {
     if (a === 'Admin Modules') return -1
     if (b === 'Admin Modules') return 1
+    if (a === 'Navigation') return -1
+    if (b === 'Navigation') return 1
     return a.localeCompare(b)
   })
 
@@ -80,6 +82,7 @@ function PermissionPanel({
         const allChecked = perms.every(p => selected.has(p.id))
         const someChecked = perms.some(p => selected.has(p.id))
         const isAdminModules = category === 'Admin Modules'
+        const isNavigation = category === 'Navigation'
 
         // Split Admin Modules into card-level (no dot after prefix) and submenu-level
         const cardPerms = isAdminModules
@@ -90,7 +93,7 @@ function PermissionPanel({
           : []
 
         return (
-          <div key={category} className={`border rounded-lg p-3 ${isAdminModules ? 'border-indigo-200 bg-indigo-50/40' : 'border-gray-100'}`}>
+          <div key={category} className={`border rounded-lg p-3 ${isAdminModules ? 'border-indigo-200 bg-indigo-50/40' : isNavigation ? 'border-emerald-200 bg-emerald-50/40' : 'border-gray-100'}`}>
             {/* Category header with select-all */}
             <label className="flex items-center gap-2 mb-2 cursor-pointer">
               <input
@@ -100,12 +103,17 @@ function PermissionPanel({
                 onChange={() => toggleCategory(perms, selected, setSelected)}
                 className="w-4 h-4 rounded"
               />
-              <span className={`text-sm font-semibold ${isAdminModules ? 'text-indigo-800' : 'text-gray-800'}`}>
+              <span className={`text-sm font-semibold ${isAdminModules ? 'text-indigo-800' : isNavigation ? 'text-emerald-800' : 'text-gray-800'}`}>
                 {category}
               </span>
               {isAdminModules && (
                 <span className="text-xs text-indigo-500 bg-indigo-100 px-1.5 py-0.5 rounded-full">
                   Card + submenu access
+                </span>
+              )}
+              {isNavigation && (
+                <span className="text-xs text-emerald-600 bg-emerald-100 px-1.5 py-0.5 rounded-full">
+                  Sidebar visibility
                 </span>
               )}
               <span className="text-xs text-gray-400 ml-auto">
@@ -189,6 +197,20 @@ function PermissionPanel({
                     </div>
                   )
                 })}
+              </div>
+            ) : isNavigation ? (
+              <div className="grid grid-cols-2 gap-1 pl-2">
+                {perms.map(p => (
+                  <label key={p.id} className="flex items-center gap-2 cursor-pointer py-1 px-2 rounded hover:bg-emerald-50 group">
+                    <input
+                      type="checkbox"
+                      checked={selected.has(p.id)}
+                      onChange={() => togglePermission(p.id, setSelected)}
+                      className="w-4 h-4 rounded accent-emerald-600"
+                    />
+                    <span className="text-sm text-emerald-900 group-hover:text-emerald-700 truncate">{p.name}</span>
+                  </label>
+                ))}
               </div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-1 pl-6">
