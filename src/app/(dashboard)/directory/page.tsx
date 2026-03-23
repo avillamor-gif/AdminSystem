@@ -11,7 +11,7 @@ export default function DirectoryPage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedDepartment, setSelectedDepartment] = useState('')
 
-  const { data: employees, isLoading } = useEmployees({ search: searchQuery, department: selectedDepartment })
+  const { data: employees, isLoading } = useEmployees({ search: searchQuery, department: selectedDepartment, status: 'active' })
   const typedEmployees = (employees || []) as EmployeeWithRelations[]
 
   // Get unique departments
