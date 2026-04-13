@@ -124,7 +124,7 @@ export interface AssetLocation {
 
 export interface AssetRequest {
   id: string
-  employee_id: string
+  employee_id?: string | null
   category_id?: string | null
   item_description: string
   justification?: string | null
@@ -137,6 +137,12 @@ export interface AssetRequest {
   assigned_asset_id?: string | null
   rejection_reason?: string | null
   notes?: string | null
+  // External borrower fields
+  borrower_type?: 'employee' | 'external' | null
+  external_borrower_name?: string | null
+  external_borrower_org?: string | null
+  external_borrower_contact?: string | null
+  external_borrower_position?: string | null
   created_at: string | null
   updated_at: string | null
   // Relations
@@ -714,8 +720,8 @@ export const assetRequestService = {
     
     if (error) throw error
 
-    // Notify supervisor + admins
-    if (request.employee_id) {
+    // Notify supervisor + admins (employee requests only — external borrowers have no user account)
+    if (request.employee_id && request.borrower_type !== 'external') {
       await notifySupervisorsAndAdmins(
         'equipment_request_notifications',
         request.employee_id,
