@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Clock, CheckCircle, XCircle, Package, Building2, UserCheck, Eye, ChevronDown } from 'lucide-react'
+import { Building2, UserCheck, Eye } from 'lucide-react'
 import { Card, Button, Badge, Modal, ModalHeader, ModalBody, ModalFooter } from '@/components/ui'
 import {
   useAssetRequests,
@@ -230,7 +230,7 @@ export default function EquipmentRequestsPage() {
 
       {/* View Detail Modal */}
       {viewModal.open && viewModal.req && (
-        <Modal isOpen onClose={() => setViewModal({ open: false, req: null })}>
+        <Modal open onClose={() => setViewModal({ open: false, req: null })}>
           <ModalHeader>
             <h3 className="text-lg font-semibold text-gray-900">Request Details</h3>
           </ModalHeader>
@@ -305,7 +305,7 @@ export default function EquipmentRequestsPage() {
 
       {/* Reject Reason Modal */}
       {rejectModal.open && (
-        <Modal isOpen onClose={() => setRejectModal({ open: false, req: null })}>
+        <Modal open onClose={() => setRejectModal({ open: false, req: null })}>
           <ModalHeader>
             <h3 className="text-lg font-semibold text-gray-900">Reject Request</h3>
           </ModalHeader>
