@@ -57,6 +57,7 @@ export default function AssetsPage() {
   const [imageFiles, setImageFiles]     = useState<(File | null)[]>(Array(MAX_IMAGES).fill(null))
   const [imagePreviews, setImagePreviews] = useState<string[]>(Array(MAX_IMAGES).fill(''))
   const [activeImageSlot, setActiveImageSlot] = useState(0)
+  const activeImageSlotRef = useRef(0)
   const [sliderIndex, setSliderIndex]   = useState(0)
   const imageInputRef = useRef<HTMLInputElement>(null)
   // Mobile pairing
@@ -164,6 +165,7 @@ export default function AssetsPage() {
   const resetImageState = () => {
     setImageFiles(Array(MAX_IMAGES).fill(null))
     setImagePreviews(Array(MAX_IMAGES).fill(''))
+    activeImageSlotRef.current = 0
     setActiveImageSlot(0)
     setSliderIndex(0)
     setMobileSession('')
@@ -277,7 +279,7 @@ export default function AssetsPage() {
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
-    const slot = activeImageSlot
+    const slot = activeImageSlotRef.currentRef.current
     setImageFiles(prev => { const n = [...prev]; n[slot] = file; return n })
     const reader = new FileReader()
     reader.onloadend = () => {
@@ -287,6 +289,14 @@ export default function AssetsPage() {
     reader.readAsDataURL(file)
     // Reset input so same file can be re-selected
     e.target.value = ''
+  }
+
+  // Set the target slot synchronously via ref before triggering the file picker,
+  // so handleImageChange always reads the correct slot (state update is async).
+  const openImagePicker = (slot: number) => {
+    activeImageSlotRef.current = slot
+    setActiveImageSlot(slot)
+    imageInputRef.current?.click()
   }
 
   const removeImage = (slot: number) => {
@@ -916,7 +926,7 @@ export default function AssetsPage() {
                     <div className="relative border-2 border-dashed border-gray-300 rounded-lg overflow-hidden min-h-[180px] flex items-center justify-center bg-gray-50 hover:border-[#ff7e15] transition-colors">
                       {imagePreviews.filter(Boolean).length === 0 ? (
                         <button type="button" className="flex flex-col items-center gap-2 py-6 text-gray-400 w-full"
-                          onClick={() => { setActiveImageSlot(0); imageInputRef.current?.click() }}>
+                          onClick={() => openImagePicker(0)}>
                           <Upload className="h-8 w-8" />
                           <span className="text-sm">Click to upload image</span>
                           <span className="text-xs">PNG, JPG up to 5MB</span>
@@ -960,7 +970,7 @@ export default function AssetsPage() {
                         <button key={i} type="button"
                           onClick={() => {
                             if (imagePreviews[i]) { setSliderIndex(i) }
-                            else { setActiveImageSlot(i); imageInputRef.current?.click() }
+                            else { openImagePicker(i) }
                           }}
                           className={`relative aspect-square rounded-md border-2 overflow-hidden flex items-center justify-center transition-colors ${
                             imagePreviews[i]
@@ -982,7 +992,7 @@ export default function AssetsPage() {
                 </div>
               </div>
 
-              {/* Panel footer */}
+              {/* Panel footer */}}
               <div className="shrink-0 px-6 py-4 border-t border-gray-200 flex justify-end gap-3 bg-white">
                 <Button type="button" variant="secondary" onClick={handleClosePanel}>
                   Cancel
@@ -1394,7 +1404,7 @@ export default function AssetsPage() {
                     <div className="relative border-2 border-dashed border-gray-300 rounded-lg overflow-hidden min-h-[180px] flex items-center justify-center bg-gray-50 hover:border-[#ff7e15] transition-colors">
                       {imagePreviews.filter(Boolean).length === 0 ? (
                         <button type="button" className="flex flex-col items-center gap-2 py-6 text-gray-400 w-full"
-                          onClick={() => { setActiveImageSlot(0); imageInputRef.current?.click() }}>
+                          onClick={() => openImagePicker(0)}>
                           <Upload className="h-8 w-8" />
                           <span className="text-sm">Click to upload image</span>
                           <span className="text-xs">PNG, JPG up to 5MB</span>
@@ -1438,7 +1448,7 @@ export default function AssetsPage() {
                         <button key={i} type="button"
                           onClick={() => {
                             if (imagePreviews[i]) { setSliderIndex(i) }
-                            else { setActiveImageSlot(i); imageInputRef.current?.click() }
+                            else { openImagePicker(i) }
                           }}
                           className={`relative aspect-square rounded-md border-2 overflow-hidden flex items-center justify-center transition-colors ${
                             imagePreviews[i]

@@ -127,7 +127,7 @@ await selectedItem
 disabled={createMutation.isPending || updateMutation.isPending}
 ```
 
-Multi-page admin sections (e.g. `leave-management/`, `payroll-benefits/`) use a `layout.tsx` with `<SecondaryNav items={...} />` for the sub-nav, and a root `page.tsx` that `router.replace`s to the first sub-page.
+Multi-page admin sections (e.g. `leave-management/`, `payroll-benefits/`, `system-config/`, `organization-structure/`, `time-attendance/`) use a `layout.tsx` with `<SecondaryNav items={...} />` for the sub-nav, and a root `page.tsx` that `router.replace`s to the first sub-page.
 
 JSONB array fields (`responsibilities`, `qualifications`, `skills` on `job_descriptions`) must be guarded: `Array.isArray(desc.responsibilities) ? desc.responsibilities : []`
 
@@ -147,6 +147,16 @@ Notifications use a two-step pattern to bypass RLS on `user_roles`:
 **Never query `user_roles` for supervisor lookups in browser services** — RLS blocks it. Use the API route pattern above.
 
 API routes that need to create auth users (e.g., `/api/create-employee-auth`) use `SUPABASE_SERVICE_ROLE_KEY` directly — always guard for missing env vars.
+
+### Write-via-API-route pattern for privileged writes
+Some services that need service-role for writes split into a read-only browser service + a standalone write function that POSTs to an API route. Example: `src/services/workflowConfig.service.ts`:
+```typescript
+// Read: browser client (RLS ok)
+export const workflowConfigService = { async getAll() {...}, async getByType() {...} }
+// Write: fetches /api/admin/workflow-configs which uses createAdminClient()
+export async function updateWorkflowConfig(id, updates) { return fetch('/api/admin/workflow-configs', { method: 'PATCH', ... }) }
+```
+Use this pattern when a table's RLS blocks writes from the browser but reads are fine.
 
 ## Audit Logging
 
