@@ -110,7 +110,7 @@ export const leaveService = {
       .select('id, first_name, last_name, email, avatar_url, department_id')
       .in('id', employeeIds)
 
-    const deptIds = [...new Set((employees || []).map(e => e.department_id).filter((x: any): x is string => !!x))]
+    const deptIds = [...new Set((employees || []).map((e: any) => e.department_id).filter((x: any): x is string => !!x))]
     const { data: departments } = deptIds.length
       ? await supabase.from('departments').select('id, name').in('id', deptIds)
       : { data: [] }
@@ -121,7 +121,7 @@ export const leaveService = {
       : { data: [] }
 
     const deptMap = new Map((departments || []).map((d: any) => [d.id, d]))
-    const employeeMap = new Map((employees || []).map(e => [
+    const employeeMap = new Map((employees || []).map((e: any) => [
       e.id,
       {
         ...e,
@@ -193,7 +193,7 @@ export const leaveService = {
       .select('id, first_name, last_name, email, avatar_url, department_id')
       .in('id', allEmpIds)
 
-    const deptIds = [...new Set((employees || []).map(e => e.department_id).filter((x: any): x is string => !!x))]
+    const deptIds = [...new Set((employees || []).map((e: any) => e.department_id).filter((x: any): x is string => !!x))]
     const { data: departments } = deptIds.length
       ? await supabase.from('departments').select('id, name').in('id', deptIds)
       : { data: [] }
@@ -204,7 +204,7 @@ export const leaveService = {
       : { data: [] }
 
     const deptMap = new Map((departments || []).map((d: any) => [d.id, d]))
-    const empMap = new Map((employees || []).map(e => ([
+    const empMap = new Map((employees || []).map((e: any) => ([
       e.id,
       { ...e, department: e.department_id ? deptMap.get(e.department_id) || null : null }
     ])))
