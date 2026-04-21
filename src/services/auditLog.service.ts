@@ -85,11 +85,11 @@ export const auditLogService = {
 
     // Create employee map
     const employeeMap = new Map(
-      employees?.map(emp => [emp.id, emp]) || []
+      employees?.map((emp: any) => [emp.id, emp]) || []
     )
 
     // Enrich logs with employee data
-    return logs.map(log => ({
+    return logs.map((log: any) => ({
       ...log,
       employee: log.employee_id ? employeeMap.get(log.employee_id) : undefined
     }))
