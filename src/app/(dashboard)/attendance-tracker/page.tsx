@@ -688,7 +688,7 @@ export default function TimePage() {
                             {displayInfo.label}
                           </div>
                           {displayInfo.badge && (
-                            <Badge variant={displayInfo.badgeVariant} className="mt-1 text-xs">
+                            <Badge variant={displayInfo.badgeVariant ?? undefined} className="mt-1 text-xs">
                               {displayInfo.badge}
                             </Badge>
                           )}
@@ -731,7 +731,7 @@ export default function TimePage() {
                             {displayInfo.label}
                           </div>
                           {displayInfo.badge && (
-                            <Badge variant={displayInfo.badgeVariant} className="mt-1 text-xs">
+                            <Badge variant={displayInfo.badgeVariant ?? undefined} className="mt-1 text-xs">
                               {displayInfo.badge}
                             </Badge>
                           )}
