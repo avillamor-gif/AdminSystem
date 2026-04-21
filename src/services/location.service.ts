@@ -206,7 +206,7 @@ export const locationService = {
       throw error
     }
 
-    const uniqueCountries = [...new Set(data?.map(item => item.country) || [])]
+    const uniqueCountries = [...new Set(data?.map((item: any) => item.country) || [])] as string[]
     return uniqueCountries
   },
 }

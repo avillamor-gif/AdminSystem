@@ -155,8 +155,8 @@ export const orgRelationshipService = {
         .eq('relationship_type', 'direct_report')
         .eq('status', 'active')
       
-      const childIds = new Set(allRelationships?.map(r => r.child_id) || [])
-      rootEmployees = allEmployees?.filter(emp => !childIds.has(emp.id)) || []
+      const childIds = new Set(allRelationships?.map((r: any) => r.child_id) || [])
+      rootEmployees = allEmployees?.filter((emp: any) => !childIds.has(emp.id)) || []
     }
 
     // Recursively build the tree
@@ -190,7 +190,7 @@ export const orgRelationshipService = {
       }
     }
 
-    return Promise.all(rootEmployees.map(emp => buildTree(emp)))
+    return Promise.all(rootEmployees.map((emp: any) => buildTree(emp)))
   },
 
   async create(data: OrgRelationshipInsert): Promise<OrgRelationship> {

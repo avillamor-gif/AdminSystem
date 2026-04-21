@@ -533,7 +533,7 @@ export const leaveApprovalService = {
           .eq('leave_request_id', (approval as any).leave_request_id)
           .order('step_number')
 
-        const allApproved = allApprovals?.every(a => 
+        const allApproved = allApprovals?.every((a: any) => 
           a.status === 'approved' || a.status === 'skipped' || a.is_optional
         )
 
@@ -561,8 +561,8 @@ export const leaveApprovalService = {
           .select('*')
           .eq('leave_request_id', (approval as any).leave_request_id)
 
-        const allRequired = allApprovals?.filter(a => !a.is_optional)
-        const allRequiredApproved = allRequired?.every(a => a.status === 'approved')
+        const allRequired = allApprovals?.filter((a: any) => !a.is_optional)
+        const allRequiredApproved = allRequired?.every((a: any) => a.status === 'approved')
 
         if (allRequiredApproved) {
           await supabase

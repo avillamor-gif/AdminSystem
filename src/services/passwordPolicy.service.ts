@@ -109,7 +109,7 @@ export const passwordPolicyService = {
     const statuses: UserPasswordStatus[] = []
 
     for (const meta of metadata || []) {
-      const user = users?.find(u => u.user_id === meta.user_id)
+      const user = users?.find((u: any) => u.user_id === meta.user_id)
       const employee = (user as any)?.employee
       
       const lastChanged = new Date(meta.last_changed_at ?? new Date())
