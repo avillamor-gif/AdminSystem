@@ -30,7 +30,7 @@ export default function AddPublicationPage() {
       .select('id, name')
       .eq('is_active', true)
       .order('name', { ascending: true })
-      .then(({ data }) => {
+      .then(({ data }: { data: any }) => {
         if (data) setPrintingPresses(data)
       })
   }, [])
