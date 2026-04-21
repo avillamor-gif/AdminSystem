@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { employeeAttachmentService, type EmployeeAttachmentWithUploader } from '@/services/employeeAttachment.service'
+import { employeeAttachmentService, type EmployeeAttachmentWithUploader } from '@/services'
 import { toast } from 'sonner'
 
 const attachmentKeys = {
