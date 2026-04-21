@@ -179,14 +179,14 @@ export const internationalOperationService = {
       supabase.from('international_operations').select('country, region, employee_count, local_staff_count, expat_staff_count, active_programs, beneficiary_count'),
     ])
 
-    const countryCount = new Set(operations?.map(op => op.country)).size
-    const regionCount = new Set(operations?.map(op => op.region).filter(Boolean)).size
+    const countryCount = new Set(operations?.map((op: any) => op.country)).size
+    const regionCount = new Set(operations?.map((op: any) => op.region).filter(Boolean)).size
     
-    const totalEmployees = operations?.reduce((sum, op) => sum + (op.employee_count || 0), 0) || 0
-    const totalLocalStaff = operations?.reduce((sum, op) => sum + (op.local_staff_count || 0), 0) || 0
-    const totalExpatStaff = operations?.reduce((sum, op) => sum + (op.expat_staff_count || 0), 0) || 0
-    const totalPrograms = operations?.reduce((sum, op) => sum + (op.active_programs || 0), 0) || 0
-    const totalBeneficiaries = operations?.reduce((sum, op) => sum + (op.beneficiary_count || 0), 0) || 0
+    const totalEmployees = operations?.reduce((sum: number, op: any) => sum + (op.employee_count || 0), 0) || 0
+    const totalLocalStaff = operations?.reduce((sum: number, op: any) => sum + (op.local_staff_count || 0), 0) || 0
+    const totalExpatStaff = operations?.reduce((sum: number, op: any) => sum + (op.expat_staff_count || 0), 0) || 0
+    const totalPrograms = operations?.reduce((sum: number, op: any) => sum + (op.active_programs || 0), 0) || 0
+    const totalBeneficiaries = operations?.reduce((sum: number, op: any) => sum + (op.beneficiary_count || 0), 0) || 0
 
     const byRegion = operations?.reduce((acc, op) => {
       if (op.region) {
