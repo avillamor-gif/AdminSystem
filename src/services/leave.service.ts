@@ -61,24 +61,24 @@ export const leaveService = {
     }
 
     // Fetch related employees
-    const employeeIds = [...new Set(requests.map(r => r.employee_id))]
+    const employeeIds = [...new Set(requests.map((r: any) => r.employee_id))]
     const { data: employees } = await supabase
       .from('employees')
       .select('id, first_name, last_name, email, avatar_url')
       .in('id', employeeIds)
 
     // Fetch related leave types
-    const leaveTypeIds = [...new Set(requests.map(r => r.leave_type_id).filter((x): x is string => !!x))]
+    const leaveTypeIds = [...new Set(requests.map((r: any) => r.leave_type_id).filter((x): x is string => !!x))]
     const { data: leaveTypes } = await supabase
       .from('leave_types')
       .select('id, leave_type_name')
       .in('id', leaveTypeIds)
 
     // Manually join the data
-    const employeeMap = new Map(employees?.map(e => [e.id, e]))
-    const leaveTypeMap = new Map(leaveTypes?.map(lt => [lt.id, { id: lt.id, name: lt.leave_type_name }]))
+    const employeeMap = new Map(employees?.map((e: any) => [e.id, e]))
+    const leaveTypeMap = new Map(leaveTypes?.map((lt: any) => [lt.id, { id: lt.id, name: lt.leave_type_name }]))
 
-    return requests.map(request => ({
+    return requests.map((request: any) => ({
       ...request,
       employee: employeeMap.get(request.employee_id) || null,
       leave_type: leaveTypeMap.get(request.leave_type_id) || null
@@ -104,7 +104,7 @@ export const leaveService = {
 
     if (!requests || requests.length === 0) return []
 
-    const employeeIds = [...new Set(requests.map(r => r.employee_id))]
+    const employeeIds = [...new Set(requests.map((r: any) => r.employee_id))]
     const { data: employees } = await supabase
       .from('employees')
       .select('id, first_name, last_name, email, avatar_url, department_id')
@@ -115,12 +115,12 @@ export const leaveService = {
       ? await supabase.from('departments').select('id, name').in('id', deptIds)
       : { data: [] }
 
-    const leaveTypeIds = [...new Set(requests.map(r => r.leave_type_id).filter(Boolean))]
+    const leaveTypeIds = [...new Set(requests.map((r: any) => r.leave_type_id).filter(Boolean))]
     const { data: leaveTypes } = leaveTypeIds.length
       ? await supabase.from('leave_types').select('id, leave_type_name').in('id', leaveTypeIds)
       : { data: [] }
 
-    const deptMap = new Map((departments || []).map(d => [d.id, d]))
+    const deptMap = new Map((departments || []).map((d: any) => [d.id, d]))
     const employeeMap = new Map((employees || []).map(e => [
       e.id,
       {
@@ -128,9 +128,9 @@ export const leaveService = {
         department: e.department_id ? deptMap.get(e.department_id) || null : null
       }
     ]))
-    const leaveTypeMap = new Map((leaveTypes || []).map(lt => [lt.id, { id: lt.id, name: lt.leave_type_name }]))
+    const leaveTypeMap = new Map((leaveTypes || []).map((lt: any) => [lt.id, { id: lt.id, name: lt.leave_type_name }]))
 
-    return requests.map(request => ({
+    return requests.map((request: any) => ({
       ...request,
       employee: employeeMap.get(request.employee_id) || null,
       leave_type: leaveTypeMap.get(request.leave_type_id) || null
@@ -177,13 +177,13 @@ export const leaveService = {
     }
 
     // Collect all unique employee IDs
-    const leaveEmpIds = (leaveReqs || []).map(r => r.employee_id)
+    const leaveEmpIds = (leaveReqs || []).map((r: any) => r.employee_id)
     const attEmpIds = (attRecords || [])
-      .filter(r => {
+      .filter((r: any) => {
         const status = getAttendanceType(r.notes)
         return workStatuses.includes(status ?? '')
       })
-      .map(r => r.employee_id)
+      .map((r: any) => r.employee_id)
     const allEmpIds = [...new Set([...leaveEmpIds, ...attEmpIds])]
 
     if (allEmpIds.length === 0) return []
@@ -198,17 +198,17 @@ export const leaveService = {
       ? await supabase.from('departments').select('id, name').in('id', deptIds)
       : { data: [] }
 
-    const leaveTypeIds = [...new Set((leaveReqs || []).map(r => r.leave_type_id).filter((x): x is string => !!x))]
+    const leaveTypeIds = [...new Set((leaveReqs || []).map((r: any) => r.leave_type_id).filter((x): x is string => !!x))]
     const { data: leaveTypes } = leaveTypeIds.length
       ? await supabase.from('leave_types').select('id, leave_type_name').in('id', leaveTypeIds)
       : { data: [] }
 
-    const deptMap = new Map((departments || []).map(d => [d.id, d]))
+    const deptMap = new Map((departments || []).map((d: any) => [d.id, d]))
     const empMap = new Map((employees || []).map(e => ([
       e.id,
       { ...e, department: e.department_id ? deptMap.get(e.department_id) || null : null }
     ])))
-    const leaveTypeMap = new Map((leaveTypes || []).map(lt => [lt.id, lt.leave_type_name as string]))
+    const leaveTypeMap = new Map((leaveTypes || []).map((lt: any) => [lt.id, lt.leave_type_name as string]))
 
     // Build result — attendance records take priority over leave for the same employee
     const seen = new Set<string>()
