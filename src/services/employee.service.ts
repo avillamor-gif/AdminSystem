@@ -61,10 +61,10 @@ export const employeeService = {
       .select('id, title')
 
     // Map departments and job titles to employees
-    const employeesWithRelations: EmployeeWithRelations[] = employees.map(emp => ({
+    const employeesWithRelations: EmployeeWithRelations[] = employees.map((emp: any) => ({
       ...emp,
-      department: departments?.find(d => d.id === emp.department_id) || null,
-      job_title: jobTitles?.find(jt => jt.id === emp.job_title_id) || null,
+      department: departments?.find((d: any) => d.id === emp.department_id) || null,
+      job_title: jobTitles?.find((jt: any) => jt.id === emp.job_title_id) || null,
       manager: null
     }))
     
