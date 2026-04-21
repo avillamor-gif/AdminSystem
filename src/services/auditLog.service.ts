@@ -75,7 +75,7 @@ export const auditLogService = {
     }
 
     // Get unique employee IDs
-    const employeeIds = [...new Set(logs.map(log => log.employee_id).filter(Boolean))]
+    const employeeIds = [...new Set(logs.map((log: any) => log.employee_id).filter(Boolean))]
 
     // Fetch employee details
     const { data: employees } = await supabase
