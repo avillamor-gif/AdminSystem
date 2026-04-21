@@ -1,8 +1,21 @@
 import { createClient } from '@/lib/supabase/client'
-import type { Database } from '@/lib/supabase/database.types'
 
-type EmployeeAttachment = Database['public']['Tables']['employee_attachments']['Row']
-type EmployeeAttachmentInsert = Database['public']['Tables']['employee_attachments']['Insert']
+export interface EmployeeAttachment {
+  id: string
+  employee_id: string
+  file_name: string
+  file_path: string
+  file_size: number
+  file_type: string
+  mime_type?: string | null
+  description?: string | null
+  document_type?: string | null
+  uploaded_by?: string | null
+  created_at?: string | null
+  updated_at?: string | null
+}
+
+type EmployeeAttachmentInsert = Omit<EmployeeAttachment, 'id' | 'created_at' | 'updated_at'>
 
 export interface EmployeeAttachmentWithUploader extends EmployeeAttachment {
   uploader?: {
