@@ -176,7 +176,7 @@ export const companyStructureService = {
       supabase.from('company_structures').select('structure_type').order('structure_type'),
     ])
 
-    const typeDistribution = byType?.reduce((acc, item) => {
+    const typeDistribution = byType?.reduce((acc: Record<string, number>, item: any) => {
       acc[item.structure_type] = (acc[item.structure_type] || 0) + 1
       return acc
     }, {} as Record<string, number>) || {}
