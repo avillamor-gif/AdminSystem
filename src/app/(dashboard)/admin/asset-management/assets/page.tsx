@@ -279,7 +279,7 @@ export default function AssetsPage() {
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
-    const slot = activeImageSlotRef.currentRef.current
+    const slot = activeImageSlotRef.current
     setImageFiles(prev => { const n = [...prev]; n[slot] = file; return n })
     const reader = new FileReader()
     reader.onloadend = () => {
