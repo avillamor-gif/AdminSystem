@@ -55,7 +55,7 @@ export const emailTemplateService = {
   async update(id: string, updates: EmailTemplateUpdate): Promise<EmailTemplate> {
     const supabase = createClient()
     
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from('email_templates')
       .update(updates)
       .eq('id', id)
@@ -73,7 +73,7 @@ export const emailTemplateService = {
   async resetToDefault(id: string): Promise<void> {
     const supabase = createClient()
     
-    const { error } = await supabase
+    const { error } = await (supabase as any)
       .from('email_templates')
       .update({ is_active: false })
       .eq('id', id)
