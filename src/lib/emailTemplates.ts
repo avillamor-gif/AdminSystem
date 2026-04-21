@@ -104,7 +104,7 @@ export function newLeaveRequestEmail(opts: {
         <td style="padding:10px 16px;font-size:14px;color:#111827;">${opts.reason}</td>
       </tr>` : ''}
     </table>
-    ${button('Review Request', `${BASE_URL}/admin/leave-management`)}
+    ${button('Review Request →', `${BASE_URL}/admin/leave-management`)}
   `)
   return { subject, html }
 }
@@ -152,7 +152,7 @@ export function leaveDecisionEmail(opts: {
         <td style="padding:10px 16px;font-size:14px;color:#111827;">${opts.approverNote}</td>
       </tr>` : ''}
     </table>
-    ${button('View My Leave', `${BASE_URL}/leave`)}
+    ${button('View My Leave →', `${BASE_URL}/leave/my-requests`)}
   `)
   return { subject, html }
 }
@@ -167,6 +167,17 @@ export function newGenericRequestEmail(opts: {
   details: string
 }): { subject: string; html: string } {
   const subject = `New ${opts.requestType} Request${opts.requestNumber ? ` #${opts.requestNumber}` : ''} from ${opts.requesterName}`
+  
+  // Map request type to specific admin URLs
+  const urlMap: Record<string, string> = {
+    'Travel': '/admin/travel',
+    'Publication': '/admin/publications/publication-management',
+    'Equipment': '/admin/asset-management/equipment-requests',
+    'Supply': '/admin/office-supplies/supply-requests',
+    'Leave Credit': '/admin/leave-management/leave-credits',
+  }
+  const reviewUrl = urlMap[opts.requestType] ?? '/admin'
+  
   const html = layout(`
     <h2 style="margin:0 0 16px;font-size:22px;color:#111827;">New ${opts.requestType} Request</h2>
     <p style="margin:0 0 16px;color:#374151;font-size:15px;">
@@ -175,7 +186,7 @@ export function newGenericRequestEmail(opts: {
     <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:16px;font-size:14px;color:#374151;margin-bottom:8px;">
       ${opts.details}
     </div>
-    ${button('Review in Admin', `${BASE_URL}/admin`)}
+    ${button('Review Request →', `${BASE_URL}${reviewUrl}`)}
   `)
   return { subject, html }
 }
@@ -198,6 +209,16 @@ export function genericDecisionEmail(opts: {
   const iconMap = { approved: '✔', rejected: '✘', fulfilled: '📦' }
   const badge = `<span style="display:inline-block;padding:4px 12px;border-radius:99px;background:${bgMap[opts.decision]};color:${colorMap[opts.decision]};font-size:13px;font-weight:600;">${iconMap[opts.decision]} ${verb}</span>`
 
+  // Map request type to employee-facing URLs
+  const urlMap: Record<string, string> = {
+    'Travel': '/travel/my-requests',
+    'Publication': '/publications/my-requests',
+    'Equipment': '/office-equipment/my-requests',
+    'Supply': '/office-supplies/my-requests',
+    'Leave Credit': '/leave-credit/my-requests',
+  }
+  const viewUrl = urlMap[opts.requestType] ?? '/'
+
   const html = layout(`
     <h2 style="margin:0 0 16px;font-size:22px;color:#111827;">${opts.requestType} Request ${verb}</h2>
     <p style="margin:0 0 16px;color:#374151;font-size:15px;">Hi <strong>${opts.employeeName}</strong>,</p>
@@ -207,7 +228,7 @@ export function genericDecisionEmail(opts: {
     <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:16px;font-size:14px;color:#374151;margin-bottom:8px;">
       ${opts.details}
     </div>
-    ${button('View My Requests', BASE_URL)}
+    ${button('View Request →', `${BASE_URL}${viewUrl}`)}
   `)
   return { subject, html }
 }
@@ -239,7 +260,7 @@ export function welcomeEmail(opts: {
       </tr>` : ''}
     </table>
     ${opts.temporaryPassword ? '<p style="margin:8px 0 20px;font-size:13px;color:#6b7280;">Please change your password after your first login.</p>' : ''}
-    ${button('Log In Now', BASE_URL)}
+    ${button('Log In Now →', BASE_URL)}
   `)
   return { subject, html }
 }

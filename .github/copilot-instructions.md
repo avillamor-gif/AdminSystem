@@ -148,6 +148,29 @@ Notifications use a two-step pattern to bypass RLS on `user_roles`:
 
 API routes that need to create auth users (e.g., `/api/create-employee-auth`) use `SUPABASE_SERVICE_ROLE_KEY` directly — always guard for missing env vars.
 
+### Email Templates (Database-Backed)
+Email notification templates are stored in the `email_templates` table and editable via **System Configuration → Email Configuration** admin UI. Use `renderEmailTemplate()` from `@/lib/emailTemplateRenderer` to fetch and render templates with variables:
+
+```typescript
+// Fetch template from DB and render with variables
+import { renderNewLeaveRequestEmail } from '@/lib/emailTemplateRenderer'
+
+const email = await renderNewLeaveRequestEmail({
+  requesterName: 'Juan dela Cruz',
+  leaveType: 'Vacation Leave',
+  startDate: '2026-05-01',
+  endDate: '2026-05-05',
+  days: 5
+})
+// Returns: { subject: string, html: string }
+```
+
+Available template types: `new-leave-request`, `leave-approved`, `leave-rejected`, `new-travel-request`, `welcome`
+
+Template variables use `{variableName}` syntax. Each template has a `variables` JSONB field documenting available placeholders. Templates include customizable subject, header color, button color, button text, and HTML body.
+
+**Legacy templates:** Hardcoded templates in `src/lib/emailTemplates.ts` are still available but should be migrated to database templates for user customization.
+
 ### Write-via-API-route pattern for privileged writes
 Some services that need service-role for writes split into a read-only browser service + a standalone write function that POSTs to an API route. Example: `src/services/workflowConfig.service.ts`:
 ```typescript
