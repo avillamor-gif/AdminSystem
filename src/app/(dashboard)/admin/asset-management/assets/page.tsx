@@ -992,7 +992,7 @@ export default function AssetsPage() {
                 </div>
               </div>
 
-              {/* Panel footer */}}
+              {/* Panel footer */}
               <div className="shrink-0 px-6 py-4 border-t border-gray-200 flex justify-end gap-3 bg-white">
                 <Button type="button" variant="secondary" onClick={handleClosePanel}>
                   Cancel
