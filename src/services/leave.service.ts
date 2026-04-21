@@ -68,7 +68,7 @@ export const leaveService = {
       .in('id', employeeIds)
 
     // Fetch related leave types
-    const leaveTypeIds = [...new Set(requests.map((r: any) => r.leave_type_id).filter((x): x is string => !!x))]
+    const leaveTypeIds = [...new Set(requests.map((r: any) => r.leave_type_id).filter((x: any): x is string => !!x))]
     const { data: leaveTypes } = await supabase
       .from('leave_types')
       .select('id, leave_type_name')
@@ -110,7 +110,7 @@ export const leaveService = {
       .select('id, first_name, last_name, email, avatar_url, department_id')
       .in('id', employeeIds)
 
-    const deptIds = [...new Set((employees || []).map(e => e.department_id).filter((x): x is string => !!x))]
+    const deptIds = [...new Set((employees || []).map(e => e.department_id).filter((x: any): x is string => !!x))]
     const { data: departments } = deptIds.length
       ? await supabase.from('departments').select('id, name').in('id', deptIds)
       : { data: [] }
@@ -193,12 +193,12 @@ export const leaveService = {
       .select('id, first_name, last_name, email, avatar_url, department_id')
       .in('id', allEmpIds)
 
-    const deptIds = [...new Set((employees || []).map(e => e.department_id).filter((x): x is string => !!x))]
+    const deptIds = [...new Set((employees || []).map(e => e.department_id).filter((x: any): x is string => !!x))]
     const { data: departments } = deptIds.length
       ? await supabase.from('departments').select('id, name').in('id', deptIds)
       : { data: [] }
 
-    const leaveTypeIds = [...new Set((leaveReqs || []).map((r: any) => r.leave_type_id).filter((x): x is string => !!x))]
+    const leaveTypeIds = [...new Set((leaveReqs || []).map((r: any) => r.leave_type_id).filter((x: any): x is string => !!x))]
     const { data: leaveTypes } = leaveTypeIds.length
       ? await supabase.from('leave_types').select('id, leave_type_name').in('id', leaveTypeIds)
       : { data: [] }
