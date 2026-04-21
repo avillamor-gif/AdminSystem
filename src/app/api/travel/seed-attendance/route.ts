@@ -133,8 +133,8 @@ export async function DELETE(req: NextRequest) {
     // Only remove rows seeded by THIS travel request (identified by the trailing marker)
     const marker = `[travel_request_id:${travelRequestId}]`
     const toDelete = (records ?? [])
-      .filter((r) => (r.notes ?? '').includes(marker))
-      .map((r) => r.id)
+      .filter((r: any) => (r.notes ?? '').includes(marker))
+      .map((r: any) => r.id)
 
     if (toDelete.length === 0) {
       return NextResponse.json({ removed: 0 })
