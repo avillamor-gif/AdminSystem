@@ -188,7 +188,7 @@ export const internationalOperationService = {
     const totalPrograms = operations?.reduce((sum: number, op: any) => sum + (op.active_programs || 0), 0) || 0
     const totalBeneficiaries = operations?.reduce((sum: number, op: any) => sum + (op.beneficiary_count || 0), 0) || 0
 
-    const byRegion = operations?.reduce((acc, op) => {
+    const byRegion = operations?.reduce((acc: Record<string, number>, op: any) => {
       if (op.region) {
         acc[op.region] = (acc[op.region] || 0) + 1
       }
@@ -222,7 +222,7 @@ export const internationalOperationService = {
       throw error
     }
 
-    const uniqueCountries = [...new Set(data?.map(item => item.country) || [])]
+    const uniqueCountries = [...new Set(data?.map((item: any) => item.country) || [])]
     return uniqueCountries
   },
 
@@ -238,7 +238,7 @@ export const internationalOperationService = {
       throw error
     }
 
-    const uniqueRegions = [...new Set(data?.map(item => item.region).filter(Boolean) || [])]
+    const uniqueRegions = [...new Set(data?.map((item: any) => item.region).filter(Boolean) || [])]
     return uniqueRegions as string[]
   },
 }
