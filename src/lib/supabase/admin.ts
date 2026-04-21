@@ -13,10 +13,11 @@ export function createAdminClient() {
     throw new Error('Missing Supabase URL or Service Role Key')
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return createClient<Database>(supabaseUrl, supabaseServiceRoleKey, {
     auth: {
       autoRefreshToken: false,
       persistSession: false
     }
-  })
+  }) as any
 }
