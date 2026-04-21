@@ -45,7 +45,7 @@ export default function SupplyRequestsPage() {
     const { data: reqs, error } = await supabase
       .from('supply_requests').select('*').order('created_at', { ascending: false })
     if (error) { toast.error(error.message || 'Failed to load requests'); return }
-    const empIds = [...new Set((reqs ?? []).map((r: Request) => r.employee_id).filter((id): id is string => Boolean(id)))]
+    const empIds = [...new Set((reqs ?? []).map((r: any) => r.employee_id).filter((id: any): id is string => Boolean(id)))]
     const itemIds = [...new Set((reqs ?? []).map((r: any) => r.item_id).filter((id): id is string => Boolean(id)))]
     const [empRes, itemRes] = await Promise.all([
       empIds.length ? supabase.from('employees').select('id, first_name, last_name').in('id', empIds) : Promise.resolve({ data: [] }),
