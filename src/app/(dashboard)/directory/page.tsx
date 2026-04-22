@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { Search, Grid, List, Mail, Phone, MapPin } from 'lucide-react'
 import { useEmployees } from '@/hooks'
+import { useDepartments } from '@/hooks/useDepartments'
 import { Card, Avatar, Badge } from '@/components/ui'
 import type { EmployeeWithRelations } from '@/services'
 
@@ -13,9 +14,9 @@ export default function DirectoryPage() {
 
   const { data: employees, isLoading } = useEmployees({ search: searchQuery, department: selectedDepartment, status: 'active' })
   const typedEmployees = (employees || []) as EmployeeWithRelations[]
+  const { data: departments = [] } = useDepartments()
 
-  // Get unique departments
-  const departments = Array.from(new Set(typedEmployees.map(e => e.department?.name).filter(Boolean)))
+  // Remove derived departments list - now using DB departments
 
   return (
     <div className="space-y-6">
@@ -60,7 +61,7 @@ export default function DirectoryPage() {
           >
             <option value="">All Departments</option>
             {departments.map((dept) => (
-              <option key={dept} value={dept}>{dept}</option>
+              <option key={dept.id} value={dept.id}>{dept.name}</option>
             ))}
           </select>
         </div>
