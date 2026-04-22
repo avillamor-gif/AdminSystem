@@ -18,7 +18,7 @@ import { useCurrentUserPermissions } from '@/hooks'
 import type { EmployeeFilters, EmployeeWithRelations } from '@/services/employee.service'
 
 export default function EmployeeProfilesPage() {
-  const [filters, setFilters] = useState<EmployeeFilters>({})
+  const [filters, setFilters] = useState<EmployeeFilters>({ status: 'active' })
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [showEditModal, setShowEditModal] = useState(false)
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
@@ -206,7 +206,7 @@ export default function EmployeeProfilesPage() {
             value={filters.status || ''}
             onChange={(e) => setFilters({ ...filters, status: e.target.value })}
           />
-          <Button variant="secondary" onClick={() => setFilters({})}>
+          <Button variant="secondary" onClick={() => setFilters({ status: 'active' })}>
             Clear Filters
           </Button>
         </div>
