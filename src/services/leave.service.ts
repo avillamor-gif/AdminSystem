@@ -220,7 +220,7 @@ export const leaveService = {
       if (!rawStatus || !workStatuses.includes(rawStatus)) continue
       if (seen.has(rec.employee_id)) continue
       seen.add(rec.employee_id)
-      const emp = empMap.get(rec.employee_id)
+      const emp = empMap.get(rec.employee_id) as WorkStatusEntry['employee']
       if (!emp) continue
       const labelMap: Record<string, string> = {
         'work-home': 'Work from Home',
@@ -240,13 +240,13 @@ export const leaveService = {
     for (const req of (leaveReqs || [])) {
       if (seen.has(req.employee_id)) continue
       seen.add(req.employee_id)
-      const emp = empMap.get(req.employee_id)
+      const emp = empMap.get(req.employee_id) as WorkStatusEntry['employee']
       if (!emp) continue
       results.push({
         id: req.id,
         employee: emp,
         statusType: 'on-leave',
-        statusLabel: leaveTypeMap.get(req.leave_type_id) ?? 'On Leave',
+        statusLabel: (leaveTypeMap.get(req.leave_type_id) as string) ?? 'On Leave',
       })
     }
 

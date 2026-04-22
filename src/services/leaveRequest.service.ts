@@ -676,14 +676,14 @@ export const leaveBalanceService = {
     if (!balances || balances.length === 0) return [] as LeaveBalance[]
 
     // Fetch leave types separately to avoid PGRST200 FK issues
-    const typeIds = [...new Set(balances.map((b) => b.leave_type_id).filter(Boolean))]
+    const typeIds = [...new Set(balances.map((b: any) => b.leave_type_id).filter(Boolean))]
     const { data: leaveTypes } = await supabase
       .from('leave_types')
       .select('id, leave_type_name, leave_type_code, color_code')
       .in('id', typeIds)
-    const typeMap = new Map((leaveTypes || []).map((t) => [t.id, t]))
+    const typeMap = new Map((leaveTypes || []).map((t: any) => [t.id, t]))
 
-    return balances.map((b) => ({
+    return balances.map((b: any) => ({
       ...b,
       leave_type: typeMap.get(b.leave_type_id) || null,
     })) as unknown as LeaveBalance[]
@@ -704,14 +704,14 @@ export const leaveBalanceService = {
     if (error) throw error
     if (!balances || balances.length === 0) return [] as LeaveBalance[]
 
-    const typeIds = [...new Set(balances.map((b) => b.leave_type_id).filter(Boolean))]
+    const typeIds = [...new Set(balances.map((b: any) => b.leave_type_id).filter(Boolean))]
     const { data: leaveTypes } = await supabase
       .from('leave_types')
       .select('id, leave_type_name, leave_type_code, color_code')
       .in('id', typeIds)
-    const typeMap = new Map((leaveTypes || []).map((t) => [t.id, t]))
+    const typeMap = new Map((leaveTypes || []).map((t: any) => [t.id, t]))
 
-    return balances.map((b) => ({
+    return balances.map((b: any) => ({
       ...b,
       leave_type: typeMap.get(b.leave_type_id) || null,
     })) as unknown as LeaveBalance[]
@@ -775,7 +775,7 @@ export const leaveBalanceService = {
       .select('employee_id, leave_type_id')
       .eq('year', year)
 
-    const covered = new Set((existing || []).map((b) => `${b.employee_id}:${b.leave_type_id}`))
+    const covered = new Set((existing || []).map((b: any) => `${b.employee_id}:${b.leave_type_id}`))
 
     const inserts: any[] = []
     for (const emp of employees || []) {

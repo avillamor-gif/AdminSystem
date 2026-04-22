@@ -252,7 +252,7 @@ export const orgRelationshipService = {
       supabase.from('org_relationships').select('relationship_type').order('relationship_type'),
     ])
 
-    const typeDistribution = byType?.reduce((acc, item) => {
+    const typeDistribution = byType?.reduce((acc: Record<string, number>, item: any) => {
       const key = item.relationship_type ?? 'unknown'
       acc[key] = (acc[key] || 0) + 1
       return acc

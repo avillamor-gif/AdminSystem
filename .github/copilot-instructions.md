@@ -35,13 +35,13 @@ src/
 ```bash
 npm install          # from workspace root
 npm run dev          # http://localhost:3000
-npm run build
+npm run build        # next build + node scripts/append-sw-push.js (injects push handlers into SW)
 npm run db:types     # regenerate src/lib/supabase/database.types.ts from Supabase
 ```
 
 **Required env vars:** `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`
 
-PWA is disabled in development (`next-pwa` config: `disable: process.env.NODE_ENV === 'development'`).
+PWA is disabled in development (`next-pwa` config: `disable: process.env.NODE_ENV === 'development'`). The custom service worker lives at `public/sw.js`; `scripts/append-sw-push.js` appends Web Push handler code to the generated SW on every production build — do not remove this script. Push notification logic (`VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`) must be set as env vars for the worker at `worker/index.js`.
 
 ## Critical Supabase Patterns
 
@@ -127,7 +127,7 @@ await selectedItem
 disabled={createMutation.isPending || updateMutation.isPending}
 ```
 
-Multi-page admin sections (e.g. `leave-management/`, `payroll-benefits/`, `system-config/`, `organization-structure/`, `time-attendance/`) use a `layout.tsx` with `<SecondaryNav items={...} />` for the sub-nav, and a root `page.tsx` that `router.replace`s to the first sub-page.
+Multi-page admin sections use a `layout.tsx` with `<SecondaryNav items={...} />` for the sub-nav, and a root `page.tsx` that `router.replace`s to the first sub-page. Current sections: `leave-management/`, `leave-policies/`, `payroll-benefits/`, `system-config/`, `organization-structure/`, `time-attendance/`, `job-management/`, `employee-data/`, `recruitment/`, `performance/`, `learning-development/`, `internship-volunteer/`, `compliance-audit/`, `analytics-reports/`, `user-access-security/`, `asset-management/`, `office-supplies/`, `office-equipment/`, `travel/`, `publications/`.
 
 JSONB array fields (`responsibilities`, `qualifications`, `skills` on `job_descriptions`) must be guarded: `Array.isArray(desc.responsibilities) ? desc.responsibilities : []`
 
@@ -207,7 +207,7 @@ Use this pattern when a table's RLS blocks writes from the browser but reads are
 All in `src/components/ui/` — import via `@/components/ui`:
 `Button` (variants: `primary`, `secondary`, `danger`, `ghost`) · `Input` · `Select` · `Card` / `CardHeader` / `CardTitle` / `CardContent` · `Modal` / `ModalHeader` / `ModalBody` / `ModalFooter` · `Badge` · `Avatar` · `ConfirmModal`
 
-- Toast: `import toast from 'react-hot-toast'` in hooks/mutations. (`sonner` used in `EmployeeDetailContent.tsx` only — do not mix)
+- Toast: two libraries coexist — **prefer `react-hot-toast`** (`import toast from 'react-hot-toast'`) for hooks/mutations in established domains. Newer hooks (e.g. `useCompanyStructures`, `useInternship`, `useEmployeeData`) use `import { toast } from 'sonner'`. Match whichever the file already uses; never mix both in the same file. `<Toaster>` in `providers.tsx` serves `react-hot-toast`; `<Sonner>` (if present in layout) serves `sonner`.
 - Date formatting: use `formatDate()` / `localDateStr()` from `@/lib/utils` — avoid `new Date().toISOString().split('T')[0]` (UTC timezone bug)
 - Styling: `cn()` from `@/lib/utils` (clsx + tailwind-merge)
 - Forms with validation: `react-hook-form` + `zod` + `zodResolver` (see `EmployeeFormModal.tsx`, `DepartmentFormModal.tsx`)

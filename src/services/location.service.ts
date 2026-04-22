@@ -174,12 +174,12 @@ export const locationService = {
       supabase.from('locations').select('location_type').order('location_type'),
     ])
 
-    const countryDistribution = byCountry?.reduce((acc, item) => {
+    const countryDistribution = byCountry?.reduce((acc: Record<string, number>, item: any) => {
       acc[item.country] = (acc[item.country] || 0) + 1
       return acc
     }, {} as Record<string, number>) || {}
 
-    const typeDistribution = byType?.reduce((acc, item) => {
+    const typeDistribution = byType?.reduce((acc: Record<string, number>, item: any) => {
       acc[item.location_type] = (acc[item.location_type] || 0) + 1
       return acc
     }, {} as Record<string, number>) || {}
