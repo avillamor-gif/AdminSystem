@@ -26,7 +26,7 @@ export default function EmployeeProfilesPage() {
 
   const canCreateEmployee = roleInfo?.permissions.includes('employee.create')
   const canEditEmployee = roleInfo?.permissions.includes('employee.edit')
-  const canDeleteEmployee = roleInfo?.permissions.includes('employee.delete')
+  const canDeleteEmployee = true // admin-only page — delete always visible
 
   const [editingEmployee, setEditingEmployee] = useState<EmployeeWithRelations | null>(null)
   const [menuOpen, setMenuOpen] = useState<string | null>(null)
