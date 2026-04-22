@@ -11,6 +11,7 @@ import { Card } from '@/components/ui/Card'
 import { Avatar } from '@/components/ui/Avatar'
 import { Badge } from '@/components/ui/Badge'
 import { EmployeeFormModal } from '@/app/(dashboard)/employees/components/EmployeeFormModal'
+import { ConfirmModal } from '@/components/ui/ConfirmModal'
 import { useEmployees, useDeleteEmployee } from '@/hooks/useEmployees'
 import { useDepartments } from '@/hooks/useDepartments'
 import { useCurrentUserPermissions } from '@/hooks'
@@ -29,6 +30,7 @@ export default function EmployeeProfilesPage() {
 
   const [editingEmployee, setEditingEmployee] = useState<EmployeeWithRelations | null>(null)
   const [menuOpen, setMenuOpen] = useState<string | null>(null)
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
   const menuRef = useRef<HTMLDivElement>(null)
 
   const { data: employees = [], isLoading: isLoadingEmployees, error: employeesError } = useEmployees(filters)
@@ -65,10 +67,15 @@ export default function EmployeeProfilesPage() {
     setMenuOpen(null)
   }
 
-  const handleDeleteEmployee = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this employee?')) return
+  const handleDeleteEmployee = (id: string) => {
     setMenuOpen(null)
-    await deleteEmployee.mutateAsync(id)
+    setConfirmDeleteId(id)
+  }
+
+  const confirmDelete = async () => {
+    if (!confirmDeleteId) return
+    await deleteEmployee.mutateAsync(confirmDeleteId)
+    setConfirmDeleteId(null)
   }
 
   const handleExport = () => {
@@ -358,13 +365,33 @@ export default function EmployeeProfilesPage() {
                       <span>{employee.job_title?.title || '-'}</span>
                     </div>
                   </div>
-                  <div className="mt-4 w-full">
+                  <div className="mt-4 w-full space-y-2">
                     <Link
                       href={`/admin/employee-data/employee-profiles/${employee.employee_id}`}
                       className="block w-full px-3 py-2 text-xs bg-orange-500 hover:bg-orange-600 text-white rounded-lg text-center transition-colors"
                     >
                       View Full Details
                     </Link>
+                    <div className="flex gap-2">
+                      {canEditEmployee && (
+                        <button
+                          onClick={() => handleEditEmployee(employee)}
+                          className="flex-1 flex items-center justify-center gap-1 px-3 py-2 text-xs border border-gray-300 text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
+                        >
+                          <Pencil className="w-3 h-3" />
+                          Edit
+                        </button>
+                      )}
+                      {canDeleteEmployee && (
+                        <button
+                          onClick={() => handleDeleteEmployee(employee.id)}
+                          className="flex-1 flex items-center justify-center gap-1 px-3 py-2 text-xs border border-red-200 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                        >
+                          <Trash2 className="w-3 h-3" />
+                          Delete
+                        </button>
+                      )}
+                    </div>
                   </div>
                 </div>
               </Card>
@@ -372,6 +399,17 @@ export default function EmployeeProfilesPage() {
           )}
         </div>
       )}
+
+      <ConfirmModal
+        isOpen={!!confirmDeleteId}
+        onClose={() => setConfirmDeleteId(null)}
+        onConfirm={confirmDelete}
+        title="Delete Employee"
+        message="Are you sure you want to delete this employee? This action cannot be undone and will permanently remove all associated records."
+        confirmText="Delete"
+        variant="danger"
+        isLoading={deleteEmployee.isPending}
+      />
 
       <EmployeeFormModal
         open={showCreateModal}
