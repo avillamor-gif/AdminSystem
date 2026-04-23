@@ -107,6 +107,7 @@ async function triggerBiometric(): Promise<boolean> {
 
 function LoginContent() {
   const searchParams = useSearchParams()
+  const redirectTo = searchParams.get('redirect') || '/'
   const [loading, setLoading] = useState(false)
   const [bioLoading, setBioLoading] = useState(false)
   const [timedOut, setTimedOut] = useState(false)
@@ -157,7 +158,7 @@ function LoginContent() {
     try { await fetch('/api/sessions/create', { method: 'POST' }) } catch {}
     // Use hard redirect for reliability on mobile PWA — router.push can silently
     // fail if the session cookie hasn't propagated to the middleware yet
-    window.location.href = '/'
+    window.location.href = redirectTo
   }
 
   async function handleBiometric() {

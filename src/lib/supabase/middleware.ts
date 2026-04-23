@@ -46,7 +46,9 @@ export async function updateSession(request: NextRequest) {
   const isProtectedRoute = !isAuthPage && !isSetupPage && !isApiRoute
 
   if (!user && isProtectedRoute) {
-    return NextResponse.redirect(new URL('/login', request.url))
+    const loginUrl = new URL('/login', request.url)
+    loginUrl.searchParams.set('redirect', request.nextUrl.pathname + request.nextUrl.search)
+    return NextResponse.redirect(loginUrl)
   }
 
   // Inactivity session timeout — only enforced on authenticated protected routes
