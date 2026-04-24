@@ -220,11 +220,33 @@ export default function RequestSuppliesPage() {
               </div>
             )}
 
-            {/* Row 2: Quantity + Priority + Purpose */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+            {/* Row 2: Available Stock + Request Quantity + Priority + Purpose */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-5">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">Available Stock</label>
+                <input
+                  type="text"
+                  value={
+                    selectedItem
+                      ? `${Math.max(0, (selectedItem.quantity_on_hand ?? 0) - form.quantity)} ${selectedItem.unit ?? ''}`.trim()
+                      : '—'
+                  }
+                  disabled
+                  className={`w-full px-3 py-2.5 text-sm border rounded-lg cursor-not-allowed ${
+                    selectedItem && (selectedItem.quantity_on_hand ?? 0) - form.quantity < 0
+                      ? 'border-red-300 bg-red-50 text-red-700 font-medium'
+                      : selectedItem && (selectedItem.quantity_on_hand ?? 0) - form.quantity === 0
+                      ? 'border-yellow-300 bg-yellow-50 text-yellow-700 font-medium'
+                      : 'border-gray-200 bg-gray-100 text-gray-600'
+                  }`}
+                />
+                {selectedItem && (selectedItem.quantity_on_hand ?? 0) - form.quantity < 0 && (
+                  <p className="text-xs text-red-600 mt-1">Exceeds available stock</p>
+                )}
+              </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                  Quantity <span className="text-red-500">*</span>
+                  Request Quantity <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="number"
