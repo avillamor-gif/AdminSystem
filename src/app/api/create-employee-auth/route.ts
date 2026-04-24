@@ -107,7 +107,7 @@ export async function POST(request: Request) {
     if (workspaceDomain && email.endsWith(`@${workspaceDomain}`)) {
       ;(async () => {
         try {
-          const baseUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'
+          const baseUrl = process.env.NEXT_PUBLIC_PRODUCTION_URL ?? process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'
           await fetch(`${baseUrl}/api/google/admin`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
