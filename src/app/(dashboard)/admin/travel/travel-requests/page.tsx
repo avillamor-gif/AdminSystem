@@ -1,15 +1,18 @@
 'use client'
 
 import React, { useState, useMemo } from 'react'
+import { useRouter } from 'next/navigation'
 import { 
-  FileText, Plus, Edit, Eye, CheckCircle, XCircle, Clock,
-  Search, Filter, Download, User, MapPin, Calendar,
-  DollarSign, AlertTriangle, Building2, Plane
+  FileText, Plus, Eye, CheckCircle, XCircle, Clock,
+  Search, Filter, Download, MapPin, Calendar,
+  DollarSign, AlertTriangle, Building2, Plane,
+  Settings, Bell, GitBranch
 } from 'lucide-react'
 import { Card, Button, Badge, Input } from '@/components/ui'
 import { useTravelRequests, useApproveTravelRequest, useRejectTravelRequest } from '@/hooks/useTravel'
-import { useEmployees, useCurrentEmployee } from '@/hooks/useEmployees'
-import { useCurrentUserPermissions } from '@/hooks'
+import { useCurrentEmployee } from '@/hooks/useEmployees'
+import { useCurrentUserPermissions, useWorkflowConfig, useDepartments } from '@/hooks'
+import { ROLE_SLUG_LABELS } from '@/services/workflowConfig.service'
 
 interface ApprovalWorkflow {
   id: string
@@ -37,6 +40,13 @@ const TravelRequestsPage = () => {
   const rejectMutation = useRejectTravelRequest()
   const { data: roleInfo } = useCurrentUserPermissions()
   const isED = roleInfo?.role_name?.toLowerCase() === 'ed'
+  const { data: travelWorkflowConfig } = useWorkflowConfig('travel')
+  const { data: departments = [] } = useDepartments()
+  const router = useRouter()
+  // Allow approve/reject if the user's role matches any step in the workflow config
+  const canApprove = travelWorkflowConfig?.approval_steps?.some(
+    s => s.approver_role === roleInfo?.role_name?.toLowerCase()
+  ) ?? isED
 
   const filteredRequests = useMemo(() => {
     return travelRequests.filter(request => {
@@ -131,10 +141,9 @@ const TravelRequestsPage = () => {
             className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange focus:border-transparent"
           >
             <option value="">All Departments</option>
-            <option value="Sales">Sales</option>
-            <option value="Marketing">Marketing</option>
-            <option value="Engineering">Engineering</option>
-            <option value="HR">Human Resources</option>
+            {departments.map(dept => (
+              <option key={dept.id} value={dept.id}>{dept.name}</option>
+            ))}
           </select>
           <Button variant="outline">
             <Filter className="w-4 h-4 mr-2" />
@@ -240,7 +249,7 @@ const TravelRequestsPage = () => {
               <Eye className="w-3 h-3 mr-1" />
               View Details
             </Button>
-            {(request.status === 'pending_approval' || request.status === 'submitted') && isED && (
+            {(request.status === 'pending_approval' || request.status === 'submitted') && canApprove && (
               <>
                 <Button 
                   size="sm" 
@@ -273,50 +282,91 @@ const TravelRequestsPage = () => {
     </div>
   )
 
-  const renderApprovals = () => (
-    <div className="space-y-6">
-      <Card className="p-6 bg-blue-50 border-blue-200">
-        <div className="flex items-start gap-3">
-          <CheckCircle className="w-6 h-6 text-blue-600 mt-1" />
-          <div>
-            <h3 className="font-semibold text-blue-800">Approval Workflow Management</h3>
-            <p className="text-blue-700 mt-1">
-              Track and manage travel request approvals through the defined workflow hierarchy.
-            </p>
-          </div>
+  const renderApprovals = () => {
+    const pending = travelRequests.filter(r => r.status === 'submitted' || r.status === 'pending_approval')
+    const approved = travelRequests.filter(r => r.status === 'approved')
+    const today = new Date().toDateString()
+    const approvedToday = approved.filter(r => r.approved_date && new Date(r.approved_date).toDateString() === today)
+    return (
+      <div className="space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <Card className="p-6 text-center">
+            <div className="p-4 bg-yellow-100 rounded-lg inline-block mb-4">
+              <Clock className="w-8 h-8 text-yellow-600" />
+            </div>
+            <h4 className="font-semibold text-gray-900 mb-2">Awaiting Approval</h4>
+            <p className="text-2xl font-bold text-yellow-600">{pending.length}</p>
+            <p className="text-sm text-gray-500">Requests pending action</p>
+          </Card>
+
+          <Card className="p-6 text-center">
+            <div className="p-4 bg-green-100 rounded-lg inline-block mb-4">
+              <CheckCircle className="w-8 h-8 text-green-600" />
+            </div>
+            <h4 className="font-semibold text-gray-900 mb-2">Approved Today</h4>
+            <p className="text-2xl font-bold text-green-600">{approvedToday.length}</p>
+            <p className="text-sm text-gray-500">Processed today</p>
+          </Card>
+
+          <Card className="p-6 text-center">
+            <div className="p-4 bg-blue-100 rounded-lg inline-block mb-4">
+              <CheckCircle className="w-8 h-8 text-blue-600" />
+            </div>
+            <h4 className="font-semibold text-gray-900 mb-2">Total Approved</h4>
+            <p className="text-2xl font-bold text-blue-600">{approved.length}</p>
+            <p className="text-sm text-gray-500">All time</p>
+          </Card>
         </div>
-      </Card>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card className="p-6 text-center">
-          <div className="p-4 bg-yellow-100 rounded-lg inline-block mb-4">
-            <Clock className="w-8 h-8 text-yellow-600" />
-          </div>
-          <h4 className="font-semibold text-gray-900 mb-2">Pending My Approval</h4>
-          <p className="text-2xl font-bold text-yellow-600">8</p>
-          <p className="text-sm text-gray-500">Requests awaiting action</p>
-        </Card>
+        {pending.length > 0 && (
+          <Card className="p-6">
+            <h3 className="font-semibold text-gray-900 mb-4">Requests Awaiting Approval</h3>
+            <div className="space-y-3">
+              {pending.map(request => (
+                <div key={request.id} className="flex items-center justify-between p-4 border border-yellow-200 bg-yellow-50 rounded-lg">
+                  <div>
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="font-medium text-gray-900">{request.request_number}</span>
+                      <Badge variant="warning" className="text-xs">
+                        {request.status?.replace(/_/g, ' ').toUpperCase()}
+                      </Badge>
+                    </div>
+                    <p className="text-sm text-gray-600">
+                      {request.employee?.first_name} {request.employee?.last_name}
+                    </p>
+                    <p className="text-sm text-gray-500 flex items-center gap-1 mt-0.5">
+                      <MapPin className="w-3 h-3" /> {request.destination}
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p className="font-bold text-gray-900">₱{(request.estimated_cost ?? 0).toLocaleString()}</p>
+                    {canApprove && (
+                      <div className="flex items-center gap-2 mt-2">
+                        <Button size="sm" variant="primary" onClick={() => handleApprove(request.id)} disabled={approveMutation.isPending}>
+                          <CheckCircle className="w-3 h-3 mr-1" />Approve
+                        </Button>
+                        <Button size="sm" variant="danger" onClick={() => handleReject(request.id)} disabled={rejectMutation.isPending}>
+                          <XCircle className="w-3 h-3 mr-1" />Reject
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </Card>
+        )}
 
-        <Card className="p-6 text-center">
-          <div className="p-4 bg-green-100 rounded-lg inline-block mb-4">
-            <CheckCircle className="w-8 h-8 text-green-600" />
-          </div>
-          <h4 className="font-semibold text-gray-900 mb-2">Approved Today</h4>
-          <p className="text-2xl font-bold text-green-600">12</p>
-          <p className="text-sm text-gray-500">Processed requests</p>
-        </Card>
-
-        <Card className="p-6 text-center">
-          <div className="p-4 bg-orange-100 rounded-lg inline-block mb-4">
-            <AlertTriangle className="w-8 h-8 text-orange-600" />
-          </div>
-          <h4 className="font-semibold text-gray-900 mb-2">Overdue</h4>
-          <p className="text-2xl font-bold text-orange-600">3</p>
-          <p className="text-sm text-gray-500">Past approval deadline</p>
-        </Card>
+        {pending.length === 0 && (
+          <Card className="p-12 text-center text-gray-500">
+            <CheckCircle className="w-12 h-12 text-green-400 mx-auto mb-3" />
+            <p className="font-medium">All caught up!</p>
+            <p className="text-sm mt-1">No travel requests awaiting approval.</p>
+          </Card>
+        )}
       </div>
-    </div>
-  )
+    )
+  }
 
   const renderTemplates = () => (
     <div className="space-y-6">
@@ -368,64 +418,108 @@ const TravelRequestsPage = () => {
     </div>
   )
 
-  const renderWorkflow = () => (
-    <div className="space-y-6">
-      <Card className="p-6 bg-purple-50 border-purple-200">
-        <div className="flex items-start gap-3">
-          <Building2 className="w-6 h-6 text-purple-600 mt-1" />
-          <div>
-            <h3 className="font-semibold text-purple-800">Workflow Configuration</h3>
-            <p className="text-purple-700 mt-1">
-              Configure approval workflows, routing rules, and delegation settings.
-            </p>
-          </div>
+  const renderWorkflow = () => {
+    if (!travelWorkflowConfig) {
+      return (
+        <div className="text-center py-12 text-gray-400">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500 mx-auto mb-3"></div>
+          Loading workflow configuration...
         </div>
-      </Card>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card className="p-6">
-          <h3 className="font-semibold text-gray-900 mb-4">Default Approval Workflow</h3>
-          <div className="space-y-4">
-            {[
-              { level: 1, role: 'Direct Manager', amount: '$0 - $2,000', time: '1 day' },
-              { level: 2, role: 'Department Head', amount: '$2,001 - $5,000', time: '2 days' },
-              { level: 3, role: 'Finance Director', amount: '$5,001+', time: '3 days' }
-            ].map((step) => (
-              <div key={step.level} className="flex items-center gap-4 p-3 bg-gray-50 rounded-lg">
-                <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                  <span className="text-sm font-medium text-blue-600">{step.level}</span>
-                </div>
-                <div className="flex-1">
-                  <p className="font-medium text-gray-900">{step.role}</p>
-                  <p className="text-sm text-gray-600">{step.amount} • {step.time} approval time</p>
-                </div>
+      )
+    }
+    return (
+      <div className="space-y-6">
+        <Card className="p-6 bg-purple-50 border-purple-200">
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex items-start gap-3">
+              <GitBranch className="w-6 h-6 text-purple-600 mt-0.5 flex-shrink-0" />
+              <div>
+                <h3 className="font-semibold text-purple-800">Travel Approval Workflow</h3>
+                <p className="text-purple-700 mt-1 text-sm">
+                  {travelWorkflowConfig.description ?? 'Live configuration from Workflow & Notification Settings.'}
+                </p>
               </div>
-            ))}
+            </div>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => router.push('/admin/system-config/workflow-settings')}
+            >
+              <Settings className="w-4 h-4 mr-1" />
+              Edit Settings
+            </Button>
           </div>
         </Card>
 
-        <Card className="p-6">
-          <h3 className="font-semibold text-gray-900 mb-4">Workflow Settings</h3>
-          <div className="space-y-4">
-            {[
-              { setting: 'Auto-approval threshold', value: '$500', description: 'Requests under this amount are auto-approved' },
-              { setting: 'Escalation timeout', value: '3 days', description: 'Auto-escalate if no action taken' },
-              { setting: 'Emergency approval', value: 'Enabled', description: 'Allow urgent requests bypass workflow' },
-              { setting: 'Delegation support', value: 'Enabled', description: 'Approvers can delegate authority' }
-            ].map((setting, index) => (
-              <div key={index} className="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
-                <div>
-                  <p className="font-medium text-gray-900">{setting.setting}</p>
-                  <p className="text-sm text-gray-600">{setting.description}</p>
-                </div>
-                <Badge variant="outline">{setting.value}</Badge>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <Card className="p-6">
+            <h3 className="font-semibold text-gray-900 mb-4">Approval Steps</h3>
+            {travelWorkflowConfig.approval_steps.length === 0 ? (
+              <p className="text-gray-500 text-sm">No approval steps configured.</p>
+            ) : (
+              <div className="space-y-3">
+                {travelWorkflowConfig.approval_steps.map((step, i) => (
+                  <div key={i} className="flex items-center gap-4 p-3 bg-gray-50 rounded-lg border border-gray-200">
+                    <div className="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center flex-shrink-0">
+                      <span className="text-sm font-bold text-orange-600">{step.level}</span>
+                    </div>
+                    <div className="flex-1">
+                      <p className="font-medium text-gray-900">{step.label}</p>
+                      <p className="text-sm text-gray-500">
+                        {ROLE_SLUG_LABELS[step.approver_role] ?? step.approver_role}
+                        {' · '}Timeout: {step.timeout_days} day{step.timeout_days !== 1 ? 's' : ''}
+                        {step.escalation_role && ` · Escalates to: ${ROLE_SLUG_LABELS[step.escalation_role] ?? step.escalation_role}`}
+                      </p>
+                    </div>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
-        </Card>
+            )}
+          </Card>
+
+          <Card className="p-6">
+            <h3 className="font-semibold text-gray-900 mb-4">Notification Recipients</h3>
+            <div className="space-y-5">
+              <div>
+                <div className="flex items-center gap-2 mb-2">
+                  <Bell className="w-4 h-4 text-blue-600" />
+                  <p className="text-sm font-medium text-gray-700">On Request Submission</p>
+                </div>
+                {travelWorkflowConfig.notify_on_submit.length === 0 ? (
+                  <p className="text-xs text-gray-400 ml-6">No recipients configured</p>
+                ) : (
+                  <div className="flex flex-wrap gap-2 ml-6">
+                    {travelWorkflowConfig.notify_on_submit.map(slug => (
+                      <span key={slug} className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                        {ROLE_SLUG_LABELS[slug] ?? slug}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+              <div>
+                <div className="flex items-center gap-2 mb-2">
+                  <Bell className="w-4 h-4 text-green-600" />
+                  <p className="text-sm font-medium text-gray-700">On Decision (CC)</p>
+                </div>
+                {travelWorkflowConfig.notify_on_decision.length === 0 ? (
+                  <p className="text-xs text-gray-400 ml-6">Only the requester is notified</p>
+                ) : (
+                  <div className="flex flex-wrap gap-2 ml-6">
+                    {travelWorkflowConfig.notify_on_decision.map(slug => (
+                      <span key={slug} className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                        {ROLE_SLUG_LABELS[slug] ?? slug}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          </Card>
+        </div>
       </div>
-    </div>
-  )
+    )
+  }
 
   return (
     <div className="space-y-6">

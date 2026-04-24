@@ -1,12 +1,14 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useMemo } from 'react'
 import { 
   BarChart3, TrendingUp, DollarSign, MapPin, Calendar,
   Users, Plane, Hotel, Car, Clock, Filter, Download,
-  Eye, FileText, PieChart, Activity, Globe
+  Eye, FileText, PieChart, Activity, Globe, CheckCircle, XCircle
 } from 'lucide-react'
-import { Card, Button, Badge, Input } from '@/components/ui'
+import { Card, Button, Badge } from '@/components/ui'
+import { useTravelRequests } from '@/hooks/useTravel'
+import { useDepartments } from '@/hooks'
 
 interface TravelAnalytic {
   period: string
@@ -77,6 +79,74 @@ interface CostAnalysis {
 const TravelAnalyticsPage = () => {
   const [activeTab, setActiveTab] = useState<'overview' | 'spending' | 'trends' | 'compliance'>('overview')
   const [selectedPeriod, setSelectedPeriod] = useState('ytd')
+
+  // ── Live data ──────────────────────────────────────────────────────────────
+  const { data: allRequests = [], isLoading: requestsLoading } = useTravelRequests()
+  const { data: departments = [] } = useDepartments()
+
+  const liveStats = useMemo(() => {
+    const approved   = allRequests.filter(r => r.status === 'approved')
+    const pending    = allRequests.filter(r => r.status === 'submitted' || r.status === 'pending_approval')
+    const rejected   = allRequests.filter(r => r.status === 'rejected')
+    const draft      = allRequests.filter(r => r.status === 'draft')
+    const totalCost  = approved.reduce((s, r) => s + (r.estimated_cost ?? 0), 0)
+    const avgCost    = approved.length > 0 ? totalCost / approved.length : 0
+
+    // Top destinations (approved only)
+    const destMap: Record<string, { trips: number; cost: number }> = {}
+    for (const r of approved) {
+      const dest = r.destination ?? 'Unknown'
+      if (!destMap[dest]) destMap[dest] = { trips: 0, cost: 0 }
+      destMap[dest].trips++
+      destMap[dest].cost += r.estimated_cost ?? 0
+    }
+    const topDestinations = Object.entries(destMap)
+      .sort((a, b) => b[1].trips - a[1].trips)
+      .slice(0, 5)
+      .map(([destination, v]) => ({ destination, ...v }))
+
+    // Monthly trend
+    const monthMap: Record<string, { trips: number; cost: number }> = {}
+    for (const r of allRequests) {
+      const dateStr = r.start_date ?? (r as any).created_at
+      if (!dateStr) continue
+      const d = new Date(dateStr)
+      if (isNaN(d.getTime())) continue
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+      if (!monthMap[key]) monthMap[key] = { trips: 0, cost: 0 }
+      monthMap[key].trips++
+      monthMap[key].cost += r.estimated_cost ?? 0
+    }
+    const monthlyTrend = Object.entries(monthMap)
+      .sort((a, b) => a[0].localeCompare(b[0]))
+      .slice(-6)
+      .map(([key, v]) => {
+        const [yr, mo] = key.split('-')
+        const label = new Date(Number(yr), Number(mo) - 1).toLocaleString('default', { month: 'short', year: '2-digit' })
+        return { label, ...v }
+      })
+    const maxMonthCost = Math.max(...monthlyTrend.map(m => m.cost), 1)
+
+    // Department spend
+    const deptMap: Record<string, { trips: number; cost: number; name: string }> = {}
+    for (const r of allRequests) {
+      const deptId = r.employee?.department_id
+      if (!deptId) continue
+      const deptName = departments.find(d => d.id === deptId)?.name ?? 'Unknown'
+      if (!deptMap[deptId]) deptMap[deptId] = { trips: 0, cost: 0, name: deptName }
+      deptMap[deptId].trips++
+      deptMap[deptId].cost += r.estimated_cost ?? 0
+    }
+    const departmentStats = Object.values(deptMap).sort((a, b) => b.cost - a.cost)
+
+    return {
+      total: allRequests.length,
+      approvedCount: approved.length, pendingCount: pending.length,
+      rejectedCount: rejected.length, draftCount: draft.length,
+      totalCost, avgCost, topDestinations, monthlyTrend, maxMonthCost, departmentStats,
+    }
+  }, [allRequests, departments])
+  // ──────────────────────────────────────────────────────────────
 
   const travelAnalytics: TravelAnalytic = {
     period: 'Year to Date 2024',
@@ -188,28 +258,24 @@ const TravelAnalyticsPage = () => {
 
   const renderOverview = () => (
     <div className="space-y-6">
-      {/* Key Metrics */}
+      {/* KPI cards — live data */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <Card className="p-6 text-center">
           <div className="p-4 bg-blue-100 rounded-lg inline-block mb-4">
             <DollarSign className="w-8 h-8 text-blue-600" />
           </div>
-          <h4 className="font-semibold text-gray-900 mb-2">Total Travel Spend</h4>
-          <p className="text-2xl font-bold text-blue-600">
-            ${travelAnalytics.totalSpend.toLocaleString()}
-          </p>
-          <p className="text-sm text-gray-500">{travelAnalytics.period}</p>
+          <h4 className="font-semibold text-gray-900 mb-2">Total Approved Budget</h4>
+          <p className="text-2xl font-bold text-blue-600">₱{liveStats.totalCost.toLocaleString()}</p>
+          <p className="text-sm text-gray-500">{liveStats.approvedCount} approved trips</p>
         </Card>
 
         <Card className="p-6 text-center">
           <div className="p-4 bg-green-100 rounded-lg inline-block mb-4">
             <Plane className="w-8 h-8 text-green-600" />
           </div>
-          <h4 className="font-semibold text-gray-900 mb-2">Total Trips</h4>
-          <p className="text-2xl font-bold text-green-600">
-            {travelAnalytics.totalTrips.toLocaleString()}
-          </p>
-          <p className="text-sm text-gray-500">Business trips</p>
+          <h4 className="font-semibold text-gray-900 mb-2">Total Requests</h4>
+          <p className="text-2xl font-bold text-green-600">{liveStats.total.toLocaleString()}</p>
+          <p className="text-sm text-gray-500">{liveStats.pendingCount} pending approval</p>
         </Card>
 
         <Card className="p-6 text-center">
@@ -217,100 +283,110 @@ const TravelAnalyticsPage = () => {
             <TrendingUp className="w-8 h-8 text-orange-600" />
           </div>
           <h4 className="font-semibold text-gray-900 mb-2">Avg Trip Cost</h4>
-          <p className="text-2xl font-bold text-orange-600">
-            ${travelAnalytics.averageTripCost.toLocaleString()}
-          </p>
-          <p className="text-sm text-gray-500">Per business trip</p>
+          <p className="text-2xl font-bold text-orange-600">₱{Math.round(liveStats.avgCost).toLocaleString()}</p>
+          <p className="text-sm text-gray-500">Per approved trip</p>
         </Card>
 
         <Card className="p-6 text-center">
-          <div className="p-4 bg-purple-100 rounded-lg inline-block mb-4">
-            <Activity className="w-8 h-8 text-purple-600" />
+          <div className="p-4 bg-red-100 rounded-lg inline-block mb-4">
+            <XCircle className="w-8 h-8 text-red-600" />
           </div>
-          <h4 className="font-semibold text-gray-900 mb-2">Policy Compliance</h4>
-          <p className="text-2xl font-bold text-purple-600">
-            {travelAnalytics.complianceMetrics.complianceRate}%
-          </p>
-          <p className="text-sm text-gray-500">Overall compliance</p>
+          <h4 className="font-semibold text-gray-900 mb-2">Rejected</h4>
+          <p className="text-2xl font-bold text-red-600">{liveStats.rejectedCount}</p>
+          <p className="text-sm text-gray-500">{liveStats.draftCount} still in draft</p>
         </Card>
       </div>
 
-      {/* Top Destinations */}
+      {/* Status breakdown + Top destinations */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card className="p-6">
-          <h3 className="font-semibold text-gray-900 mb-4">Top Destinations</h3>
+          <h3 className="font-semibold text-gray-900 mb-4">Request Status Breakdown</h3>
           <div className="space-y-3">
-            {travelAnalytics.topDestinations.map((dest, index) => (
-              <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                <div className="flex items-center gap-3">
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-bold ${
-                    index === 0 ? 'bg-yellow-500' : 
-                    index === 1 ? 'bg-gray-400' : 
-                    index === 2 ? 'bg-orange-400' : 'bg-blue-500'
-                  }`}>
-                    {index + 1}
+            {[
+              { label: 'Approved',         value: liveStats.approvedCount, color: 'bg-green-500' },
+              { label: 'Pending Approval', value: liveStats.pendingCount,  color: 'bg-yellow-500' },
+              { label: 'Rejected',         value: liveStats.rejectedCount, color: 'bg-red-500'    },
+              { label: 'Draft',            value: liveStats.draftCount,    color: 'bg-gray-400'   },
+            ].map(({ label, value, color }) => {
+              const pct = liveStats.total > 0 ? (value / liveStats.total) * 100 : 0
+              return (
+                <div key={label} className="space-y-1">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-700">{label}</span>
+                    <span className="font-medium">{value} ({pct.toFixed(0)}%)</span>
                   </div>
-                  <div>
-                    <p className="font-medium text-gray-900">{dest.city}</p>
-                    <p className="text-sm text-gray-600">{dest.country}</p>
+                  <div className="w-full bg-gray-100 rounded-full h-2">
+                    <div className={`${color} h-2 rounded-full`} style={{ width: `${pct}%` }} />
                   </div>
                 </div>
-                <div className="text-right">
-                  <p className="font-bold text-gray-900">${dest.spend.toLocaleString()}</p>
-                  <p className="text-sm text-gray-600">{dest.trips} trips</p>
-                </div>
-              </div>
-            ))}
+              )
+            })}
           </div>
         </Card>
 
         <Card className="p-6">
-          <h3 className="font-semibold text-gray-900 mb-4">Spend by Category</h3>
+          <h3 className="font-semibold text-gray-900 mb-4">Top Destinations (Approved)</h3>
+          {liveStats.topDestinations.length === 0 ? (
+            <p className="text-gray-500 text-sm">No approved trips yet.</p>
+          ) : (
+            <div className="space-y-3">
+              {liveStats.topDestinations.map((dest, index) => (
+                <div key={dest.destination} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0 ${
+                    index === 0 ? 'bg-yellow-500' : index === 1 ? 'bg-gray-400' : index === 2 ? 'bg-orange-400' : 'bg-blue-400'
+                  }`}>{index + 1}</div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-gray-900 truncate">{dest.destination}</p>
+                    <p className="text-xs text-gray-500">{dest.trips} trip{dest.trips !== 1 ? 's' : ''}</p>
+                  </div>
+                  <p className="font-bold text-gray-900 flex-shrink-0">₱{dest.cost.toLocaleString()}</p>
+                </div>
+              ))}
+            </div>
+          )}
+        </Card>
+      </div>
+
+      {/* Monthly trend — live */}
+      <Card className="p-6">
+        <h3 className="font-semibold text-gray-900 mb-4">Monthly Travel Trend (last 6 months)</h3>
+        {liveStats.monthlyTrend.length === 0 ? (
+          <p className="text-gray-500 text-sm">No data available yet.</p>
+        ) : (
+          <div className="flex items-end gap-4" style={{ height: '140px' }}>
+            {liveStats.monthlyTrend.map(month => {
+              const barPct = liveStats.maxMonthCost > 0
+                ? Math.max((month.cost / liveStats.maxMonthCost) * 100, 4) : 4
+              return (
+                <div key={month.label} className="flex flex-col items-center gap-1 flex-1">
+                  <p className="text-xs text-gray-500">₱{(month.cost / 1000).toFixed(0)}k</p>
+                  <div className="w-full bg-blue-500 rounded-t-md" style={{ height: `${barPct}px` }} />
+                  <p className="text-xs font-medium text-gray-700">{month.label}</p>
+                  <p className="text-xs text-gray-400">{month.trips} trips</p>
+                </div>
+              )
+            })}
+          </div>
+        )}
+      </Card>
+
+      {/* Department breakdown — live */}
+      {liveStats.departmentStats.length > 0 && (
+        <Card className="p-6">
+          <h3 className="font-semibold text-gray-900 mb-4">Travel by Department</h3>
           <div className="space-y-3">
-            {travelAnalytics.categoryBreakdown.map((category, index) => (
-              <div key={index} className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="font-medium text-gray-900">{category.category}</span>
-                  <span className="text-sm text-gray-600">{category.percentage}%</span>
+            {liveStats.departmentStats.map(dept => (
+              <div key={dept.name} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
+                <div>
+                  <p className="font-medium text-gray-900">{dept.name}</p>
+                  <p className="text-sm text-gray-500">{dept.trips} request{dept.trips !== 1 ? 's' : ''}</p>
                 </div>
-                <div className="w-full bg-gray-200 rounded-full h-2">
-                  <div 
-                    className="bg-blue-600 h-2 rounded-full" 
-                    style={{ width: `${category.percentage}%` }}
-                  ></div>
-                </div>
-                <div className="flex items-center justify-between text-sm text-gray-600">
-                  <span>${category.amount.toLocaleString()}</span>
-                  <span>{category.trips} bookings</span>
-                </div>
+                <p className="font-bold text-gray-900">₱{dept.cost.toLocaleString()}</p>
               </div>
             ))}
           </div>
         </Card>
-      </div>
-
-      {/* Monthly Trend */}
-      <Card className="p-6">
-        <h3 className="font-semibold text-gray-900 mb-4">Monthly Travel Trends</h3>
-        <div className="grid grid-cols-6 gap-4">
-          {travelAnalytics.monthlyTrend.map((month, index) => (
-            <div key={index} className="text-center">
-              <div className="bg-blue-100 rounded-lg p-4 mb-2">
-                <div 
-                  className="bg-blue-600 rounded-full mx-auto"
-                  style={{ 
-                    height: `${(month.spend / 300000) * 80 + 20}px`,
-                    width: '8px'
-                  }}
-                ></div>
-              </div>
-              <p className="text-sm font-medium text-gray-900">{month.month}</p>
-              <p className="text-xs text-gray-600">${(month.spend / 1000)}k</p>
-              <p className="text-xs text-gray-500">{month.trips} trips</p>
-            </div>
-          ))}
-        </div>
-      </Card>
+      )}
     </div>
   )
 

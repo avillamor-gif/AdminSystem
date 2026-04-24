@@ -1,13 +1,15 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useMemo } from 'react'
 import { 
   Receipt, DollarSign, CreditCard, FileText, Plus, Edit,
   Search, Filter, Download, Calendar, Tag, Building,
   CheckCircle, XCircle, Clock, AlertTriangle, Eye,
-  Paperclip, User, MapPin
+  Paperclip, User, MapPin, Plane
 } from 'lucide-react'
 import { Card, Button, Badge, Input } from '@/components/ui'
+import { useTravelRequests } from '@/hooks/useTravel'
+import { formatDate } from '@/lib/utils'
 
 interface ExpenseEntry {
   id: string
@@ -65,6 +67,29 @@ const ExpenseManagementPage = () => {
   const [searchQuery, setSearchQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState('')
   const [categoryFilter, setCategoryFilter] = useState('')
+
+  // ── Live data ──────────────────────────────────────────────────────────────
+  const { data: allTravelRequests = [], isLoading: travelLoading } = useTravelRequests()
+
+  const liveStats = useMemo(() => {
+    const approved = allTravelRequests.filter(r => r.status === 'approved')
+    const pending  = allTravelRequests.filter(r => r.status === 'submitted' || r.status === 'pending_approval')
+    const totalBudget = approved.reduce((s, r) => s + (r.estimated_cost ?? 0), 0)
+    return { totalBudget, approvedCount: approved.length, pendingCount: pending.length, total: allTravelRequests.length }
+  }, [allTravelRequests])
+
+  const filteredLiveRequests = useMemo(() => {
+    return allTravelRequests.filter(r => {
+      const matchesSearch = !searchQuery ||
+        r.destination?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        r.employee?.first_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        r.employee?.last_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        r.request_number?.toLowerCase().includes(searchQuery.toLowerCase())
+      const matchesStatus = !statusFilter || r.status === statusFilter
+      return matchesSearch && matchesStatus
+    })
+  }, [allTravelRequests, searchQuery, statusFilter])
+  // ──────────────────────────────────────────────────────────────────────────
 
   const expenseEntries: ExpenseEntry[] = [
     {
@@ -206,6 +231,26 @@ const ExpenseManagementPage = () => {
 
   const renderExpenses = () => (
     <div className="space-y-4">
+      {/* Stats row */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <Card className="p-4 text-center">
+          <p className="text-xl font-bold text-blue-600">₱{liveStats.totalBudget.toLocaleString()}</p>
+          <p className="text-xs text-gray-500 mt-1">Approved Budget</p>
+        </Card>
+        <Card className="p-4 text-center">
+          <p className="text-xl font-bold text-green-600">{liveStats.approvedCount}</p>
+          <p className="text-xs text-gray-500 mt-1">Approved Trips</p>
+        </Card>
+        <Card className="p-4 text-center">
+          <p className="text-xl font-bold text-yellow-600">{liveStats.pendingCount}</p>
+          <p className="text-xs text-gray-500 mt-1">Pending Approval</p>
+        </Card>
+        <Card className="p-4 text-center">
+          <p className="text-xl font-bold text-purple-600">{liveStats.total}</p>
+          <p className="text-xs text-gray-500 mt-1">Total Requests</p>
+        </Card>
+      </div>
+
       {/* Search and Filters */}
       <Card className="p-4">
         <div className="flex items-center gap-4 flex-wrap">
@@ -213,7 +258,7 @@ const ExpenseManagementPage = () => {
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
               <Input
-                placeholder="Search by employee, merchant, or description..."
+                placeholder="Search by employee, destination, or request number..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-10"
@@ -228,191 +273,105 @@ const ExpenseManagementPage = () => {
             <option value="">All Status</option>
             <option value="draft">Draft</option>
             <option value="submitted">Submitted</option>
-            <option value="under_review">Under Review</option>
+            <option value="pending_approval">Pending Approval</option>
             <option value="approved">Approved</option>
             <option value="rejected">Rejected</option>
+            <option value="cancelled">Cancelled</option>
           </select>
-          <select
-            value={categoryFilter}
-            onChange={(e) => setCategoryFilter(e.target.value)}
-            className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange focus:border-transparent"
-          >
-            <option value="">All Categories</option>
-            <option value="meals">Meals</option>
-            <option value="accommodation">Accommodation</option>
-            <option value="transport">Transport</option>
-            <option value="entertainment">Entertainment</option>
-            <option value="communication">Communication</option>
-            <option value="other">Other</option>
-          </select>
-          <Button variant="outline">
-            <Filter className="w-4 h-4 mr-2" />
-            More Filters
-          </Button>
         </div>
       </Card>
 
-      {/* Expense Entries */}
-      {expenseEntries.map((expense) => (
-        <Card key={expense.id} className="p-6">
-          <div className="flex items-start justify-between mb-4">
-            <div className="flex items-center gap-4">
-              <div className={`p-3 rounded-lg ${getCategoryColor(expense.category)}`}>
-                <span className="text-lg">{getCategoryIcon(expense.category)}</span>
-              </div>
-              <div>
-                <div className="flex items-center gap-2 mb-1">
-                  <h4 className="font-semibold text-gray-900">{expense.expenseNumber}</h4>
-                  <Badge variant={getStatusColor(expense.status)} className="text-xs">
-                    {expense.status.replace('_', ' ').toUpperCase()}
-                  </Badge>
-                  {expense.violatesPolicy && (
-                    <Badge variant="danger" className="text-xs">
-                      <AlertTriangle className="w-3 h-3 mr-1" />
-                      POLICY VIOLATION
-                    </Badge>
-                  )}
-                  {expense.billable && (
-                    <Badge variant="info" className="text-xs">
-                      BILLABLE
-                    </Badge>
-                  )}
-                </div>
-                <p className="text-sm text-gray-600">{expense.employeeName} • {expense.department}</p>
-                <div className="flex items-center gap-4 mt-1 text-sm text-gray-500">
-                  <span className="flex items-center gap-1">
-                    <Calendar className="w-3 h-3" />
-                    {new Date(expense.date).toLocaleDateString()}
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <Building className="w-3 h-3" />
-                    {expense.merchant}
-                  </span>
-                  {expense.tripDestination && (
-                    <span className="flex items-center gap-1">
-                      <MapPin className="w-3 h-3" />
-                      {expense.tripDestination}
-                    </span>
-                  )}
-                </div>
-              </div>
-            </div>
-            <div className="text-right">
-              <p className="text-lg font-bold text-gray-900">
-                {expense.currency} {expense.amount.toFixed(2)}
-              </p>
-              {expense.localAmount && expense.currency !== 'USD' && (
-                <p className="text-xs text-gray-500">
-                  ~${expense.localAmount.toFixed(2)} USD
-                </p>
-              )}
-              <div className="flex items-center gap-1 mt-1 text-xs">
-                {expense.receiptAttached && (
-                  <Badge variant="success" className="text-xs">
-                    <Paperclip className="w-3 h-3 mr-1" />
-                    Receipt
-                  </Badge>
-                )}
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 mb-4">
-            <p className="text-sm text-gray-700">
-              <strong>{expense.category.toUpperCase()}:</strong> {expense.description}
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4 text-sm">
-            <div>
-              <p className="text-gray-500">Category</p>
-              <p className="font-medium capitalize">{expense.category}</p>
-              {expense.subcategory && (
-                <p className="text-xs text-gray-500">{expense.subcategory}</p>
-              )}
-            </div>
-            <div>
-              <p className="text-gray-500">Payment Method</p>
-              <p className="font-medium">{expense.paymentMethod.replace('_', ' ')}</p>
-            </div>
-            {expense.projectCode && (
-              <div>
-                <p className="text-gray-500">Project</p>
-                <p className="font-medium font-mono text-xs">{expense.projectCode}</p>
-              </div>
-            )}
-            {expense.taxAmount && (
-              <div>
-                <p className="text-gray-500">Tax</p>
-                <p className="font-medium">${expense.taxAmount.toFixed(2)} ({expense.taxRate}%)</p>
-              </div>
-            )}
-          </div>
-
-          {expense.violatesPolicy && expense.policyViolationReason && (
-            <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-4">
-              <div className="flex items-center gap-2">
-                <AlertTriangle className="w-4 h-4 text-red-600" />
-                <span className="text-sm text-red-800">
-                  <strong>Policy Violation:</strong> {expense.policyViolationReason}
-                </span>
-              </div>
-            </div>
-          )}
-
-          {expense.status === 'approved' && expense.approvedBy && (
-            <div className="bg-green-50 border border-green-200 rounded-lg p-3 mb-4">
-              <div className="flex items-center gap-2">
-                <CheckCircle className="w-4 h-4 text-green-600" />
-                <span className="text-sm text-green-800">
-                  Approved by <strong>{expense.approvedBy}</strong> on {new Date(expense.approvedDate!).toLocaleDateString()}
-                </span>
-              </div>
-            </div>
-          )}
-
-          {expense.tags.length > 0 && (
-            <div className="mb-4">
-              <p className="text-sm text-gray-500 mb-2">Tags:</p>
-              <div className="flex flex-wrap gap-2">
-                {expense.tags.map((tag, index) => (
-                  <Badge key={index} variant="outline" className="text-xs">
-                    <Tag className="w-3 h-3 mr-1" />
-                    {tag}
-                  </Badge>
-                ))}
-              </div>
-            </div>
-          )}
-
-          <div className="flex items-center gap-2 pt-4 border-t border-gray-200">
-            <Button size="sm" variant="outline">
-              <Eye className="w-3 h-3 mr-1" />
-              View Details
-            </Button>
-            <Button size="sm" variant="outline">
-              <Edit className="w-3 h-3 mr-1" />
-              Edit
-            </Button>
-            {expense.status === 'submitted' && (
-              <>
-                <Button size="sm" variant="primary">
-                  <CheckCircle className="w-3 h-3 mr-1" />
-                  Approve
-                </Button>
-                <Button size="sm" variant="danger">
-                  <XCircle className="w-3 h-3 mr-1" />
-                  Reject
-                </Button>
-              </>
-            )}
-            <Button size="sm" variant="outline">
-              <Download className="w-3 h-3 mr-1" />
-              Receipt
-            </Button>
+      {/* Live travel requests as expense records */}
+      {travelLoading ? (
+        <Card className="p-12 text-center">
+          <div className="flex justify-center items-center gap-3">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-600"></div>
+            <span className="text-gray-600">Loading expense records...</span>
           </div>
         </Card>
-      ))}
+      ) : filteredLiveRequests.length === 0 ? (
+        <Card className="p-12 text-center text-gray-500">No expense records found</Card>
+      ) : (
+        filteredLiveRequests.map(request => (
+          <Card key={request.id} className="p-6">
+            <div className="flex items-start justify-between mb-3">
+              <div className="flex items-center gap-4">
+                <div className="p-3 bg-blue-100 rounded-lg">
+                  <Plane className="w-5 h-5 text-blue-600" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <h4 className="font-semibold text-gray-900">{request.request_number}</h4>
+                    <Badge variant={getStatusColor(request.status ?? '')} className="text-xs">
+                      {request.status?.replace(/_/g, ' ').toUpperCase()}
+                    </Badge>
+                  </div>
+                  <p className="text-sm text-gray-600">
+                    {request.employee?.first_name} {request.employee?.last_name}
+                  </p>
+                  <div className="flex items-center gap-4 mt-1 text-sm text-gray-500">
+                    <span className="flex items-center gap-1">
+                      <MapPin className="w-3 h-3" />{request.destination}
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <Calendar className="w-3 h-3" />
+                      {request.start_date ? formatDate(request.start_date) : '—'}
+                      {' → '}
+                      {request.end_date ? formatDate(request.end_date) : '—'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+              <div className="text-right">
+                <p className="text-lg font-bold text-gray-900">₱{(request.estimated_cost ?? 0).toLocaleString()}</p>
+                <p className="text-xs text-gray-500">Estimated Cost</p>
+              </div>
+            </div>
+
+            {request.purpose && (
+              <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 mb-3">
+                <p className="text-sm text-gray-700"><strong>Purpose:</strong> {request.purpose}</p>
+              </div>
+            )}
+
+            {request.status === 'approved' && request.approved_date && (
+              <div className="bg-green-50 border border-green-200 rounded-lg p-3 text-sm text-green-800 flex items-center gap-2 mb-3">
+                <CheckCircle className="w-4 h-4 text-green-600 flex-shrink-0" />
+                Approved on {formatDate(request.approved_date)}
+              </div>
+            )}
+
+            {request.status === 'rejected' && (request as any).rejection_reason && (
+              <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-sm text-red-800 flex items-center gap-2 mb-3">
+                <XCircle className="w-4 h-4 text-red-600 flex-shrink-0" />
+                <strong>Rejected:</strong>&nbsp;{(request as any).rejection_reason}
+              </div>
+            )}
+
+            <div className="flex items-center gap-2 pt-3 border-t border-gray-200">
+              <Button size="sm" variant="outline">
+                <Eye className="w-3 h-3 mr-1" />View Details
+              </Button>
+              <Button size="sm" variant="outline">
+                <Download className="w-3 h-3 mr-1" />Export
+              </Button>
+            </div>
+          </Card>
+        ))
+      )}
+
+      <Card className="p-4 bg-blue-50 border-blue-200">
+        <div className="flex items-start gap-3">
+          <FileText className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
+          <div>
+            <p className="text-sm font-medium text-blue-800">Itemized Expense Tracking</p>
+            <p className="text-sm text-blue-700 mt-1">
+              Currently showing travel request budgets (estimated costs). Post-trip itemized expense
+              reporting with receipts and per-diem breakdown is planned for a future release.
+            </p>
+          </div>
+        </div>
+      </Card>
     </div>
   )
 
