@@ -237,6 +237,51 @@ export const travelService = {
 
     // Update workflow
     await workflowService.processApproval(id, 'travel', approverId, 'approved', comments)
+
+    // Google Workspace side-effects: Calendar event + Chat DM (fire-and-forget)
+    ;(async () => {
+      try {
+        const travelRecord2 = await this.getById(id)
+        const employeeEmail = (travelRecord2 as any)?.employee?.email
+        const firstName = (travelRecord2 as any)?.employee?.first_name ?? 'there'
+        const destination = travelRecord2?.destination ?? 'your destination'
+        const startDate = (travelRecord2 as any)?.departure_date ?? (travelRecord2 as any)?.start_date
+        const endDate = (travelRecord2 as any)?.return_date ?? (travelRecord2 as any)?.end_date
+
+        if (employeeEmail && startDate && endDate) {
+          // Create travel event on employee calendar
+          await fetch('/api/google/calendar', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              action: 'create',
+              userEmail: employeeEmail,
+              event: {
+                summary: `✈️ Business Travel — ${destination}`,
+                description: `Approved business travel to ${destination}.`,
+                start: startDate,
+                end: endDate,
+                allDay: true,
+              },
+            }),
+          })
+        }
+
+        if (employeeEmail) {
+          await fetch('/api/google/chat', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              action: 'sendDM',
+              userEmail: employeeEmail,
+              message: `✅ Hi ${firstName}, your travel request to *${destination}* has been *approved*! Safe travels! ✈️`,
+            }),
+          })
+        }
+      } catch (e) {
+        console.warn('[travel] Google Workspace side-effects error:', e)
+      }
+    })()
   },
 
   // Reject travel request
@@ -302,6 +347,29 @@ export const travelService = {
 
     // Update workflow
     await workflowService.processApproval(id, 'travel', approverId, 'rejected', reason)
+
+    // Google Workspace side-effect: Chat DM (fire-and-forget)
+    ;(async () => {
+      try {
+        const travelRecord3 = await this.getById(id)
+        const employeeEmail = (travelRecord3 as any)?.employee?.email
+        const firstName = (travelRecord3 as any)?.employee?.first_name ?? 'there'
+        const destination = travelRecord3?.destination ?? 'your destination'
+        if (employeeEmail) {
+          await fetch('/api/google/chat', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              action: 'sendDM',
+              userEmail: employeeEmail,
+              message: `❌ Hi ${firstName}, your travel request to *${destination}* has been *rejected*.\n\nReason: _${reason}_`,
+            }),
+          })
+        }
+      } catch (e) {
+        console.warn('[travel] Google Chat DM on reject error:', e)
+      }
+    })()
   },
 
   // Cancel travel request

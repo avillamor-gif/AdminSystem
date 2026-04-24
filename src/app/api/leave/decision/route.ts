@@ -227,6 +227,74 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: updateError.message }, { status: 500 })
       }
 
+      // ── Google Workspace side-effects ─────────────────────────────────────
+      // Fire-and-forget: don't block the response on Google API calls
+      ;(async () => {
+        try {
+          // Fetch employee email + name + leave dates
+          const { data: employeeRow } = await admin
+            .from('employees')
+            .select('email, first_name, last_name')
+            .eq('id', updated.employee_id)
+            .single()
+
+          // Also fetch the full leave request for dates + leave_type
+          const { data: lrFull } = await admin
+            .from('leave_requests')
+            .select('start_date, end_date, leave_type_id, reason')
+            .eq('id', leave_request_id)
+            .single()
+
+          const employeeEmail = employeeRow?.email
+          const employeeName = employeeRow
+            ? `${employeeRow.first_name} ${employeeRow.last_name}`
+            : 'Employee'
+
+          if (employeeEmail && lrFull) {
+            const origin = req.nextUrl.origin
+
+            if (finalStatus === 'approved') {
+              // Create OOO calendar event on the employee's primary calendar
+              fetch(`${origin}/api/google/calendar`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  action: 'create',
+                  userEmail: employeeEmail,
+                  event: {
+                    summary: `🌴 On Leave`,
+                    description: lrFull.reason
+                      ? `Leave reason: ${lrFull.reason}`
+                      : 'Approved leave request',
+                    start: lrFull.start_date,
+                    end: lrFull.end_date,
+                    allDay: true,
+                  },
+                }),
+              }).catch(e => console.warn('[leave/decision] Calendar create error:', e))
+            }
+
+            // Send Chat DM with the decision
+            const chatMsg = finalStatus === 'approved'
+              ? `✅ Hi ${employeeRow?.first_name ?? 'there'}, your leave request (${lrFull.start_date} – ${lrFull.end_date}) has been *approved*. Have a good break! 🎉`
+              : `❌ Hi ${employeeRow?.first_name ?? 'there'}, your leave request (${lrFull.start_date} – ${lrFull.end_date}) has been *rejected*${comments ? `.\n\nReason: _${comments}_` : '.'}`
+
+            fetch(`${origin}/api/google/chat`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                action: 'sendDM',
+                userEmail: employeeEmail,
+                message: chatMsg,
+              }),
+            }).catch(e => console.warn('[leave/decision] Chat DM error:', e))
+          }
+        } catch (e) {
+          console.warn('[leave/decision] Google Workspace side-effects error:', e)
+        }
+      })()
+      // ─────────────────────────────────────────────────────────────────────
+
       // Notify the employee of the final decision
       const notifTitle = finalStatus === 'approved' ? 'Leave Request Approved' : 'Leave Request Rejected'
       const notifMessage = finalStatus === 'approved'

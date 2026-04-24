@@ -101,6 +101,31 @@ export async function POST(request: Request) {
       }
     }
 
+    // Create Google Workspace account (fire-and-forget)
+    // Only attempt if the email belongs to the Workspace domain
+    const workspaceDomain = process.env.GOOGLE_WORKSPACE_DOMAIN
+    if (workspaceDomain && email.endsWith(`@${workspaceDomain}`)) {
+      ;(async () => {
+        try {
+          const baseUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'
+          await fetch(`${baseUrl}/api/google/admin`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              action: 'createUser',
+              firstName: employee.first_name,
+              lastName: employee.last_name,
+              email,
+              password,
+              changePasswordAtNextLogin: true,
+            }),
+          })
+        } catch (e) {
+          console.warn('[create-employee-auth] Google Workspace account creation failed:', e)
+        }
+      })()
+    }
+
     return NextResponse.json({
       message: `Employee auth account created successfully!`,
       details: {
