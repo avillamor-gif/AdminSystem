@@ -143,6 +143,18 @@ function LoginContent() {
         setShowForm(true)
       }
     })
+
+    // Auto-trigger Google OAuth if coming from the Gmail add-on
+    const provider = searchParams.get('provider')
+    if (provider === 'google') {
+      supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback?redirect=${encodeURIComponent(redirectTo)}`,
+          queryParams: { hd: 'iboninternational.org' },
+        },
+      })
+    }
   }, [searchParams])
 
   const {
@@ -206,16 +218,19 @@ function LoginContent() {
 
   async function signInWithGoogle() {
     try {
-      const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || window.location.origin
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
-        options: { redirectTo: `${siteUrl}/auth/callback` },
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback?redirect=${encodeURIComponent(redirectTo)}`,
+          queryParams: { hd: 'iboninternational.org' },
+        },
       })
       if (error) toast.error(error.message)
     } catch {
       toast.error('An error occurred with Google login')
     }
   }
+
 
   // Show biometric screen only when both email + password are cached and the form is hidden
   const showBiometricScreen = bioAvailable && bioReady && !!bioEmail && !showForm && bioEnabled
