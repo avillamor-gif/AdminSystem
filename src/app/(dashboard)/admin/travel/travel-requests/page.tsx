@@ -34,7 +34,6 @@ const TravelRequestsPage = () => {
   const [selectedRequest, setSelectedRequest] = useState<any>(null)
 
   const { data: travelRequests = [], isLoading } = useTravelRequests()
-  const { data: employees = [] } = useEmployees()
   const { data: currentEmployee } = useCurrentEmployee()
   const approveMutation = useApproveTravelRequest()
   const rejectMutation = useRejectTravelRequest()
