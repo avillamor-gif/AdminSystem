@@ -16,25 +16,9 @@
       "layoutProperties": {
         "primaryColor": "#1a56db",
         "secondaryColor": "#1e429f"
-      },
-      "homepageTrigger": {
-        "runFunction": "buildHomePage",
-        "enabled": true
       }
     },
     "gmail": {
-      "homepageTrigger": {
-        "runFunction": "buildHomePage",
-        "enabled": true
-      }
-    },
-    "drive": {
-      "homepageTrigger": {
-        "runFunction": "buildHomePage",
-        "enabled": true
-      }
-    },
-    "calendar": {
       "homepageTrigger": {
         "runFunction": "buildHomePage",
         "enabled": true
