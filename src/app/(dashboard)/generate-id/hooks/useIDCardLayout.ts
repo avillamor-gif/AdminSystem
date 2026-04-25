@@ -120,7 +120,13 @@ function loadLayout(key: string, defaults: CardElementLayout[]): CardElementLayo
   if (typeof window === 'undefined') return defaults
   try {
     const saved = localStorage.getItem(key)
-    if (saved) return JSON.parse(saved) as CardElementLayout[]
+    if (saved) {
+      const parsed = JSON.parse(saved) as CardElementLayout[]
+      // Merge: keep saved positions/styles, but add any new default elements missing from saved layout
+      const savedIds = new Set(parsed.map(el => el.id))
+      const missing = defaults.filter(el => !savedIds.has(el.id))
+      return [...parsed, ...missing]
+    }
   } catch {}
   return defaults
 }
