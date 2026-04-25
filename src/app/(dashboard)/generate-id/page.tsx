@@ -1,18 +1,21 @@
 'use client'
 
 import { useState, useRef } from 'react'
-import { Printer } from 'lucide-react'
+import { Printer, Pencil, Eye } from 'lucide-react'
 import { Card, Button, Input, Badge, Avatar } from '@/components/ui'
 import { useEmployees } from '@/hooks/useEmployees'
 import { useEmergencyContacts } from '@/hooks/useEmergencyContacts'
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute'
 import type { EmployeeWithRelations } from '@/services/employee.service'
 import { IDCard } from './components/IDCard'
+import { IDCardEditor } from './components/IDCardEditor'
+import { useIDCardLayout } from './hooks/useIDCardLayout'
 
 function GenerateIDContent() {
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedEmployeeId, setSelectedEmployeeId] = useState<string | null>(null)
   const [cardSide, setCardSide] = useState<'front' | 'back'>('front')
+  const [editMode, setEditMode] = useState(false)
   const frontRef = useRef<HTMLDivElement>(null)
   const backRef  = useRef<HTMLDivElement>(null)
 
@@ -21,6 +24,9 @@ function GenerateIDContent() {
   const selectedEmployeeData = typedEmployees.find(e => e.id === selectedEmployeeId) ?? null
 
   const { data: emergencyContacts = [] } = useEmergencyContacts(selectedEmployeeId ?? '')
+  const primaryContact = emergencyContacts[0] ?? null
+
+  const { frontLayout, backLayout, updateElement, saveLayout, resetLayout } = useIDCardLayout()
   const primaryContact = emergencyContacts[0] ?? null
 
   const stats = {
@@ -47,6 +53,12 @@ function GenerateIDContent() {
       pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, 0, 54, 85.6)
     }
     pdf.save(`ID_${selectedEmployeeData.employee_id}_${selectedEmployeeData.last_name}.pdf`)
+  }
+
+  const employeeWithContact = {
+    ...selectedEmployeeData as any,
+    emergency_contact_name: primaryContact?.name,
+    emergency_contact_phone: primaryContact?.mobile_phone,
   }
 
   return (
@@ -159,38 +171,92 @@ function GenerateIDContent() {
               <Card>
                 <div className="p-4 border-b border-gray-200 flex items-center justify-between">
                   <h3 className="font-semibold text-gray-900">ID Card Preview</h3>
-                  <div className="flex gap-2">
+                  <div className="flex gap-2 items-center">
+                    {!editMode && (
+                      <>
+                        <button
+                          onClick={() => setCardSide('front')}
+                          className={`px-4 py-1.5 text-sm rounded-lg font-medium transition-colors ${
+                            cardSide === 'front'
+                              ? 'bg-orange text-white'
+                              : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                          }`}
+                        >
+                          Front
+                        </button>
+                        <button
+                          onClick={() => setCardSide('back')}
+                          className={`px-4 py-1.5 text-sm rounded-lg font-medium transition-colors ${
+                            cardSide === 'back'
+                              ? 'bg-orange text-white'
+                              : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                          }`}
+                        >
+                          Back
+                        </button>
+                      </>
+                    )}
                     <button
-                      onClick={() => setCardSide('front')}
-                      className={`px-4 py-1.5 text-sm rounded-lg font-medium transition-colors ${
-                        cardSide === 'front'
+                      onClick={() => setEditMode(m => !m)}
+                      className={`flex items-center gap-1.5 px-4 py-1.5 text-sm rounded-lg font-medium transition-colors ${
+                        editMode
                           ? 'bg-orange text-white'
                           : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                       }`}
                     >
-                      Front
-                    </button>
-                    <button
-                      onClick={() => setCardSide('back')}
-                      className={`px-4 py-1.5 text-sm rounded-lg font-medium transition-colors ${
-                        cardSide === 'back'
-                          ? 'bg-orange text-white'
-                          : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                      }`}
-                    >
-                      Back
+                      {editMode ? <Eye className="w-3.5 h-3.5" /> : <Pencil className="w-3.5 h-3.5" />}
+                      {editMode ? 'Preview' : 'Edit Design'}
                     </button>
                   </div>
                 </div>
-                <div className="p-8 flex justify-center">
-                  {/* Hidden refs for PDF capture */}
-                  <div style={{ position: 'absolute', left: -9999, top: -9999 }}>
-                    <IDCard ref={frontRef} employee={selectedEmployeeData as any} side="front" />
-                    <IDCard ref={backRef}  employee={{ ...selectedEmployeeData as any, emergency_contact_name: primaryContact?.name, emergency_contact_phone: primaryContact?.mobile_phone }} side="back" />
+
+                {editMode ? (
+                  /* ── Edit Mode ── */
+                  <div className="p-6 space-y-4">
+                    {/* Side tabs inside editor */}
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => setCardSide('front')}
+                        className={`px-4 py-1.5 text-sm rounded-lg font-medium transition-colors ${
+                          cardSide === 'front' ? 'bg-orange text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                        }`}
+                      >
+                        Front
+                      </button>
+                      <button
+                        onClick={() => setCardSide('back')}
+                        className={`px-4 py-1.5 text-sm rounded-lg font-medium transition-colors ${
+                          cardSide === 'back' ? 'bg-orange text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                        }`}
+                      >
+                        Back
+                      </button>
+                    </div>
+                    <IDCardEditor
+                      side={cardSide}
+                      layout={cardSide === 'front' ? frontLayout : backLayout}
+                      employee={employeeWithContact}
+                      onUpdateElement={(id, patch) => updateElement(cardSide, id, patch)}
+                      onSave={saveLayout}
+                      onReset={resetLayout}
+                    />
                   </div>
-                  {/* Visible preview */}
-                  <IDCard employee={{ ...selectedEmployeeData as any, emergency_contact_name: primaryContact?.name, emergency_contact_phone: primaryContact?.mobile_phone }} side={cardSide} />
-                </div>
+                ) : (
+                  /* ── Preview Mode ── */
+                  <div className="p-8 flex justify-center">
+                    {/* Hidden refs for PDF capture */}
+                    <div style={{ position: 'absolute', left: -9999, top: -9999 }}>
+                      <IDCard ref={frontRef} employee={employeeWithContact} side="front" layout={frontLayout} />
+                      <IDCard ref={backRef} employee={employeeWithContact} side="back" layout={backLayout} />
+                    </div>
+                    {/* Visible preview */}
+                    <IDCard
+                      employee={employeeWithContact}
+                      side={cardSide}
+                      layout={cardSide === 'front' ? frontLayout : backLayout}
+                    />
+                  </div>
+                )}
               </Card>
             </div>
           ) : (
