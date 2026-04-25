@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
-import { Printer, Pencil, Eye } from 'lucide-react'
+import { Download, Pencil, Eye } from 'lucide-react'
 import { Card, Button, Input, Badge, Avatar } from '@/components/ui'
 import { useEmployees } from '@/hooks/useEmployees'
 import { useEmergencyContacts } from '@/hooks/useEmergencyContacts'
@@ -52,32 +52,32 @@ function GenerateIDContent() {
   const handlePrint = async () => {
     if (!selectedEmployeeData) return
     const html2canvas = (await import('html2canvas')).default
-    const { jsPDF } = await import('jspdf')
 
-    // Credit card: 85.6 × 54 mm (ISO/IEC 7810 ID-1), no bleed
-    // scale 5 → ~700 DPI at credit-card size — sharp enough for professional printing
-    const SCALE = 5
     const html2canvasOpts = {
-      scale: SCALE,
+      scale: 5,
       useCORS: true,
       allowTaint: false,
       backgroundColor: '#ffffff',
       logging: false,
     }
 
-    const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: [54, 85.6] })
+    const baseName = `ID_${selectedEmployeeData.employee_id}_${selectedEmployeeData.last_name}`
+
+    const download = (dataUrl: string, filename: string) => {
+      const a = document.createElement('a')
+      a.href = dataUrl
+      a.download = filename
+      a.click()
+    }
 
     if (frontRef.current) {
       const canvas = await html2canvas(frontRef.current, html2canvasOpts)
-      // JPEG at 98% quality — smaller file, no visible loss at this DPI
-      pdf.addImage(canvas.toDataURL('image/jpeg', 0.98), 'JPEG', 0, 0, 54, 85.6)
+      download(canvas.toDataURL('image/jpeg', 0.98), `${baseName}_front.jpg`)
     }
-    pdf.addPage([54, 85.6], 'portrait')
     if (backRef.current) {
       const canvas = await html2canvas(backRef.current, html2canvasOpts)
-      pdf.addImage(canvas.toDataURL('image/jpeg', 0.98), 'JPEG', 0, 0, 54, 85.6)
+      download(canvas.toDataURL('image/jpeg', 0.98), `${baseName}_back.jpg`)
     }
-    pdf.save(`ID_${selectedEmployeeData.employee_id}_${selectedEmployeeData.last_name}.pdf`)
   }
 
   const employeeWithContact = {
@@ -187,8 +187,8 @@ function GenerateIDContent() {
                     </div>
                   </div>
                   <Button onClick={handlePrint}>
-                    <Printer className="w-4 h-4 mr-2" />
-                    Print ID
+                    <Download className="w-4 h-4 mr-2" />
+                    Export ID
                   </Button>
                 </div>
               </Card>
@@ -290,7 +290,7 @@ function GenerateIDContent() {
             </div>
           ) : (
             <Card className="p-12 text-center">
-              <Printer className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+              <Download className="w-12 h-12 text-gray-400 mx-auto mb-4" />
               <h3 className="text-lg font-medium text-gray-900 mb-2">No employee selected</h3>
               <p className="text-gray-600">Select an employee from the list to preview their ID card</p>
             </Card>
