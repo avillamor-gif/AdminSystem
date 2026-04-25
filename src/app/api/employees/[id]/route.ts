@@ -13,6 +13,7 @@ const ALLOWED_FIELDS = [
   'work_phone', 'mobile_phone', 'home_phone', 'work_email', 'personal_email', 'state', 'zip_code',
   'contract_start_date', 'contract_end_date',
   'salary_structure_id',
+  'signature_url',
 ]
 
 export async function PATCH(

@@ -1,9 +1,9 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowLeft, Mail, Phone, MapPin, Calendar, Building2, Briefcase, User, Users, CreditCard, Shield, Award, FileText, Heart, Plane, Laptop, GraduationCap, Lock, Save, Paperclip, Upload, Download, Trash2, Edit, Eye, Camera, RotateCcw, Package } from 'lucide-react'
+import { ArrowLeft, Mail, Phone, MapPin, Calendar, Building2, Briefcase, User, Users, CreditCard, Shield, Award, FileText, Heart, Plane, Laptop, GraduationCap, Lock, Save, Paperclip, Upload, Download, Trash2, Edit, Eye, Camera, RotateCcw, Package, PenLine } from 'lucide-react'
 import { Card, Avatar, Badge, Button, Input, Select } from '@/components/ui'
 import { formatDate } from '@/lib/utils'
 import { useEmployeeByEmployeeId, useUpdateEmployee, useEmployees } from '@/hooks/useEmployees'
@@ -20,11 +20,12 @@ import { useAssets, useAssetAssignments, useAssignAsset, useReturnAsset, type As
 import { useCurrentEmployee } from '@/hooks/useEmployees'
 import { useImmigrationDocuments, useCreateImmigrationDocument, useUpdateImmigrationDocument, useDeleteImmigrationDocument, type ImmigrationDocument } from '@/hooks/useImmigration'
 import { EmergencyContactFormModal } from './EmergencyContactFormModal'
+import { SignatureTab } from './SignatureTab'
 import { uploadEmployeePhoto, deleteEmployeePhoto } from '@/lib/supabase/storage'
 import { logAction } from '@/services/auditLog.service'
 import { toast } from 'sonner'
 
-type TabKey = 'personal' | 'contact' | 'employment' | 'emergency' | 'dependents' | 'banking' | 'benefits' | 'immigration' | 'assets' | 'qualifications' | 'security'
+type TabKey = 'personal' | 'contact' | 'employment' | 'emergency' | 'dependents' | 'banking' | 'benefits' | 'immigration' | 'assets' | 'qualifications' | 'security' | 'signature'
 
 export function EmployeeDetailContent({
   backHref = '/employees',
@@ -452,6 +453,7 @@ export function EmployeeDetailContent({
     { key: 'assets' as TabKey, label: 'Assets & Equipment', icon: Laptop },
     { key: 'qualifications' as TabKey, label: 'Qualifications', icon: GraduationCap },
     { key: 'security' as TabKey, label: 'Security & Privacy', icon: Lock },
+    { key: 'signature' as TabKey, label: 'E-Signature', icon: PenLine },
   ]
 
   if (isLoading) {
@@ -2551,6 +2553,16 @@ export function EmployeeDetailContent({
         )
       }
       
+      case 'signature': {
+        return (
+          <SignatureTab
+            employee={employee}
+            readOnly={readOnly}
+            uploadAttachment={uploadEmployeeAttachment}
+          />
+        )
+      }
+
       default:
         return null
     }
