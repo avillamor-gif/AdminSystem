@@ -15,6 +15,7 @@ interface IDCardProps {
   side: 'front' | 'back'
   layout?: CardElementLayout[]
   bgImage?: string | null
+  overlayImage?: string | null
 }
 
 function getTextContent(id: string, employee: EmployeeWithRelations & { [key: string]: any }, customText?: string): string {
@@ -43,7 +44,7 @@ function getTextContent(id: string, employee: EmployeeWithRelations & { [key: st
 }
 
 export const IDCard = forwardRef<HTMLDivElement, IDCardProps>(
-  ({ employee, side, layout, bgImage }, ref) => {
+  ({ employee, side, layout, bgImage, overlayImage }, ref) => {
     const defaultLayout = side === 'front' ? DEFAULT_FRONT_LAYOUT : DEFAULT_BACK_LAYOUT
     const elements = layout ?? defaultLayout
     const defaultBgSrc = side === 'front' ? '/FrontID.png' : '/BackID.png'
@@ -104,6 +105,21 @@ export const IDCard = forwardRef<HTMLDivElement, IDCardProps>(
                     {(employee.first_name?.[0] || '').toUpperCase()}
                     {(employee.last_name?.[0] || '').toUpperCase()}
                   </div>
+                )}
+                {/* Overlay image rendered inside photo bounds, on top */}
+                {overlayImage && (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={overlayImage}
+                    alt=""
+                    style={{
+                      position: 'absolute', inset: 0,
+                      width: '100%', height: '100%',
+                      objectFit: 'cover',
+                      pointerEvents: 'none',
+                    }}
+                    draggable={false}
+                  />
                 )}
               </div>
             )

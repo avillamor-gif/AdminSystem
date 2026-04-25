@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { Printer, Pencil, Eye } from 'lucide-react'
 import { Card, Button, Input, Badge, Avatar } from '@/components/ui'
 import { useEmployees } from '@/hooks/useEmployees'
@@ -11,8 +11,7 @@ import { IDCard } from './components/IDCard'
 import { IDCardEditor } from './components/IDCardEditor'
 import { useEmployeeAttachments } from '@/hooks/useEmployeeAttachments'
 import { useIDCardLayout } from './hooks/useIDCardLayout'
-
-const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL ?? ''
+import { createClient } from '@/lib/supabase/client'
 
 function GenerateIDContent() {
   const [searchQuery, setSearchQuery] = useState('')
@@ -31,11 +30,17 @@ function GenerateIDContent() {
 
   const { data: attachments = [] } = useEmployeeAttachments(selectedEmployeeId ?? '')
   const signatureAttachment = attachments.find((a: any) => a.document_type === 'e-signature')
-  const signatureUrl = signatureAttachment
-    ? `${SUPABASE_URL}/storage/v1/object/public/attachments/${signatureAttachment.file_path}`
-    : null
 
-  const { frontLayout, backLayout, bgFront, bgBack, setCustomBg, updateElement, saveLayout, resetLayout } = useIDCardLayout()
+  // Generate a signed URL for the signature (bucket is private)
+  const [signatureUrl, setSignatureUrl] = useState<string | null>(null)
+  useEffect(() => {
+    if (!signatureAttachment?.file_path) { setSignatureUrl(null); return }
+    const supabase = createClient()
+    supabase.storage.from('attachments').createSignedUrl(signatureAttachment.file_path, 3600)
+      .then(({ data }: { data: { signedUrl: string } | null }) => setSignatureUrl(data?.signedUrl ?? null))
+  }, [signatureAttachment?.file_path])
+
+  const { frontLayout, backLayout, bgFront, bgBack, overlayFront, overlayBack, setCustomBg, setCustomOverlay, updateElement, saveLayout, resetLayout } = useIDCardLayout()
 
   const stats = {
     totalEmployees: employees.length,
@@ -250,6 +255,8 @@ function GenerateIDContent() {
                       onReset={resetLayout}
                       bgImage={cardSide === 'front' ? bgFront : bgBack}
                       onUploadBg={(dataUrl) => setCustomBg(cardSide, dataUrl)}
+                      overlayImage={cardSide === 'front' ? overlayFront : overlayBack}
+                      onUploadOverlay={(dataUrl) => setCustomOverlay(cardSide, dataUrl)}
                     />
                   </div>
                 ) : (
@@ -257,8 +264,8 @@ function GenerateIDContent() {
                   <div className="p-8 flex justify-center">
                     {/* Hidden refs for PDF capture */}
                     <div style={{ position: 'absolute', left: -9999, top: -9999 }}>
-                      <IDCard ref={frontRef} employee={employeeWithContact} side="front" layout={frontLayout} bgImage={bgFront} />
-                      <IDCard ref={backRef} employee={employeeWithContact} side="back" layout={backLayout} bgImage={bgBack} />
+                      <IDCard ref={frontRef} employee={employeeWithContact} side="front" layout={frontLayout} bgImage={bgFront} overlayImage={overlayFront} />
+                      <IDCard ref={backRef} employee={employeeWithContact} side="back" layout={backLayout} bgImage={bgBack} overlayImage={overlayBack} />
                     </div>
                     {/* Visible preview */}
                     <IDCard
@@ -266,6 +273,7 @@ function GenerateIDContent() {
                       side={cardSide}
                       layout={cardSide === 'front' ? frontLayout : backLayout}
                       bgImage={cardSide === 'front' ? bgFront : bgBack}
+                      overlayImage={cardSide === 'front' ? overlayFront : overlayBack}
                     />
                   </div>
                 )}

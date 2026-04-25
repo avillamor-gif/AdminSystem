@@ -21,6 +21,8 @@ interface IDCardEditorProps {
   onReset: () => void
   bgImage?: string | null
   onUploadBg: (dataUrl: string | null) => void
+  overlayImage?: string | null
+  onUploadOverlay: (dataUrl: string | null) => void
 }
 
 function getElementLabel(id: string, employee: EmployeeWithRelations & { [key: string]: any }, customText?: string): string {
@@ -54,11 +56,14 @@ export function IDCardEditor({
   onReset,
   bgImage,
   onUploadBg,
+  overlayImage,
+  onUploadOverlay,
 }: IDCardEditorProps) {
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [saved, setSaved] = useState(false)
   const nodeRefs = useRef<Record<string, React.RefObject<HTMLDivElement>>>({})
   const bgInputRef = useRef<HTMLInputElement>(null)
+  const overlayInputRef = useRef<HTMLInputElement>(null)
 
   const handleBgUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -68,6 +73,15 @@ export function IDCardEditor({
     reader.readAsDataURL(file)
     e.target.value = ''
   }, [onUploadBg])
+
+  const handleOverlayUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = (ev) => onUploadOverlay(ev.target?.result as string)
+    reader.readAsDataURL(file)
+    e.target.value = ''
+  }, [onUploadOverlay])
 
   // Ensure a nodeRef exists for each element (required by react-draggable with StrictMode)
   layout.forEach(el => {
@@ -163,6 +177,21 @@ export function IDCardEditor({
                         {(employee.first_name?.[0] || '').toUpperCase()}
                         {(employee.last_name?.[0] || '').toUpperCase()}
                       </div>
+                    )}
+                    {/* Overlay on top of photo */}
+                    {overlayImage && (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={overlayImage}
+                        alt=""
+                        style={{
+                          position: 'absolute', inset: 0,
+                          width: '100%', height: '100%',
+                          objectFit: 'cover',
+                          pointerEvents: 'none',
+                        }}
+                        draggable={false}
+                      />
                     )}
                     {isSelected && (
                       <div style={{
@@ -358,6 +387,27 @@ export function IDCardEditor({
           {bgImage && (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={bgImage} alt="bg preview" className="w-full rounded border border-gray-200" style={{ maxHeight: 60, objectFit: 'cover' }} />
+          )}
+        </div>
+
+        {/* Photo overlay image upload */}
+        <div className="border border-gray-200 rounded-lg p-3 space-y-2">
+          <div className="text-xs font-semibold text-gray-600">Photo Overlay</div>
+          <p className="text-xs text-gray-400">Image rendered on top of the employee photo (e.g. frame, watermark)</p>
+          <input ref={overlayInputRef} type="file" accept="image/*" className="hidden" onChange={handleOverlayUpload} />
+          <div className="flex gap-2">
+            <Button variant="secondary" onClick={() => overlayInputRef.current?.click()} className="flex-1 text-xs py-1.5">
+              <ImagePlus className="w-3.5 h-3.5 mr-1" /> Upload
+            </Button>
+            {overlayImage && (
+              <Button variant="danger" onClick={() => onUploadOverlay(null)} className="text-xs py-1.5 px-3">
+                Remove
+              </Button>
+            )}
+          </div>
+          {overlayImage && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={overlayImage} alt="overlay preview" className="w-full rounded border border-gray-200" style={{ maxHeight: 60, objectFit: 'cover' }} />
           )}
         </div>
 

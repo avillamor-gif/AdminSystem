@@ -124,6 +124,8 @@ const STORAGE_KEY_FRONT = 'id_card_layout_front_v1'
 const STORAGE_KEY_BACK = 'id_card_layout_back_v1'
 const STORAGE_KEY_BG_FRONT = 'id_card_bg_front_v1'
 const STORAGE_KEY_BG_BACK = 'id_card_bg_back_v1'
+const STORAGE_KEY_OVERLAY_FRONT = 'id_card_overlay_front_v1'
+const STORAGE_KEY_OVERLAY_BACK = 'id_card_overlay_back_v1'
 
 function loadBg(key: string): string | null {
   if (typeof window === 'undefined') return null
@@ -154,6 +156,8 @@ export function useIDCardLayout() {
   )
   const [bgFront, setBgFront] = useState<string | null>(() => loadBg(STORAGE_KEY_BG_FRONT))
   const [bgBack, setBgBack] = useState<string | null>(() => loadBg(STORAGE_KEY_BG_BACK))
+  const [overlayFront, setOverlayFront] = useState<string | null>(() => loadBg(STORAGE_KEY_OVERLAY_FRONT))
+  const [overlayBack, setOverlayBack] = useState<string | null>(() => loadBg(STORAGE_KEY_OVERLAY_BACK))
 
   const setCustomBg = useCallback((side: 'front' | 'back', dataUrl: string | null) => {
     if (side === 'front') {
@@ -164,6 +168,18 @@ export function useIDCardLayout() {
       setBgBack(dataUrl)
       if (dataUrl) localStorage.setItem(STORAGE_KEY_BG_BACK, dataUrl)
       else localStorage.removeItem(STORAGE_KEY_BG_BACK)
+    }
+  }, [])
+
+  const setCustomOverlay = useCallback((side: 'front' | 'back', dataUrl: string | null) => {
+    if (side === 'front') {
+      setOverlayFront(dataUrl)
+      if (dataUrl) localStorage.setItem(STORAGE_KEY_OVERLAY_FRONT, dataUrl)
+      else localStorage.removeItem(STORAGE_KEY_OVERLAY_FRONT)
+    } else {
+      setOverlayBack(dataUrl)
+      if (dataUrl) localStorage.setItem(STORAGE_KEY_OVERLAY_BACK, dataUrl)
+      else localStorage.removeItem(STORAGE_KEY_OVERLAY_BACK)
     }
   }, [])
 
@@ -187,11 +203,15 @@ export function useIDCardLayout() {
     setBackLayout(DEFAULT_BACK_LAYOUT)
     setBgFront(null)
     setBgBack(null)
+    setOverlayFront(null)
+    setOverlayBack(null)
     localStorage.removeItem(STORAGE_KEY_FRONT)
     localStorage.removeItem(STORAGE_KEY_BACK)
     localStorage.removeItem(STORAGE_KEY_BG_FRONT)
     localStorage.removeItem(STORAGE_KEY_BG_BACK)
+    localStorage.removeItem(STORAGE_KEY_OVERLAY_FRONT)
+    localStorage.removeItem(STORAGE_KEY_OVERLAY_BACK)
   }, [])
 
-  return { frontLayout, backLayout, bgFront, bgBack, setCustomBg, updateElement, saveLayout, resetLayout }
+  return { frontLayout, backLayout, bgFront, bgBack, overlayFront, overlayBack, setCustomBg, setCustomOverlay, updateElement, saveLayout, resetLayout }
 }
