@@ -16,6 +16,7 @@ interface IDCardProps {
   layout?: CardElementLayout[]
   bgImage?: string | null
   overlayImage?: string | null
+  forPrint?: boolean
 }
 
 function getTextContent(id: string, employee: EmployeeWithRelations & { [key: string]: any }, customText?: string): string {
@@ -44,7 +45,7 @@ function getTextContent(id: string, employee: EmployeeWithRelations & { [key: st
 }
 
 export const IDCard = forwardRef<HTMLDivElement, IDCardProps>(
-  ({ employee, side, layout, bgImage, overlayImage }, ref) => {
+  ({ employee, side, layout, bgImage, overlayImage, forPrint = false }, ref) => {
     const defaultLayout = side === 'front' ? DEFAULT_FRONT_LAYOUT : DEFAULT_BACK_LAYOUT
     const elements = layout ?? defaultLayout
     const defaultBgSrc = side === 'front' ? '/FrontID.png' : '/BackID.png'
@@ -59,17 +60,21 @@ export const IDCard = forwardRef<HTMLDivElement, IDCardProps>(
           fontFamily: 'Arial, Helvetica, sans-serif',
           position: 'relative',
           overflow: 'hidden',
-          borderRadius: 10,
-          boxShadow: '0 4px 20px rgba(0,0,0,0.18)',
+          // Remove rounded corners and shadow for print — printer cuts straight edges
+          borderRadius: forPrint ? 0 : 10,
+          boxShadow: forPrint ? 'none' : '0 4px 20px rgba(0,0,0,0.18)',
           userSelect: 'none',
         }}
       >
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={bgSrc}
-          alt=""
-          style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }}
-          draggable={false}
+        {/* Background — use div+backgroundImage so html2canvas renders it correctly */}
+        <div
+          style={{
+            position: 'absolute', inset: 0,
+            backgroundImage: `url(${bgSrc})`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            pointerEvents: 'none',
+          }}
         />
 
         {elements.map(el => {
@@ -89,12 +94,12 @@ export const IDCard = forwardRef<HTMLDivElement, IDCardProps>(
                 }}
               >
                 {employee.avatar_url ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={employee.avatar_url}
-                    alt=""
-                    style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'top' }}
-                  />
+                  <div style={{
+                    width: '100%', height: '100%',
+                    backgroundImage: `url(${employee.avatar_url})`,
+                    backgroundSize: 'cover',
+                    backgroundPosition: 'top center',
+                  }} />
                 ) : (
                   <div style={{
                     width: '100%', height: '100%',
@@ -111,21 +116,19 @@ export const IDCard = forwardRef<HTMLDivElement, IDCardProps>(
 
           if (el.type === 'overlay') {
             return overlayImage ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
+              <div
                 key={el.id}
-                src={overlayImage}
-                alt=""
                 style={{
                   position: 'absolute',
                   left: el.style.x,
                   top: el.style.y,
                   width: el.style.width ?? CARD_W,
                   height: el.style.height ?? CARD_H,
-                  objectFit: 'cover',
+                  backgroundImage: `url(${overlayImage})`,
+                  backgroundSize: 'cover',
+                  backgroundPosition: 'center',
                   pointerEvents: 'none',
                 }}
-                draggable={false}
               />
             ) : null
           }

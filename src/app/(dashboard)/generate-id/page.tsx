@@ -276,11 +276,6 @@ function GenerateIDContent() {
                 ) : (
                   /* ── Preview Mode ── */
                   <div className="p-8 flex justify-center">
-                    {/* Hidden refs for PDF capture */}
-                    <div style={{ position: 'absolute', left: -9999, top: -9999 }}>
-                      <IDCard ref={frontRef} employee={employeeWithContact} side="front" layout={frontLayout} bgImage={bgFront} overlayImage={overlayFront} />
-                      <IDCard ref={backRef} employee={employeeWithContact} side="back" layout={backLayout} bgImage={bgBack} overlayImage={overlayBack} />
-                    </div>
                     {/* Visible preview */}
                     <IDCard
                       employee={employeeWithContact}
@@ -301,6 +296,12 @@ function GenerateIDContent() {
             </Card>
           )}
         </div>
+      </div>
+
+      {/* Hidden cards for PDF — always in DOM, position:fixed+visibility:hidden for correct layout rendering */}
+      <div style={{ position: 'fixed', top: 0, left: 0, visibility: 'hidden', pointerEvents: 'none', zIndex: -1 }}>
+        <IDCard ref={frontRef} employee={employeeWithContact} side="front" layout={frontLayout} bgImage={bgFront} overlayImage={overlayFront} forPrint />
+        <IDCard ref={backRef} employee={employeeWithContact} side="back" layout={backLayout} bgImage={bgBack} overlayImage={overlayBack} forPrint />
       </div>
     </div>
   )

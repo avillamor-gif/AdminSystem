@@ -35,13 +35,13 @@ export const DEFAULT_FRONT_LAYOUT: CardElementLayout[] = [
     id: 'lastName',
     label: 'Last Name',
     type: 'text',
-    style: { x: 22, y: 114, fontSize: 26, fontWeight: '900', color: '#111', lineHeight: 1.1 },
+    style: { x: 22, y: 114, fontSize: 26, fontWeight: '900', color: '#111', lineHeight: 1.1, width: 256 },
   },
   {
     id: 'firstName',
     label: 'First Name',
     type: 'text',
-    style: { x: 22, y: 146, fontSize: 26, fontWeight: '900', color: '#111', lineHeight: 1.15 },
+    style: { x: 22, y: 146, fontSize: 26, fontWeight: '900', color: '#111', lineHeight: 1.15, width: 256 },
   },
   {
     id: 'divider',
