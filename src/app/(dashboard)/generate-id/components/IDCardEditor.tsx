@@ -170,28 +170,13 @@ export function IDCardEditor({
                       />
                     ) : (
                       <div style={{
-                        width: '100%', height: '100%', background: '#e5e7eb',
+                        width: '100%', height: '100%',
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
                         fontSize: 36, fontWeight: 700, color: '#9ca3af', pointerEvents: 'none',
                       }}>
                         {(employee.first_name?.[0] || '').toUpperCase()}
                         {(employee.last_name?.[0] || '').toUpperCase()}
                       </div>
-                    )}
-                    {/* Overlay on top of photo */}
-                    {overlayImage && (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        src={overlayImage}
-                        alt=""
-                        style={{
-                          position: 'absolute', inset: 0,
-                          width: '100%', height: '100%',
-                          objectFit: 'cover',
-                          pointerEvents: 'none',
-                        }}
-                        draggable={false}
-                      />
                     )}
                     {isSelected && (
                       <div style={{
@@ -300,6 +285,62 @@ export function IDCardEditor({
               )
             }
 
+            if (el.type === 'overlay') {
+              return (
+                <Draggable
+                  key={el.id}
+                  nodeRef={nodeRef}
+                  position={{ x: el.style.x, y: el.style.y }}
+                  bounds="parent"
+                  onStop={(_, data) => onUpdateElement(el.id, { x: data.x, y: data.y })}
+                  onStart={() => setSelectedId(el.id)}
+                >
+                  <div
+                    ref={nodeRef}
+                    style={{
+                      position: 'absolute',
+                      top: 0,
+                      left: 0,
+                      width: el.style.width ?? CARD_W,
+                      height: el.style.height ?? CARD_H,
+                      cursor: 'grab',
+                      outline: isSelected ? '2px dashed #f97316' : '2px dashed transparent',
+                      outlineOffset: 2,
+                    }}
+                    onClick={(e) => { e.stopPropagation(); setSelectedId(el.id) }}
+                  >
+                    {overlayImage ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={overlayImage}
+                        alt=""
+                        style={{ width: '100%', height: '100%', objectFit: 'cover', pointerEvents: 'none' }}
+                        draggable={false}
+                      />
+                    ) : (
+                      <div style={{
+                        width: '100%', height: '100%', border: '2px dashed #d1d5db',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        fontSize: 9, color: '#9ca3af', pointerEvents: 'none',
+                      }}>
+                        No overlay uploaded
+                      </div>
+                    )}
+                    {isSelected && (
+                      <div style={{
+                        position: 'absolute', top: -18, left: 0,
+                        background: '#f97316', color: '#fff',
+                        fontSize: 10, padding: '1px 5px', borderRadius: 3, whiteSpace: 'nowrap',
+                        pointerEvents: 'none',
+                      }}>
+                        Background Overlay
+                      </div>
+                    )}
+                  </div>
+                </Draggable>
+              )
+            }
+
             // text element
             const text = getElementLabel(el.id, employee, el.style.customText)
             return (
@@ -390,10 +431,10 @@ export function IDCardEditor({
           )}
         </div>
 
-        {/* Photo overlay image upload */}
+        {/* Background overlay image upload */}
         <div className="border border-gray-200 rounded-lg p-3 space-y-2">
-          <div className="text-xs font-semibold text-gray-600">Photo Overlay</div>
-          <p className="text-xs text-gray-400">Image rendered on top of the employee photo (e.g. frame, watermark)</p>
+          <div className="text-xs font-semibold text-gray-600">Background Overlay</div>
+          <p className="text-xs text-gray-400">Image layered over the card (e.g. frame, watermark). Show/hide &amp; drag it from the Elements list.</p>
           <input ref={overlayInputRef} type="file" accept="image/*" className="hidden" onChange={handleOverlayUpload} />
           <div className="flex gap-2">
             <Button variant="secondary" onClick={() => overlayInputRef.current?.click()} className="flex-1 text-xs py-1.5">

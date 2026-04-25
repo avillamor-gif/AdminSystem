@@ -86,7 +86,6 @@ export const IDCard = forwardRef<HTMLDivElement, IDCardProps>(
                   width: el.style.width,
                   height: el.style.height,
                   overflow: 'hidden',
-                  backgroundColor: '#e5e7eb',
                 }}
               >
                 {employee.avatar_url ? (
@@ -106,23 +105,29 @@ export const IDCard = forwardRef<HTMLDivElement, IDCardProps>(
                     {(employee.last_name?.[0] || '').toUpperCase()}
                   </div>
                 )}
-                {/* Overlay image rendered inside photo bounds, on top */}
-                {overlayImage && (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={overlayImage}
-                    alt=""
-                    style={{
-                      position: 'absolute', inset: 0,
-                      width: '100%', height: '100%',
-                      objectFit: 'cover',
-                      pointerEvents: 'none',
-                    }}
-                    draggable={false}
-                  />
-                )}
               </div>
             )
+          }
+
+          if (el.type === 'overlay') {
+            return overlayImage ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                key={el.id}
+                src={overlayImage}
+                alt=""
+                style={{
+                  position: 'absolute',
+                  left: el.style.x,
+                  top: el.style.y,
+                  width: el.style.width ?? CARD_W,
+                  height: el.style.height ?? CARD_H,
+                  objectFit: 'cover',
+                  pointerEvents: 'none',
+                }}
+                draggable={false}
+              />
+            ) : null
           }
 
           if (el.type === 'divider') {

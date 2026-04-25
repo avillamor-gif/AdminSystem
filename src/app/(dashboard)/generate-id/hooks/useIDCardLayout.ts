@@ -17,7 +17,7 @@ export interface ElementStyle {
   customText?: string
 }
 
-export type CardElementType = 'text' | 'photo' | 'divider' | 'group' | 'signature'
+export type CardElementType = 'text' | 'photo' | 'divider' | 'group' | 'signature' | 'overlay'
 
 export interface CardElementLayout {
   id: string
@@ -73,6 +73,12 @@ export const DEFAULT_FRONT_LAYOUT: CardElementLayout[] = [
     type: 'signature',
     style: { x: 22, y: 230, width: 120, height: 40 },
   },
+  {
+    id: 'overlay',
+    label: 'Background Overlay',
+    type: 'overlay',
+    style: { x: 0, y: 0, width: CARD_W, height: CARD_H, hidden: true },
+  },
 ]
 
 export const DEFAULT_BACK_LAYOUT: CardElementLayout[] = [
@@ -117,6 +123,12 @@ export const DEFAULT_BACK_LAYOUT: CardElementLayout[] = [
     label: 'ID Valid Date',
     type: 'text',
     style: { x: 75, y: 270, fontSize: 12, color: '#222', textAlign: 'center', width: 150, customText: 'Valid Until: MM/DD/YYYY' },
+  },
+  {
+    id: 'overlay',
+    label: 'Background Overlay',
+    type: 'overlay',
+    style: { x: 0, y: 0, width: CARD_W, height: CARD_H, hidden: true },
   },
 ]
 
