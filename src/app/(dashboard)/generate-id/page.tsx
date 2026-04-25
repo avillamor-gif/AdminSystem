@@ -27,7 +27,6 @@ function GenerateIDContent() {
   const primaryContact = emergencyContacts[0] ?? null
 
   const { frontLayout, backLayout, updateElement, saveLayout, resetLayout } = useIDCardLayout()
-  const primaryContact = emergencyContacts[0] ?? null
 
   const stats = {
     totalEmployees: employees.length,
