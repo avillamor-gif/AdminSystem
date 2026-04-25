@@ -648,42 +648,36 @@ export function EmployeeDetailContent({
                 <div className="grid grid-cols-2 gap-4">
                   <Input 
                     label="National ID" 
-                    type="number"
                     value={formData.national_id} 
                     onChange={(e) => handleInputChange('national_id', e.target.value)}
                     disabled={!isEditMode} 
                   />
                   <Input 
                     label="Voter's ID" 
-                    type="number"
                     value={formData.voters_id} 
                     onChange={(e) => handleInputChange('voters_id', e.target.value)}
                     disabled={!isEditMode} 
                   />
                   <Input 
                     label="Pag-IBIG Number" 
-                    type="number"
                     value={formData.pagibig_number} 
                     onChange={(e) => handleInputChange('pagibig_number', e.target.value)}
                     disabled={!isEditMode} 
                   />
                   <Input 
                     label="PhilHealth Number" 
-                    type="number"
                     value={formData.philhealth_number} 
                     onChange={(e) => handleInputChange('philhealth_number', e.target.value)}
                     disabled={!isEditMode} 
                   />
                   <Input 
                     label="SSS Number" 
-                    type="number"
                     value={formData.sss_number} 
                     onChange={(e) => handleInputChange('sss_number', e.target.value)}
                     disabled={!isEditMode} 
                   />
                   <Input 
                     label="TIN Number" 
-                    type="number"
                     value={formData.tin_number} 
                     onChange={(e) => handleInputChange('tin_number', e.target.value)}
                     disabled={!isEditMode} 
