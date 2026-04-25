@@ -183,8 +183,6 @@ export const IDCard = forwardRef<HTMLDivElement, IDCardProps>(
                 letterSpacing: el.style.letterSpacing,
                 lineHeight: el.style.lineHeight,
                 whiteSpace: el.style.width ? 'normal' : 'nowrap',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
               }}
             >
               {getTextContent(el.id, employee, el.style.customText)}

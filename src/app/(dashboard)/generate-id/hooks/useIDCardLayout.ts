@@ -86,43 +86,43 @@ export const DEFAULT_BACK_LAYOUT: CardElementLayout[] = [
     id: 'emergencyContact',
     label: 'Emergency Contact',
     type: 'text',
-    style: { x: 50, y: 109, fontSize: 13, fontWeight: '900', color: '#111', textAlign: 'center', width: 200 },
+    style: { x: 30, y: 109, fontSize: 13, fontWeight: '900', color: '#111', textAlign: 'center', width: 240 },
   },
   {
     id: 'tinNumber',
     label: 'TIN No.',
     type: 'text',
-    style: { x: 75, y: 175, fontSize: 12, color: '#222', textAlign: 'center', width: 150 },
+    style: { x: 40, y: 175, fontSize: 12, color: '#222', textAlign: 'center', width: 220 },
   },
   {
     id: 'sssNumber',
     label: 'SSS No.',
     type: 'text',
-    style: { x: 75, y: 193, fontSize: 12, color: '#222', textAlign: 'center', width: 150 },
+    style: { x: 40, y: 193, fontSize: 12, color: '#222', textAlign: 'center', width: 220 },
   },
   {
     id: 'pagibigNumber',
     label: 'PAG-IBIG No.',
     type: 'text',
-    style: { x: 75, y: 211, fontSize: 12, color: '#222', textAlign: 'center', width: 150 },
+    style: { x: 40, y: 211, fontSize: 12, color: '#222', textAlign: 'center', width: 220 },
   },
   {
     id: 'philhealthNumber',
     label: 'PhilHealth No.',
     type: 'text',
-    style: { x: 75, y: 229, fontSize: 12, color: '#222', textAlign: 'center', width: 150 },
+    style: { x: 40, y: 229, fontSize: 12, color: '#222', textAlign: 'center', width: 220 },
   },
   {
     id: 'birthday',
     label: 'Birthday',
     type: 'text',
-    style: { x: 75, y: 247, fontSize: 12, color: '#222', textAlign: 'center', width: 150 },
+    style: { x: 40, y: 247, fontSize: 12, color: '#222', textAlign: 'center', width: 220 },
   },
   {
     id: 'validDate',
     label: 'ID Valid Date',
     type: 'text',
-    style: { x: 75, y: 270, fontSize: 12, color: '#222', textAlign: 'center', width: 150, customText: 'Valid Until: MM/DD/YYYY' },
+    style: { x: 40, y: 270, fontSize: 12, color: '#222', textAlign: 'center', width: 220, customText: 'Valid Until: MM/DD/YYYY' },
   },
   {
     id: 'overlay',
@@ -132,8 +132,8 @@ export const DEFAULT_BACK_LAYOUT: CardElementLayout[] = [
   },
 ]
 
-const STORAGE_KEY_FRONT = 'id_card_layout_front_v1'
-const STORAGE_KEY_BACK = 'id_card_layout_back_v1'
+const STORAGE_KEY_FRONT = 'id_card_layout_front_v2'
+const STORAGE_KEY_BACK = 'id_card_layout_back_v2'
 const STORAGE_KEY_BG_GALLERY_FRONT = 'id_card_bg_gallery_front_v1'
 const STORAGE_KEY_BG_GALLERY_BACK = 'id_card_bg_gallery_back_v1'
 const STORAGE_KEY_OVERLAY_FRONT = 'id_card_overlay_front_v1'
