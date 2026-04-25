@@ -199,6 +199,62 @@ export function IDCardEditor({
               )
             }
 
+            if (el.type === 'signature') {
+              return (
+                <Draggable
+                  key={el.id}
+                  nodeRef={nodeRef}
+                  position={{ x: el.style.x, y: el.style.y }}
+                  bounds="parent"
+                  onStop={(_, data) => onUpdateElement(el.id, { x: data.x, y: data.y })}
+                  onStart={() => setSelectedId(el.id)}
+                >
+                  <div
+                    ref={nodeRef}
+                    style={{
+                      position: 'absolute',
+                      top: 0,
+                      left: 0,
+                      width: el.style.width ?? 120,
+                      height: el.style.height ?? 40,
+                      cursor: 'grab',
+                      outline: isSelected ? '2px dashed #f97316' : '2px dashed transparent',
+                      outlineOffset: 2,
+                    }}
+                    onClick={(e) => { e.stopPropagation(); setSelectedId(el.id) }}
+                  >
+                    {employee.signature_url ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={employee.signature_url}
+                        alt="signature"
+                        style={{ width: '100%', height: '100%', objectFit: 'contain', pointerEvents: 'none' }}
+                        draggable={false}
+                      />
+                    ) : (
+                      <div style={{
+                        width: '100%', height: '100%', border: '1px dashed #aaa',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        fontSize: 9, color: '#aaa', pointerEvents: 'none',
+                      }}>
+                        No signature
+                      </div>
+                    )}
+                    {isSelected && (
+                      <div style={{
+                        position: 'absolute', top: -18, left: 0,
+                        background: '#f97316', color: '#fff',
+                        fontSize: 10, padding: '1px 5px', borderRadius: 3, whiteSpace: 'nowrap',
+                        pointerEvents: 'none',
+                      }}>
+                        E-Signature
+                      </div>
+                    )}
+                  </div>
+                </Draggable>
+              )
+            }
+
             // text element
             const text = getElementLabel(el.id, employee)
             return (

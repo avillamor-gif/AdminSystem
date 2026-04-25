@@ -43,6 +43,7 @@ const DOC_TYPE_FOLDER: Record<string, string> = {
   emergency_contact: 'Emergency Contacts',
   immigration: 'Immigration',
   contract: 'Contracts',
+  'e-signature': 'E-Signatures',
 }
 
 /** Resolve the Shared Drive ID by name (or return null to use My Drive). */

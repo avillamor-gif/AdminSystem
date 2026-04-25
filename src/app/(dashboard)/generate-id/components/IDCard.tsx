@@ -122,6 +122,25 @@ export const IDCard = forwardRef<HTMLDivElement, IDCardProps>(
             )
           }
 
+          if (el.type === 'signature') {
+            return employee.signature_url ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                key={el.id}
+                src={employee.signature_url}
+                alt="signature"
+                style={{
+                  position: 'absolute',
+                  left: el.style.x,
+                  top: el.style.y,
+                  width: el.style.width ?? 120,
+                  height: el.style.height ?? 40,
+                  objectFit: 'contain',
+                }}
+              />
+            ) : null
+          }
+
           return (
             <div
               key={el.id}

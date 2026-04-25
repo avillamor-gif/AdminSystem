@@ -16,10 +16,12 @@ export interface ElementStyle {
   hidden?: boolean
 }
 
+export type CardElementType = 'text' | 'photo' | 'divider' | 'group' | 'signature'
+
 export interface CardElementLayout {
   id: string
   label: string
-  type: 'text' | 'photo' | 'divider' | 'group'
+  type: CardElementType
   style: ElementStyle
 }
 
@@ -102,6 +104,12 @@ export const DEFAULT_BACK_LAYOUT: CardElementLayout[] = [
     label: 'Birthday',
     type: 'text',
     style: { x: 75, y: 247, fontSize: 12, color: '#222', textAlign: 'center', width: 150 },
+  },
+  {
+    id: 'signature',
+    label: 'E-Signature',
+    type: 'signature',
+    style: { x: 90, y: 270, width: 120, height: 40 },
   },
 ]
 

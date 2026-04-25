@@ -9,7 +9,10 @@ import { ProtectedRoute } from '@/components/auth/ProtectedRoute'
 import type { EmployeeWithRelations } from '@/services/employee.service'
 import { IDCard } from './components/IDCard'
 import { IDCardEditor } from './components/IDCardEditor'
+import { useEmployeeAttachments } from '@/hooks/useEmployeeAttachments'
 import { useIDCardLayout } from './hooks/useIDCardLayout'
+
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL ?? ''
 
 function GenerateIDContent() {
   const [searchQuery, setSearchQuery] = useState('')
@@ -25,6 +28,12 @@ function GenerateIDContent() {
 
   const { data: emergencyContacts = [] } = useEmergencyContacts(selectedEmployeeId ?? '')
   const primaryContact = emergencyContacts[0] ?? null
+
+  const { data: attachments = [] } = useEmployeeAttachments(selectedEmployeeId ?? '')
+  const signatureAttachment = attachments.find((a: any) => a.document_type === 'e-signature')
+  const signatureUrl = signatureAttachment
+    ? `${SUPABASE_URL}/storage/v1/object/public/attachments/${signatureAttachment.file_path}`
+    : null
 
   const { frontLayout, backLayout, updateElement, saveLayout, resetLayout } = useIDCardLayout()
 
@@ -58,6 +67,7 @@ function GenerateIDContent() {
     ...selectedEmployeeData as any,
     emergency_contact_name: primaryContact?.name,
     emergency_contact_phone: primaryContact?.mobile_phone,
+    signature_url: signatureUrl ?? undefined,
   }
 
   return (
