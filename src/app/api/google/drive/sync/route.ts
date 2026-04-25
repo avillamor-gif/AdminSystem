@@ -32,7 +32,7 @@ import { getDriveClient } from '@/lib/google'
 import { Readable } from 'stream'
 
 const ADMIN_EMAIL = process.env.GOOGLE_ADMIN_EMAIL!
-const ROOT_FOLDER_NAME = 'IBON Admin System'
+const ROOT_FOLDER_NAME = 'IBON International Admin System'
 
 const DOC_TYPE_FOLDER: Record<string, string> = {
   emergency_contact: 'Emergency Contacts',
