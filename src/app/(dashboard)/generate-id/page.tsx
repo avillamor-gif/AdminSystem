@@ -54,16 +54,28 @@ function GenerateIDContent() {
     const html2canvas = (await import('html2canvas')).default
     const { jsPDF } = await import('jspdf')
 
+    // Credit card: 85.6 × 54 mm (ISO/IEC 7810 ID-1), no bleed
+    // scale 5 → ~700 DPI at credit-card size — sharp enough for professional printing
+    const SCALE = 5
+    const html2canvasOpts = {
+      scale: SCALE,
+      useCORS: true,
+      allowTaint: false,
+      backgroundColor: '#ffffff',
+      logging: false,
+    }
+
     const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: [54, 85.6] })
 
     if (frontRef.current) {
-      const canvas = await html2canvas(frontRef.current, { scale: 3, useCORS: true, backgroundColor: null })
-      pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, 0, 54, 85.6)
+      const canvas = await html2canvas(frontRef.current, html2canvasOpts)
+      // JPEG at 98% quality — smaller file, no visible loss at this DPI
+      pdf.addImage(canvas.toDataURL('image/jpeg', 0.98), 'JPEG', 0, 0, 54, 85.6)
     }
     pdf.addPage([54, 85.6], 'portrait')
     if (backRef.current) {
-      const canvas = await html2canvas(backRef.current, { scale: 3, useCORS: true, backgroundColor: null })
-      pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, 0, 54, 85.6)
+      const canvas = await html2canvas(backRef.current, html2canvasOpts)
+      pdf.addImage(canvas.toDataURL('image/jpeg', 0.98), 'JPEG', 0, 0, 54, 85.6)
     }
     pdf.save(`ID_${selectedEmployeeData.employee_id}_${selectedEmployeeData.last_name}.pdf`)
   }
