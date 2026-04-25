@@ -2,7 +2,7 @@
 
 import { useState, useRef, useCallback } from 'react'
 import Draggable from 'react-draggable'
-import { RotateCcw, Save, Eye, EyeOff, Move, ImagePlus } from 'lucide-react'
+import { RotateCcw, Save, Eye, EyeOff, Move, ImagePlus, Check, X } from 'lucide-react'
 import { Button } from '@/components/ui'
 import {
   CARD_W,
@@ -12,6 +12,8 @@ import {
 } from '../hooks/useIDCardLayout'
 import type { EmployeeWithRelations } from '@/services/employee.service'
 
+import type { BgGallery } from '../hooks/useIDCardLayout'
+
 interface IDCardEditorProps {
   side: 'front' | 'back'
   layout: CardElementLayout[]
@@ -19,8 +21,10 @@ interface IDCardEditorProps {
   onUpdateElement: (id: string, patch: Partial<ElementStyle>) => void
   onSave: () => void
   onReset: () => void
-  bgImage?: string | null
-  onUploadBg: (dataUrl: string | null) => void
+  bgGallery: BgGallery
+  onAddBg: (dataUrl: string) => void
+  onSelectBg: (index: number) => void
+  onRemoveBg: (index: number) => void
   overlayImage?: string | null
   onUploadOverlay: (dataUrl: string | null) => void
 }
@@ -54,8 +58,10 @@ export function IDCardEditor({
   onUpdateElement,
   onSave,
   onReset,
-  bgImage,
-  onUploadBg,
+  bgGallery,
+  onAddBg,
+  onSelectBg,
+  onRemoveBg,
   overlayImage,
   onUploadOverlay,
 }: IDCardEditorProps) {
@@ -69,10 +75,10 @@ export function IDCardEditor({
     const file = e.target.files?.[0]
     if (!file) return
     const reader = new FileReader()
-    reader.onload = (ev) => onUploadBg(ev.target?.result as string)
+    reader.onload = (ev) => onAddBg(ev.target?.result as string)
     reader.readAsDataURL(file)
     e.target.value = ''
-  }, [onUploadBg])
+  }, [onAddBg])
 
   const handleOverlayUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -103,7 +109,7 @@ export function IDCardEditor({
   }
 
   const defaultBgSrc = side === 'front' ? '/FrontID.png' : '/BackID.png'
-  const bgSrc = bgImage ?? defaultBgSrc
+  const bgSrc = bgGallery.images[bgGallery.selectedIndex] ?? defaultBgSrc
 
   return (
     <div className="flex gap-4 items-start">
@@ -415,23 +421,48 @@ export function IDCardEditor({
           </Button>
         </div>
 
-        {/* Background image upload */}
+        {/* Background image gallery */}
         <div className="border border-gray-200 rounded-lg p-3 space-y-2">
           <div className="text-xs font-semibold text-gray-600">Background Image</div>
           <input ref={bgInputRef} type="file" accept="image/*" className="hidden" onChange={handleBgUpload} />
-          <div className="flex gap-2">
-            <Button variant="secondary" onClick={() => bgInputRef.current?.click()} className="flex-1 text-xs py-1.5">
-              <ImagePlus className="w-3.5 h-3.5 mr-1" /> Upload
-            </Button>
-            {bgImage && (
-              <Button variant="danger" onClick={() => onUploadBg(null)} className="text-xs py-1.5 px-3">
-                Remove
-              </Button>
-            )}
-          </div>
-          {bgImage && (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={bgImage} alt="bg preview" className="w-full rounded border border-gray-200" style={{ maxHeight: 60, objectFit: 'cover' }} />
+          {/* Thumbnails */}
+          {bgGallery.images.length > 0 && (
+            <div className="grid grid-cols-3 gap-1.5">
+              {bgGallery.images.map((img, idx) => (
+                <div key={idx} className="relative group">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={img}
+                    alt={`bg ${idx + 1}`}
+                    onClick={() => onSelectBg(idx)}
+                    className={`w-full rounded cursor-pointer border-2 transition-all ${
+                      idx === bgGallery.selectedIndex
+                        ? 'border-orange-500 shadow-md'
+                        : 'border-gray-200 hover:border-orange-300'
+                    }`}
+                    style={{ height: 52, objectFit: 'cover' }}
+                  />
+                  {idx === bgGallery.selectedIndex && (
+                    <div className="absolute top-0.5 left-0.5 bg-orange-500 rounded-full p-0.5 pointer-events-none">
+                      <Check className="w-2.5 h-2.5 text-white" />
+                    </div>
+                  )}
+                  <button
+                    onClick={() => onRemoveBg(idx)}
+                    className="absolute top-0.5 right-0.5 bg-red-500 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
+                    title="Remove"
+                  >
+                    <X className="w-2.5 h-2.5" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+          <Button variant="secondary" onClick={() => bgInputRef.current?.click()} className="w-full text-xs py-1.5">
+            <ImagePlus className="w-3.5 h-3.5 mr-1" /> Add Background
+          </Button>
+          {bgGallery.images.length > 0 && (
+            <p className="text-xs text-gray-400">Click a thumbnail to select · hover to delete</p>
           )}
         </div>
 

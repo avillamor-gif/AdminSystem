@@ -40,7 +40,7 @@ function GenerateIDContent() {
       .then(({ data }: { data: { signedUrl: string } | null }) => setSignatureUrl(data?.signedUrl ?? null))
   }, [signatureAttachment?.file_path])
 
-  const { frontLayout, backLayout, bgFront, bgBack, overlayFront, overlayBack, setCustomBg, setCustomOverlay, updateElement, saveLayout, resetLayout } = useIDCardLayout()
+  const { frontLayout, backLayout, bgFront, bgBack, bgGalleryFront, bgGalleryBack, addBg, selectBg, removeBg, overlayFront, overlayBack, setCustomOverlay, updateElement, saveLayout, resetLayout } = useIDCardLayout()
 
   const stats = {
     totalEmployees: employees.length,
@@ -253,8 +253,10 @@ function GenerateIDContent() {
                       onUpdateElement={(id, patch) => updateElement(cardSide, id, patch)}
                       onSave={saveLayout}
                       onReset={resetLayout}
-                      bgImage={cardSide === 'front' ? bgFront : bgBack}
-                      onUploadBg={(dataUrl) => setCustomBg(cardSide, dataUrl)}
+                      bgGallery={cardSide === 'front' ? bgGalleryFront : bgGalleryBack}
+                      onAddBg={(dataUrl) => addBg(cardSide, dataUrl)}
+                      onSelectBg={(idx) => selectBg(cardSide, idx)}
+                      onRemoveBg={(idx) => removeBg(cardSide, idx)}
                       overlayImage={cardSide === 'front' ? overlayFront : overlayBack}
                       onUploadOverlay={(dataUrl) => setCustomOverlay(cardSide, dataUrl)}
                     />

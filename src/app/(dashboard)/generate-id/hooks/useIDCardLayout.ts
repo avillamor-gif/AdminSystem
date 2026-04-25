@@ -134,14 +134,30 @@ export const DEFAULT_BACK_LAYOUT: CardElementLayout[] = [
 
 const STORAGE_KEY_FRONT = 'id_card_layout_front_v1'
 const STORAGE_KEY_BACK = 'id_card_layout_back_v1'
-const STORAGE_KEY_BG_FRONT = 'id_card_bg_front_v1'
-const STORAGE_KEY_BG_BACK = 'id_card_bg_back_v1'
+const STORAGE_KEY_BG_GALLERY_FRONT = 'id_card_bg_gallery_front_v1'
+const STORAGE_KEY_BG_GALLERY_BACK = 'id_card_bg_gallery_back_v1'
 const STORAGE_KEY_OVERLAY_FRONT = 'id_card_overlay_front_v1'
 const STORAGE_KEY_OVERLAY_BACK = 'id_card_overlay_back_v1'
+
+export interface BgGallery {
+  images: string[]
+  selectedIndex: number
+}
+
+const DEFAULT_GALLERY: BgGallery = { images: [], selectedIndex: 0 }
 
 function loadBg(key: string): string | null {
   if (typeof window === 'undefined') return null
   try { return localStorage.getItem(key) } catch { return null }
+}
+
+function loadGallery(key: string): BgGallery {
+  if (typeof window === 'undefined') return DEFAULT_GALLERY
+  try {
+    const saved = localStorage.getItem(key)
+    if (saved) return JSON.parse(saved) as BgGallery
+  } catch {}
+  return DEFAULT_GALLERY
 }
 
 function loadLayout(key: string, defaults: CardElementLayout[]): CardElementLayout[] {
@@ -166,22 +182,50 @@ export function useIDCardLayout() {
   const [backLayout, setBackLayout] = useState<CardElementLayout[]>(() =>
     loadLayout(STORAGE_KEY_BACK, DEFAULT_BACK_LAYOUT)
   )
-  const [bgFront, setBgFront] = useState<string | null>(() => loadBg(STORAGE_KEY_BG_FRONT))
-  const [bgBack, setBgBack] = useState<string | null>(() => loadBg(STORAGE_KEY_BG_BACK))
+  const [bgGalleryFront, setBgGalleryFront] = useState<BgGallery>(() => loadGallery(STORAGE_KEY_BG_GALLERY_FRONT))
+  const [bgGalleryBack, setBgGalleryBack] = useState<BgGallery>(() => loadGallery(STORAGE_KEY_BG_GALLERY_BACK))
   const [overlayFront, setOverlayFront] = useState<string | null>(() => loadBg(STORAGE_KEY_OVERLAY_FRONT))
   const [overlayBack, setOverlayBack] = useState<string | null>(() => loadBg(STORAGE_KEY_OVERLAY_BACK))
 
-  const setCustomBg = useCallback((side: 'front' | 'back', dataUrl: string | null) => {
-    if (side === 'front') {
-      setBgFront(dataUrl)
-      if (dataUrl) localStorage.setItem(STORAGE_KEY_BG_FRONT, dataUrl)
-      else localStorage.removeItem(STORAGE_KEY_BG_FRONT)
-    } else {
-      setBgBack(dataUrl)
-      if (dataUrl) localStorage.setItem(STORAGE_KEY_BG_BACK, dataUrl)
-      else localStorage.removeItem(STORAGE_KEY_BG_BACK)
-    }
+  // Derived active bg per side
+  const bgFront = bgGalleryFront.images[bgGalleryFront.selectedIndex] ?? null
+  const bgBack  = bgGalleryBack.images[bgGalleryBack.selectedIndex] ?? null
+
+  const saveGallery = useCallback((key: string, gallery: BgGallery) => {
+    localStorage.setItem(key, JSON.stringify(gallery))
   }, [])
+
+  const addBg = useCallback((side: 'front' | 'back', dataUrl: string) => {
+    const key = side === 'front' ? STORAGE_KEY_BG_GALLERY_FRONT : STORAGE_KEY_BG_GALLERY_BACK
+    const setter = side === 'front' ? setBgGalleryFront : setBgGalleryBack
+    setter(prev => {
+      const next: BgGallery = { images: [...prev.images, dataUrl], selectedIndex: prev.images.length }
+      saveGallery(key, next)
+      return next
+    })
+  }, [saveGallery])
+
+  const selectBg = useCallback((side: 'front' | 'back', index: number) => {
+    const key = side === 'front' ? STORAGE_KEY_BG_GALLERY_FRONT : STORAGE_KEY_BG_GALLERY_BACK
+    const setter = side === 'front' ? setBgGalleryFront : setBgGalleryBack
+    setter(prev => {
+      const next: BgGallery = { ...prev, selectedIndex: index }
+      saveGallery(key, next)
+      return next
+    })
+  }, [saveGallery])
+
+  const removeBg = useCallback((side: 'front' | 'back', index: number) => {
+    const key = side === 'front' ? STORAGE_KEY_BG_GALLERY_FRONT : STORAGE_KEY_BG_GALLERY_BACK
+    const setter = side === 'front' ? setBgGalleryFront : setBgGalleryBack
+    setter(prev => {
+      const images = prev.images.filter((_, i) => i !== index)
+      const selectedIndex = Math.min(prev.selectedIndex, Math.max(0, images.length - 1))
+      const next: BgGallery = { images, selectedIndex }
+      saveGallery(key, next)
+      return next
+    })
+  }, [saveGallery])
 
   const setCustomOverlay = useCallback((side: 'front' | 'back', dataUrl: string | null) => {
     if (side === 'front') {
@@ -213,17 +257,24 @@ export function useIDCardLayout() {
   const resetLayout = useCallback(() => {
     setFrontLayout(DEFAULT_FRONT_LAYOUT)
     setBackLayout(DEFAULT_BACK_LAYOUT)
-    setBgFront(null)
-    setBgBack(null)
+    setBgGalleryFront(DEFAULT_GALLERY)
+    setBgGalleryBack(DEFAULT_GALLERY)
     setOverlayFront(null)
     setOverlayBack(null)
     localStorage.removeItem(STORAGE_KEY_FRONT)
     localStorage.removeItem(STORAGE_KEY_BACK)
-    localStorage.removeItem(STORAGE_KEY_BG_FRONT)
-    localStorage.removeItem(STORAGE_KEY_BG_BACK)
+    localStorage.removeItem(STORAGE_KEY_BG_GALLERY_FRONT)
+    localStorage.removeItem(STORAGE_KEY_BG_GALLERY_BACK)
     localStorage.removeItem(STORAGE_KEY_OVERLAY_FRONT)
     localStorage.removeItem(STORAGE_KEY_OVERLAY_BACK)
   }, [])
 
-  return { frontLayout, backLayout, bgFront, bgBack, overlayFront, overlayBack, setCustomBg, setCustomOverlay, updateElement, saveLayout, resetLayout }
+  return {
+    frontLayout, backLayout,
+    bgFront, bgBack,
+    bgGalleryFront, bgGalleryBack,
+    addBg, selectBg, removeBg,
+    overlayFront, overlayBack, setCustomOverlay,
+    updateElement, saveLayout, resetLayout,
+  }
 }
