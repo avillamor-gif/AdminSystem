@@ -35,7 +35,7 @@ function GenerateIDContent() {
     ? `${SUPABASE_URL}/storage/v1/object/public/attachments/${signatureAttachment.file_path}`
     : null
 
-  const { frontLayout, backLayout, updateElement, saveLayout, resetLayout } = useIDCardLayout()
+  const { frontLayout, backLayout, bgFront, bgBack, setCustomBg, updateElement, saveLayout, resetLayout } = useIDCardLayout()
 
   const stats = {
     totalEmployees: employees.length,
@@ -248,6 +248,8 @@ function GenerateIDContent() {
                       onUpdateElement={(id, patch) => updateElement(cardSide, id, patch)}
                       onSave={saveLayout}
                       onReset={resetLayout}
+                      bgImage={cardSide === 'front' ? bgFront : bgBack}
+                      onUploadBg={(dataUrl) => setCustomBg(cardSide, dataUrl)}
                     />
                   </div>
                 ) : (
@@ -255,14 +257,15 @@ function GenerateIDContent() {
                   <div className="p-8 flex justify-center">
                     {/* Hidden refs for PDF capture */}
                     <div style={{ position: 'absolute', left: -9999, top: -9999 }}>
-                      <IDCard ref={frontRef} employee={employeeWithContact} side="front" layout={frontLayout} />
-                      <IDCard ref={backRef} employee={employeeWithContact} side="back" layout={backLayout} />
+                      <IDCard ref={frontRef} employee={employeeWithContact} side="front" layout={frontLayout} bgImage={bgFront} />
+                      <IDCard ref={backRef} employee={employeeWithContact} side="back" layout={backLayout} bgImage={bgBack} />
                     </div>
                     {/* Visible preview */}
                     <IDCard
                       employee={employeeWithContact}
                       side={cardSide}
                       layout={cardSide === 'front' ? frontLayout : backLayout}
+                      bgImage={cardSide === 'front' ? bgFront : bgBack}
                     />
                   </div>
                 )}

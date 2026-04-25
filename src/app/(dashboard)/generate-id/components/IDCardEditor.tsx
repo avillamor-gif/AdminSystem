@@ -2,7 +2,7 @@
 
 import { useState, useRef, useCallback } from 'react'
 import Draggable from 'react-draggable'
-import { RotateCcw, Save, Eye, EyeOff, Move } from 'lucide-react'
+import { RotateCcw, Save, Eye, EyeOff, Move, ImagePlus } from 'lucide-react'
 import { Button } from '@/components/ui'
 import {
   CARD_W,
@@ -19,9 +19,12 @@ interface IDCardEditorProps {
   onUpdateElement: (id: string, patch: Partial<ElementStyle>) => void
   onSave: () => void
   onReset: () => void
+  bgImage?: string | null
+  onUploadBg: (dataUrl: string | null) => void
 }
 
-function getElementLabel(id: string, employee: EmployeeWithRelations & { [key: string]: any }): string {
+function getElementLabel(id: string, employee: EmployeeWithRelations & { [key: string]: any }, customText?: string): string {
+  if (customText !== undefined) return customText
   switch (id) {
     case 'lastName': return (employee.last_name || '').toUpperCase() || 'LAST NAME'
     case 'firstName': return (employee.first_name || '').toUpperCase() || 'FIRST NAME'
@@ -49,10 +52,22 @@ export function IDCardEditor({
   onUpdateElement,
   onSave,
   onReset,
+  bgImage,
+  onUploadBg,
 }: IDCardEditorProps) {
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [saved, setSaved] = useState(false)
   const nodeRefs = useRef<Record<string, React.RefObject<HTMLDivElement>>>({})
+  const bgInputRef = useRef<HTMLInputElement>(null)
+
+  const handleBgUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = (ev) => onUploadBg(ev.target?.result as string)
+    reader.readAsDataURL(file)
+    e.target.value = ''
+  }, [onUploadBg])
 
   // Ensure a nodeRef exists for each element (required by react-draggable with StrictMode)
   layout.forEach(el => {
@@ -69,7 +84,8 @@ export function IDCardEditor({
     setTimeout(() => setSaved(false), 2000)
   }
 
-  const bgSrc = side === 'front' ? '/FrontID.png' : '/BackID.png'
+  const defaultBgSrc = side === 'front' ? '/FrontID.png' : '/BackID.png'
+  const bgSrc = bgImage ?? defaultBgSrc
 
   return (
     <div className="flex gap-4 items-start">
@@ -256,7 +272,7 @@ export function IDCardEditor({
             }
 
             // text element
-            const text = getElementLabel(el.id, employee)
+            const text = getElementLabel(el.id, employee, el.style.customText)
             return (
               <Draggable
                 key={el.id}
@@ -323,6 +339,26 @@ export function IDCardEditor({
             <Save className="w-3.5 h-3.5 mr-1" />
             {saved ? 'Saved!' : 'Save'}
           </Button>
+        </div>
+
+        {/* Background image upload */}
+        <div className="border border-gray-200 rounded-lg p-3 space-y-2">
+          <div className="text-xs font-semibold text-gray-600">Background Image</div>
+          <input ref={bgInputRef} type="file" accept="image/*" className="hidden" onChange={handleBgUpload} />
+          <div className="flex gap-2">
+            <Button variant="secondary" onClick={() => bgInputRef.current?.click()} className="flex-1 text-xs py-1.5">
+              <ImagePlus className="w-3.5 h-3.5 mr-1" /> Upload
+            </Button>
+            {bgImage && (
+              <Button variant="danger" onClick={() => onUploadBg(null)} className="text-xs py-1.5 px-3">
+                Remove
+              </Button>
+            )}
+          </div>
+          {bgImage && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={bgImage} alt="bg preview" className="w-full rounded border border-gray-200" style={{ maxHeight: 60, objectFit: 'cover' }} />
+          )}
         </div>
 
         {/* Element list */}
@@ -413,6 +449,19 @@ export function IDCardEditor({
               {/* Text-only properties */}
               {selectedEl.type === 'text' && (
                 <>
+                  {/* Editable custom text (e.g. validDate) */}
+                  {selectedEl.style.customText !== undefined && (
+                    <div>
+                      <label className="text-xs text-gray-500 block mb-1">Text Content</label>
+                      <input
+                        type="text"
+                        value={selectedEl.style.customText}
+                        onChange={e => onUpdateElement(selectedEl.id, { customText: e.target.value })}
+                        className="w-full border border-gray-200 rounded px-2 py-1 text-xs"
+                        placeholder="e.g. Valid Until: 12/31/2027"
+                      />
+                    </div>
+                  )}
                   <div>
                     <label className="text-xs text-gray-500 block mb-1">Font Size</label>
                     <input

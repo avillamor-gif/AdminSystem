@@ -14,6 +14,7 @@ export interface ElementStyle {
   letterSpacing?: number
   lineHeight?: number
   hidden?: boolean
+  customText?: string
 }
 
 export type CardElementType = 'text' | 'photo' | 'divider' | 'group' | 'signature'
@@ -66,6 +67,12 @@ export const DEFAULT_FRONT_LAYOUT: CardElementLayout[] = [
     type: 'photo',
     style: { x: 170, y: 224, width: 116, height: 144 },
   },
+  {
+    id: 'signature',
+    label: 'E-Signature',
+    type: 'signature',
+    style: { x: 22, y: 230, width: 120, height: 40 },
+  },
 ]
 
 export const DEFAULT_BACK_LAYOUT: CardElementLayout[] = [
@@ -106,15 +113,22 @@ export const DEFAULT_BACK_LAYOUT: CardElementLayout[] = [
     style: { x: 75, y: 247, fontSize: 12, color: '#222', textAlign: 'center', width: 150 },
   },
   {
-    id: 'signature',
-    label: 'E-Signature',
-    type: 'signature',
-    style: { x: 90, y: 270, width: 120, height: 40 },
+    id: 'validDate',
+    label: 'ID Valid Date',
+    type: 'text',
+    style: { x: 75, y: 270, fontSize: 12, color: '#222', textAlign: 'center', width: 150, customText: 'Valid Until: MM/DD/YYYY' },
   },
 ]
 
 const STORAGE_KEY_FRONT = 'id_card_layout_front_v1'
 const STORAGE_KEY_BACK = 'id_card_layout_back_v1'
+const STORAGE_KEY_BG_FRONT = 'id_card_bg_front_v1'
+const STORAGE_KEY_BG_BACK = 'id_card_bg_back_v1'
+
+function loadBg(key: string): string | null {
+  if (typeof window === 'undefined') return null
+  try { return localStorage.getItem(key) } catch { return null }
+}
 
 function loadLayout(key: string, defaults: CardElementLayout[]): CardElementLayout[] {
   if (typeof window === 'undefined') return defaults
@@ -138,6 +152,20 @@ export function useIDCardLayout() {
   const [backLayout, setBackLayout] = useState<CardElementLayout[]>(() =>
     loadLayout(STORAGE_KEY_BACK, DEFAULT_BACK_LAYOUT)
   )
+  const [bgFront, setBgFront] = useState<string | null>(() => loadBg(STORAGE_KEY_BG_FRONT))
+  const [bgBack, setBgBack] = useState<string | null>(() => loadBg(STORAGE_KEY_BG_BACK))
+
+  const setCustomBg = useCallback((side: 'front' | 'back', dataUrl: string | null) => {
+    if (side === 'front') {
+      setBgFront(dataUrl)
+      if (dataUrl) localStorage.setItem(STORAGE_KEY_BG_FRONT, dataUrl)
+      else localStorage.removeItem(STORAGE_KEY_BG_FRONT)
+    } else {
+      setBgBack(dataUrl)
+      if (dataUrl) localStorage.setItem(STORAGE_KEY_BG_BACK, dataUrl)
+      else localStorage.removeItem(STORAGE_KEY_BG_BACK)
+    }
+  }, [])
 
   const updateElement = useCallback(
     (side: 'front' | 'back', id: string, patch: Partial<ElementStyle>) => {
@@ -157,9 +185,13 @@ export function useIDCardLayout() {
   const resetLayout = useCallback(() => {
     setFrontLayout(DEFAULT_FRONT_LAYOUT)
     setBackLayout(DEFAULT_BACK_LAYOUT)
+    setBgFront(null)
+    setBgBack(null)
     localStorage.removeItem(STORAGE_KEY_FRONT)
     localStorage.removeItem(STORAGE_KEY_BACK)
+    localStorage.removeItem(STORAGE_KEY_BG_FRONT)
+    localStorage.removeItem(STORAGE_KEY_BG_BACK)
   }, [])
 
-  return { frontLayout, backLayout, updateElement, saveLayout, resetLayout }
+  return { frontLayout, backLayout, bgFront, bgBack, setCustomBg, updateElement, saveLayout, resetLayout }
 }

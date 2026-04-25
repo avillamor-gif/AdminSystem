@@ -14,9 +14,11 @@ interface IDCardProps {
   employee: EmployeeWithRelations & { [key: string]: any }
   side: 'front' | 'back'
   layout?: CardElementLayout[]
+  bgImage?: string | null
 }
 
-function getTextContent(id: string, employee: EmployeeWithRelations & { [key: string]: any }): string {
+function getTextContent(id: string, employee: EmployeeWithRelations & { [key: string]: any }, customText?: string): string {
+  if (customText !== undefined) return customText
   switch (id) {
     case 'lastName': return (employee.last_name || '').toUpperCase()
     case 'firstName': return (employee.first_name || '').toUpperCase()
@@ -41,10 +43,11 @@ function getTextContent(id: string, employee: EmployeeWithRelations & { [key: st
 }
 
 export const IDCard = forwardRef<HTMLDivElement, IDCardProps>(
-  ({ employee, side, layout }, ref) => {
+  ({ employee, side, layout, bgImage }, ref) => {
     const defaultLayout = side === 'front' ? DEFAULT_FRONT_LAYOUT : DEFAULT_BACK_LAYOUT
     const elements = layout ?? defaultLayout
-    const bgSrc = side === 'front' ? '/FrontID.png' : '/BackID.png'
+    const defaultBgSrc = side === 'front' ? '/FrontID.png' : '/BackID.png'
+    const bgSrc = bgImage ?? defaultBgSrc
 
     return (
       <div
@@ -160,7 +163,7 @@ export const IDCard = forwardRef<HTMLDivElement, IDCardProps>(
                 textOverflow: 'ellipsis',
               }}
             >
-              {getTextContent(el.id, employee)}
+              {getTextContent(el.id, employee, el.style.customText)}
             </div>
           )
         })}
