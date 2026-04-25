@@ -78,10 +78,14 @@ export function IDCardEditor({
     const file = e.target.files?.[0]
     if (!file) return
     const reader = new FileReader()
-    reader.onload = (ev) => onUploadOverlay(ev.target?.result as string)
+    reader.onload = (ev) => {
+      onUploadOverlay(ev.target?.result as string)
+      // Auto-show the overlay element when image is uploaded
+      onUpdateElement('overlay', { hidden: false })
+    }
     reader.readAsDataURL(file)
     e.target.value = ''
-  }, [onUploadOverlay])
+  }, [onUploadOverlay, onUpdateElement])
 
   // Ensure a nodeRef exists for each element (required by react-draggable with StrictMode)
   layout.forEach(el => {

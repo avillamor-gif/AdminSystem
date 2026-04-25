@@ -77,7 +77,7 @@ export const DEFAULT_FRONT_LAYOUT: CardElementLayout[] = [
     id: 'overlay',
     label: 'Background Overlay',
     type: 'overlay',
-    style: { x: 0, y: 0, width: CARD_W, height: CARD_H, hidden: true },
+    style: { x: 0, y: 0, width: CARD_W, height: CARD_H },
   },
 ]
 
@@ -128,7 +128,7 @@ export const DEFAULT_BACK_LAYOUT: CardElementLayout[] = [
     id: 'overlay',
     label: 'Background Overlay',
     type: 'overlay',
-    style: { x: 0, y: 0, width: CARD_W, height: CARD_H, hidden: true },
+    style: { x: 0, y: 0, width: CARD_W, height: CARD_H },
   },
 ]
 
