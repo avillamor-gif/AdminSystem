@@ -77,7 +77,7 @@ export function useUploadContractDocument() {
             employeeId: variables.employeeId,
             employeeName: result.employeeName,
           }),
-        }).catch(err => console.warn('[Drive Sync] contract mirror failed:', err))
+        }).catch(err => console.error('[Drive Sync] contract mirror failed:', err?.message ?? err))
       }
     },
     onError: (error: Error) => {

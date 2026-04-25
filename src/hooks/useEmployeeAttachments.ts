@@ -71,7 +71,7 @@ export function useUploadEmployeeAttachment() {
             employeeName: result.employeeName,
             documentType: variables.documentType,
           }),
-        }).catch(err => console.warn('[Drive Sync] attachment mirror failed:', err))
+        }).catch(err => console.error('[Drive Sync] attachment mirror failed:', err?.message ?? err))
       }
     },
     onError: (error: Error) => {

@@ -53,9 +53,10 @@ async function getSharedDriveId(
   const res = await drive.drives.list({
     pageSize: 50,
     fields: 'drives(id, name)',
+    useDomainAdminAccess: true,
   })
   const found = (res.data.drives ?? []).find(d => d.name === SHARED_DRIVE_NAME)
-  if (!found?.id) throw new Error(`Shared Drive "${SHARED_DRIVE_NAME}" not found. Create it in Google Workspace first.`)
+  if (!found?.id) throw new Error(`Shared Drive "${SHARED_DRIVE_NAME}" not found. Create it in Google Workspace first and add the service account as Content Manager.`)
   return found.id
 }
 
@@ -63,11 +64,10 @@ async function getSharedDriveId(
 async function getOrCreateFolder(
   drive: ReturnType<typeof getDriveClient>,
   name: string,
-  parentId?: string,
+  parentId: string,           // always required — pass sharedDriveId as root parent
   sharedDriveId?: string | null,
 ): Promise<string> {
-  const parentClause = parentId ? ` and '${parentId}' in parents` : ''
-  const q = `name='${name.replace(/'/g, "\\'")}' and mimeType='application/vnd.google-apps.folder'${parentClause} and trashed=false`
+  const q = `name='${name.replace(/'/g, "\\'")}' and mimeType='application/vnd.google-apps.folder' and '${parentId}' in parents and trashed=false`
 
   const listParams: Record<string, any> = { q, fields: 'files(id)', spaces: 'drive' }
   if (sharedDriveId) {
@@ -86,7 +86,7 @@ async function getOrCreateFolder(
     requestBody: {
       name,
       mimeType: 'application/vnd.google-apps.folder',
-      ...(parentId ? { parents: [parentId] } : sharedDriveId ? { parents: [sharedDriveId] } : {}),
+      parents: [parentId],
     },
     fields: 'id',
   }
@@ -120,8 +120,11 @@ export async function POST(req: NextRequest) {
     // ── Resolve Shared Drive (if configured) ────────────────────────────────
     const sharedDriveId = await getSharedDriveId(drive)
 
-    // ── Root folder ──────────────────────────────────────────────────────────
-    const rootId = await getOrCreateFolder(drive, ROOT_FOLDER_NAME, sharedDriveId ?? undefined, sharedDriveId)
+    // ── Root folder — parent is either the Shared Drive ID or 'root' ────────
+    // For Shared Drives the root parent IS the sharedDriveId itself.
+    // For My Drive we use the special alias 'root'.
+    const rootParent = sharedDriveId ?? 'root'
+    const rootId = await getOrCreateFolder(drive, ROOT_FOLDER_NAME, rootParent, sharedDriveId)
 
     // ── Determine target folder ──────────────────────────────────────────────
     let targetFolderId: string
