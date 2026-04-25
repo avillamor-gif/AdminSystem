@@ -745,6 +745,7 @@ export function EmployeeDetailContent({
                             employeeId: employee.id,
                             file,
                             uploadedBy: undefined,
+                            employeeName: `${employee.first_name} ${employee.last_name}`,
                           })
                           console.log('✅ Attachment upload successful:', result)
                           e.target.value = '' // Reset input
@@ -1357,6 +1358,7 @@ export function EmployeeDetailContent({
                               file,
                               employeeId: employee.id,
                               uploadedBy: undefined,
+                              employeeName: `${employee.first_name} ${employee.last_name}`,
                             })
                             console.log('✅ Contract upload successful:', result)
                             e.target.value = ''
@@ -1639,7 +1641,8 @@ export function EmployeeDetailContent({
                           file,
                           employeeId: employee.id,
                           documentType: 'emergency_contact',
-                          description: 'Emergency contact document'
+                          description: 'Emergency contact document',
+                          employeeName: `${employee.first_name} ${employee.last_name}`,
                         })
                         
                         console.log('✅ Emergency contact attachment upload successful')
@@ -1976,7 +1979,7 @@ export function EmployeeDetailContent({
                         return
                       }
                       try {
-                        await uploadEmployeeAttachment.mutateAsync({ employeeId: employee.id, file, documentType: 'immigration', uploadedBy: undefined })
+                        await uploadEmployeeAttachment.mutateAsync({ employeeId: employee.id, file, documentType: 'immigration', uploadedBy: undefined, employeeName: `${employee.first_name} ${employee.last_name}` })
                         e.target.value = ''
                       } catch (error: any) {
                         toast.error(error?.message || 'Failed to upload attachment')

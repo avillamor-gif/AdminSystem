@@ -140,22 +140,39 @@ export default function AddPublicationPage() {
     }
   }
 
-  async function uploadToStorage(file: File, path: string): Promise<string> {
+  async function uploadToStorage(file: File, path: string, driveOptions?: { title: string; isCover?: boolean }): Promise<string> {
     const supabase = createClient()
     const { data, error } = await supabase.storage
       .from('publications')
       .upload(path, file, { cacheControl: '3600', upsert: false })
     if (error) throw new Error(`Upload failed: ${error.message}`)
     const { data: urlData } = supabase.storage.from('publications').getPublicUrl(data.path)
-    return urlData.publicUrl
+    const publicUrl = urlData.publicUrl
+
+    // Mirror to Google Drive (fire-and-forget)
+    if (driveOptions) {
+      fetch('/api/google/drive/sync', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: 'publication',
+          fileUrl: publicUrl,
+          fileName: driveOptions.isCover ? 'cover.jpg' : file.name,
+          mimeType: file.type,
+          publicationTitle: driveOptions.title,
+        }),
+      }).catch(err => console.warn('[Drive Sync] publication mirror failed:', err))
+    }
+
+    return publicUrl
   }
 
-  async function uploadCoverImage(dataUrl: string, basePath: string): Promise<string> {
+  async function uploadCoverImage(dataUrl: string, basePath: string, publicationTitle?: string): Promise<string> {
     // Convert the canvas data URL to a Blob and upload as JPEG
     const res = await fetch(dataUrl)
     const blob = await res.blob()
     const file = new File([blob], 'cover.jpg', { type: 'image/jpeg' })
-    return uploadToStorage(file, `${basePath}/cover.jpg`)
+    return uploadToStorage(file, `${basePath}/cover.jpg`, publicationTitle ? { title: publicationTitle, isCover: true } : undefined)
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -179,9 +196,9 @@ export default function AddPublicationPage() {
       setIsUploading(true)
       try {
         const basePath = `publications/${Date.now()}`
-        pdf_url = await uploadToStorage(selectedFile, `${basePath}/document.pdf`)
+        pdf_url = await uploadToStorage(selectedFile, `${basePath}/document.pdf`, { title: form.title })
         if (coverPreview) {
-          cover_url = await uploadCoverImage(coverPreview, basePath)
+          cover_url = await uploadCoverImage(coverPreview, basePath, form.title)
         }
       } catch (err: any) {
         toast.error(err.message ?? 'File upload failed')

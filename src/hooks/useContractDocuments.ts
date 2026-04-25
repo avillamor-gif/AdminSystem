@@ -30,12 +30,14 @@ export function useUploadContractDocument() {
       file, 
       employeeId, 
       uploadedBy, 
-      description 
+      description,
+      employeeName,
     }: { 
       file: File
       employeeId: string
       uploadedBy?: string
       description?: string
+      employeeName?: string
     }) => {
       // Upload file to storage
       const filePath = await contractDocumentService.uploadFile(file, employeeId)
@@ -51,13 +53,32 @@ export function useUploadContractDocument() {
         uploaded_by: uploadedBy,
       }
 
-      return await contractDocumentService.create(documentData)
+      const record = await contractDocumentService.create(documentData)
+      return { record, filePath, mimeType: file.type, employeeName }
     },
-    onSuccess: (_, variables) => {
+    onSuccess: (result, variables) => {
       queryClient.invalidateQueries({ 
         queryKey: contractDocumentKeys.list(variables.employeeId) 
       })
       toast.success('Contract document uploaded successfully')
+
+      // Mirror to Google Drive (fire-and-forget)
+      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+      if (supabaseUrl) {
+        const fileUrl = `${supabaseUrl}/storage/v1/object/public/contracts/${result.filePath}`
+        fetch('/api/google/drive/sync', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            type: 'contract',
+            fileUrl,
+            fileName: result.record.file_name,
+            mimeType: result.mimeType,
+            employeeId: variables.employeeId,
+            employeeName: result.employeeName,
+          }),
+        }).catch(err => console.warn('[Drive Sync] contract mirror failed:', err))
+      }
     },
     onError: (error: Error) => {
       console.error('Upload error:', error)

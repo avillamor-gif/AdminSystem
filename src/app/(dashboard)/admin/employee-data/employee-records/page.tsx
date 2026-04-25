@@ -37,12 +37,16 @@ export default function EmployeeRecordsPage() {
     const file = e.target.files?.[0]
     if (!file || !selectedEmployee) return
 
+    const emp = employees.find(e => e.id === selectedEmployee)
+    const employeeName = emp ? `${emp.first_name} ${emp.last_name}` : undefined
+
     try {
       await uploadMutation.mutateAsync({
         employeeId: selectedEmployee,
         file,
         description: file.name,
         documentType: 'other',
+        employeeName,
       })
       toast.success('File uploaded successfully')
       // Reset file input

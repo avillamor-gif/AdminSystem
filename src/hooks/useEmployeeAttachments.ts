@@ -25,18 +25,20 @@ export function useUploadEmployeeAttachment() {
       description,
       documentType,
       uploadedBy,
+      employeeName,
     }: {
       employeeId: string
       file: File
       description?: string
       documentType?: string
       uploadedBy?: string
+      employeeName?: string
     }) => {
       // Upload file to storage
       const filePath = await employeeAttachmentService.uploadFile(employeeId, file)
 
       // Create database record
-      return employeeAttachmentService.create({
+      const record = await employeeAttachmentService.create({
         employee_id: employeeId,
         file_name: file.name,
         file_path: filePath,
@@ -47,10 +49,30 @@ export function useUploadEmployeeAttachment() {
         document_type: documentType,
         uploaded_by: uploadedBy || null,
       })
+      return { record, filePath, mimeType: file.type, employeeName }
     },
-    onSuccess: (_, variables) => {
+    onSuccess: (result, variables) => {
       queryClient.invalidateQueries({ queryKey: attachmentKeys.byEmployee(variables.employeeId) })
       toast.success('File uploaded successfully')
+
+      // Mirror to Google Drive (fire-and-forget)
+      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+      if (supabaseUrl) {
+        const fileUrl = `${supabaseUrl}/storage/v1/object/public/attachments/${result.filePath}`
+        fetch('/api/google/drive/sync', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            type: 'attachment',
+            fileUrl,
+            fileName: result.record.file_name,
+            mimeType: result.mimeType,
+            employeeId: variables.employeeId,
+            employeeName: result.employeeName,
+            documentType: variables.documentType,
+          }),
+        }).catch(err => console.warn('[Drive Sync] attachment mirror failed:', err))
+      }
     },
     onError: (error: Error) => {
       console.error('Upload error:', error)
