@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState, useEffect, useRef } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -9,7 +9,7 @@ import { Save, Send, AlertTriangle, Plus, Trash2, BookOpen, Route, Wrench, MapPi
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
-import { useCreateTravelRequest, useSubmitTravelRequest } from '@/hooks/useTravel'
+import { useCreateTravelRequest, useSubmitTravelRequest, useUpdateTravelRequest } from '@/hooks/useTravel'
 import { useCurrentEmployee } from '@/hooks/useEmployees'
 import { createClient } from '@/lib/supabase/client'
 
@@ -117,12 +117,16 @@ const emptyEquipment = (): EquipmentRow => ({
 
 export default function NewTravelRequestPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const draftId = searchParams.get('id')
   const { data: currentEmployee } = useCurrentEmployee()
   const createMutation = useCreateTravelRequest()
+  const updateMutation = useUpdateTravelRequest()
   const submitMutation = useSubmitTravelRequest()
   const [submitError, setSubmitError] = useState<string | null>(null)
   const [budgetPlanFile, setBudgetPlanFile] = useState<File | null>(null)
   const [budgetPlanUploading, setBudgetPlanUploading] = useState(false)
+  const [existingDraftId, setExistingDraftId] = useState<string | null>(draftId)
 
   // Destination rows
   const [destinationRows, setDestinationRows] = useState<DestinationRow[]>([emptyDestination()])
@@ -133,12 +137,75 @@ export default function NewTravelRequestPage() {
   const [catalogue, setCatalogue] = useState<CataloguePub[]>([])
   const pubDropdownRefs = useRef<(HTMLDivElement | null)[]>([])
 
+  // Load existing draft if ?id= is provided
+  useEffect(() => {
+    if (!draftId) return
+    async function loadDraft() {
+      const supabase = createClient()
+      const { data } = await supabase.from('travel_requests').select('*').eq('id', draftId).single()
+      if (!data) return
+      // Restore form values
+      setValue('estimated_cost', data.estimated_cost ?? 0)
+      setValue('currency', data.currency ?? 'PHP')
+      setValue('budget_code', data.budget_code ?? '')
+      // Restore JSONB arrays
+      if (Array.isArray(data.destinations_detail) && data.destinations_detail.length > 0) {
+        setDestinationRows(data.destinations_detail.map((d: any) => ({
+          date_from: d.dates?.split('–')[0]?.trim() ?? '',
+          date_to: d.dates?.split('–')[1]?.trim() ?? '',
+          destination: d.destination ?? '',
+          purpose: d.purpose ?? '',
+          hotel_provided: d.hotel_provided ?? false,
+          activity_funded: d.activity_funded ?? false,
+          activity_funded_by: d.activity_funded_by ?? '',
+        })))
+      }
+      if (Array.isArray(data.itinerary) && data.itinerary.length > 0) {
+        setItineraryLegs(data.itinerary.map((l: any) => ({
+          date: l.date ?? '',
+          from_location: l.from_location ?? '',
+          to_location: l.to_location ?? '',
+          departure_time: l.departure_time ?? '',
+          arrival_time: l.arrival_time ?? '',
+          is_official: l.is_official ?? true,
+          funded_by: l.funded_by ?? '',
+        })))
+      }
+      if (Array.isArray(data.publications_requested) && data.publications_requested.length > 0) {
+        setPublications(data.publications_requested.map((p: any) => ({
+          ...emptyPublication(),
+          publication_id: p.publication_id ?? '',
+          title: p.title ?? '',
+          publisher: p.publisher ?? '',
+          available_copies: p.available_copies ?? 0,
+          est_weight_kg: String(p.est_weight_kg ?? ''),
+          request_copies: String(p.request_copies ?? 1),
+          search: p.title ?? '',
+        })))
+      }
+      if (Array.isArray(data.equipment_requested) && data.equipment_requested.length > 0) {
+        setEquipmentRows(data.equipment_requested.map((r: any) => ({
+          ...emptyEquipment(),
+          asset_id: r.asset_id ?? '',
+          asset_name: r.asset_name ?? '',
+          asset_tag: r.asset_tag ?? '',
+          category: r.category ?? '',
+          model: r.model ?? '',
+          expected_return_date: r.expected_return_date ?? '',
+          purpose: r.purpose ?? '',
+          search: r.asset_name ?? '',
+        })))
+      }
+    }
+    loadDraft()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [draftId])
+
   // Load publication catalogue once
   useEffect(() => {
     async function loadCatalogue() {
       const supabase = createClient()
       const { data, error } = await supabase
-        .from('publication_requests')
         .select('id, publication_id, publication_title, publication_type, publisher, quantity')
         .eq('request_type', 'catalogue')
         .eq('status', 'approved')
@@ -226,6 +293,7 @@ export default function NewTravelRequestPage() {
     register,
     handleSubmit,
     getValues,
+    setValue,
     formState: { errors },
   } = useForm<FormData>({
     resolver: zodResolver(schema),
@@ -355,8 +423,20 @@ export default function NewTravelRequestPage() {
       budget_code: raw.budget_code,
     }
     try {
-      const created = await createMutation.mutateAsync(buildPayload(draftData))
-      await uploadBudgetPlan(created.id, created.request_number ?? '')
+      let savedId: string
+      let savedNumber: string
+      if (existingDraftId) {
+        // Update existing draft
+        const updated = await updateMutation.mutateAsync({ id: existingDraftId, updates: buildPayload(draftData) as any })
+        savedId = existingDraftId
+        savedNumber = (updated as any).request_number ?? ''
+      } else {
+        const created = await createMutation.mutateAsync(buildPayload(draftData))
+        savedId = created.id
+        savedNumber = created.request_number ?? ''
+        setExistingDraftId(savedId)
+      }
+      await uploadBudgetPlan(savedId, savedNumber)
       router.push('/travel/my-requests')
     } catch (e: any) {
       setSubmitError(e?.message ?? 'Failed to save draft. Please try again.')
@@ -367,10 +447,20 @@ export default function NewTravelRequestPage() {
     if (!currentEmployee) return
     setSubmitError(null)
     try {
-      const created = await createMutation.mutateAsync(buildPayload(data))
-      await uploadBudgetPlan(created.id, created.request_number ?? '')
+      let savedId: string
+      let savedNumber: string
+      if (existingDraftId) {
+        const updated = await updateMutation.mutateAsync({ id: existingDraftId, updates: buildPayload(data) as any })
+        savedId = existingDraftId
+        savedNumber = (updated as any).request_number ?? ''
+      } else {
+        const created = await createMutation.mutateAsync(buildPayload(data))
+        savedId = created.id
+        savedNumber = created.request_number ?? ''
+      }
+      await uploadBudgetPlan(savedId, savedNumber)
       await submitMutation.mutateAsync({
-        id: created.id,
+        id: savedId,
         employeeId: currentEmployee.id,
         employeeName: `${currentEmployee.first_name} ${currentEmployee.last_name}`,
         department: (currentEmployee as any).department?.name ?? undefined,

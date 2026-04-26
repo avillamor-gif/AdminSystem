@@ -1,12 +1,12 @@
 'use client'
 
 import React, { useState } from 'react'
-import { Plane, MapPin, Calendar, DollarSign, Clock, Eye, X, CheckCircle, XCircle, AlertTriangle, Plus } from 'lucide-react'
+import { Plane, MapPin, Calendar, DollarSign, Clock, Eye, X, CheckCircle, XCircle, AlertTriangle, Plus, Trash2, Edit2 } from 'lucide-react'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
 import { Modal, ModalHeader, ModalBody, ModalFooter } from '@/components/ui/Modal'
-import { useTravelRequests, useCancelTravelRequest } from '@/hooks/useTravel'
+import { useTravelRequests, useCancelTravelRequest, useDeleteTravelRequest } from '@/hooks/useTravel'
 import { useCurrentEmployee } from '@/hooks/useEmployees'
 import { useRouter } from 'next/navigation'
 import { formatDate } from '@/lib/utils'
@@ -29,6 +29,7 @@ export default function MyTravelRequestsPage() {
     !!employeeId  // don't fetch until we know who the current employee is
   )
   const cancelMutation = useCancelTravelRequest()
+  const deleteMutation = useDeleteTravelRequest()
 
   const [viewRequest, setViewRequest] = useState<any>(null)
   const [statusFilter, setStatusFilter] = useState('')
@@ -48,6 +49,11 @@ export default function MyTravelRequestsPage() {
   const handleCancel = async (id: string) => {
     if (!confirm('Cancel this travel request?')) return
     await cancelMutation.mutateAsync(id)
+  }
+
+  const handleDelete = async (id: string) => {
+    if (!confirm('Permanently delete this travel request? This cannot be undone.')) return
+    await deleteMutation.mutateAsync(id)
   }
 
   const cfg = (status: string) => STATUS_CONFIG[status] ?? STATUS_CONFIG['draft']
@@ -137,9 +143,20 @@ export default function MyTravelRequestsPage() {
                   const s = cfg(req.status ?? 'draft')
                   const Icon = s.icon
                   const canCancel = req.status === 'draft' || req.status === 'submitted'
+                  const isDraft = req.status === 'draft'
+                  const isCancelled = req.status === 'cancelled'
                   return (
-                    <tr key={req.id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 text-sm font-medium text-gray-900 whitespace-nowrap">{req.request_number}</td>
+                    <tr
+                      key={req.id}
+                      className={`hover:bg-gray-50 ${isDraft ? 'cursor-pointer' : ''}`}
+                      onClick={isDraft ? () => router.push(`/travel/travel-request?id=${req.id}`) : undefined}
+                    >
+                      <td className="px-6 py-4 text-sm font-medium text-gray-900 whitespace-nowrap">
+                        <div className="flex items-center gap-1.5">
+                          {req.request_number}
+                          {isDraft && <Edit2 className="w-3 h-3 text-gray-400" title="Click row to continue editing" />}
+                        </div>
+                      </td>
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-1.5">
                           <MapPin className="w-3.5 h-3.5 text-gray-400 shrink-0" />
@@ -160,7 +177,7 @@ export default function MyTravelRequestsPage() {
                           {s.label}
                         </span>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
+                      <td className="px-6 py-4 whitespace-nowrap" onClick={e => e.stopPropagation()}>
                         <div className="flex items-center gap-1">
                           <button
                             onClick={() => setViewRequest(req)}
@@ -169,6 +186,15 @@ export default function MyTravelRequestsPage() {
                           >
                             <Eye className="w-4 h-4" />
                           </button>
+                          {isDraft && (
+                            <button
+                              onClick={() => router.push(`/travel/travel-request?id=${req.id}`)}
+                              className="p-1.5 text-gray-400 hover:text-orange-600 rounded hover:bg-orange-50"
+                              title="Continue editing draft"
+                            >
+                              <Edit2 className="w-4 h-4" />
+                            </button>
+                          )}
                           {canCancel && (
                             <button
                               onClick={() => handleCancel(req.id)}
@@ -176,6 +202,16 @@ export default function MyTravelRequestsPage() {
                               title="Cancel request"
                             >
                               <X className="w-4 h-4" />
+                            </button>
+                          )}
+                          {isCancelled && (
+                            <button
+                              onClick={() => handleDelete(req.id)}
+                              className="p-1.5 text-gray-400 hover:text-red-700 rounded hover:bg-red-50"
+                              title="Permanently delete"
+                              disabled={deleteMutation.isPending}
+                            >
+                              <Trash2 className="w-4 h-4" />
                             </button>
                           )}
                         </div>
