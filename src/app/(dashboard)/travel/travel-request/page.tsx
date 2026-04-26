@@ -290,6 +290,7 @@ export default function NewTravelRequestPage() {
     estimated_cost: data.estimated_cost,
     currency: data.currency,
     budget_code: data.budget_code || null,
+    destination: destinationRows.find(r => r.destination.trim())?.destination || null,
     destinations_detail: destinationRows
       .filter(r => r.destination.trim())
       .map(r => ({
