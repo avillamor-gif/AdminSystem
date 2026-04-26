@@ -47,7 +47,7 @@ export default function EmployeeProfilesPage() {
 
   // Filter by group after fetch (useEmployees already handles dept/search filters)
   const employees = (allEmployeesRaw as EmployeeWithRelations[]).filter(e => {
-    if (employeeGroup === 'current') return e.status === 'active' || e.status === 'inactive'
+    if (employeeGroup === 'current') return e.status === 'active'
     if (employeeGroup === 'past') return e.status === 'terminated'
     return true // 'all'
   })

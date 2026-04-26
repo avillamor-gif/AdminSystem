@@ -27,7 +27,7 @@ export default function TerminationActivationPage() {
   const updateEmployee = useUpdateEmployee()
 
   const statusGroups: Record<string, string[]> = {
-    current: ['active', 'inactive'],
+    current: ['active'],
     all: ['active', 'inactive', 'terminated'],
     past: ['terminated'],
   }
