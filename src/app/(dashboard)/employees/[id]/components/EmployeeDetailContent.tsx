@@ -567,32 +567,37 @@ export function EmployeeDetailContent({
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Sex</label>
-                  <div className="flex gap-6 py-2">
-                    <label className="flex items-center cursor-pointer">
-                      <input
-                        type="radio"
-                        name="sex"
-                        value="male"
-                        checked={formData.sex === 'male'}
-                        onChange={(e) => handleInputChange('sex', e.target.value)}
-                        disabled={!isEditMode}
-                        className="h-4 w-4 text-orange focus:ring-orange border-gray-300 cursor-pointer"
-                      />
-                      <span className="ml-2 text-sm text-gray-700">Male</span>
-                    </label>
-                    <label className="flex items-center cursor-pointer">
-                      <input
-                        type="radio"
-                        name="sex"
-                        value="female"
-                        checked={formData.sex === 'female'}
-                        onChange={(e) => handleInputChange('sex', e.target.value)}
-                        disabled={!isEditMode}
-                        className="h-4 w-4 text-orange focus:ring-orange border-gray-300 cursor-pointer"
-                      />
-                      <span className="ml-2 text-sm text-gray-700">Female</span>
-                    </label>
-                  </div>
+                  {isEditMode ? (
+                    <div className="flex gap-4 py-2">
+                      {['male', 'female'].map((val) => (
+                        <label
+                          key={val}
+                          className={`flex items-center gap-2 px-4 py-2 rounded-lg border-2 cursor-pointer transition-all ${
+                            formData.sex === val
+                              ? 'border-orange-500 bg-orange-50 text-orange-700 font-medium'
+                              : 'border-gray-200 text-gray-600 hover:border-orange-300'
+                          }`}
+                        >
+                          <input
+                            type="radio"
+                            name="sex"
+                            value={val}
+                            checked={formData.sex === val}
+                            onChange={(e) => handleInputChange('sex', e.target.value)}
+                            className="accent-orange-500 h-4 w-4"
+                          />
+                          <span className="text-sm capitalize">{val}</span>
+                        </label>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="py-2 text-sm text-gray-900">
+                      {formData.sex
+                        ? <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-700 capitalize">{formData.sex}</span>
+                        : <span className="text-gray-400">—</span>
+                      }
+                    </p>
+                  )}
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-4">
