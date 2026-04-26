@@ -13,7 +13,18 @@ import toast from 'react-hot-toast'
 const terminationSchema = z.object({
   employee_id: z.string().min(1, 'Employee is required'),
   termination_type: z.enum(['voluntary_resignation', 'retirement', 'contract_end', 'termination_with_cause', 'termination_without_cause', 'layoff', 'mutual_agreement']),
-  termination_reason: z.string().min(10, 'Reason must be at least 10 characters'),
+  termination_reason: z.enum([
+    'Contract Not Renewed',
+    'Deceased',
+    'Dismissed',
+    'Laid-off',
+    'Other',
+    'Physically Disabled/Compensated',
+    'Resigned',
+    'Resigned - Company Requested',
+    'Resigned - Self Proposed',
+    'Retired',
+  ], { required_error: 'Termination reason is required' }),
   proposed_last_working_date: z.string().min(1, 'Last working date is required'),
   notice_period_days: z.number().int().min(0).optional(),
   notice_date: z.string().optional(),
@@ -117,12 +128,22 @@ export default function NewTerminationPage() {
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Termination Reason <span className="text-red-500">*</span>
               </label>
-              <textarea
+              <select
                 {...register('termination_reason')}
-                rows={4}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
-                placeholder="Provide detailed reason for termination..."
-              />
+              >
+                <option value="">Select reason...</option>
+                <option value="Contract Not Renewed">Contract Not Renewed</option>
+                <option value="Deceased">Deceased</option>
+                <option value="Dismissed">Dismissed</option>
+                <option value="Laid-off">Laid-off</option>
+                <option value="Other">Other</option>
+                <option value="Physically Disabled/Compensated">Physically Disabled/Compensated</option>
+                <option value="Resigned">Resigned</option>
+                <option value="Resigned - Company Requested">Resigned - Company Requested</option>
+                <option value="Resigned - Self Proposed">Resigned - Self Proposed</option>
+                <option value="Retired">Retired</option>
+              </select>
               {errors.termination_reason && <p className="mt-1 text-sm text-red-600">{errors.termination_reason.message}</p>}
             </div>
 
