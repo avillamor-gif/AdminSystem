@@ -2606,7 +2606,7 @@ export function EmployeeDetailContent({
                 lastName={employee.last_name}
                 size="lg"
               />
-              {isAdmin && !readOnly && (
+              {(isAdmin || selfService) && !readOnly && (
                 <label
                   htmlFor="photo-upload-mobile"
                   className="absolute inset-0 rounded-full flex items-center justify-center bg-black/0 group-hover:bg-black/40 transition-all cursor-pointer"
@@ -2656,7 +2656,7 @@ export function EmployeeDetailContent({
         <div className="flex items-center gap-6">
           <div className="relative flex-shrink-0 group">
             <Avatar src={employee.avatar_url} firstName={employee.first_name} lastName={employee.last_name} size="xl" />
-            {isAdmin && !readOnly && (
+            {(isAdmin || selfService) && !readOnly && (
               <label
                 htmlFor="photo-upload"
                 className="absolute inset-0 rounded-full flex items-center justify-center bg-black/0 group-hover:bg-black/40 transition-all cursor-pointer"
