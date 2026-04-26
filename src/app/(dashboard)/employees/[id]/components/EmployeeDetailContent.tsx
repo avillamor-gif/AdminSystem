@@ -2,11 +2,12 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
+import { useQueryClient } from '@tanstack/react-query'
 import Link from 'next/link'
 import { ArrowLeft, Mail, Phone, MapPin, Calendar, Building2, Briefcase, User, Users, CreditCard, Shield, Award, FileText, Heart, Plane, Laptop, GraduationCap, Lock, Save, Paperclip, Upload, Download, Trash2, Edit, Eye, Camera, RotateCcw, Package, PenLine } from 'lucide-react'
 import { Card, Avatar, Badge, Button, Input, Select } from '@/components/ui'
 import { formatDate } from '@/lib/utils'
-import { useEmployeeByEmployeeId, useUpdateEmployee, useEmployees } from '@/hooks/useEmployees'
+import { useEmployeeByEmployeeId, useUpdateEmployee, useEmployees, useCurrentEmployee, employeeKeys } from '@/hooks/useEmployees'
 import { useCurrentUserPermissions } from '@/hooks/usePermissions'
 import { useJobTitles } from '@/hooks/useJobTitles'
 import { useJobDescriptions } from '@/hooks/useJobDescriptions'
@@ -17,7 +18,6 @@ import { useEmergencyContacts, useDeleteEmergencyContact } from '@/hooks/useEmer
 import { useContractDocuments, useUploadContractDocument, useDeleteContractDocument, useDownloadContractDocument } from '@/hooks/useContractDocuments'
 import { useEmployeeAttachments, useUploadEmployeeAttachment, useDeleteEmployeeAttachment, useDownloadEmployeeAttachment } from '@/hooks/useEmployeeAttachments'
 import { useAssets, useAssetAssignments, useAssignAsset, useReturnAsset, type Asset } from '@/hooks/useAssets'
-import { useCurrentEmployee } from '@/hooks/useEmployees'
 import { useImmigrationDocuments, useCreateImmigrationDocument, useUpdateImmigrationDocument, useDeleteImmigrationDocument, type ImmigrationDocument } from '@/hooks/useImmigration'
 import { EmergencyContactFormModal } from './EmergencyContactFormModal'
 import { SignatureTab } from './SignatureTab'
@@ -110,6 +110,7 @@ export function EmployeeDetailContent({
   
   // Fetch employee by employee_id
   const { data: employee, isLoading, error } = useEmployeeByEmployeeId(employeeId)
+  const queryClient = useQueryClient()
   const updateEmployee = useUpdateEmployee()
   const { data: roleInfo } = useCurrentUserPermissions()
   const { data: jobTitles = [] } = useJobTitles({})
@@ -389,24 +390,22 @@ export function EmployeeDetailContent({
     setIsUploadingPhoto(true)
 
     try {
-      // Delete old photo if exists
-      if (employee.avatar_url) {
-        try {
-          await deleteEmployeePhoto(employee.avatar_url)
-        } catch (error) {
-          console.error('Error deleting old photo:', error)
-          // Continue with upload even if delete fails
-        }
+      const formData = new FormData()
+      formData.append('file', file)
+      formData.append('employeeId', employee.employee_id)
+
+      const res = await fetch(`/api/employees/${employee.id}/photo`, {
+        method: 'POST',
+        body: formData,
+      })
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ error: res.statusText }))
+        throw new Error(err.error || 'Upload failed')
       }
 
-      // Upload new photo
-      const photoUrl = await uploadEmployeePhoto(file, employee.employee_id)
-
-      // Update employee with new photo URL
-      await updateEmployee.mutateAsync({
-        id: employee.id,
-        data: { avatar_url: photoUrl }
-      })
+      // Refresh employee data in cache
+      await queryClient.invalidateQueries({ queryKey: employeeKeys.all })
 
       toast.success('Photo uploaded successfully')
     } catch (error) {
@@ -425,12 +424,14 @@ export function EmployeeDetailContent({
     setIsUploadingPhoto(true)
 
     try {
-      await deleteEmployeePhoto(employee.avatar_url)
-      
-      await updateEmployee.mutateAsync({
-        id: employee.id,
-        data: { avatar_url: null }
-      })
+      const res = await fetch(`/api/employees/${employee.id}/photo`, { method: 'DELETE' })
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ error: res.statusText }))
+        throw new Error(err.error || 'Delete failed')
+      }
+
+      // Refresh employee data in cache
+      await queryClient.invalidateQueries({ queryKey: employeeKeys.all })
 
       toast.success('Photo deleted successfully')
     } catch (error) {
