@@ -1,6 +1,7 @@
 import SecondaryNav from '@/components/layout/SecondaryNav'
 
 const navItems = [
+  { label: 'Workforce Analytics',      href: '/admin/employee-data/workforce-analytics',   requiresPermission: 'admin.employee_data.employee_profiles' },
   { label: 'Employee Profiles',        href: '/admin/employee-data/employee-profiles',      requiresPermission: 'admin.employee_data.employee_profiles' },
   { label: 'Data Management',          href: '/admin/employee-data/data-management',         requiresPermission: 'admin.employee_data.data_management' },
   { label: 'PIM Configuration',        href: '/admin/employee-data/pim-configuration',       requiresPermission: 'admin.employee_data.pim_configuration' },
