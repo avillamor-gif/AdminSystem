@@ -8,7 +8,7 @@ export function useTravelRequests(filters: TravelRequestFilters = {}, enabled = 
   return useQuery({
     queryKey: travelKeys.list(filters),
     queryFn: () => travelService.getAll(filters),
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    staleTime: 0, // always refetch on mount so newly created drafts appear immediately
     enabled,
   })
 }
@@ -50,6 +50,7 @@ export function useCreateTravelRequest() {
       travelService.create(data),
     onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: travelKeys.all })
+      queryClient.refetchQueries({ queryKey: travelKeys.lists() })
       if (result.employee_id) {
         logAction({
           employee_id: result.employee_id,
