@@ -21,10 +21,16 @@ interface PendingAction {
 export default function TerminationActivationPage() {
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState<string>('all')
-  const [pendingAction, setPendingAction] = useState<PendingAction | null>(null)
+  const [statusFilter, setStatusFilter] = useState<string>('current')
 
   const { data: allEmployees = [], isLoading } = useEmployees({})
   const updateEmployee = useUpdateEmployee()
+
+  const statusGroups: Record<string, string[]> = {
+    current: ['active', 'inactive'],
+    all: ['active', 'inactive', 'terminated'],
+    past: ['terminated'],
+  }
 
   const employees = (allEmployees as any[])
     .filter(e => {
@@ -32,7 +38,7 @@ export default function TerminationActivationPage() {
         !search ||
         `${e.first_name} ${e.last_name}`.toLowerCase().includes(search.toLowerCase()) ||
         (e.employee_id ?? '').toLowerCase().includes(search.toLowerCase())
-      const matchesStatus = statusFilter === 'all' || e.status === statusFilter
+      const matchesStatus = statusGroups[statusFilter]?.includes(e.status ?? 'active')
       return matchesSearch && matchesStatus
     })
     .sort((a: any, b: any) =>
@@ -146,10 +152,9 @@ export default function TerminationActivationPage() {
           </div>
           <div className="flex gap-1 bg-gray-100 rounded-lg p-1">
             {[
-              { value: 'all', label: 'All' },
-              { value: 'active', label: 'Active' },
-              { value: 'inactive', label: 'Inactive' },
-              { value: 'terminated', label: 'Terminated' },
+              { value: 'current', label: 'Current Employees' },
+              { value: 'all',     label: 'Current & Past' },
+              { value: 'past',    label: 'Past Employees' },
             ].map(opt => (
               <button
                 key={opt.value}

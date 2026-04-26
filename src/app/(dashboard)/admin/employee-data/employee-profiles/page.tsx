@@ -19,6 +19,14 @@ import type { EmployeeFilters, EmployeeWithRelations } from '@/services/employee
 
 export default function EmployeeProfilesPage() {
   const [filters, setFilters] = useState<EmployeeFilters>({})
+  const [employeeGroup, setEmployeeGroup] = useState<'current' | 'all' | 'past'>('current')
+
+  // Derive the status filter from the group selection
+  const groupStatusMap: Record<string, string> = {
+    current: '',      // active + inactive — handled by post-filter below
+    all: '',          // all statuses
+    past: 'terminated',
+  }
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [showEditModal, setShowEditModal] = useState(false)
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
@@ -33,11 +41,17 @@ export default function EmployeeProfilesPage() {
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
   const menuRef = useRef<HTMLDivElement>(null)
 
-  const { data: employees = [], isLoading: isLoadingEmployees, error: employeesError } = useEmployees(filters)
+  const { data: allEmployeesRaw = [], isLoading: isLoadingEmployees, error: employeesError } = useEmployees(filters)
   const { data: departments = [] } = useDepartments()
   const deleteEmployee = useDeleteEmployee()
 
-  const typedEmployees = employees as EmployeeWithRelations[]
+  // Filter by group after fetch (useEmployees already handles dept/search filters)
+  const employees = (allEmployeesRaw as EmployeeWithRelations[]).filter(e => {
+    if (employeeGroup === 'current') return e.status === 'active' || e.status === 'inactive'
+    if (employeeGroup === 'past') return e.status === 'terminated'
+    return true // 'all'
+  })
+  const typedEmployees = employees
   const typedDepartments = departments
 
   const stats = {
@@ -201,14 +215,25 @@ export default function EmployeeProfilesPage() {
             value={filters.department || ''}
             onChange={(e) => setFilters({ ...filters, department: e.target.value })}
           />
-          <Select
-            options={statusOptions}
-            value={filters.status || ''}
-            onChange={(e) => setFilters({ ...filters, status: e.target.value })}
-          />
-          <Button variant="secondary" onClick={() => setFilters({})}>
-            Clear Filters
-          </Button>
+          <div className="flex gap-1 bg-gray-100 rounded-lg p-1 col-span-2">
+            {([
+              { value: 'current', label: 'Current Employees' },
+              { value: 'all',     label: 'Current & Past' },
+              { value: 'past',    label: 'Past Employees' },
+            ] as const).map(opt => (
+              <button
+                key={opt.value}
+                onClick={() => setEmployeeGroup(opt.value)}
+                className={`flex-1 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                  employeeGroup === opt.value
+                    ? 'bg-white shadow text-gray-900'
+                    : 'text-gray-500 hover:text-gray-700'
+                }`}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
         </div>
       </Card>
 
