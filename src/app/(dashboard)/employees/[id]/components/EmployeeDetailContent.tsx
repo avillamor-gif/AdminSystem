@@ -584,12 +584,21 @@ export function EmployeeDetailContent({
                       ))}
                     </div>
                   ) : (
-                    <p className="py-2 text-sm text-gray-900">
-                      {formData.sex
-                        ? <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-700 capitalize">{formData.sex}</span>
-                        : <span className="text-gray-400">—</span>
-                      }
-                    </p>
+                    <div className="flex gap-6 py-2">
+                      {['male', 'female'].map((val) => (
+                        <label key={val} className="flex items-center gap-2">
+                          <input
+                            type="radio"
+                            name="sex-view"
+                            value={val}
+                            checked={formData.sex === val}
+                            readOnly
+                            className="accent-orange-500 h-4 w-4"
+                          />
+                          <span className="text-sm text-gray-700 capitalize">{val}</span>
+                        </label>
+                      ))}
+                    </div>
                   )}
                 </div>
               </div>
