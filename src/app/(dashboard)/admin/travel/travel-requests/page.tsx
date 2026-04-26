@@ -6,9 +6,9 @@ import {
   FileText, Plus, Eye, CheckCircle, XCircle, Clock,
   Search, Filter, Download, MapPin, Calendar,
   DollarSign, AlertTriangle, Building2, Plane,
-  Settings, Bell, GitBranch, ExternalLink
+  Settings, Bell, GitBranch, ExternalLink, User, Briefcase
 } from 'lucide-react'
-import { Card, Button, Badge, Input } from '@/components/ui'
+import { Card, Button, Badge, Input, Modal, ModalHeader, ModalBody, ModalFooter } from '@/components/ui'
 import { useTravelRequests, useApproveTravelRequest, useRejectTravelRequest } from '@/hooks/useTravel'
 import { useCurrentEmployee } from '@/hooks/useEmployees'
 import { useCurrentUserPermissions, useWorkflowConfig, useDepartments } from '@/hooks'
@@ -32,6 +32,8 @@ const TravelRequestsPage = () => {
   const [statusFilter, setStatusFilter] = useState('')
   const [departmentFilter, setDepartmentFilter] = useState('')
   const [selectedRequest, setSelectedRequest] = useState<any>(null)
+  const [approveModal, setApproveModal] = useState<{ open: boolean; requestId: string; comments: string }>({ open: false, requestId: '', comments: '' })
+  const [rejectModal, setRejectModal] = useState<{ open: boolean; requestId: string; reason: string }>({ open: false, requestId: '', reason: '' })
 
   const { data: travelRequests = [], isLoading } = useTravelRequests()
   const { data: currentEmployee } = useCurrentEmployee()
@@ -77,23 +79,32 @@ const TravelRequestsPage = () => {
   }, [travelRequests])
 
   const handleApprove = async (requestId: string) => {
-    const comments = prompt('Enter approval notes (optional):') || undefined
-    await approveMutation.mutateAsync({
-      id: requestId,
-      approverId: currentEmployee?.id ?? '',
-      comments,
-    })
+    setApproveModal({ open: true, requestId, comments: '' })
   }
 
   const handleReject = async (requestId: string) => {
-    const reason = prompt('Enter rejection reason:')
-    if (!reason) return
-    
-    await rejectMutation.mutateAsync({
-      id: requestId,
+    setRejectModal({ open: true, requestId, reason: '' })
+  }
+
+  const confirmApprove = async () => {
+    await approveMutation.mutateAsync({
+      id: approveModal.requestId,
       approverId: currentEmployee?.id ?? '',
-      reason,
+      comments: approveModal.comments || undefined,
     })
+    setApproveModal({ open: false, requestId: '', comments: '' })
+    setSelectedRequest(null)
+  }
+
+  const confirmReject = async () => {
+    if (!rejectModal.reason.trim()) return
+    await rejectMutation.mutateAsync({
+      id: rejectModal.requestId,
+      approverId: currentEmployee?.id ?? '',
+      reason: rejectModal.reason,
+    })
+    setRejectModal({ open: false, requestId: '', reason: '' })
+    setSelectedRequest(null)
   }
 
   const getStatusColor = (status: string) => {
@@ -550,7 +561,7 @@ const TravelRequestsPage = () => {
             <Download className="w-4 h-4 mr-2" />
             Export Reports
           </Button>
-          <Button>
+          <Button onClick={() => router.push('/travel/travel-request')}>
             <Plus className="w-4 h-4 mr-2" />
             New Travel Request
           </Button>
@@ -590,6 +601,247 @@ const TravelRequestsPage = () => {
           {activeTab === 'workflow' && renderWorkflow()}
         </div>
       </Card>
+
+      {/* Detail Modal */}
+      {selectedRequest && (
+        <Modal isOpen={!!selectedRequest} onClose={() => setSelectedRequest(null)} size="lg">
+          <ModalHeader>
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-blue-100 rounded-lg">
+                <Plane className="w-5 h-5 text-blue-600" />
+              </div>
+              <div>
+                <h2 className="text-lg font-semibold text-gray-900">{selectedRequest.request_number}</h2>
+                <p className="text-sm text-gray-500">Travel Request Details</p>
+              </div>
+              <Badge variant={getStatusColor(selectedRequest.status ?? '')} className="ml-2">
+                {selectedRequest.status?.replace(/_/g, ' ').toUpperCase()}
+              </Badge>
+            </div>
+          </ModalHeader>
+          <ModalBody>
+            <div className="space-y-5">
+              {/* Employee */}
+              <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                <User className="w-5 h-5 text-gray-400" />
+                <div>
+                  <p className="text-xs text-gray-500">Requested by</p>
+                  <p className="font-medium text-gray-900">{selectedRequest.employee?.first_name} {selectedRequest.employee?.last_name}</p>
+                </div>
+              </div>
+
+              {/* Destination & Dates */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-xs text-gray-500 mb-1">Destination</p>
+                  <p className="font-medium text-gray-900 flex items-center gap-1">
+                    <MapPin className="w-4 h-4 text-gray-400" />{selectedRequest.destination || '—'}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500 mb-1">Travel Dates</p>
+                  <p className="font-medium text-gray-900 flex items-center gap-1">
+                    <Calendar className="w-4 h-4 text-gray-400" />
+                    {selectedRequest.start_date ? new Date(selectedRequest.start_date).toLocaleDateString() : '—'} – {selectedRequest.end_date ? new Date(selectedRequest.end_date).toLocaleDateString() : '—'}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500 mb-1">Duration</p>
+                  <p className="font-medium text-gray-900">{selectedRequest.duration || '—'}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500 mb-1">Urgency</p>
+                  <p className="font-medium text-gray-900 capitalize">{selectedRequest.urgency || '—'}</p>
+                </div>
+              </div>
+
+              {/* Purpose & Justification */}
+              <div>
+                <p className="text-xs text-gray-500 mb-1">Purpose</p>
+                <p className="text-gray-800">{selectedRequest.purpose || '—'}</p>
+              </div>
+              {selectedRequest.business_justification && (
+                <div>
+                  <p className="text-xs text-gray-500 mb-1">Business Justification</p>
+                  <p className="text-gray-800">{selectedRequest.business_justification}</p>
+                </div>
+              )}
+
+              {/* Cost */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-xs text-gray-500 mb-1">Estimated Cost</p>
+                  <p className="font-bold text-gray-900 text-lg">
+                    {selectedRequest.currency || '₱'}{(selectedRequest.estimated_cost ?? 0).toLocaleString()}
+                  </p>
+                </div>
+                {selectedRequest.budget_code && (
+                  <div>
+                    <p className="text-xs text-gray-500 mb-1">Budget Code</p>
+                    <p className="font-medium text-gray-900">{selectedRequest.budget_code}</p>
+                  </div>
+                )}
+              </div>
+
+              {/* Budget Plan */}
+              {selectedRequest.budget_plan_url && (
+                <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
+                  <p className="text-xs text-gray-500 mb-1">Budget Plan</p>
+                  <a
+                    href={selectedRequest.budget_plan_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-1 text-sm text-green-700 font-medium hover:underline"
+                  >
+                    <ExternalLink className="w-4 h-4" />
+                    {selectedRequest.budget_plan_filename || 'Open Budget Plan in Google Drive'}
+                  </a>
+                </div>
+              )}
+
+              {/* Itinerary */}
+              {Array.isArray(selectedRequest.itinerary) && selectedRequest.itinerary.length > 0 && (
+                <div>
+                  <p className="text-xs text-gray-500 mb-2">Itinerary</p>
+                  <div className="space-y-2">
+                    {selectedRequest.itinerary.map((item: any, i: number) => (
+                      <div key={i} className="p-2 bg-gray-50 rounded border border-gray-200 text-sm">
+                        <span className="font-medium">{item.date || item.day}</span>
+                        {item.activity && <span className="text-gray-600"> — {item.activity}</span>}
+                        {item.location && <span className="text-gray-500"> ({item.location})</span>}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Destinations detail */}
+              {Array.isArray(selectedRequest.destinations_detail) && selectedRequest.destinations_detail.length > 0 && (
+                <div>
+                  <p className="text-xs text-gray-500 mb-2">Destinations Detail</p>
+                  <div className="space-y-2">
+                    {selectedRequest.destinations_detail.map((dest: any, i: number) => (
+                      <div key={i} className="p-2 bg-gray-50 rounded border border-gray-200 text-sm flex items-center gap-2">
+                        <MapPin className="w-3 h-3 text-gray-400" />
+                        <span>{typeof dest === 'string' ? dest : dest.location || dest.city || JSON.stringify(dest)}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Equipment */}
+              {Array.isArray(selectedRequest.equipment_requested) && selectedRequest.equipment_requested.length > 0 && (
+                <div>
+                  <p className="text-xs text-gray-500 mb-2">Equipment Requested</p>
+                  <div className="flex flex-wrap gap-2">
+                    {selectedRequest.equipment_requested.map((eq: any, i: number) => (
+                      <span key={i} className="px-2 py-1 bg-blue-50 border border-blue-200 rounded text-xs text-blue-800">
+                        {typeof eq === 'string' ? eq : eq.name || eq.type || JSON.stringify(eq)}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Publications */}
+              {Array.isArray(selectedRequest.publications_requested) && selectedRequest.publications_requested.length > 0 && (
+                <div>
+                  <p className="text-xs text-gray-500 mb-2">Publications Requested</p>
+                  <div className="flex flex-wrap gap-2">
+                    {selectedRequest.publications_requested.map((pub: any, i: number) => (
+                      <span key={i} className="px-2 py-1 bg-purple-50 border border-purple-200 rounded text-xs text-purple-800">
+                        {typeof pub === 'string' ? pub : pub.title || pub.name || JSON.stringify(pub)}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Rejection reason */}
+              {selectedRequest.status === 'rejected' && selectedRequest.rejection_reason && (
+                <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
+                  <p className="text-xs text-red-500 mb-1">Rejection Reason</p>
+                  <p className="text-red-800 text-sm">{selectedRequest.rejection_reason}</p>
+                </div>
+              )}
+            </div>
+          </ModalBody>
+          <ModalFooter>
+            <div className="flex items-center gap-2 w-full">
+              {(selectedRequest.status === 'pending_approval' || selectedRequest.status === 'submitted') && canApprove && (
+                <>
+                  <Button
+                    variant="primary"
+                    onClick={() => handleApprove(selectedRequest.id)}
+                    disabled={approveMutation.isPending}
+                  >
+                    <CheckCircle className="w-4 h-4 mr-1" /> Approve
+                  </Button>
+                  <Button
+                    variant="danger"
+                    onClick={() => handleReject(selectedRequest.id)}
+                    disabled={rejectMutation.isPending}
+                  >
+                    <XCircle className="w-4 h-4 mr-1" /> Reject
+                  </Button>
+                </>
+              )}
+              <Button variant="secondary" className="ml-auto" onClick={() => setSelectedRequest(null)}>
+                Close
+              </Button>
+            </div>
+          </ModalFooter>
+        </Modal>
+      )}
+
+      {/* Approve Modal */}
+      <Modal isOpen={approveModal.open} onClose={() => setApproveModal({ open: false, requestId: '', comments: '' })}>
+        <ModalHeader>Approve Travel Request</ModalHeader>
+        <ModalBody>
+          <p className="text-gray-600 mb-3">Add optional approval notes before approving this travel request.</p>
+          <textarea
+            className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
+            rows={3}
+            placeholder="Approval notes (optional)..."
+            value={approveModal.comments}
+            onChange={(e) => setApproveModal(prev => ({ ...prev, comments: e.target.value }))}
+          />
+        </ModalBody>
+        <ModalFooter>
+          <Button variant="secondary" onClick={() => setApproveModal({ open: false, requestId: '', comments: '' })}>Cancel</Button>
+          <Button variant="primary" onClick={confirmApprove} disabled={approveMutation.isPending}>
+            <CheckCircle className="w-4 h-4 mr-1" />
+            {approveMutation.isPending ? 'Approving...' : 'Approve'}
+          </Button>
+        </ModalFooter>
+      </Modal>
+
+      {/* Reject Modal */}
+      <Modal isOpen={rejectModal.open} onClose={() => setRejectModal({ open: false, requestId: '', reason: '' })}>
+        <ModalHeader>Reject Travel Request</ModalHeader>
+        <ModalBody>
+          <p className="text-gray-600 mb-3">Please provide a reason for rejecting this travel request.</p>
+          <textarea
+            className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
+            rows={3}
+            placeholder="Rejection reason (required)..."
+            value={rejectModal.reason}
+            onChange={(e) => setRejectModal(prev => ({ ...prev, reason: e.target.value }))}
+          />
+        </ModalBody>
+        <ModalFooter>
+          <Button variant="secondary" onClick={() => setRejectModal({ open: false, requestId: '', reason: '' })}>Cancel</Button>
+          <Button
+            variant="danger"
+            onClick={confirmReject}
+            disabled={rejectMutation.isPending || !rejectModal.reason.trim()}
+          >
+            <XCircle className="w-4 h-4 mr-1" />
+            {rejectMutation.isPending ? 'Rejecting...' : 'Reject'}
+          </Button>
+        </ModalFooter>
+      </Modal>
     </div>
   )
 }
