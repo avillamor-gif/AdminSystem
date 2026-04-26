@@ -253,8 +253,22 @@ export default function MyTravelRequestsPage() {
                 )}
                 {viewRequest.cost_center && (
                   <div>
-                    <p className="text-gray-500 text-xs font-medium uppercase mb-1">Cost Center</p>
+                    <p className="text-gray-500 text-xs font-medium uppercase mb-1">Budget Plan (Cost Center)</p>
                     <p className="font-medium text-gray-900">{viewRequest.cost_center}</p>
+                  </div>
+                )}
+                {(viewRequest as any).budget_plan_url && (
+                  <div className="col-span-2">
+                    <p className="text-gray-500 text-xs font-medium uppercase mb-1">Budget Plan File</p>
+                    <a
+                      href={(viewRequest as any).budget_plan_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 text-sm text-green-700 hover:underline font-medium"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
+                      {(viewRequest as any).budget_plan_filename ?? 'Open Budget Plan'}
+                    </a>
                   </div>
                 )}
               </div>

@@ -88,7 +88,6 @@ const schema = z.object({
   estimated_cost: z.coerce.number().min(0, 'Cost must be a positive number'),
   currency: z.string().default('PHP'),
   budget_code: z.string().optional(),
-  cost_center: z.string().optional(),
 })
 
 type FormData = z.infer<typeof schema>
@@ -122,6 +121,8 @@ export default function NewTravelRequestPage() {
   const createMutation = useCreateTravelRequest()
   const submitMutation = useSubmitTravelRequest()
   const [submitError, setSubmitError] = useState<string | null>(null)
+  const [budgetPlanFile, setBudgetPlanFile] = useState<File | null>(null)
+  const [budgetPlanUploading, setBudgetPlanUploading] = useState(false)
 
   // Destination rows
   const [destinationRows, setDestinationRows] = useState<DestinationRow[]>([emptyDestination()])
@@ -288,7 +289,6 @@ export default function NewTravelRequestPage() {
     estimated_cost: data.estimated_cost,
     currency: data.currency,
     budget_code: data.budget_code || null,
-    cost_center: data.cost_center || null,
     destinations_detail: destinationRows
       .filter(r => r.destination.trim())
       .map(r => ({
@@ -323,11 +323,31 @@ export default function NewTravelRequestPage() {
       })),
   })
 
+  const uploadBudgetPlan = async (travelRequestId: string, requestNumber: string) => {
+    if (!budgetPlanFile || !currentEmployee) return
+    setBudgetPlanUploading(true)
+    try {
+      const fd = new FormData()
+      fd.append('file', budgetPlanFile)
+      fd.append('travelRequestId', travelRequestId)
+      fd.append('requestNumber', requestNumber)
+      fd.append('employeeName', `${currentEmployee.first_name} ${currentEmployee.last_name}`)
+      const res = await fetch('/api/travel/upload-budget-plan', { method: 'POST', body: fd })
+      if (!res.ok) {
+        const err = await res.json()
+        console.error('Budget plan upload failed:', err)
+      }
+    } finally {
+      setBudgetPlanUploading(false)
+    }
+  }
+
   const onSaveDraft = async (data: FormData) => {
     if (!currentEmployee) return
     setSubmitError(null)
     try {
-      await createMutation.mutateAsync(buildPayload(data))
+      const created = await createMutation.mutateAsync(buildPayload(data))
+      await uploadBudgetPlan(created.id, created.request_number ?? '')
       router.push('/travel/my-requests')
     } catch (e: any) {
       setSubmitError(e?.message ?? 'Failed to save draft. Please try again.')
@@ -339,6 +359,7 @@ export default function NewTravelRequestPage() {
     setSubmitError(null)
     try {
       const created = await createMutation.mutateAsync(buildPayload(data))
+      await uploadBudgetPlan(created.id, created.request_number ?? '')
       await submitMutation.mutateAsync({
         id: created.id,
         employeeId: currentEmployee.id,
@@ -929,8 +950,25 @@ export default function NewTravelRequestPage() {
                 <Input {...register('budget_code')} placeholder="e.g. MKT-2024" />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">Cost Center <span className="text-gray-400 font-normal">(optional)</span></label>
-                <Input {...register('cost_center')} placeholder="e.g. CC-001" />
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">Budget Plan <span className="text-gray-400 font-normal">(Excel file, optional)</span></label>
+                <div className="flex items-center gap-3">
+                  <label className="flex-1 flex items-center gap-2 px-3 py-2 border border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-orange-400 hover:bg-orange-50 transition-colors text-sm text-gray-500">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-green-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                    <span className="truncate">{budgetPlanFile ? budgetPlanFile.name : 'Click to attach .xlsx / .xls'}</span>
+                    <input
+                      type="file"
+                      accept=".xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel"
+                      className="hidden"
+                      onChange={e => setBudgetPlanFile(e.target.files?.[0] ?? null)}
+                    />
+                  </label>
+                  {budgetPlanFile && (
+                    <button type="button" onClick={() => setBudgetPlanFile(null)} className="text-xs text-red-500 hover:text-red-700">
+                      Remove
+                    </button>
+                  )}
+                </div>
+                <p className="mt-1 text-xs text-gray-400">Will be uploaded to Google Workspace for approver review &amp; editing.</p>
               </div>
             </div>
           </CardContent>
@@ -969,18 +1007,18 @@ export default function NewTravelRequestPage() {
             type="button"
             variant="secondary"
             onClick={handleSubmit(onSaveDraft)}
-            disabled={createMutation.isPending}
+            disabled={createMutation.isPending || budgetPlanUploading}
           >
             <Save className="w-4 h-4 mr-2" />
-            Save as Draft
+            {budgetPlanUploading ? 'Uploading...' : 'Save as Draft'}
           </Button>
           <Button
             type="button"
             onClick={handleSubmit(onSubmit)}
-            disabled={createMutation.isPending || submitMutation.isPending}
+            disabled={createMutation.isPending || submitMutation.isPending || budgetPlanUploading}
           >
             <Send className="w-4 h-4 mr-2" />
-            {createMutation.isPending || submitMutation.isPending ? 'Submitting...' : 'Submit for Approval'}
+            {budgetPlanUploading ? 'Uploading Budget Plan...' : createMutation.isPending || submitMutation.isPending ? 'Submitting...' : 'Submit for Approval'}
           </Button>
         </div>
       </form>

@@ -6,7 +6,7 @@ import {
   FileText, Plus, Eye, CheckCircle, XCircle, Clock,
   Search, Filter, Download, MapPin, Calendar,
   DollarSign, AlertTriangle, Building2, Plane,
-  Settings, Bell, GitBranch
+  Settings, Bell, GitBranch, ExternalLink
 } from 'lucide-react'
 import { Card, Button, Badge, Input } from '@/components/ui'
 import { useTravelRequests, useApproveTravelRequest, useRejectTravelRequest } from '@/hooks/useTravel'
@@ -248,6 +248,18 @@ const TravelRequestsPage = () => {
               <Eye className="w-3 h-3 mr-1" />
               View Details
             </Button>
+            {(request as any).budget_plan_url && (
+              <a
+                href={(request as any).budget_plan_url}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <Button size="sm" variant="outline" className="text-green-700 border-green-300 hover:bg-green-50">
+                  <ExternalLink className="w-3 h-3 mr-1" />
+                  Open Budget Plan
+                </Button>
+              </a>
+            )}
             {(request.status === 'pending_approval' || request.status === 'submitted') && canApprove && (
               <>
                 <Button 
@@ -338,8 +350,14 @@ const TravelRequestsPage = () => {
                     </p>
                   </div>
                   <div className="text-right">
-                    <p className="font-bold text-gray-900">₱{(request.estimated_cost ?? 0).toLocaleString()}</p>
-                    {canApprove && (
+                  <p className="font-bold text-gray-900">₱{(request.estimated_cost ?? 0).toLocaleString()}</p>
+                  {(request as any).budget_plan_url && (
+                    <a href={(request as any).budget_plan_url} target="_blank" rel="noopener noreferrer" className="mt-1 flex items-center justify-end gap-1 text-xs text-green-700 hover:underline">
+                      <ExternalLink className="w-3 h-3" />
+                      Open Budget Plan
+                    </a>
+                  )}
+                  {canApprove && (
                       <div className="flex items-center gap-2 mt-2">
                         <Button size="sm" variant="primary" onClick={() => handleApprove(request.id)} disabled={approveMutation.isPending}>
                           <CheckCircle className="w-3 h-3 mr-1" />Approve
