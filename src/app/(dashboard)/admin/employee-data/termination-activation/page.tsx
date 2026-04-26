@@ -28,8 +28,8 @@ export default function TerminationActivationPage() {
 
   const statusGroups: Record<string, string[]> = {
     current: ['active'],
-    all: ['active', 'inactive', 'terminated'],
-    past: ['terminated'],
+    all: ['active', 'terminated'],
+    past: ['inactive'],
   }
 
   const employees = (allEmployees as any[])
