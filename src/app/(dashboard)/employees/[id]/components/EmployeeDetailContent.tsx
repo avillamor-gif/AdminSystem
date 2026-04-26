@@ -567,39 +567,27 @@ export function EmployeeDetailContent({
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Sex</label>
-                  {isEditMode ? (
-                    <div className="flex gap-6 py-2">
-                      {['male', 'female'].map((val) => (
-                        <label key={val} className="flex items-center gap-2 cursor-pointer">
-                          <input
-                            type="radio"
-                            name="sex"
-                            value={val}
-                            checked={formData.sex === val}
-                            onChange={(e) => handleInputChange('sex', e.target.value)}
-                            className="accent-orange-500 h-4 w-4 cursor-pointer"
-                          />
-                          <span className="text-sm text-gray-700 capitalize">{val}</span>
-                        </label>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="flex gap-6 py-2">
-                      {['male', 'female'].map((val) => (
-                        <label key={val} className="flex items-center gap-2">
-                          <input
-                            type="radio"
-                            name="sex-view"
-                            value={val}
-                            checked={formData.sex === val}
-                            readOnly
-                            className="accent-orange-500 h-4 w-4"
-                          />
-                          <span className="text-sm text-gray-700 capitalize">{val}</span>
-                        </label>
-                      ))}
-                    </div>
-                  )}
+                  <div className="flex gap-6 py-2">
+                    {['male', 'female'].map((val) => (
+                      <label
+                        key={val}
+                        className={`flex items-center gap-2 ${isEditMode ? 'cursor-pointer' : 'cursor-default'}`}
+                        onClick={() => isEditMode && handleInputChange('sex', val)}
+                      >
+                        {/* Custom radio circle */}
+                        <span className={`inline-flex items-center justify-center w-4 h-4 rounded-full border-2 shrink-0 ${
+                          formData.sex === val
+                            ? 'border-orange-500 bg-orange-500'
+                            : 'border-gray-300 bg-white'
+                        }`}>
+                          {formData.sex === val && (
+                            <span className="w-1.5 h-1.5 rounded-full bg-white block" />
+                          )}
+                        </span>
+                        <span className="text-sm text-gray-700 capitalize">{val}</span>
+                      </label>
+                    ))}
+                  </div>
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-4">
