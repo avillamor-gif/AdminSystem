@@ -68,6 +68,7 @@ export default function AdminPage() {
       color: 'bg-purple-500',
       href: '/admin/employee-data',
       items: [
+        'Workforce Analytics',
         'Employee Profiles',
         'Data Management',
         'PIM Configuration',
@@ -366,6 +367,7 @@ export default function AdminPage() {
                           'Career Paths': '/admin/job-management/career-paths',
                           
                           // Employee Data Management routes
+                          'Workforce Analytics': '/admin/employee-data/workforce-analytics',
                           'Employee Profiles': '/admin/employee-data/employee-profiles',
                           'Data Management': '/admin/employee-data/data-management',
                           'PIM Configuration': '/admin/employee-data/pim-configuration',
