@@ -21,6 +21,7 @@ interface PendingAction {
 export default function TerminationActivationPage() {
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState<string>('current')
+  const [pendingAction, setPendingAction] = useState<PendingAction | null>(null)
 
   const { data: allEmployees = [], isLoading } = useEmployees({})
   const updateEmployee = useUpdateEmployee()
