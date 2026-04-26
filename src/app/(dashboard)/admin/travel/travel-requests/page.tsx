@@ -604,7 +604,7 @@ const TravelRequestsPage = () => {
 
       {/* Detail Modal */}
       {selectedRequest && (
-        <Modal isOpen={!!selectedRequest} onClose={() => setSelectedRequest(null)} size="lg">
+        <Modal open={!!selectedRequest} onClose={() => setSelectedRequest(null)} size="lg">
           <ModalHeader>
             <div className="flex items-center gap-3">
               <div className="p-2 bg-blue-100 rounded-lg">
@@ -796,7 +796,7 @@ const TravelRequestsPage = () => {
       )}
 
       {/* Approve Modal */}
-      <Modal isOpen={approveModal.open} onClose={() => setApproveModal({ open: false, requestId: '', comments: '' })}>
+      <Modal open={approveModal.open} onClose={() => setApproveModal({ open: false, requestId: '', comments: '' })}>
         <ModalHeader>Approve Travel Request</ModalHeader>
         <ModalBody>
           <p className="text-gray-600 mb-3">Add optional approval notes before approving this travel request.</p>
@@ -818,7 +818,7 @@ const TravelRequestsPage = () => {
       </Modal>
 
       {/* Reject Modal */}
-      <Modal isOpen={rejectModal.open} onClose={() => setRejectModal({ open: false, requestId: '', reason: '' })}>
+      <Modal open={rejectModal.open} onClose={() => setRejectModal({ open: false, requestId: '', reason: '' })}>
         <ModalHeader>Reject Travel Request</ModalHeader>
         <ModalBody>
           <p className="text-gray-600 mb-3">Please provide a reason for rejecting this travel request.</p>
