@@ -120,14 +120,26 @@ type Tab = 'overview' | 'demographics' | 'tenure' | 'headcount'
 
 export default function WorkforceAnalyticsPage() {
   const [tab, setTab] = useState<Tab>('overview')
+  const [filterEtId, setFilterEtId] = useState<string>('all')
+  const [filterDeptId, setFilterDeptId] = useState<string>('all')
+  const [filterStatus, setFilterStatus] = useState<string>('active')
 
   const { data: allEmployees = [] } = useEmployees({})
   const { data: departments = [] } = useDepartments()
   const { data: employmentTypes = [] } = useEmploymentTypes()
 
+  // ── filtered employee list (drives all metrics) ────────────────────────────
+  const filteredEmployees = useMemo(() => {
+    let list = allEmployees as any[]
+    if (filterStatus !== 'all') list = list.filter(e => e.status === filterStatus)
+    if (filterEtId !== 'all')   list = list.filter(e => e.employment_type_id === filterEtId)
+    if (filterDeptId !== 'all') list = list.filter(e => e.department_id === filterDeptId)
+    return list
+  }, [allEmployees, filterStatus, filterEtId, filterDeptId])
+
   // ── computed metrics ───────────────────────────────────────────────────────
   const metrics = useMemo(() => {
-    const employees = allEmployees as any[]
+    const employees = filteredEmployees as any[]
 
     const active      = employees.filter(e => e.status === 'active')
     const inactive    = employees.filter(e => e.status === 'inactive')
@@ -271,7 +283,7 @@ export default function WorkforceAnalyticsPage() {
         ? `${Math.floor(avgTenure)}y ${Math.round((avgTenure % 1) * 12)}m`
         : '—',
     }
-  }, [allEmployees, departments, employmentTypes])
+  }, [filteredEmployees, departments, employmentTypes])
 
   const tabs: { key: Tab; label: string; icon: React.ElementType }[] = [
     { key: 'overview',     label: 'Overview',       icon: BarChart3 },
@@ -302,7 +314,64 @@ export default function WorkforceAnalyticsPage() {
         </Button>
       </div>
 
-      {/* Top KPI cards */}
+      {/* Filter bar */}
+      <div className="flex flex-wrap gap-3 p-4 bg-gray-50 rounded-xl border border-gray-200">
+        <div className="flex items-center gap-2">
+          <label className="text-xs font-medium text-gray-500 shrink-0">Status</label>
+          <select
+            value={filterStatus}
+            onChange={e => setFilterStatus(e.target.value)}
+            className="text-sm border border-gray-200 rounded-lg px-3 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-orange-300"
+          >
+            <option value="active">Active</option>
+            <option value="inactive">Inactive</option>
+            <option value="terminated">Terminated</option>
+            <option value="all">All Statuses</option>
+          </select>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <label className="text-xs font-medium text-gray-500 shrink-0">Employment Type</label>
+          <select
+            value={filterEtId}
+            onChange={e => setFilterEtId(e.target.value)}
+            className="text-sm border border-gray-200 rounded-lg px-3 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-orange-300"
+          >
+            <option value="all">All Types</option>
+            {(employmentTypes as any[]).map((et: any) => (
+              <option key={et.id} value={et.id}>{et.name}</option>
+            ))}
+          </select>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <label className="text-xs font-medium text-gray-500 shrink-0">Department</label>
+          <select
+            value={filterDeptId}
+            onChange={e => setFilterDeptId(e.target.value)}
+            className="text-sm border border-gray-200 rounded-lg px-3 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-orange-300"
+          >
+            <option value="all">All Departments</option>
+            {(departments as any[]).map((d: any) => (
+              <option key={d.id} value={d.id}>{d.name}</option>
+            ))}
+          </select>
+        </div>
+
+        <div className="flex items-center gap-1.5 text-xs text-gray-400 ml-auto">
+          <span className="font-semibold text-gray-700">{filteredEmployees.length}</span>
+          employees shown
+        </div>
+
+        {(filterStatus !== 'active' || filterEtId !== 'all' || filterDeptId !== 'all') && (
+          <button
+            onClick={() => { setFilterStatus('active'); setFilterEtId('all'); setFilterDeptId('all') }}
+            className="text-xs text-orange-600 hover:text-orange-800 font-medium underline underline-offset-2"
+          >
+            Reset filters
+          </button>
+        )}
+      </div>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <StatCard icon={Users}     label="Total Employees"  value={metrics.total}      sub="all statuses"                  color="bg-orange-500" />
         <StatCard icon={UserCheck} label="Active"           value={metrics.active}     sub={`${pct(metrics.active, metrics.total)}% of total`}  color="bg-emerald-500" />
