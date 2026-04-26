@@ -38,11 +38,7 @@ export const travelService = {
   async getAll(filters: TravelRequestFilters = {}): Promise<TravelRequestWithEmployee[]> {
     let query = supabase
       .from('travel_requests')
-      .select(`
-        *,
-        employee:employees!travel_requests_employee_id_fkey(id, first_name, last_name, email, department_id),
-        approver:employees!travel_requests_approved_by_fkey(id, first_name, last_name)
-      `)
+      .select('*')
       .order('created_at', { ascending: false })
 
     // Apply filters
@@ -72,18 +68,34 @@ export const travelService = {
       throw new Error('Failed to fetch travel requests')
     }
 
-    return data as unknown as TravelRequestWithEmployee[]
+    if (!data || data.length === 0) return []
+
+    // Resolve employee and approver records manually (avoids PGRST200 FK alias issues)
+    const employeeIds = [...new Set(data.map((r: any) => r.employee_id).filter(Boolean))]
+    const approverIds = [...new Set(data.map((r: any) => r.approved_by).filter(Boolean))]
+    const allIds = [...new Set([...employeeIds, ...approverIds])]
+
+    let employeeMap: Record<string, any> = {}
+    if (allIds.length > 0) {
+      const { data: emps } = await supabase
+        .from('employees')
+        .select('id, first_name, last_name, email, department_id')
+        .in('id', allIds)
+      if (emps) employeeMap = Object.fromEntries(emps.map((e: any) => [e.id, e]))
+    }
+
+    return data.map((r: any) => ({
+      ...r,
+      employee: r.employee_id ? employeeMap[r.employee_id] ?? null : null,
+      approver: r.approved_by ? employeeMap[r.approved_by] ?? null : null,
+    })) as TravelRequestWithEmployee[]
   },
 
   // Get travel request by ID
   async getById(id: string): Promise<TravelRequestWithEmployee | null> {
     const { data, error } = await supabase
       .from('travel_requests')
-      .select(`
-        *,
-        employee:employees!travel_requests_employee_id_fkey(id, first_name, last_name, email, department_id),
-        approver:employees!travel_requests_approved_by_fkey(id, first_name, last_name)
-      `)
+      .select('*')
       .eq('id', id)
       .single()
 
@@ -92,7 +104,24 @@ export const travelService = {
       return null
     }
 
-    return data as unknown as TravelRequestWithEmployee
+    if (!data) return null
+
+    // Resolve employee and approver manually
+    const ids = [data.employee_id, data.approved_by].filter(Boolean) as string[]
+    let employeeMap: Record<string, any> = {}
+    if (ids.length > 0) {
+      const { data: emps } = await supabase
+        .from('employees')
+        .select('id, first_name, last_name, email, department_id')
+        .in('id', ids)
+      if (emps) employeeMap = Object.fromEntries(emps.map((e: any) => [e.id, e]))
+    }
+
+    return {
+      ...data,
+      employee: data.employee_id ? employeeMap[data.employee_id] ?? null : null,
+      approver: data.approved_by ? employeeMap[data.approved_by] ?? null : null,
+    } as unknown as TravelRequestWithEmployee
   },
 
   // Create new travel request
