@@ -260,7 +260,7 @@ export default function TerminationActivationPage() {
         title={pendingAction ? `${actionLabel[pendingAction.newStatus]} Employee` : ''}
         message={pendingAction ? `You are about to ${actionLabel[pendingAction.newStatus].toLowerCase()} ${pendingAction.employeeName}.\n\n${confirmMessages[pendingAction.newStatus]}` : ''}
         confirmText={pendingAction ? actionLabel[pendingAction.newStatus] : 'Confirm'}
-        variant={pendingAction?.newStatus === 'active' ? 'default' : 'danger'}
+        variant={pendingAction?.newStatus === 'active' ? undefined : 'danger'}
         isLoading={updateEmployee.isPending}
       />
     </div>
