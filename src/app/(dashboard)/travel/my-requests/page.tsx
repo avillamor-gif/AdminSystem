@@ -154,7 +154,7 @@ export default function MyTravelRequestsPage() {
                       <td className="px-6 py-4 text-sm font-medium text-gray-900 whitespace-nowrap">
                         <div className="flex items-center gap-1.5">
                           {req.request_number}
-                          {isDraft && <Edit2 className="w-3 h-3 text-gray-400" title="Click row to continue editing" />}
+                          {isDraft && <Edit2 className="w-3 h-3 text-gray-400" aria-label="Click row to continue editing" />}
                         </div>
                       </td>
                       <td className="px-6 py-4">
