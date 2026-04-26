@@ -568,25 +568,18 @@ export function EmployeeDetailContent({
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Sex</label>
                   {isEditMode ? (
-                    <div className="flex gap-4 py-2">
+                    <div className="flex gap-6 py-2">
                       {['male', 'female'].map((val) => (
-                        <label
-                          key={val}
-                          className={`flex items-center gap-2 px-4 py-2 rounded-lg border-2 cursor-pointer transition-all ${
-                            formData.sex === val
-                              ? 'border-orange-500 bg-orange-50 text-orange-700 font-medium'
-                              : 'border-gray-200 text-gray-600 hover:border-orange-300'
-                          }`}
-                        >
+                        <label key={val} className="flex items-center gap-2 cursor-pointer">
                           <input
                             type="radio"
                             name="sex"
                             value={val}
                             checked={formData.sex === val}
                             onChange={(e) => handleInputChange('sex', e.target.value)}
-                            className="accent-orange-500 h-4 w-4"
+                            className="accent-orange-500 h-4 w-4 cursor-pointer"
                           />
-                          <span className="text-sm capitalize">{val}</span>
+                          <span className="text-sm text-gray-700 capitalize">{val}</span>
                         </label>
                       ))}
                     </div>
