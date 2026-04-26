@@ -5,19 +5,28 @@ import { Readable } from 'stream'
 
 // ── Google Drive auth ─────────────────────────────────────────────────────────
 function getDriveClient() {
-  const email = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL
-  const key   = process.env.GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY?.replace(/\\n/g, '\n')
+  const json = process.env.GOOGLE_SERVICE_ACCOUNT_JSON
+  if (!json) throw new Error('Missing GOOGLE_SERVICE_ACCOUNT_JSON env var')
 
-  if (!email || !key) {
-    throw new Error('Missing GOOGLE_SERVICE_ACCOUNT_EMAIL or GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY env vars')
-  }
+  const credentials = JSON.parse(json)
 
   const auth = new google.auth.GoogleAuth({
-    credentials: { client_email: email, private_key: key },
+    credentials,
     scopes: ['https://www.googleapis.com/auth/drive'],
   })
 
   return google.drive({ version: 'v3', auth })
+}
+
+// ── Resolve Shared Drive ID by name ──────────────────────────────────────────
+async function getSharedDriveId(drive: ReturnType<typeof google.drive>): Promise<string> {
+  const driveName = process.env.GOOGLE_SHARED_DRIVE_NAME
+  if (!driveName) throw new Error('Missing GOOGLE_SHARED_DRIVE_NAME env var')
+
+  const res = await drive.drives.list({ pageSize: 50, fields: 'drives(id, name)' })
+  const found = res.data.drives?.find(d => d.name === driveName)
+  if (!found?.id) throw new Error(`Shared Drive "${driveName}" not found. Check GOOGLE_SHARED_DRIVE_NAME and that the service account has access.`)
+  return found.id
 }
 
 // ── Ensure folder exists (or create it) ─────────────────────────────────────
@@ -73,12 +82,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
     }
 
-    const sharedDriveId = process.env.GOOGLE_SHARED_DRIVE_ID
-    if (!sharedDriveId) {
-      return NextResponse.json({ error: 'Missing GOOGLE_SHARED_DRIVE_ID env var' }, { status: 500 })
-    }
-
     const drive = getDriveClient()
+    const sharedDriveId = await getSharedDriveId(drive)
     const year  = new Date().getFullYear().toString()
 
     // ── Folder structure: Travel Requests / {Year} / {Employee Name} / {Request#} ──
