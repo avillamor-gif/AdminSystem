@@ -5,8 +5,7 @@ import { PenLine, Upload, Trash2, Download, RefreshCw, CheckCircle } from 'lucid
 import { Button } from '@/components/ui'
 import { useEmployeeAttachments, useDeleteEmployeeAttachment } from '@/hooks/useEmployeeAttachments'
 import { toast } from 'sonner'
-
-const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL ?? ''
+import { createClient } from '@/lib/supabase/client'
 
 interface SignatureTabProps {
   employee: { id: string; first_name?: string; last_name?: string; employee_id?: string }
@@ -38,9 +37,22 @@ export function SignatureTab({ employee, readOnly, uploadAttachment }: Signature
 
   // Find the current e-signature attachment
   const signatureAttachment = attachments.find(a => a.document_type === 'e-signature')
-  const signatureUrl = signatureAttachment
-    ? `${SUPABASE_URL}/storage/v1/object/public/attachments/${signatureAttachment.file_path}`
-    : null
+  const [signatureUrl, setSignatureUrl] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (!signatureAttachment?.file_path) {
+      setSignatureUrl(null)
+      return
+    }
+    const supabase = createClient()
+    supabase.storage
+      .from('attachments')
+      .createSignedUrl(signatureAttachment.file_path, 3600)
+      .then((res: { data: { signedUrl: string } | null; error: Error | null }) => {
+        if (res.error) { console.error('Failed to get signed URL for signature:', res.error); return }
+        setSignatureUrl(res.data?.signedUrl ?? null)
+      })
+  }, [signatureAttachment?.id, signatureAttachment?.file_path])
 
   // ── Canvas drawing ──────────────────────────────────────────────
   const getPos = (e: React.MouseEvent | React.TouchEvent, canvas: HTMLCanvasElement) => {
