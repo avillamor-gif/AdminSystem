@@ -225,6 +225,7 @@ export default function NewTravelRequestPage() {
   const {
     register,
     handleSubmit,
+    getValues,
     formState: { errors },
   } = useForm<FormData>({
     resolver: zodResolver(schema),
@@ -342,11 +343,18 @@ export default function NewTravelRequestPage() {
     }
   }
 
-  const onSaveDraft = async (data: FormData) => {
+  const onSaveDraft = async () => {
     if (!currentEmployee) return
     setSubmitError(null)
+    // Use getValues() to bypass Zod validation — drafts can have incomplete data
+    const raw = getValues()
+    const draftData: FormData = {
+      estimated_cost: Number(raw.estimated_cost) || 0,
+      currency: raw.currency || 'PHP',
+      budget_code: raw.budget_code,
+    }
     try {
-      const created = await createMutation.mutateAsync(buildPayload(data))
+      const created = await createMutation.mutateAsync(buildPayload(draftData))
       await uploadBudgetPlan(created.id, created.request_number ?? '')
       router.push('/travel/my-requests')
     } catch (e: any) {
@@ -1006,7 +1014,7 @@ export default function NewTravelRequestPage() {
           <Button
             type="button"
             variant="secondary"
-            onClick={handleSubmit(onSaveDraft)}
+            onClick={onSaveDraft}
             disabled={createMutation.isPending || budgetPlanUploading}
           >
             <Save className="w-4 h-4 mr-2" />
