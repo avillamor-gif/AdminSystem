@@ -172,9 +172,9 @@ export function newGenericRequestEmail(opts: {
   const urlMap: Record<string, string> = {
     'Travel': '/admin/travel',
     'Publication': '/admin/publications/publication-management',
-    'Equipment': '/admin/asset-management/equipment-requests',
+    'Equipment': '/admin/office-equipment/equipment-requests',
     'Supply': '/admin/office-supplies/supply-requests',
-    'Leave Credit': '/admin/leave-management/leave-credits',
+    'Leave Credit': '/admin/leave-management/credit-approvals',
   }
   const reviewUrl = urlMap[opts.requestType] ?? '/admin'
   
@@ -213,9 +213,9 @@ export function genericDecisionEmail(opts: {
   const urlMap: Record<string, string> = {
     'Travel': '/travel/my-requests',
     'Publication': '/publications/my-requests',
-    'Equipment': '/office-equipment/my-requests',
+    'Equipment': '/admin/office-equipment/equipment-requests',
     'Supply': '/office-supplies/my-requests',
-    'Leave Credit': '/leave-credit/my-requests',
+    'Leave Credit': '/leave/my-requests',
   }
   const viewUrl = urlMap[opts.requestType] ?? '/'
 
