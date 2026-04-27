@@ -8,7 +8,7 @@ import type { Tables } from '@/lib/supabase'
 
 type EmailTemplate = Tables<'email_templates'>
 
-const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://adminsystem.iboninternational.org'
+const BASE_URL = process.env.NEXT_PUBLIC_PRODUCTION_URL ?? 'https://adminsystem.iboninternational.org'
 
 /**
  * Render an email template with variables

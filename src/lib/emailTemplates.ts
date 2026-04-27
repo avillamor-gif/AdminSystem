@@ -5,7 +5,7 @@
  * Keep templates simple — inline CSS only, no external assets.
  */
 
-const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://adminsystem.iboninternational.org'
+const BASE_URL = process.env.NEXT_PUBLIC_PRODUCTION_URL ?? 'https://adminsystem.iboninternational.org'
 
 // ─── Shared chrome ────────────────────────────────────────────────────────────
 

@@ -205,7 +205,11 @@ export function useDeleteTravelRequest() {
   
   return useMutation({
     mutationFn: (id: string) => travelService.delete(id),
-    onSuccess: () => {
+    onSuccess: (_, id) => {
+      // Optimistically remove from all cached query lists
+      queryClient.setQueriesData({ queryKey: travelKeys.lists() }, (old: any) =>
+        Array.isArray(old) ? old.filter((r: any) => r.id !== id) : old
+      )
       queryClient.invalidateQueries({ queryKey: travelKeys.all })
       toast.success('Travel request deleted successfully')
     },
