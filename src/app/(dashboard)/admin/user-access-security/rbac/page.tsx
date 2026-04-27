@@ -51,6 +51,7 @@ const ADMIN_CARD_PREFIXES: { code: string; label: string }[] = [
   { code: 'admin.system_config',   label: 'System Configuration' },
   { code: 'admin.travel',          label: 'Travel Management' },
   { code: 'admin.assets',          label: 'Asset Management' },
+  { code: 'admin.equipment',       label: 'Office Equipment' },
   { code: 'admin.supplies',        label: 'Office Supplies' },
   { code: 'admin.publications',    label: 'Publications' },
   { code: 'admin.internship',      label: 'Internship & Volunteer' },

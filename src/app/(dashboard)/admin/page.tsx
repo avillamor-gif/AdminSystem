@@ -211,7 +211,7 @@ export default function AdminPage() {
       color: 'bg-cyan-600',
       href: '/admin/office-equipment',
       items: ['Equipment Requests', 'Borrowed Equipment', 'Equipment Assignment', 'Maintenance Records', 'Warranty Tracking'],
-      requiresPermission: 'admin.equipment',
+      requiresPermission: 'admin.assets',
     },
     {
       id: 'office-supplies',
