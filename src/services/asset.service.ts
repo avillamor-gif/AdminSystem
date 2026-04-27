@@ -139,6 +139,8 @@ export interface AssetRequest {
   notes?: string | null
   returned_date?: string | null
   return_notes?: string | null
+  borrow_start_date?: string | null
+  borrow_end_date?: string | null
   // External borrower fields
   borrower_type?: 'employee' | 'external' | null
   external_borrower_name?: string | null
@@ -838,6 +840,35 @@ export const assetRequestService = {
 
     if (error) throw error
     return data as any
+  },
+
+  /**
+   * Check whether an asset has any conflicting approved/fulfilled borrows
+   * during the given date range (inclusive). Returns the conflicting requests.
+   */
+  async checkAvailability(
+    assetId: string,
+    startDate: string,
+    endDate: string,
+    excludeRequestId?: string
+  ): Promise<AssetRequest[]> {
+    let query = supabase
+      .from('asset_requests')
+      .select('*')
+      .eq('assigned_asset_id', assetId)
+      .in('status', ['approved', 'fulfilled'])
+      .is('returned_date', null)
+      // Overlap: existing.start <= newEnd AND existing.end >= newStart
+      .lte('borrow_start_date', endDate)
+      .gte('borrow_end_date', startDate)
+
+    if (excludeRequestId) {
+      query = query.neq('id', excludeRequestId)
+    }
+
+    const { data, error } = await query
+    if (error) throw error
+    return (data || []) as any
   },
 
   async delete(id: string): Promise<void> {

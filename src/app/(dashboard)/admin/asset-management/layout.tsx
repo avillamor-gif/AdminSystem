@@ -4,7 +4,6 @@ const assetNavItems = [
   { label: 'Assets',       href: '/admin/asset-management/assets',       requiresPermission: 'admin.assets.assets' },
   { label: 'Assignments',  href: '/admin/asset-management/assignments',  requiresPermission: 'admin.assets.assignments' },
   { label: 'Maintenance',  href: '/admin/asset-management/maintenance',  requiresPermission: 'admin.assets.maintenance' },
-  { label: 'Requests',     href: '/admin/asset-management/requests',     requiresPermission: 'admin.assets.requests' },
   { label: 'Setup',        href: '/admin/asset-management/setup',        requiresPermission: 'admin.assets.setup' },
   { label: 'Reports',      href: '/admin/asset-management/reports',      requiresPermission: 'admin.assets.reports' },
 ]

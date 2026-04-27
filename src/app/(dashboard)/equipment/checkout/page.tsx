@@ -1,13 +1,13 @@
 'use client'
 
-import { useState, useEffect, useRef, Suspense } from 'react'
+import { useState, useEffect, useRef, Suspense, useCallback } from 'react'
 import { useSearchParams } from 'next/navigation'
-import { Monitor, Search, X, CheckCircle, ChevronDown, UserCheck, Building2 } from 'lucide-react'
+import { Monitor, Search, X, CheckCircle, ChevronDown, UserCheck, Building2, AlertTriangle } from 'lucide-react'
 import { Card, Button, Input } from '@/components/ui'
 import { useAssets, useAssetCategories, useCreateAssetRequest } from '@/hooks/useAssets'
 import { useCurrentEmployee } from '@/hooks/useEmployees'
 import { localDateStr } from '@/lib/utils'
-import type { Asset } from '@/services/asset.service'
+import { assetRequestService, type Asset, type AssetRequest } from '@/services/asset.service'
 import toast from 'react-hot-toast'
 
 interface CheckoutFormData {
@@ -46,6 +46,8 @@ function CheckoutPageInner() {
     position: '',
   })
   const [submitted, setSubmitted] = useState(false)
+  const [conflicts, setConflicts] = useState<AssetRequest[]>([])
+  const [checkingAvailability, setCheckingAvailability] = useState(false)
 
   // Equipment search combobox state
   const [equipSearch, setEquipSearch] = useState('')
@@ -89,6 +91,21 @@ function CheckoutPageInner() {
     return () => document.removeEventListener('mousedown', handleClick)
   }, [])
 
+  // Availability conflict check — runs whenever asset + both dates are set
+  useEffect(() => {
+    const assetId = formData.asset_id
+    const start = formData.borrowed_date
+    const end = formData.expected_return_date
+    if (!assetId || !start || !end) { setConflicts([]); return }
+    let cancelled = false
+    setCheckingAvailability(true)
+    assetRequestService.checkAvailability(assetId, start, end)
+      .then(result => { if (!cancelled) setConflicts(result) })
+      .catch(() => { if (!cancelled) setConflicts([]) })
+      .finally(() => { if (!cancelled) setCheckingAvailability(false) })
+    return () => { cancelled = true }
+  }, [formData.asset_id, formData.borrowed_date, formData.expected_return_date])
+
   // Filtered asset list based on search input
   const filteredAssets = assets.filter(a => {
     const q = equipSearch.toLowerCase()
@@ -109,6 +126,7 @@ function CheckoutPageInner() {
     setFormData({ asset_id: '', purpose: '', borrowed_date: today, expected_return_date: '', notes: '' })
     setExternal({ name: '', org: '', contact: '', position: '' })
     setEquipSearch('')
+    setConflicts([])
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -138,6 +156,8 @@ function CheckoutPageInner() {
         item_description: selectedAsset?.name || formData.asset_id,
         justification: formData.purpose.trim(),
         requested_date: formData.borrowed_date,
+        borrow_start_date: formData.borrowed_date,
+        borrow_end_date: formData.expected_return_date,
         notes: notesText || undefined,
         priority: 'normal',
         status: 'pending',
@@ -154,6 +174,8 @@ function CheckoutPageInner() {
         item_description: selectedAsset?.name || formData.asset_id,
         justification: formData.purpose.trim(),
         requested_date: formData.borrowed_date,
+        borrow_start_date: formData.borrowed_date,
+        borrow_end_date: formData.expected_return_date,
         notes: notesText || undefined,
         priority: 'normal',
         status: 'pending',
@@ -348,6 +370,31 @@ function CheckoutPageInner() {
               </div>
             )}
 
+            {/* Availability conflict warning */}
+            {conflicts.length > 0 && (
+              <div className="flex items-start gap-3 bg-red-50 border border-red-200 rounded-lg px-4 py-3">
+                <AlertTriangle className="w-5 h-5 text-red-500 shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-sm font-medium text-red-800">
+                    This equipment is already booked during your selected dates
+                  </p>
+                  <ul className="mt-1 space-y-0.5">
+                    {conflicts.map(c => (
+                      <li key={c.id} className="text-xs text-red-600">
+                        {c.borrow_start_date} → {c.borrow_end_date ?? 'TBD'}
+                        {c.employee ? ` · ${(c.employee as any).first_name} ${(c.employee as any).last_name}` : ''}
+                        {c.external_borrower_name ? ` · ${c.external_borrower_name}` : ''}
+                      </li>
+                    ))}
+                  </ul>
+                  <p className="text-xs text-red-500 mt-1">You can still submit, but it may be declined.</p>
+                </div>
+              </div>
+            )}
+            {checkingAvailability && formData.asset_id && formData.borrowed_date && formData.expected_return_date && (
+              <p className="text-xs text-gray-400">Checking availability…</p>
+            )}
+
             {/* Row 2: Purpose + Dates */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
               <div>
@@ -365,13 +412,15 @@ function CheckoutPageInner() {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                  Borrowed Date
+                  Borrow Start Date <span className="text-red-500">*</span>
                 </label>
                 <input
-                  type="text"
-                  value={new Date(formData.borrowed_date + 'T00:00:00').toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' })}
-                  disabled
-                  className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-lg bg-gray-100 text-gray-500 cursor-not-allowed"
+                  type="date"
+                  value={formData.borrowed_date}
+                  onChange={e => setFormData(p => ({ ...p, borrowed_date: e.target.value }))}
+                  required
+                  min={today}
+                  className="w-full px-3 py-2.5 text-sm border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
                 />
               </div>
               <div>
