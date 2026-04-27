@@ -3,6 +3,7 @@ import SecondaryNav from '@/components/layout/SecondaryNav'
 const navItems = [
   { label: 'Equipment Inventory', href: '/admin/office-equipment/equipment-inventory' },
   { label: 'Equipment Requests',  href: '/admin/office-equipment/equipment-requests' },
+  { label: 'Borrowed Equipment',  href: '/admin/office-equipment/borrowed-equipment' },
   { label: 'Equipment Assignment',href: '/admin/office-equipment/equipment-assignment' },
   { label: 'Maintenance Records', href: '/admin/office-equipment/maintenance-records' },
   { label: 'Warranty Tracking',   href: '/admin/office-equipment/warranty-tracking' },

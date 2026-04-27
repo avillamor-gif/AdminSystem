@@ -621,6 +621,22 @@ export function useFulfillAssetRequest() {
   })
 }
 
+export function useMarkEquipmentReturned() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ id, notes }: { id: string; notes?: string }) =>
+      assetRequestService.markReturned(id, notes),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: assetRequestKeys.lists() })
+      toast.success('Equipment marked as returned')
+    },
+    onError: (error: any) => {
+      toast.error(error.message || 'Failed to mark as returned')
+    },
+  })
+}
+
 export function useDeleteAssetRequest() {
   const queryClient = useQueryClient()
   

@@ -137,6 +137,8 @@ export interface AssetRequest {
   assigned_asset_id?: string | null
   rejection_reason?: string | null
   notes?: string | null
+  returned_date?: string | null
+  return_notes?: string | null
   // External borrower fields
   borrower_type?: 'employee' | 'external' | null
   external_borrower_name?: string | null
@@ -819,6 +821,22 @@ export const assetRequestService = {
       'Your equipment request has been fulfilled and the item has been assigned to you.'
     )
 
+    return data as any
+  },
+
+  async markReturned(id: string, notes?: string): Promise<AssetRequest> {
+    const { data, error } = await supabase
+      .from('asset_requests')
+      .update({
+        returned_date: new Date().toISOString().split('T')[0],
+        return_notes: notes ?? null,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', id)
+      .select('*')
+      .single()
+
+    if (error) throw error
     return data as any
   },
 
