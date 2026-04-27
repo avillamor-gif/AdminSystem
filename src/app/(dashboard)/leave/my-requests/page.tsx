@@ -22,6 +22,7 @@ import { useCurrentEmployee } from '@/hooks/useEmployees'
 import { Plus, Calendar, Clock, XCircle } from 'lucide-react'
 import { format } from 'date-fns'
 import { countWorkingDays } from '@/lib/dateUtils'
+import toast from 'react-hot-toast'
 
 function isoToday() {
   const d = new Date()
@@ -108,6 +109,12 @@ export default function MyLeavePage() {
 
   const onSubmit = async (data: LeaveRequestForm) => {
     if (!currentEmployee?.id) {
+      toast.error('Could not identify your employee profile. Please refresh and try again.')
+      return
+    }
+
+    if (totalDays <= 0) {
+      toast.error('The selected date range contains no working days. Please choose a valid range (excluding weekends and holidays).')
       return
     }
 
@@ -398,6 +405,11 @@ export default function MyLeavePage() {
                   )}
                 </div>
               )}
+              {!!startDate && !!endDate && totalDays <= 0 && (
+                <div className="bg-red-50 border border-red-200 rounded p-3 text-sm text-red-700">
+                  ⚠️ The selected range has no working days (weekends/holidays excluded). Please choose different dates.
+                </div>
+              )}
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -420,6 +432,7 @@ export default function MyLeavePage() {
               type="submit"
               disabled={
                 createMutation.isPending ||
+                (!!startDate && !!endDate && totalDays <= 0) ||
                 (selectedBalance !== undefined && totalDays > selectedBalance.available_days) ||
                 (selectedLeaveType !== '' && selectedBalance === undefined)
               }
