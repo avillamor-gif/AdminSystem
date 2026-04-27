@@ -64,7 +64,7 @@ export default function EquipmentRequestsPage() {
           <p className="text-sm font-medium text-gray-900">
             {(r as any).employee
               ? `${(r as any).employee.first_name} ${(r as any).employee.last_name}`
-              : 'Employee'}
+              : '—'}
           </p>
           <p className="text-xs text-gray-500">Internal</p>
         </div>

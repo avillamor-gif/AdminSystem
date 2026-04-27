@@ -683,7 +683,7 @@ export const assetRequestService = {
   }): Promise<AssetRequest[]> {
     let query = supabase
       .from('asset_requests')
-      .select('*')
+      .select('*, employee:employees(id, first_name, last_name, avatar_url)')
       .order('requested_date', { ascending: false })
 
     if (filters?.employee_id) {
