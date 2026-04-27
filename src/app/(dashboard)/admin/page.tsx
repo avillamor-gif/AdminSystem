@@ -6,7 +6,7 @@ import {
   Users, Building2, Briefcase, Settings, Globe, Shield, 
   FileText, Languages, Mail, Database, ChevronRight, TrendingUp,
   Calendar, Clock, DollarSign, AlertTriangle, Lock, Eye,
-  BarChart3, BookOpen, Award, Zap, UserCheck, Gavel, Package, UserPlus, GraduationCap
+  BarChart3, BookOpen, Award, Zap, UserCheck, Gavel, Package, UserPlus, GraduationCap, Monitor
 } from 'lucide-react'
 import { Card, Button } from '@/components/ui'
 import { useRecentAuditLogs } from '@/hooks/useAuditLogs'
@@ -202,6 +202,16 @@ export default function AdminPage() {
       href: '/admin/asset-management',
       items: ['Assets', 'Assignments', 'Maintenance', 'Requests', 'Setup', 'Reports'],
       requiresPermission: 'admin.assets',
+    },
+    {
+      id: 'office-equipment',
+      title: 'Office Equipment',
+      description: 'Manage office equipment requests, assignments, and borrowed items',
+      icon: Monitor,
+      color: 'bg-cyan-600',
+      href: '/admin/office-equipment',
+      items: ['Equipment Requests', 'Borrowed Equipment', 'Equipment Assignment', 'Maintenance Records', 'Warranty Tracking'],
+      requiresPermission: 'admin.equipment',
     },
     {
       id: 'office-supplies',
@@ -481,6 +491,13 @@ export default function AdminPage() {
                           'Supply Requests': '/admin/office-supplies/supply-requests',
                           'Purchase Orders': '/admin/office-supplies/purchase-orders',
                           'Stock Levels': '/admin/office-supplies/stock-levels',
+
+                          // Office Equipment routes
+                          'Equipment Requests': '/admin/office-equipment/equipment-requests',
+                          'Borrowed Equipment': '/admin/office-equipment/borrowed-equipment',
+                          'Equipment Assignment': '/admin/office-equipment/equipment-assignment',
+                          'Maintenance Records': '/admin/office-equipment/maintenance-records',
+                          'Warranty Tracking': '/admin/office-equipment/warranty-tracking',
 
                           // Publications routes
                           'Publication Management': '/admin/publications/publication-management',
