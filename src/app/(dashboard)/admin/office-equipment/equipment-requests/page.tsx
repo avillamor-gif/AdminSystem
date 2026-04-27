@@ -9,7 +9,7 @@ import {
   useRejectAssetRequest,
   useFulfillAssetRequest,
 } from '@/hooks/useAssets'
-import { useCurrentEmployee } from '@/hooks/useEmployees'
+import { useCurrentEmployee, useEmployees } from '@/hooks/useEmployees'
 import type { AssetRequest } from '@/services/asset.service'
 
 const STATUS_LABELS: Record<string, string> = {
@@ -34,11 +34,19 @@ export default function EquipmentRequestsPage() {
 
   const { data: requests = [], isLoading } = useAssetRequests(statusFilter ? { status: statusFilter } : {})
   const { data: currentEmployee } = useCurrentEmployee()
+  const { data: employees = [] } = useEmployees()
+
+  // Map employee records onto requests (avoids aliased FK join which breaks Supabase schema cache)
+  const employeeMap = Object.fromEntries(employees.map(e => [e.id, e]))
+  const enrichedRequests = requests.map(r => ({
+    ...r,
+    employee: r.employee_id ? (employeeMap[r.employee_id] ?? null) : null,
+  }))
   const approveMutation = useApproveAssetRequest()
   const rejectMutation = useRejectAssetRequest()
   const fulfillMutation = useFulfillAssetRequest()
 
-  const filtered = requests.filter(r => {
+  const filtered = enrichedRequests.filter(r => {
     if (!typeFilter) return true
     const bt = (r as any).borrower_type || 'employee'
     return bt === typeFilter
@@ -91,8 +99,8 @@ export default function EquipmentRequestsPage() {
     }
   }
 
-  const pendingCount = requests.filter(r => r.status === 'pending').length
-  const externalCount = requests.filter(r => (r as any).borrower_type === 'external').length
+  const pendingCount = enrichedRequests.filter(r => r.status === 'pending').length
+  const externalCount = enrichedRequests.filter(r => (r as any).borrower_type === 'external').length
 
   return (
     <div className="space-y-6">
