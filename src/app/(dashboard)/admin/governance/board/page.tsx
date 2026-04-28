@@ -26,14 +26,28 @@ const STATUS_COLORS: Record<string, string> = {
   deceased: 'bg-red-100 text-red-700',
 }
 
-const emptyTrustee = {
-  first_name: '', last_name: '', email: '', phone: '',
-  address: '', city: '', country: 'Philippines',
-  trustee_number: '', notes: '', status: 'active' as const, avatar_url: '',
+type TrusteeForm = {
+  first_name: string; last_name: string; email: string; phone: string
+  address: string; city: string; country: string
+  trustee_number: string; notes: string
+  status: 'active' | 'inactive' | 'deceased'
+  avatar_url: string
 }
 
-const emptyTerm = {
-  trustee_id: '', position: 'Trustee' as const,
+type TermForm = {
+  trustee_id: string
+  position: 'Chairperson' | 'Vice Chairperson' | 'Secretary' | 'Treasurer' | 'Trustee'
+  term_start: string; term_end: string; is_current: boolean; notes: string
+}
+
+const emptyTrustee: TrusteeForm = {
+  first_name: '', last_name: '', email: '', phone: '',
+  address: '', city: '', country: 'Philippines',
+  trustee_number: '', notes: '', status: 'active', avatar_url: '',
+}
+
+const emptyTerm: TermForm = {
+  trustee_id: '', position: 'Trustee',
   term_start: localDateStr(new Date()), term_end: '', is_current: true, notes: '',
 }
 
@@ -51,12 +65,12 @@ export default function BoardPage() {
   // Trustee modal
   const [trusteeModal, setTrusteeModal] = useState(false)
   const [selectedTrustee, setSelectedTrustee] = useState<BoardTrustee | null>(null)
-  const [trusteeForm, setTrusteeForm] = useState(emptyTrustee)
+  const [trusteeForm, setTrusteeForm] = useState<TrusteeForm>(emptyTrustee)
 
   // Term modal
   const [termModal, setTermModal] = useState(false)
   const [selectedTerm, setSelectedTerm] = useState<BoardTerm | null>(null)
-  const [termForm, setTermForm] = useState(emptyTerm)
+  const [termForm, setTermForm] = useState<TermForm>(emptyTerm)
 
   // Expanded rows (trustee id → show terms)
   const [expanded, setExpanded] = useState<Record<string, boolean>>({})
@@ -80,7 +94,7 @@ export default function BoardPage() {
       address: t.address || '', city: t.city || '',
       country: t.country || 'Philippines',
       trustee_number: t.trustee_number || '',
-      notes: t.notes || '', status: t.status, avatar_url: t.avatar_url || '',
+      notes: t.notes || '', status: t.status as 'active' | 'inactive' | 'deceased', avatar_url: t.avatar_url || '',
     } : emptyTrustee)
     setTrusteeModal(true)
   }
@@ -88,7 +102,7 @@ export default function BoardPage() {
   function openTerm(trusteeId: string, t?: BoardTerm) {
     setSelectedTerm(t || null)
     setTermForm(t ? {
-      trustee_id: t.trustee_id, position: t.position,
+      trustee_id: t.trustee_id, position: t.position as 'Chairperson' | 'Vice Chairperson' | 'Secretary' | 'Treasurer' | 'Trustee',
       term_start: t.term_start, term_end: t.term_end || '',
       is_current: t.is_current, notes: t.notes || '',
     } : { ...emptyTerm, trustee_id: trusteeId })

@@ -32,7 +32,7 @@ function AttendancePanel({ ga }: { ga: GeneralAssembly }) {
   function toggle(memberId: string) {
     if (attendeeSet.has(memberId)) {
       const record = attendees.find(a => a.member_id === memberId)
-      if (record) removeAtt.mutate({ gaId: ga.id, attendeeId: record.id })
+      if (record) removeAtt.mutate({ id: record.id, gaId: ga.id })
     } else {
       bulkAdd.mutate({ gaId: ga.id, memberIds: [memberId] })
     }
