@@ -6,7 +6,7 @@ import {
   Users, Building2, Briefcase, Settings, Globe, Shield, 
   FileText, Languages, Mail, Database, ChevronRight, TrendingUp,
   Calendar, Clock, DollarSign, AlertTriangle, Lock, Eye,
-  BarChart3, BookOpen, Award, Zap, UserCheck, Gavel, Package, UserPlus, GraduationCap, Monitor
+  BarChart3, BookOpen, Award, Zap, UserCheck, Gavel, Package, UserPlus, GraduationCap, Monitor, Users2
 } from 'lucide-react'
 import { Card, Button } from '@/components/ui'
 import { useRecentAuditLogs } from '@/hooks/useAuditLogs'
@@ -222,6 +222,16 @@ export default function AdminPage() {
       href: '/admin/office-supplies',
       items: ['Supply Inventory', 'Supply Requests', 'Purchase Orders', 'Stock Levels', 'Setup'],
       requiresPermission: 'admin.supplies',
+    },
+    {
+      id: 'governance',
+      title: 'Governance',
+      description: 'Manage Board of Trustees, membership registry, and General Assemblies',
+      icon: Users2,
+      color: 'bg-amber-700',
+      href: '/admin/governance',
+      items: ['Board of Trustees', 'Membership', 'General Assemblies'],
+      requiresPermission: 'admin.manage',
     },
     {
       id: 'publications',
@@ -498,6 +508,11 @@ export default function AdminPage() {
                           'Equipment Assignment': '/admin/office-equipment/equipment-assignment',
                           'Maintenance Records': '/admin/office-equipment/maintenance-records',
                           'Warranty Tracking': '/admin/office-equipment/warranty-tracking',
+
+                          // Governance routes
+                          'Board of Trustees': '/admin/governance/board',
+                          'Membership': '/admin/governance/members',
+                          'General Assemblies': '/admin/governance/general-assemblies',
 
                           // Publications routes
                           'Publication Management': '/admin/publications/publication-management',
