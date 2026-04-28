@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { Plus, Edit, Trash2, Users, CalendarDays, CheckSquare, Square } from 'lucide-react'
-import { Card, Button, Modal, ModalHeader, ModalBody, ModalFooter, Badge } from '@/components/ui'
+import { Card, Button, Modal, ModalHeader, ModalBody, ModalFooter } from '@/components/ui'
 import {
   useGeneralAssemblies, useCreateGeneralAssembly, useUpdateGeneralAssembly, useDeleteGeneralAssembly,
   useMembers,
@@ -17,8 +17,8 @@ const STATUS_COLORS: Record<string, string> = {
 }
 
 const emptyForm = {
-  assembly_number: '', title: '', date: '', location: '', quorum_met: false,
-  status: 'upcoming' as GeneralAssembly['status'], agenda: '', minutes_url: '', notes: '',
+  title: '', ga_date: '', location: '',
+  status: 'upcoming' as GeneralAssembly['status'], description: '', minutes_url: '',
 }
 
 function AttendancePanel({ ga }: { ga: GeneralAssembly }) {
@@ -102,11 +102,9 @@ export default function GeneralAssembliesPage() {
   function openModal(ga?: GeneralAssembly) {
     setSelected(ga || null)
     setForm(ga ? {
-      assembly_number: ga.assembly_number || '',
-      title: ga.title, date: ga.date, location: ga.location || '',
-      quorum_met: ga.quorum_met ?? false,
-      status: ga.status, agenda: ga.agenda || '',
-      minutes_url: ga.minutes_url || '', notes: ga.notes || '',
+      title: ga.title, ga_date: ga.ga_date, location: ga.location || '',
+      status: ga.status, description: ga.description || '',
+      minutes_url: ga.minutes_url || '',
     } : emptyForm)
     setModal(true)
   }
@@ -115,11 +113,9 @@ export default function GeneralAssembliesPage() {
     e.preventDefault()
     const payload = {
       ...form,
-      assembly_number: form.assembly_number || null,
       location: form.location || null,
-      agenda: form.agenda || null,
+      description: form.description || null,
       minutes_url: form.minutes_url || null,
-      notes: form.notes || null,
     }
     if (selected) {
       await updateMutation.mutateAsync({ id: selected.id, data: payload })
@@ -158,22 +154,16 @@ export default function GeneralAssembliesPage() {
                   <div className="min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
                       <h3 className="font-semibold text-gray-900">{ga.title}</h3>
-                      {ga.assembly_number && (
-                        <span className="text-xs text-gray-400">#{ga.assembly_number}</span>
-                      )}
                       <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${STATUS_COLORS[ga.status]}`}>
                         {ga.status.charAt(0).toUpperCase() + ga.status.slice(1)}
                       </span>
-                      {ga.quorum_met && (
-                        <span className="text-xs px-2 py-0.5 rounded-full font-medium bg-green-50 text-green-700">Quorum Met</span>
-                      )}
                     </div>
                     <p className="text-sm text-gray-500 mt-0.5">
-                      {ga.date}
+                      {ga.ga_date}
                       {ga.location && <> · {ga.location}</>}
                     </p>
-                    {ga.agenda && (
-                      <p className="text-sm text-gray-600 mt-1 line-clamp-2">{ga.agenda}</p>
+                    {ga.description && (
+                      <p className="text-sm text-gray-600 mt-1 line-clamp-2">{ga.description}</p>
                     )}
                     <div className="flex items-center gap-1 mt-2 text-xs text-gray-500">
                       <Users className="w-3.5 h-3.5" />
@@ -216,26 +206,15 @@ export default function GeneralAssembliesPage() {
           </ModalHeader>
           <ModalBody>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
+              <div className="col-span-2">
                 <label className="block text-sm font-medium text-gray-700 mb-1">Title <span className="text-red-500">*</span></label>
                 <input required value={form.title} onChange={e => setForm(p => ({ ...p, title: e.target.value }))}
                   placeholder="e.g. 42nd General Assembly"
                   className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-400" />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Assembly Number</label>
-                <input value={form.assembly_number} onChange={e => setForm(p => ({ ...p, assembly_number: e.target.value }))}
-                  placeholder="e.g. 42"
-                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-400" />
-              </div>
-              <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Date <span className="text-red-500">*</span></label>
-                <input type="date" required value={form.date} onChange={e => setForm(p => ({ ...p, date: e.target.value }))}
-                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-400" />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Location</label>
-                <input value={form.location} onChange={e => setForm(p => ({ ...p, location: e.target.value }))}
+                <input type="date" required value={form.ga_date} onChange={e => setForm(p => ({ ...p, ga_date: e.target.value }))}
                   className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-400" />
               </div>
               <div>
@@ -247,16 +226,15 @@ export default function GeneralAssembliesPage() {
                   <option value="cancelled">Cancelled</option>
                 </select>
               </div>
-              <div className="flex items-center gap-3 mt-2">
-                <input type="checkbox" id="quorum" checked={form.quorum_met}
-                  onChange={e => setForm(p => ({ ...p, quorum_met: e.target.checked }))}
-                  className="w-4 h-4 rounded border-gray-300 text-amber-600 focus:ring-amber-400" />
-                <label htmlFor="quorum" className="text-sm font-medium text-gray-700">Quorum was met</label>
+              <div className="col-span-2">
+                <label className="block text-sm font-medium text-gray-700 mb-1">Location</label>
+                <input value={form.location} onChange={e => setForm(p => ({ ...p, location: e.target.value }))}
+                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-400" />
               </div>
               <div className="col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-1">Agenda</label>
-                <textarea rows={3} value={form.agenda} onChange={e => setForm(p => ({ ...p, agenda: e.target.value }))}
-                  placeholder="Topics to be discussed…"
+                <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                <textarea rows={3} value={form.description} onChange={e => setForm(p => ({ ...p, description: e.target.value }))}
+                  placeholder="Agenda, topics to be discussed…"
                   className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-400 resize-none" />
               </div>
               <div className="col-span-2">
@@ -264,11 +242,6 @@ export default function GeneralAssembliesPage() {
                 <input type="url" value={form.minutes_url} onChange={e => setForm(p => ({ ...p, minutes_url: e.target.value }))}
                   placeholder="https://…"
                   className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-400" />
-              </div>
-              <div className="col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-1">Notes</label>
-                <textarea rows={2} value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))}
-                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-400 resize-none" />
               </div>
             </div>
           </ModalBody>
