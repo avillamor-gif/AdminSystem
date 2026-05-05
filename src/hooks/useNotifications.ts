@@ -164,7 +164,7 @@ export function useNotifications() {
         type: 'equipment_request',
         title: notif.title,
         description: notif.message,
-        href: isIncoming ? '/admin/asset-management/requests' : '/equipment/my-requests',
+        href: isIncoming ? '/admin/office-equipment/equipment-requests' : '/equipment/my-requests',
         createdAt: notif.created_at,
         urgency: notif.type === 'rejected' ? 'warning' : 'normal',
         actionRequired: isIncoming,
