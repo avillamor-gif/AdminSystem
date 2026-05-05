@@ -2,16 +2,18 @@
 
 import { useState, useEffect, useMemo } from 'react'
 import { useSearchParams } from 'next/navigation'
-import { Clock, Play, Square, Calendar, ChevronRight } from 'lucide-react'
+import { Clock, Play, Square, Calendar, ChevronRight, Edit2 } from 'lucide-react'
 import { Card, Button, Badge } from '@/components/ui'
 import { AttendanceTypeModal } from '@/components/attendance/AttendanceTypeModal'
 import type { AttendanceType } from '@/components/attendance/AttendanceTypeModal'
+import { AttendanceEditModal } from '@/components/admin/AttendanceEditModal'
 import { usePunchInOut, parseSessions, serializeSessions, mapAttendanceTypeToStatus } from '@/hooks/usePunchInOut'
 import { createClient } from '../../../lib/supabase/client'
 import { useAttendanceRecords, useCurrentEmployee, useLeaveRequests } from '@/hooks'
 import { useCurrentUserPermissions } from '@/hooks/usePermissions'
 import { useHolidays } from '@/hooks/useLeaveAbsence'
 import { localDateStr } from '@/lib/utils'
+import type { AttendanceRecord } from '@/services/attendance.service'
 
 // Format a timestamp to "09:34 AM"
 function fmtTime(iso: string | null | undefined): string {
@@ -36,6 +38,9 @@ export default function TimePage() {
   const [isEditMode, setIsEditMode] = useState(false)
   const [selectedDate, setSelectedDate] = useState<string | null>(null)
   const [currentMonth, setCurrentMonth] = useState(new Date(new Date().getFullYear(), new Date().getMonth()))
+  const [editModal, setEditModal] = useState<{ open: boolean; dateStr: string; record: AttendanceRecord | null }>({
+    open: false, dateStr: '', record: null,
+  })
 
   // Fetch current employee data
   const { data: currentEmployee, isLoading: isLoadingEmployee, error: employeeError } = useCurrentEmployee()
@@ -810,12 +815,13 @@ export default function TimePage() {
                   <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Punch Out</th>
                   <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Duration</th>
                   <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Status</th>
+                  <th className="px-6 py-3 text-right text-xs font-semibold text-gray-600 uppercase">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
                 {isLoading ? (
                   <tr>
-                    <td colSpan={5} className="px-6 py-12 text-center">
+                    <td colSpan={6} className="px-6 py-12 text-center">
                       <div className="flex justify-center">
                         <div className="h-8 w-8 animate-spin rounded-full border-4 border-orange border-t-transparent" />
                       </div>
@@ -855,7 +861,17 @@ export default function TimePage() {
                                 <span className="text-sm font-medium text-gray-700">{info.label}</span>
                               </div>
                             </td>
-                          </tr>
+                            {idx === 0 && (
+                              <td className="px-6 py-4 text-right" rowSpan={sessions.length}>
+                                <button
+                                  onClick={() => setEditModal({ open: true, dateStr: record.date, record })}
+                                  className="p-1.5 text-gray-400 hover:text-orange rounded-lg hover:bg-orange/10 transition-colors"
+                                  title="Edit attendance"
+                                >
+                                  <Edit2 className="w-4 h-4" />
+                                </button>
+                              </td>
+                            )}
                         )
                       })
                     }
@@ -879,12 +895,20 @@ export default function TimePage() {
                             <span className="text-sm font-medium text-gray-700">{attendanceInfo.label}</span>
                           </div>
                         </td>
-                      </tr>
+                        <td className="px-6 py-4 text-right">
+                          <button
+                            onClick={() => setEditModal({ open: true, dateStr: record.date, record })}
+                            className="p-1.5 text-gray-400 hover:text-orange rounded-lg hover:bg-orange/10 transition-colors"
+                            title="Edit attendance"
+                          >
+                            <Edit2 className="w-4 h-4" />
+                          </button>
+                        </td>
                     )]
                   })
                 ) : (
                   <tr>
-                    <td colSpan={5} className="px-6 py-12 text-center text-gray-500">
+                    <td colSpan={6} className="px-6 py-12 text-center text-gray-500">
                       No attendance records found
                     </td>
                   </tr>
@@ -920,6 +944,15 @@ export default function TimePage() {
         onNoteChange={setAttendanceNote}
         onConfirm={selectedDate ? handleSaveAttendance : handleConfirmPunchIn}
         onCancel={handleCancelEdit}
+      />
+
+      <AttendanceEditModal
+        open={editModal.open}
+        onClose={() => setEditModal(s => ({ ...s, open: false }))}
+        employeeId={currentEmployee?.id ?? ''}
+        employeeName={currentEmployee ? `${currentEmployee.first_name} ${currentEmployee.last_name}` : ''}
+        dateStr={editModal.dateStr}
+        record={editModal.record}
       />
 
     </div>
