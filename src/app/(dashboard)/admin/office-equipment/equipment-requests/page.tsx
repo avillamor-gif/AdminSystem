@@ -1,13 +1,14 @@
 'use client'
 
 import { useState } from 'react'
-import { Building2, UserCheck, Eye } from 'lucide-react'
+import { Building2, UserCheck, Eye, CalendarDays, CheckCircle2 } from 'lucide-react'
 import { Card, Button, Badge, Modal, ModalHeader, ModalBody, ModalFooter } from '@/components/ui'
 import {
   useAssetRequests,
   useApproveAssetRequest,
   useRejectAssetRequest,
   useFulfillAssetRequest,
+  useAssets,
 } from '@/hooks/useAssets'
 import { useCurrentEmployee, useEmployees } from '@/hooks/useEmployees'
 import type { AssetRequest } from '@/services/asset.service'
@@ -31,6 +32,7 @@ export default function EquipmentRequestsPage() {
   const [rejectModal, setRejectModal] = useState<{ open: boolean; req: AssetRequest | null }>({ open: false, req: null })
   const [rejectReason, setRejectReason] = useState('')
   const [viewModal, setViewModal] = useState<{ open: boolean; req: AssetRequest | null }>({ open: false, req: null })
+  const [fulfillModal, setFulfillModal] = useState<{ open: boolean; req: AssetRequest | null }>({ open: false, req: null })
 
   const { data: requests = [], isLoading } = useAssetRequests(statusFilter ? { status: statusFilter } : {})
   const { data: currentEmployee } = useCurrentEmployee()
@@ -45,6 +47,8 @@ export default function EquipmentRequestsPage() {
   const approveMutation = useApproveAssetRequest()
   const rejectMutation = useRejectAssetRequest()
   const fulfillMutation = useFulfillAssetRequest()
+  // Available assets for the fulfill modal asset lookup
+  const { data: allAssets = [] } = useAssets({})
 
   const filtered = enrichedRequests.filter(r => {
     if (!typeFilter) return true
@@ -95,6 +99,7 @@ export default function EquipmentRequestsPage() {
   async function handleFulfill(r: AssetRequest) {
     // assigned_asset_id may or may not be set; service handles both cases safely
     await fulfillMutation.mutateAsync({ id: r.id, assetId: r.assigned_asset_id ?? undefined })
+    setFulfillModal({ open: false, req: null })
   }
 
   const pendingCount = enrichedRequests.filter(r => r.status === 'pending').length
@@ -156,7 +161,7 @@ export default function EquipmentRequestsPage() {
                   <th className="text-left px-5 py-3 font-medium text-gray-600">Borrower</th>
                   <th className="text-left px-5 py-3 font-medium text-gray-600">Equipment</th>
                   <th className="text-left px-5 py-3 font-medium text-gray-600">Purpose</th>
-                  <th className="text-left px-5 py-3 font-medium text-gray-600">Date</th>
+                  <th className="text-left px-5 py-3 font-medium text-gray-600">Borrow Period</th>
                   <th className="text-left px-5 py-3 font-medium text-gray-600">Status</th>
                   <th className="text-right px-5 py-3 font-medium text-gray-600">Actions</th>
                 </tr>
@@ -178,7 +183,18 @@ export default function EquipmentRequestsPage() {
                       </td>
                       <td className="px-5 py-3.5 text-gray-800 font-medium">{r.item_description}</td>
                       <td className="px-5 py-3.5 text-gray-600 max-w-[180px] truncate">{r.justification || '—'}</td>
-                      <td className="px-5 py-3.5 text-gray-500 whitespace-nowrap">{r.requested_date}</td>
+                      <td className="px-5 py-3.5 whitespace-nowrap">
+                        {r.borrow_start_date ? (
+                          <div className="flex items-center gap-1 text-xs text-gray-700">
+                            <CalendarDays className="w-3.5 h-3.5 text-gray-400 shrink-0" />
+                            <span>{r.borrow_start_date}</span>
+                            <span className="text-gray-400">→</span>
+                            <span>{r.borrow_end_date ?? 'TBD'}</span>
+                          </div>
+                        ) : (
+                          <span className="text-xs text-gray-400">{r.requested_date}</span>
+                        )}
+                      </td>
                       <td className="px-5 py-3.5">
                         <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${STATUS_COLORS[r.status ?? 'pending'] ?? 'bg-gray-100 text-gray-600'}`}>
                           {STATUS_LABELS[r.status ?? 'pending'] ?? r.status}
@@ -218,7 +234,7 @@ export default function EquipmentRequestsPage() {
                               variant="primary"
                               className="text-xs py-1 px-3 h-auto"
                               disabled={fulfillMutation.isPending}
-                              onClick={() => fulfillMutation.mutateAsync({ id: r.id, assetId: r.assigned_asset_id ?? undefined })}
+                              onClick={() => setFulfillModal({ open: true, req: r })}
                             >
                               Mark Fulfilled
                             </Button>
@@ -308,6 +324,60 @@ export default function EquipmentRequestsPage() {
           </ModalFooter>
         </Modal>
       )}
+
+      {/* Fulfill Confirmation Modal */}
+      {fulfillModal.open && fulfillModal.req && (() => {
+        const r = fulfillModal.req!
+        const linkedAsset = allAssets.find(a => a.id === (r as any).asset_id)
+        return (
+          <Modal open onClose={() => setFulfillModal({ open: false, req: null })}>
+            <ModalHeader>
+              <div className="flex items-center gap-2">
+                <CheckCircle2 className="w-5 h-5 text-green-600" />
+                <h3 className="text-lg font-semibold text-gray-900">Confirm Fulfillment</h3>
+              </div>
+            </ModalHeader>
+            <ModalBody>
+              <div className="space-y-4 text-sm">
+                <p className="text-gray-600">
+                  You are about to mark this request as <span className="font-semibold text-green-700">Fulfilled</span>. The equipment will be recorded as handed out.
+                </p>
+                <div className="p-4 bg-gray-50 rounded-lg border border-gray-200 space-y-2">
+                  <div><span className="text-gray-500 text-xs">Item Requested</span><p className="font-medium text-gray-900">{r.item_description}</p></div>
+                  {linkedAsset && (
+                    <div><span className="text-gray-500 text-xs">Asset Record</span>
+                      <p className="font-medium text-gray-900">{linkedAsset.name}{linkedAsset.asset_tag ? ` · ${linkedAsset.asset_tag}` : ''}</p>
+                    </div>
+                  )}
+                  {r.borrow_start_date && (
+                    <div><span className="text-gray-500 text-xs">Borrow Period</span>
+                      <p className="font-medium text-gray-900 flex items-center gap-1">
+                        <CalendarDays className="w-3.5 h-3.5 text-gray-400" />
+                        {r.borrow_start_date} → {r.borrow_end_date ?? 'TBD'}
+                      </p>
+                    </div>
+                  )}
+                </div>
+                {!linkedAsset && (
+                  <p className="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+                    No specific asset was linked to this request. Asset availability will not be automatically updated.
+                  </p>
+                )}
+              </div>
+            </ModalBody>
+            <ModalFooter>
+              <Button variant="secondary" onClick={() => setFulfillModal({ open: false, req: null })}>Cancel</Button>
+              <Button
+                variant="primary"
+                disabled={fulfillMutation.isPending}
+                onClick={() => handleFulfill(r)}
+              >
+                {fulfillMutation.isPending ? 'Marking…' : 'Confirm Fulfilled'}
+              </Button>
+            </ModalFooter>
+          </Modal>
+        )
+      })()}
 
       {/* Reject Reason Modal */}
       {rejectModal.open && (

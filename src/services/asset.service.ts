@@ -822,6 +822,15 @@ export const assetRequestService = {
     
     if (error) throw error
 
+    // Flip the physical asset to 'assigned' so it stops appearing as available
+    const linkedAssetId = (assetId && assetId !== id) ? assetId : (data as any).asset_id
+    if (linkedAssetId) {
+      await supabase.from('assets').update({
+        status: 'assigned',
+        assigned_date: new Date().toISOString().split('T')[0],
+      }).eq('id', linkedAssetId)
+    }
+
     await notifyRequesterOfDecision(
       'equipment_request_notifications', 'asset_requests', id,
       'fulfilled', 'Equipment Request Fulfilled',
@@ -844,6 +853,17 @@ export const assetRequestService = {
       .single()
 
     if (error) throw error
+
+    // Restore the physical asset to 'available'
+    const linkedAssetId = (data as any).assigned_asset_id || (data as any).asset_id
+    if (linkedAssetId) {
+      await supabase.from('assets').update({
+        status: 'available',
+        assigned_to: null,
+        assigned_date: null,
+      }).eq('id', linkedAssetId)
+    }
+
     return data as any
   },
 
