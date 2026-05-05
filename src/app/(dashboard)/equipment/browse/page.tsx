@@ -16,17 +16,14 @@ export default function BrowseEquipmentPage() {
   const [categoryFilter, setCategoryFilter] = useState('')
   const [availabilityFilter, setAvailabilityFilter] = useState<'all' | 'available' | 'borrowed'>('all')
 
-  // Load both available and currently-assigned (borrowed) assets
-  const { data: availableAssets = [], isLoading: loadingAvailable } = useAssets({ status: 'available' })
-  const { data: assignedAssets = [], isLoading: loadingAssigned } = useAssets({ status: 'assigned' })
+  // Load only available assets — assigned assets are not borrowable and never shown
+  const { data: availableAssets = [], isLoading } = useAssets({ status: 'available' })
   const { data: categories = [] } = useAssetCategories()
 
   // Active borrow requests to determine when borrowed items will be free
   const { data: fulfilledRequests = [] } = useAssetRequests({ status: 'fulfilled' })
   const { data: approvedRequests = [] } = useAssetRequests({ status: 'approved' })
   const { data: pendingRequests = [] } = useAssetRequests({ status: 'pending' })
-
-  const isLoading = loadingAvailable || loadingAssigned
 
   // Build assetId → latest borrow_end_date for non-returned active borrows
   const borrowedEndMap: Record<string, string | null> = {}
@@ -41,12 +38,8 @@ export default function BrowseEquipmentPage() {
     }
   }
 
-  // Only include available assets + assigned assets that are currently borrowed (have an active request)
-  // Permanently assigned assets (no borrow request) are hidden
-  const allAssets = [
-    ...availableAssets,
-    ...assignedAssets.filter(a => !!borrowedEndMap[a.id]),
-  ]
+  // All shown assets are available; those with an active borrow request are marked Borrowed
+  const allAssets = availableAssets
 
   const filtered = allAssets.filter((a) => {
     const matchesSearch =
