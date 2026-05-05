@@ -85,7 +85,7 @@ export default function BrowseEquipmentPage() {
         <Card className="p-6 flex flex-col items-center text-center">
           <div className="p-3 bg-red-100 rounded-xl mb-3"><CalendarX className="h-6 w-6 text-red-500" /></div>
           <p className="text-2xl font-bold text-gray-900">{borrowedCount}</p>
-          <p className="text-sm text-gray-500 mt-1">Currently Assigned</p>
+          <p className="text-sm text-gray-500 mt-1">Currently Borrowed</p>
         </Card>
         <Card className="p-6 flex flex-col items-center text-center">
           <div className="p-3 bg-purple-100 rounded-xl mb-3"><Package className="h-6 w-6 text-purple-600" /></div>
@@ -120,7 +120,7 @@ export default function BrowseEquipmentPage() {
         >
           <option value="all">All Availability</option>
           <option value="available">Available Now</option>
-          <option value="borrowed">Currently Assigned</option>
+          <option value="borrowed">Currently Borrowed</option>
         </select>
         {(searchQuery || categoryFilter || availabilityFilter !== 'all') && (
           <button
@@ -182,7 +182,7 @@ export default function BrowseEquipmentPage() {
                         {isBorrowed ? (
                           <div>
                             <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-red-100 text-red-700">
-                              <CalendarX className="w-3 h-3" /> Assigned
+                              <CalendarX className="w-3 h-3" /> Borrowed
                             </span>
                             {nextAvailable && (
                               <p className="text-[11px] text-green-700 font-medium mt-0.5">Free from {nextAvailable}</p>
