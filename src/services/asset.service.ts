@@ -67,6 +67,7 @@ export interface Asset {
   image_urls?: string[] | null
   notes?: string | null
   location_id?: string | null
+  borrowable_by?: 'employees' | 'external' | 'both' | 'none' | null
   created_at: string | null
   updated_at: string | null
   // Relations

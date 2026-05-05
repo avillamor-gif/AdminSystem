@@ -233,7 +233,9 @@ function CheckoutPageInner() {
     }
   }, [preselectedId])
 
-  const { data: assets = [] } = useAssets({ status: 'available' })
+  const { data: availableAssets = [] } = useAssets({ status: 'available' })
+  const { data: assignedAssets = [] } = useAssets({ status: 'assigned' })
+  const assets = [...availableAssets, ...assignedAssets]
   const { data: currentEmployee } = useCurrentEmployee()
   const createMutation = useCreateAssetRequest()
 
@@ -551,6 +553,7 @@ function CheckoutPageInner() {
                     ) : filteredAssets.map(a => {
                       const cat = (a as any).category?.name
                       const cond = a.condition ? a.condition.charAt(0).toUpperCase() + a.condition.slice(1) : ''
+                      const isBorrowed = a.status === 'assigned'
                       return (
                         <button
                           key={a.id}
@@ -560,7 +563,12 @@ function CheckoutPageInner() {
                             formData.asset_id === a.id ? 'bg-green-50 font-medium text-green-700' : 'text-gray-800'
                           }`}
                         >
-                          <span>{a.name}{a.asset_tag ? ` · ${a.asset_tag}` : ''}</span>
+                          <span className="flex items-center gap-2 min-w-0">
+                            <span className="truncate">{a.name}{a.asset_tag ? ` · ${a.asset_tag}` : ''}</span>
+                            {isBorrowed && (
+                              <span className="shrink-0 text-[10px] font-semibold px-1.5 py-0.5 rounded bg-red-100 text-red-600">Borrowed</span>
+                            )}
+                          </span>
                           <span className="text-xs text-gray-400 shrink-0">{[cat, cond].filter(Boolean).join(' · ')}</span>
                         </button>
                       )

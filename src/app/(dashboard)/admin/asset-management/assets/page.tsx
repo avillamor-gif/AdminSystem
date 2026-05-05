@@ -87,7 +87,8 @@ export default function AssetsPage() {
     status: 'available' as Asset['status'],
     condition: 'good' as Asset['condition'],
     assigned_to: '',
-    assigned_date: ''
+    assigned_date: '',
+    borrowable_by: 'both' as 'employees' | 'external' | 'both' | 'none'
   })
 
   const { data: assets = [], isLoading } = useAssets({
@@ -199,7 +200,8 @@ export default function AssetsPage() {
         status: asset.status,
         condition: asset.condition || 'good',
         assigned_to: asset.assigned_to || '',
-        assigned_date: asset.assigned_date || ''
+        assigned_date: asset.assigned_date || '',
+        borrowable_by: ((asset as any).borrowable_by || 'both') as 'employees' | 'external' | 'both' | 'none'
       })
       // Populate previews from image_urls (or fall back to single image_url)
       const urls: string[] = Array.isArray((asset as any).image_urls) && (asset as any).image_urls.length > 0
@@ -231,7 +233,8 @@ export default function AssetsPage() {
         status: 'available',
         condition: 'good',
         assigned_to: '',
-        assigned_date: ''
+        assigned_date: '',
+        borrowable_by: 'both'
       })
     }
     if (asset) {
@@ -272,7 +275,8 @@ export default function AssetsPage() {
       status: 'available',
       condition: 'good',
       assigned_to: '',
-      assigned_date: ''
+      assigned_date: '',
+      borrowable_by: 'both'
     })
   }
 
@@ -417,7 +421,8 @@ export default function AssetsPage() {
       status: resolvedStatus,
       condition: formData.condition,
       assigned_to: formData.assigned_to || (null as unknown as string),
-      assigned_date: formData.assigned_to ? (formData.assigned_date || undefined) : (null as unknown as string)
+      assigned_date: formData.assigned_to ? (formData.assigned_date || undefined) : (null as unknown as string),
+      borrowable_by: (formData.borrowable_by || 'both') as any
     }
 
     if (selectedAsset) {
@@ -676,7 +681,7 @@ export default function AssetsPage() {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusColors[asset.status ?? 'available']}`}>
-                          {asset.status === 'assigned' ? 'In-use' : asset.status === 'maintenance' ? 'Under Maintenance' : (asset.status ?? '').charAt(0).toUpperCase() + (asset.status ?? '').slice(1)}
+                          {asset.status === 'assigned' ? 'Assigned' : asset.status === 'maintenance' ? 'Under Maintenance' : (asset.status ?? '').charAt(0).toUpperCase() + (asset.status ?? '').slice(1)}
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
@@ -1367,6 +1372,18 @@ export default function AssetsPage() {
                       <option value="good">Good</option>
                       <option value="fair">Fair</option>
                       <option value="poor">Poor</option>
+                    </Select>
+
+                    {/* Borrowable By */}
+                    <Select
+                      label="Borrowable By"
+                      value={formData.borrowable_by || 'both'}
+                      onChange={(e) => setFormData({ ...formData, borrowable_by: e.target.value as 'employees' | 'external' | 'both' | 'none' })}
+                    >
+                      <option value="both">Employees &amp; Partners</option>
+                      <option value="employees">Employees Only</option>
+                      <option value="external">External Partners Only</option>
+                      <option value="none">Not Available for Borrowing</option>
                     </Select>
 
                     {/* Description */}
