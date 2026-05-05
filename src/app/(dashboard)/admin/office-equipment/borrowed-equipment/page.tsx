@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { Building2, UserCheck, RotateCcw } from 'lucide-react'
 import { Card, Button, Badge, Modal, ModalHeader, ModalBody, ModalFooter } from '@/components/ui'
-import { useAssetRequests, useMarkEquipmentReturned } from '@/hooks/useAssets'
+import { useAssetRequests, useMarkEquipmentReturned, useAssets } from '@/hooks/useAssets'
 import { useEmployees } from '@/hooks'
 import type { AssetRequest } from '@/services/asset.service'
 import { formatDate } from '@/lib/utils'
@@ -34,6 +34,8 @@ export default function BorrowedEquipmentPage() {
   const markReturnedMutation = useMarkEquipmentReturned()
   const { data: employees = [] } = useEmployees()
   const employeeMap = Object.fromEntries(employees.map(e => [e.id, `${e.first_name} ${e.last_name}`]))
+  const { data: allAssets = [] } = useAssets({})
+  const assetTagMap = Object.fromEntries(allAssets.map(a => [a.id, a.asset_tag || '']))
 
   const filtered = requests.filter(r => {
     const isReturned = !!(r as any).returned_date
@@ -149,6 +151,7 @@ export default function BorrowedEquipmentPage() {
                 <tr>
                   <th className="text-left px-5 py-3 font-medium text-gray-600">Borrower</th>
                   <th className="text-left px-5 py-3 font-medium text-gray-600">Equipment</th>
+                  <th className="text-left px-5 py-3 font-medium text-gray-600">Asset Tag</th>
                   <th className="text-left px-5 py-3 font-medium text-gray-600">Purpose</th>
                   <th className="text-left px-5 py-3 font-medium text-gray-600">Date Borrowed</th>
                   <th className="text-left px-5 py-3 font-medium text-gray-600">Date Returned</th>
@@ -179,6 +182,9 @@ export default function BorrowedEquipmentPage() {
                         </div>
                       </td>
                       <td className="px-5 py-3.5 text-gray-800 font-medium">{r.item_description}</td>
+                      <td className="px-5 py-3.5 font-mono text-xs text-gray-500">
+                        {assetTagMap[(r as any).assigned_asset_id] || '—'}
+                      </td>
                       <td className="px-5 py-3.5 text-gray-500 max-w-[160px] truncate">
                         {r.justification || '—'}
                       </td>
