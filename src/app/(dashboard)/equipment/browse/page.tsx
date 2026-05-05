@@ -41,7 +41,12 @@ export default function BrowseEquipmentPage() {
     }
   }
 
-  const allAssets = [...availableAssets, ...assignedAssets]
+  // Only include available assets + assigned assets that are currently borrowed (have an active request)
+  // Permanently assigned assets (no borrow request) are hidden
+  const allAssets = [
+    ...availableAssets,
+    ...assignedAssets.filter(a => !!borrowedEndMap[a.id]),
+  ]
 
   const filtered = allAssets.filter((a) => {
     const matchesSearch =
@@ -50,14 +55,14 @@ export default function BrowseEquipmentPage() {
       a.asset_tag?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       (a as any).category?.name?.toLowerCase().includes(searchQuery.toLowerCase())
     const matchesCategory = !categoryFilter || (a as any).category_id === categoryFilter
-    const isBorrowed = a.status === 'assigned' || !!borrowedEndMap[a.id]
+    const isBorrowed = !!borrowedEndMap[a.id]
     if (availabilityFilter === 'available' && isBorrowed) return false
     if (availabilityFilter === 'borrowed' && !isBorrowed) return false
     return matchesSearch && matchesCategory
   })
 
-  const availableCount = allAssets.filter(a => a.status === 'available' && !borrowedEndMap[a.id]).length
-  const borrowedCount  = allAssets.filter(a => a.status === 'assigned' || !!borrowedEndMap[a.id]).length
+  const availableCount = allAssets.filter(a => !borrowedEndMap[a.id]).length
+  const borrowedCount  = allAssets.filter(a => !!borrowedEndMap[a.id]).length
 
   function goToCheckout(asset: Asset) {
     router.push(`/equipment/checkout?asset=${asset.id}`)
@@ -160,7 +165,7 @@ export default function BrowseEquipmentPage() {
               <tbody className="bg-white divide-y divide-gray-200">
                 {filtered.map((asset) => {
                   const a = asset as any
-                  const isBorrowed = asset.status === 'assigned' || !!borrowedEndMap[asset.id]
+                  const isBorrowed = !!borrowedEndMap[asset.id]
                   const endDate = borrowedEndMap[asset.id]
                   const nextAvailable = endDate
                     ? (() => { const d = new Date(endDate + 'T00:00:00'); d.setDate(d.getDate() + 1); return localDateStr(d) })()
