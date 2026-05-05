@@ -209,6 +209,9 @@ export default function DashboardPage() {
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-gray-900 truncate">{fullName}</p>
                       {dept && <p className="text-xs text-gray-500 truncate">{dept}</p>}
+                      {item.clockIn && (
+                        <p className="text-xs text-gray-400">In {new Date(item.clockIn).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+                      )}
                     </div>
                     <span className={`px-2 py-1 text-xs font-medium rounded whitespace-nowrap ${badgeCls}`}>
                       {item.statusLabel}

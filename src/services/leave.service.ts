@@ -34,6 +34,7 @@ export type WorkStatusEntry = {
   } | null
   statusType: 'work-home' | 'work-offsite' | 'work-travel' | 'work-onsite' | 'on-leave'
   statusLabel: string
+  clockIn?: string | null
 }
 
 export const leaveService = {
@@ -233,6 +234,7 @@ export const leaveService = {
         employee: emp,
         statusType: rawStatus as WorkStatusEntry['statusType'],
         statusLabel: labelMap[rawStatus] ?? rawStatus,
+        clockIn: rec.clock_in ?? null,
       })
     }
 
@@ -251,6 +253,14 @@ export const leaveService = {
     }
 
     return results.sort((a, b) => {
+      // on-leave always at the bottom
+      if (a.statusType === 'on-leave' && b.statusType !== 'on-leave') return 1
+      if (b.statusType === 'on-leave' && a.statusType !== 'on-leave') return -1
+      // Sort by clock-in time ascending (earliest punch-in first)
+      if (a.clockIn && b.clockIn) return a.clockIn.localeCompare(b.clockIn)
+      if (a.clockIn && !b.clockIn) return -1
+      if (!a.clockIn && b.clockIn) return 1
+      // Fallback: alphabetical
       const nameA = `${a.employee?.first_name} ${a.employee?.last_name}`
       const nameB = `${b.employee?.first_name} ${b.employee?.last_name}`
       return nameA.localeCompare(nameB)
