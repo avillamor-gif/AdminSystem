@@ -93,10 +93,8 @@ export default function EquipmentRequestsPage() {
   }
 
   async function handleFulfill(r: AssetRequest) {
-    if (!r.assigned_asset_id) {
-      // Fulfill without assigning a specific asset (admin can update later)
-      await fulfillMutation.mutateAsync({ id: r.id, assetId: r.assigned_asset_id ?? r.id })
-    }
+    // assigned_asset_id may or may not be set; service handles both cases safely
+    await fulfillMutation.mutateAsync({ id: r.id, assetId: r.assigned_asset_id ?? undefined })
   }
 
   const pendingCount = enrichedRequests.filter(r => r.status === 'pending').length
@@ -220,7 +218,7 @@ export default function EquipmentRequestsPage() {
                               variant="primary"
                               className="text-xs py-1 px-3 h-auto"
                               disabled={fulfillMutation.isPending}
-                              onClick={() => fulfillMutation.mutateAsync({ id: r.id, assetId: r.assigned_asset_id ?? r.id })}
+                              onClick={() => fulfillMutation.mutateAsync({ id: r.id, assetId: r.assigned_asset_id ?? undefined })}
                             >
                               Mark Fulfilled
                             </Button>

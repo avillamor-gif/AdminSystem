@@ -1,8 +1,8 @@
 'use client'
 
-import { useState, useEffect, useRef, Suspense, useCallback } from 'react'
+import { useState, useEffect, useRef, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
-import { Monitor, Search, X, CheckCircle, ChevronDown, UserCheck, Building2, AlertTriangle, CalendarX } from 'lucide-react'
+import { Monitor, Search, X, CheckCircle, ChevronDown, UserCheck, Building2, AlertTriangle, CalendarX, ChevronLeft, ChevronRight } from 'lucide-react'
 import { Card, Button, Input } from '@/components/ui'
 import { useAssets, useAssetCategories, useCreateAssetRequest } from '@/hooks/useAssets'
 import { useCurrentEmployee } from '@/hooks/useEmployees'
@@ -27,6 +27,173 @@ interface ExternalBorrowerData {
 
 const today = localDateStr(new Date())
 
+// ── Availability Calendar ──────────────────────────────────────────────────
+interface BookedRange { start: string; end: string }
+
+function AvailabilityCalendar({
+  bookings,
+  startDate,
+  endDate,
+  onRangeChange,
+}: {
+  bookings: AssetRequest[]
+  startDate: string
+  endDate: string
+  onRangeChange: (start: string, end: string) => void
+}) {
+  const [viewYear, setViewYear] = useState(() => new Date().getFullYear())
+  const [viewMonth, setViewMonth] = useState(() => new Date().getMonth())
+  const [firstClick, setFirstClick] = useState<string | null>(null)
+  const [hoverDate, setHoverDate] = useState<string | null>(null)
+
+  const bookedRanges: BookedRange[] = bookings
+    .map(b => ({ start: b.borrow_start_date ?? '', end: b.borrow_end_date ?? b.borrow_start_date ?? '' }))
+    .filter(r => r.start)
+
+  function isBooked(d: string) {
+    return bookedRanges.some(r => d >= r.start && d <= r.end)
+  }
+
+  function isInSelection(d: string) {
+    const anchor = firstClick || startDate
+    const cursor = hoverDate || endDate
+    if (!anchor || !cursor) return false
+    const [lo, hi] = anchor <= cursor ? [anchor, cursor] : [cursor, anchor]
+    return d >= lo && d <= hi
+  }
+
+  function isEndpoint(d: string) {
+    return d === startDate || d === endDate
+  }
+
+  function handleClick(d: string) {
+    if (d < today || isBooked(d)) return
+    if (!firstClick) {
+      // First click — set anchor
+      setFirstClick(d)
+      onRangeChange(d, '')
+    } else {
+      // Second click — finalise range
+      const [s, e] = firstClick <= d ? [firstClick, d] : [d, firstClick]
+      setFirstClick(null)
+      setHoverDate(null)
+      onRangeChange(s, e)
+    }
+  }
+
+  function prevMonth() {
+    if (viewMonth === 0) { setViewYear(y => y - 1); setViewMonth(11) }
+    else setViewMonth(m => m - 1)
+  }
+  function nextMonth() {
+    if (viewMonth === 11) { setViewYear(y => y + 1); setViewMonth(0) }
+    else setViewMonth(m => m + 1)
+  }
+
+  // Second displayed month
+  const m2month = viewMonth === 11 ? 0 : viewMonth + 1
+  const m2year  = viewMonth === 11 ? viewYear + 1 : viewYear
+
+  function renderMonth(year: number, month: number) {
+    const label = new Date(year, month, 1).toLocaleString('default', { month: 'long', year: 'numeric' })
+    const firstWeekday = new Date(year, month, 1).getDay()
+    const daysInMonth  = new Date(year, month + 1, 0).getDate()
+    const cells: React.ReactNode[] = []
+
+    for (let i = 0; i < firstWeekday; i++) cells.push(<div key={`pad-${i}`} />)
+
+    for (let day = 1; day <= daysInMonth; day++) {
+      const d = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`
+      const past   = d < today
+      const booked = isBooked(d)
+      const inSel  = isInSelection(d)
+      const endpt  = isEndpoint(d)
+
+      let cls = 'h-8 w-8 flex items-center justify-center rounded-full text-xs font-medium transition-colors select-none '
+      if (past) {
+        cls += 'text-gray-300 cursor-not-allowed'
+      } else if (booked) {
+        cls += 'bg-red-100 text-red-500 cursor-not-allowed line-through'
+      } else if (endpt) {
+        cls += 'bg-green-600 text-white cursor-pointer shadow'
+      } else if (inSel) {
+        cls += 'bg-green-100 text-green-700 cursor-pointer'
+      } else {
+        cls += 'text-gray-700 hover:bg-green-50 hover:text-green-700 cursor-pointer'
+      }
+
+      cells.push(
+        <div
+          key={d}
+          className={cls}
+          onClick={() => handleClick(d)}
+          onMouseEnter={() => firstClick && !past && !booked && setHoverDate(d)}
+          onMouseLeave={() => firstClick && setHoverDate(null)}
+        >
+          {day}
+        </div>
+      )
+    }
+
+    return (
+      <div className="flex-1 min-w-0">
+        <p className="text-xs font-semibold text-gray-700 text-center mb-2">{label}</p>
+        <div className="grid grid-cols-7 gap-y-0.5 gap-x-0 text-center">
+          {['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map(h => (
+            <div key={h} className="text-[10px] font-medium text-gray-400 py-1">{h}</div>
+          ))}
+          {cells}
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="border border-gray-200 rounded-xl bg-white overflow-hidden">
+      {/* Header */}
+      <div className="flex items-center justify-between px-4 py-2.5 border-b bg-gray-50/60">
+        <p className="text-xs font-semibold text-gray-700">Availability Calendar</p>
+        <div className="flex items-center gap-3 text-[11px] text-gray-500">
+          <span className="flex items-center gap-1">
+            <span className="inline-block w-3 h-3 rounded-full bg-red-200 border border-red-300" /> Booked
+          </span>
+          <span className="flex items-center gap-1">
+            <span className="inline-block w-3 h-3 rounded-full bg-green-100 border border-green-400" /> Your selection
+          </span>
+          {firstClick && (
+            <span className="text-green-600 font-medium animate-pulse">Click an end date…</span>
+          )}
+        </div>
+      </div>
+
+      {/* Calendar grid */}
+      <div className="flex items-start gap-2 px-4 py-3">
+        <button type="button" onClick={prevMonth} className="p-1.5 rounded hover:bg-gray-100 text-gray-400 hover:text-gray-600 shrink-0 mt-5">
+          <ChevronLeft className="w-4 h-4" />
+        </button>
+        <div className="flex gap-6 flex-1 overflow-hidden">
+          {renderMonth(viewYear, viewMonth)}
+          {renderMonth(m2year, m2month)}
+        </div>
+        <button type="button" onClick={nextMonth} className="p-1.5 rounded hover:bg-gray-100 text-gray-400 hover:text-gray-600 shrink-0 mt-5">
+          <ChevronRight className="w-4 h-4" />
+        </button>
+      </div>
+
+      {/* Selected range footer */}
+      {(startDate || endDate) && (
+        <div className="px-4 py-2 border-t bg-green-50 text-xs text-center text-green-800">
+          {startDate && endDate
+            ? <>Borrow: <strong>{startDate}</strong> → <strong>{endDate}</strong></>
+            : <>Start date: <strong>{startDate || endDate}</strong> — select an end date</>
+          }
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ── Page ───────────────────────────────────────────────────────────────────
 function CheckoutPageInner() {
   const searchParams = useSearchParams()
   const preselectedId = searchParams.get('asset') ?? ''
@@ -50,6 +217,9 @@ function CheckoutPageInner() {
   const [checkingAvailability, setCheckingAvailability] = useState(false)
   const [nextAvailableDate, setNextAvailableDate] = useState<string | null>(null)
   const [showAvailabilityModal, setShowAvailabilityModal] = useState(false)
+  // Active borrows on the selected asset (regardless of chosen dates) — shown immediately on asset select
+  const [activeBookings, setActiveBookings] = useState<AssetRequest[]>([])
+  const [checkingActive, setCheckingActive] = useState(false)
 
   // Equipment search combobox state
   const [equipSearch, setEquipSearch] = useState('')
@@ -96,6 +266,31 @@ function CheckoutPageInner() {
   // Availability conflict check — runs whenever asset + both dates are set
   useEffect(() => {
     const assetId = formData.asset_id
+    if (!assetId) { setActiveBookings([]); return }
+    let cancelled = false
+    setCheckingActive(true)
+    // Check a wide window (today → 2 years out) to surface ANY active borrow
+    const farFuture = new Date()
+    farFuture.setFullYear(farFuture.getFullYear() + 2)
+    assetRequestService.checkAvailability(assetId, today, farFuture.toISOString().split('T')[0])
+      .then(async result => {
+        if (cancelled) return
+        setActiveBookings(result)
+        if (result.length > 0) {
+          const next = await assetRequestService.getNextAvailableDate(assetId).catch(() => null)
+          if (!cancelled) setNextAvailableDate(next)
+        } else {
+          setNextAvailableDate(null)
+        }
+      })
+      .catch(() => { if (!cancelled) { setActiveBookings([]); setNextAvailableDate(null) } })
+      .finally(() => { if (!cancelled) setCheckingActive(false) })
+    return () => { cancelled = true }
+  }, [formData.asset_id])
+
+  // Date-specific conflict check — runs whenever asset + both dates are set
+  useEffect(() => {
+    const assetId = formData.asset_id
     const start = formData.borrowed_date
     const end = formData.expected_return_date
     if (!assetId || !start || !end) { setConflicts([]); return }
@@ -139,6 +334,7 @@ function CheckoutPageInner() {
     setEquipSearch('')
     setConflicts([])
     setNextAvailableDate(null)
+    setActiveBookings([])
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -163,6 +359,7 @@ function CheckoutPageInner() {
     if (borrowerType === 'employee') {
       await createMutation.mutateAsync({
         employee_id: currentEmployee!.id,
+        asset_id: formData.asset_id || undefined,
         borrower_type: 'employee',
         category_id: (selectedAsset as any)?.category_id || undefined,
         item_description: selectedAsset?.name || formData.asset_id,
@@ -173,10 +370,11 @@ function CheckoutPageInner() {
         notes: notesText || undefined,
         priority: 'normal',
         status: 'pending',
-      })
+      } as any)
     } else {
       await createMutation.mutateAsync({
         employee_id: null,
+        asset_id: formData.asset_id || undefined,
         borrower_type: 'external',
         external_borrower_name: external.name.trim(),
         external_borrower_org: external.org.trim(),
@@ -374,11 +572,42 @@ function CheckoutPageInner() {
 
             {/* Selected asset details */}
             {selectedAsset && (
-              <div className="p-4 bg-blue-50 border border-blue-100 rounded-lg grid grid-cols-2 gap-x-8 gap-y-2 text-sm">
-                <div><span className="text-gray-500">Category: </span><span className="font-medium text-gray-800">{(selectedAsset as any).category?.name || '—'}</span></div>
-                <div><span className="text-gray-500">Location: </span><span className="font-medium text-gray-800">{selectedAsset.location || '—'}</span></div>
-                <div><span className="text-gray-500">Condition: </span><span className="font-medium text-gray-800 capitalize">{selectedAsset.condition || '—'}</span></div>
-                <div><span className="text-gray-500">Quantity Available: </span><span className="font-medium text-gray-800">1</span></div>
+              <div className={`p-4 border rounded-lg text-sm ${
+                activeBookings.length > 0 ? 'bg-red-50 border-red-200' : 'bg-blue-50 border-blue-100'
+              }`}>
+                {/* Currently borrowed alert */}
+                {checkingActive && (
+                  <p className="text-xs text-gray-400 mb-2">Checking current availability…</p>
+                )}
+                {!checkingActive && activeBookings.length > 0 && (
+                  <div className="flex items-start gap-2 mb-3 pb-3 border-b border-red-200">
+                    <CalendarX className="w-4 h-4 text-red-500 shrink-0 mt-0.5" />
+                    <div>
+                      <p className="text-xs font-semibold text-red-800">Currently borrowed — not available</p>
+                      <ul className="mt-0.5 space-y-0.5">
+                        {activeBookings.map(b => (
+                          <li key={b.id} className="text-xs text-red-600">
+                            {b.borrow_start_date} → {b.borrow_end_date ?? 'TBD'}
+                            {b.external_borrower_name ? ` · ${b.external_borrower_name}` : ''}
+                          </li>
+                        ))}
+                      </ul>
+                      {nextAvailableDate && (
+                        <p className="text-xs text-green-700 font-medium mt-1">
+                          Next available: <span className="font-bold">{nextAvailableDate}</span>
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                )}
+                <div className="grid grid-cols-2 gap-x-8 gap-y-2">
+                  <div><span className="text-gray-500">Category: </span><span className="font-medium text-gray-800">{(selectedAsset as any).category?.name || '—'}</span></div>
+                  <div><span className="text-gray-500">Location: </span><span className="font-medium text-gray-800">{selectedAsset.location || '—'}</span></div>
+                  <div><span className="text-gray-500">Condition: </span><span className="font-medium text-gray-800 capitalize">{selectedAsset.condition || '—'}</span></div>
+                  <div><span className="text-gray-500">Status: </span><span className={`font-medium ${
+                    activeBookings.length > 0 ? 'text-red-600' : 'text-green-600'
+                  }`}>{activeBookings.length > 0 ? 'Currently Borrowed' : 'Available'}</span></div>
+                </div>
               </div>
             )}
 
@@ -460,6 +689,18 @@ function CheckoutPageInner() {
                   </div>
                 </div>
               </div>
+            )}
+
+            {/* Availability Calendar — shown as soon as an asset is selected */}
+            {formData.asset_id && (
+              <AvailabilityCalendar
+                bookings={activeBookings}
+                startDate={formData.borrowed_date}
+                endDate={formData.expected_return_date}
+                onRangeChange={(start, end) =>
+                  setFormData(p => ({ ...p, borrowed_date: start, expected_return_date: end }))
+                }
+              />
             )}
 
             {/* Row 2: Purpose + Dates */}

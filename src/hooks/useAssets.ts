@@ -609,7 +609,7 @@ export function useFulfillAssetRequest() {
   const queryClient = useQueryClient()
   
   return useMutation({
-    mutationFn: ({ id, assetId }: { id: string; assetId: string }) => 
+    mutationFn: ({ id, assetId }: { id: string; assetId?: string | null }) => 
       assetRequestService.fulfill(id, assetId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: assetRequestKeys.lists() })

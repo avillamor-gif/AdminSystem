@@ -124,6 +124,7 @@ export interface AssetLocation {
 
 export interface AssetRequest {
   id: string
+  asset_id?: string | null
   employee_id?: string | null
   category_id?: string | null
   item_description: string
@@ -802,15 +803,19 @@ export const assetRequestService = {
     return data as any
   },
 
-  async fulfill(id: string, assetId: string): Promise<AssetRequest> {
+  async fulfill(id: string, assetId?: string | null): Promise<AssetRequest> {
+    const update: Record<string, unknown> = {
+      status: 'fulfilled',
+      fulfilled_date: new Date().toISOString().split('T')[0],
+      updated_at: new Date().toISOString(),
+    }
+    // Only set assigned_asset_id if we have a real asset UUID distinct from the request id
+    if (assetId && assetId !== id) {
+      update.assigned_asset_id = assetId
+    }
     const { data, error } = await supabase
       .from('asset_requests')
-      .update({
-        status: 'fulfilled',
-        assigned_asset_id: assetId,
-        fulfilled_date: new Date().toISOString().split('T')[0],
-        updated_at: new Date().toISOString()
-      })
+      .update(update)
       .eq('id', id)
       .select()
       .single()
