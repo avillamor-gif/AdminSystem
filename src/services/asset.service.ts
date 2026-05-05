@@ -885,7 +885,8 @@ export const assetRequestService = {
     }
 
     const run = async (col: string) => {
-      let q = supabase
+      // Rows where borrow_end_date covers the requested range
+      let q1 = supabase
         .from(base.from)
         .select('*')
         .eq(col, assetId)
@@ -893,9 +894,21 @@ export const assetRequestService = {
         .is('returned_date', null)
         .lte('borrow_start_date', endDate)
         .gte('borrow_end_date', startDate)
-      if (excludeRequestId) q = q.neq('id', excludeRequestId)
-      const { data } = await q
-      return (data || []) as any[]
+      if (excludeRequestId) q1 = q1.neq('id', excludeRequestId)
+
+      // Rows with no borrow_end_date (open-ended / no scheduled return) — always block
+      let q2 = supabase
+        .from(base.from)
+        .select('*')
+        .eq(col, assetId)
+        .in('status', base.statuses)
+        .is('returned_date', null)
+        .is('borrow_end_date', null)
+        .lte('borrow_start_date', endDate)
+      if (excludeRequestId) q2 = q2.neq('id', excludeRequestId)
+
+      const [{ data: d1 }, { data: d2 }] = await Promise.all([q1, q2])
+      return [...(d1 || []), ...(d2 || [])] as any[]
     }
 
     const [byAssigned, byRequested] = await Promise.all([
