@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, Suspense, useCallback } from 'react'
 import { useSearchParams } from 'next/navigation'
-import { Monitor, Search, X, CheckCircle, ChevronDown, UserCheck, Building2, AlertTriangle } from 'lucide-react'
+import { Monitor, Search, X, CheckCircle, ChevronDown, UserCheck, Building2, AlertTriangle, CalendarX } from 'lucide-react'
 import { Card, Button, Input } from '@/components/ui'
 import { useAssets, useAssetCategories, useCreateAssetRequest } from '@/hooks/useAssets'
 import { useCurrentEmployee } from '@/hooks/useEmployees'
@@ -48,6 +48,8 @@ function CheckoutPageInner() {
   const [submitted, setSubmitted] = useState(false)
   const [conflicts, setConflicts] = useState<AssetRequest[]>([])
   const [checkingAvailability, setCheckingAvailability] = useState(false)
+  const [nextAvailableDate, setNextAvailableDate] = useState<string | null>(null)
+  const [showAvailabilityModal, setShowAvailabilityModal] = useState(false)
 
   // Equipment search combobox state
   const [equipSearch, setEquipSearch] = useState('')
@@ -100,8 +102,17 @@ function CheckoutPageInner() {
     let cancelled = false
     setCheckingAvailability(true)
     assetRequestService.checkAvailability(assetId, start, end)
-      .then(result => { if (!cancelled) setConflicts(result) })
-      .catch(() => { if (!cancelled) setConflicts([]) })
+      .then(async result => {
+        if (cancelled) return
+        setConflicts(result)
+        if (result.length > 0) {
+          const next = await assetRequestService.getNextAvailableDate(assetId).catch(() => null)
+          if (!cancelled) setNextAvailableDate(next)
+        } else {
+          setNextAvailableDate(null)
+        }
+      })
+      .catch(() => { if (!cancelled) { setConflicts([]); setNextAvailableDate(null) } })
       .finally(() => { if (!cancelled) setCheckingAvailability(false) })
     return () => { cancelled = true }
   }, [formData.asset_id, formData.borrowed_date, formData.expected_return_date])
@@ -127,6 +138,7 @@ function CheckoutPageInner() {
     setExternal({ name: '', org: '', contact: '', position: '' })
     setEquipSearch('')
     setConflicts([])
+    setNextAvailableDate(null)
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -370,29 +382,84 @@ function CheckoutPageInner() {
               </div>
             )}
 
-            {/* Availability conflict warning */}
+            {/* Availability conflict — blocking banner */}
             {conflicts.length > 0 && (
               <div className="flex items-start gap-3 bg-red-50 border border-red-200 rounded-lg px-4 py-3">
-                <AlertTriangle className="w-5 h-5 text-red-500 shrink-0 mt-0.5" />
-                <div>
+                <CalendarX className="w-5 h-5 text-red-500 shrink-0 mt-0.5" />
+                <div className="flex-1">
                   <p className="text-sm font-medium text-red-800">
-                    This equipment is already booked during your selected dates
+                    This equipment is unavailable for your selected dates.
                   </p>
-                  <ul className="mt-1 space-y-0.5">
-                    {conflicts.map(c => (
-                      <li key={c.id} className="text-xs text-red-600">
-                        {c.borrow_start_date} → {c.borrow_end_date ?? 'TBD'}
-                        {c.employee ? ` · ${(c.employee as any).first_name} ${(c.employee as any).last_name}` : ''}
-                        {c.external_borrower_name ? ` · ${c.external_borrower_name}` : ''}
-                      </li>
-                    ))}
-                  </ul>
-                  <p className="text-xs text-red-500 mt-1">You can still submit, but it may be declined.</p>
+                  {nextAvailableDate && (
+                    <p className="text-xs text-green-700 font-medium mt-0.5">
+                      Next available from: <span className="font-bold">{nextAvailableDate}</span>
+                    </p>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => setShowAvailabilityModal(true)}
+                    className="mt-1.5 text-xs text-red-600 underline hover:text-red-800"
+                  >
+                    View conflicting bookings
+                  </button>
                 </div>
               </div>
             )}
             {checkingAvailability && formData.asset_id && formData.borrowed_date && formData.expected_return_date && (
               <p className="text-xs text-gray-400">Checking availability…</p>
+            )}
+
+            {/* Availability modal */}
+            {showAvailabilityModal && (
+              <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40">
+                <div className="bg-white rounded-xl shadow-xl w-full max-w-md">
+                  <div className="flex items-center justify-between px-5 py-4 border-b">
+                    <div className="flex items-center gap-2">
+                      <CalendarX className="w-5 h-5 text-red-500" />
+                      <h3 className="text-sm font-semibold text-gray-900">Equipment Unavailable</h3>
+                    </div>
+                    <button type="button" onClick={() => setShowAvailabilityModal(false)} className="text-gray-400 hover:text-gray-600">
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                  <div className="px-5 py-4 space-y-3">
+                    <p className="text-sm text-gray-600">
+                      <span className="font-medium text-gray-900">{selectedAsset?.name}</span> is already booked during your selected dates:
+                    </p>
+                    <ul className="space-y-1.5">
+                      {conflicts.map(c => (
+                        <li key={c.id} className="flex items-center gap-2 text-xs bg-red-50 border border-red-100 rounded-lg px-3 py-2">
+                          <AlertTriangle className="w-3.5 h-3.5 text-red-400 shrink-0" />
+                          <span className="text-red-700 font-medium">{c.borrow_start_date} → {c.borrow_end_date ?? 'TBD'}</span>
+                          {c.external_borrower_name && (
+                            <span className="text-red-500">· {c.external_borrower_name}</span>
+                          )}
+                        </li>
+                      ))}
+                    </ul>
+                    {nextAvailableDate && (
+                      <div className="flex items-center gap-2 bg-green-50 border border-green-200 rounded-lg px-3 py-2.5">
+                        <CheckCircle className="w-4 h-4 text-green-500 shrink-0" />
+                        <p className="text-sm text-green-800">
+                          Next available from: <span className="font-bold">{nextAvailableDate}</span>
+                        </p>
+                      </div>
+                    )}
+                    <p className="text-xs text-gray-500">
+                      Please adjust your borrow dates or choose a different item.
+                    </p>
+                  </div>
+                  <div className="px-5 py-3 border-t flex justify-end">
+                    <button
+                      type="button"
+                      onClick={() => setShowAvailabilityModal(false)}
+                      className="px-4 py-2 text-sm font-medium text-white bg-gray-700 hover:bg-gray-800 rounded-lg"
+                    >
+                      Close
+                    </button>
+                  </div>
+                </div>
+              </div>
             )}
 
             {/* Row 2: Purpose + Dates */}
@@ -453,7 +520,7 @@ function CheckoutPageInner() {
 
           <div className="flex items-center justify-between pt-1">
             <p className="text-sm text-gray-500">* Required fields</p>
-            <Button type="submit" disabled={createMutation.isPending} className="px-6">
+            <Button type="submit" disabled={createMutation.isPending || conflicts.length > 0} className="px-6">
               {createMutation.isPending ? 'Submitting...' : 'Submit Request'}
             </Button>
           </div>

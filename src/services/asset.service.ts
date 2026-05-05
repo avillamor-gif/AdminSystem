@@ -843,7 +843,7 @@ export const assetRequestService = {
   },
 
   /**
-   * Check whether an asset has any conflicting approved/fulfilled borrows
+   * Check whether an asset has any conflicting borrows (pending/approved/fulfilled, not returned)
    * during the given date range (inclusive). Returns the conflicting requests.
    */
   async checkAvailability(
@@ -852,23 +852,60 @@ export const assetRequestService = {
     endDate: string,
     excludeRequestId?: string
   ): Promise<AssetRequest[]> {
-    let query = supabase
-      .from('asset_requests')
-      .select('*')
-      .eq('assigned_asset_id', assetId)
-      .in('status', ['approved', 'fulfilled'])
-      .is('returned_date', null)
-      // Overlap: existing.start <= newEnd AND existing.end >= newStart
-      .lte('borrow_start_date', endDate)
-      .gte('borrow_end_date', startDate)
-
-    if (excludeRequestId) {
-      query = query.neq('id', excludeRequestId)
+    // Query both assigned_asset_id (admin-assigned) and the asset_id stored at request creation
+    const base = {
+      from: 'asset_requests',
+      statuses: ['pending', 'approved', 'fulfilled'] as string[],
     }
 
-    const { data, error } = await query
-    if (error) throw error
-    return (data || []) as any
+    const run = async (col: string) => {
+      let q = supabase
+        .from(base.from)
+        .select('*')
+        .eq(col, assetId)
+        .in('status', base.statuses)
+        .is('returned_date', null)
+        .lte('borrow_start_date', endDate)
+        .gte('borrow_end_date', startDate)
+      if (excludeRequestId) q = q.neq('id', excludeRequestId)
+      const { data } = await q
+      return (data || []) as any[]
+    }
+
+    const [byAssigned, byRequested] = await Promise.all([
+      run('assigned_asset_id'),
+      run('asset_id'),
+    ])
+
+    // Deduplicate by id
+    const seen = new Set<string>()
+    const results: AssetRequest[] = []
+    for (const r of [...byAssigned, ...byRequested]) {
+      if (!seen.has(r.id)) { seen.add(r.id); results.push(r) }
+    }
+    return results
+  },
+
+  /**
+   * Returns the earliest date the asset is free again (day after latest borrow_end_date),
+   * or null if there are no active borrows.
+   */
+  async getNextAvailableDate(assetId: string): Promise<string | null> {
+    const { data } = await supabase
+      .from('asset_requests')
+      .select('borrow_end_date')
+      .or(`assigned_asset_id.eq.${assetId},asset_id.eq.${assetId}`)
+      .in('status', ['pending', 'approved', 'fulfilled'])
+      .is('returned_date', null)
+      .not('borrow_end_date', 'is', null)
+      .order('borrow_end_date', { ascending: false })
+      .limit(1)
+    if (!data || data.length === 0) return null
+    // Day after the latest end date
+    const latest = data[0].borrow_end_date as string
+    const d = new Date(latest + 'T00:00:00')
+    d.setDate(d.getDate() + 1)
+    return d.toISOString().split('T')[0]
   },
 
   async delete(id: string): Promise<void> {
