@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { Building2, UserCheck, RotateCcw } from 'lucide-react'
 import { Card, Button, Badge, Modal, ModalHeader, ModalBody, ModalFooter } from '@/components/ui'
 import { useAssetRequests, useMarkEquipmentReturned } from '@/hooks/useAssets'
+import { useEmployees } from '@/hooks'
 import type { AssetRequest } from '@/services/asset.service'
 import { formatDate } from '@/lib/utils'
 
@@ -31,6 +32,8 @@ export default function BorrowedEquipmentPage() {
   // Fetch only fulfilled requests (equipment that was given out)
   const { data: requests = [], isLoading } = useAssetRequests({ status: 'fulfilled' })
   const markReturnedMutation = useMarkEquipmentReturned()
+  const { data: employees = [] } = useEmployees()
+  const employeeMap = Object.fromEntries(employees.map(e => [e.id, `${e.first_name} ${e.last_name}`]))
 
   const filtered = requests.filter(r => {
     const isReturned = !!(r as any).returned_date
@@ -72,9 +75,7 @@ export default function BorrowedEquipmentPage() {
         <UserCheck className="w-3.5 h-3.5 text-green-600 mt-0.5 shrink-0" />
         <div>
           <p className="text-sm font-medium text-gray-900">
-            {(r as any).employee
-              ? `${(r as any).employee.first_name} ${(r as any).employee.last_name}`
-              : 'Employee'}
+            {employeeMap[(r as any).employee_id] || '—'}
           </p>
           <p className="text-xs text-gray-500">Internal</p>
         </div>

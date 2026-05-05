@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { Monitor, Package, Search, X, CalendarX, CalendarCheck } from 'lucide-react'
 import { Card, Button, Input } from '@/components/ui'
 import { useAssets, useAssetCategories, useAssetRequests } from '@/hooks/useAssets'
+import { useEmployees } from '@/hooks'
 import { localDateStr } from '@/lib/utils'
 import type { Asset } from '@/services/asset.service'
 
@@ -27,6 +28,7 @@ export default function BrowseEquipmentPage() {
 
   // Build assetId → latest borrow_end_date for non-returned active borrows
   const borrowedEndMap: Record<string, string | null> = {}
+  const borrowerMap: Record<string, string> = {}
   for (const r of [...fulfilledRequests, ...approvedRequests, ...pendingRequests]) {
     if (!(r as any).returned_date) {
       const assetId = (r as any).asset_id || (r as any).assigned_asset_id
@@ -34,8 +36,28 @@ export default function BrowseEquipmentPage() {
         const existing = borrowedEndMap[assetId]
         const end = r.borrow_end_date ?? null
         if (!existing || (end && end > existing)) borrowedEndMap[assetId] = end
+        // Track borrower (first match wins — most recent fulfilled)
+        if (!borrowerMap[assetId]) {
+          if ((r as any).borrower_type === 'external' && (r as any).external_borrower_name) {
+            borrowerMap[assetId] = (r as any).external_borrower_name
+          } else if ((r as any).employee_id) {
+            borrowerMap[assetId] = (r as any).employee_id // resolve to name below
+          }
+        }
       }
     }
+  }
+
+  // Resolve employee IDs to names
+  const { data: employees = [] } = useEmployees()
+  const employeeMap: Record<string, string> = {}
+  for (const emp of employees) {
+    employeeMap[emp.id] = `${emp.first_name} ${emp.last_name}`
+  }
+  // Replace UUIDs in borrowerMap with resolved names
+  for (const assetId in borrowerMap) {
+    const val = borrowerMap[assetId]
+    if (employeeMap[val]) borrowerMap[assetId] = employeeMap[val]
   }
 
   // All shown assets are available; those with an active borrow request are marked Borrowed
@@ -150,7 +172,7 @@ export default function BrowseEquipmentPage() {
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50 border-b border-gray-200">
                 <tr>
-                  {['Asset Tag', 'Name', 'Category', 'Brand / Model', 'Condition', 'Location', 'Availability', ''].map((h) => (
+                  {['Equipment', 'Asset Tag', 'Category', 'Brand / Model', 'Condition', 'Location', 'Availability', ''].map((h) => (
                     <th key={h} className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{h}</th>
                   ))}
                 </tr>
@@ -166,8 +188,8 @@ export default function BrowseEquipmentPage() {
 
                   return (
                     <tr key={asset.id} className={`transition-colors ${isBorrowed ? 'bg-red-50/30 hover:bg-red-50/60' : 'hover:bg-gray-50'}`}>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-600">{asset.asset_tag || '—'}</td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{asset.name}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-600">{asset.asset_tag || '—'}</td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{a.category?.name || '—'}</td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
                         {[a.brand?.name, asset.model].filter(Boolean).join(' / ') || '—'}
@@ -184,6 +206,9 @@ export default function BrowseEquipmentPage() {
                             <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-red-100 text-red-700">
                               <CalendarX className="w-3 h-3" /> Borrowed
                             </span>
+                            {borrowerMap[asset.id] && (
+                              <p className="text-[11px] text-gray-500 mt-0.5">by {borrowerMap[asset.id]}</p>
+                            )}
                             {nextAvailable && (
                               <p className="text-[11px] text-green-700 font-medium mt-0.5">Free from {nextAvailable}</p>
                             )}
