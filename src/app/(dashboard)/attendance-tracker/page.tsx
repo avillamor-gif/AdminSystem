@@ -872,6 +872,7 @@ export default function TimePage() {
                                 </button>
                               </td>
                             )}
+                          </tr>
                         )
                       })
                     }
