@@ -1,247 +1,272 @@
 'use client'
 
-import { useState, useMemo } from 'react'
-import { ChevronRight, ChevronDown, Building2 } from 'lucide-react'
+import { useState, useMemo, useRef, useCallback } from 'react'
+import dynamic from 'next/dynamic'
+import {
+  Building2, ZoomIn, ZoomOut, Maximize2,
+  ChevronDown, ChevronUp, X, Search, Download
+} from 'lucide-react'
 import { Card } from '@/components/ui'
 import { useDepartments } from '@/hooks/useDepartments'
 import { useEmployees } from '@/hooks/useEmployees'
+import type { OrgChartNode } from './OrgChartPanel'
 
-const LEVEL_COLORS = [
-  { bg: 'bg-blue-100',   icon: 'text-blue-600',   badge: 'bg-blue-100 text-blue-700' },
-  { bg: 'bg-purple-100', icon: 'text-purple-600', badge: 'bg-purple-100 text-purple-700' },
-  { bg: 'bg-green-100',  icon: 'text-green-600',  badge: 'bg-green-100 text-green-700' },
-  { bg: 'bg-orange-100', icon: 'text-orange-600', badge: 'bg-orange-100 text-orange-700' },
-]
-const color = (level: number) => LEVEL_COLORS[level % LEVEL_COLORS.length]
+const OrgChartPanel = dynamic(() => import('./OrgChartPanel'), { ssr: false })
+
+function computeLevel(id: string, depts: any[], memo = new Map<string, number>()): number {
+  if (memo.has(id)) return memo.get(id)!
+  const dept = depts.find((d: any) => d.id === id)
+  if (!dept || !dept.parent_id) { memo.set(id, 0); return 0 }
+  const level = 1 + computeLevel(dept.parent_id, depts, memo)
+  memo.set(id, level)
+  return level
+}
 
 export default function DepartmentHierarchyPage() {
-  const [expandedDepts, setExpandedDepts] = useState<Set<string>>(new Set())
-  const [expandedMembers, setExpandedMembers] = useState<Set<string>>(new Set())
   const { data: departments = [], isLoading: deptLoading } = useDepartments()
   const { data: employees = [], isLoading: empLoading } = useEmployees({})
-
   const isLoading = deptLoading || empLoading
 
-  const toggleExpand = (id: string) => {
-    setExpandedDepts(prev => {
-      const next = new Set(prev)
-      next.has(id) ? next.delete(id) : next.add(id)
-      return next
-    })
-  }
+  const [selectedDeptId, setSelectedDeptId] = useState<string | null>(null)
+  const [memberSearch, setMemberSearch] = useState('')
+  const chartRef = useRef<any>(null)
 
-  const toggleMembers = (id: string, e: React.MouseEvent) => {
-    e.stopPropagation()
-    setExpandedMembers(prev => {
-      const next = new Set(prev)
-      next.has(id) ? next.delete(id) : next.add(id)
-      return next
-    })
-  }
-
-  const hierarchy = useMemo(() => {
-    const deptMap = new Map(departments.map(d => [d.id, { ...d, children: [] as any[] }]))
-    const roots: any[] = []
-    departments.forEach(dept => {
-      const node = deptMap.get(dept.id)!
-      if (dept.parent_id && deptMap.has(dept.parent_id)) {
-        deptMap.get(dept.parent_id)!.children.push(node)
-      } else {
-        roots.push(node)
+  const nodes = useMemo<OrgChartNode[]>(() => {
+    if (!departments.length) return []
+    const levelMemo = new Map<string, number>()
+    return departments.map((dept: any) => {
+      const deptEmps = (employees as any[]).filter(
+        (e: any) => e.department_id === dept.id && e.status === 'active'
+      )
+      const head = dept.head_id
+        ? (employees as any[]).find((e: any) => e.id === dept.head_id)
+        : null
+      return {
+        id: dept.id,
+        parentNodeId: dept.parent_id ?? null,
+        name: dept.name,
+        description: dept.description ?? null,
+        headName: head ? `${head.first_name} ${head.last_name}` : null,
+        headAvatar: head?.avatar_url ?? null,
+        headTitle: head?.job_title?.title ?? null,
+        employeeCount: deptEmps.length,
+        level: computeLevel(dept.id, departments as any[], levelMemo),
       }
     })
-    return roots
-  }, [departments])
+  }, [departments, employees])
 
-  const renderDepartmentNode = (dept: any, level = 0) => {
-    const hasChildren = dept.children && dept.children.length > 0
-    const isExpanded = expandedDepts.has(dept.id)
-    const showMembers = expandedMembers.has(dept.id)
-    const c = color(level)
+  const selectedDept = useMemo(
+    () => (departments as any[]).find((d: any) => d.id === selectedDeptId) ?? null,
+    [departments, selectedDeptId]
+  )
 
-    const deptEmployees = (employees as any[]).filter((e: any) => e.department_id === dept.id && e.status === 'active')
-    const head = dept.head_id ? (employees as any[]).find((e: any) => e.id === dept.head_id) : null
+  const deptMembers = useMemo(() => {
+    if (!selectedDeptId) return []
+    return (employees as any[]).filter(
+      (e: any) => e.department_id === selectedDeptId && e.status === 'active'
+    )
+  }, [employees, selectedDeptId])
 
-    return (
-      <div key={dept.id} className="select-none">
-        <div
-          className="flex items-start gap-3 p-3 rounded-xl cursor-pointer hover:bg-gray-50 transition-colors"
-          style={{ marginLeft: level * 28 }}
-          onClick={() => hasChildren && toggleExpand(dept.id)}
-        >
-          <div className="mt-1 flex-shrink-0 w-4">
-            {hasChildren
-              ? isExpanded
-                ? <ChevronDown className="w-4 h-4 text-gray-500" />
-                : <ChevronRight className="w-4 h-4 text-gray-500" />
-              : null}
-          </div>
+  const filteredMembers = useMemo(() => {
+    if (!memberSearch.trim()) return deptMembers
+    const q = memberSearch.toLowerCase()
+    return deptMembers.filter((e: any) =>
+      `${e.first_name} ${e.last_name}`.toLowerCase().includes(q) ||
+      (e.job_title?.title ?? '').toLowerCase().includes(q)
+    )
+  }, [deptMembers, memberSearch])
 
-          <div className={`w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 ${c.bg}`}>
-            <Building2 className={`w-4 h-4 ${c.icon}`} />
-          </div>
+  const handleNodeClick = useCallback((id: string) => {
+    setSelectedDeptId(id)
+    setMemberSearch('')
+  }, [])
 
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className="font-semibold text-gray-900">{dept.name}</span>
-              <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${c.badge}`}>Level {level + 1}</span>
-              {hasChildren && (
-                <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-600">
-                  {dept.children.length} sub-dept{dept.children.length !== 1 ? 's' : ''}
-                </span>
-              )}
-            </div>
+  const rootCount = (departments as any[]).filter((d: any) => !d.parent_id).length
+  const activeEmpCount = (employees as any[]).filter((e: any) => e.status === 'active').length
+  const maxDepth = departments.length
+    ? Math.max(0, ...(departments as any[]).map((d: any) => computeLevel(d.id, departments as any[])))
+    : 0
 
-            {dept.description && (
-              <p className="text-xs text-gray-500 mt-0.5 truncate">{dept.description}</p>
-            )}
-
-            {head && (
-              <div className="flex items-center gap-2 mt-2">
-                <div className="w-6 h-6 rounded-full overflow-hidden flex-shrink-0 ring-2 ring-white shadow-sm">
-                  {head.avatar_url ? (
-                    <img src={head.avatar_url} alt={head.first_name} className="w-full h-full object-cover" />
-                  ) : (
-                    <div className="w-full h-full bg-orange-200 flex items-center justify-center text-orange-700 text-[9px] font-bold">
-                      {head.first_name?.[0]}{head.last_name?.[0]}
-                    </div>
-                  )}
-                </div>
-                <span className="text-xs font-medium text-orange-700">{head.first_name} {head.last_name}</span>
-                <span className="text-xs text-gray-400">· Dept Head</span>
-              </div>
-            )}
-
-            {deptEmployees.length > 0 && (
-              <button
-                onClick={(e) => toggleMembers(dept.id, e)}
-                className="mt-2 flex items-center gap-1.5 text-xs text-gray-500 hover:text-gray-700 transition-colors"
-              >
-                <div className="flex -space-x-1.5">
-                  {deptEmployees.slice(0, 5).map((emp: any) => (
-                    <div key={emp.id} className="w-6 h-6 rounded-full ring-2 ring-white overflow-hidden flex-shrink-0">
-                      {emp.avatar_url ? (
-                        <img src={emp.avatar_url} alt={emp.first_name} className="w-full h-full object-cover" />
-                      ) : (
-                        <div className="w-full h-full bg-gray-200 flex items-center justify-center text-gray-500 text-[9px] font-bold">
-                          {emp.first_name?.[0]}{emp.last_name?.[0]}
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                  {deptEmployees.length > 5 && (
-                    <div className="w-6 h-6 rounded-full ring-2 ring-white bg-gray-100 flex items-center justify-center text-gray-500 text-[9px] font-bold flex-shrink-0">
-                      +{deptEmployees.length - 5}
-                    </div>
-                  )}
-                </div>
-                <span>{deptEmployees.length} employee{deptEmployees.length !== 1 ? 's' : ''}</span>
-                {showMembers ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
-              </button>
-            )}
-
-            {showMembers && deptEmployees.length > 0 && (
-              <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
-                {deptEmployees.map((emp: any) => {
-                  const title = emp.job_title?.title ?? null
-                  const isHead = emp.id === dept.head_id
-                  return (
-                    <div key={emp.id} className={`flex items-center gap-2 p-2 rounded-lg border ${isHead ? 'border-orange-200 bg-orange-50' : 'border-gray-100 bg-gray-50'}`}>
-                      <div className="w-9 h-9 rounded-full overflow-hidden flex-shrink-0 ring-2 ring-white shadow-sm">
-                        {emp.avatar_url ? (
-                          <img src={emp.avatar_url} alt={`${emp.first_name} ${emp.last_name}`} className="w-full h-full object-cover" />
-                        ) : (
-                          <div className="w-full h-full bg-gradient-to-br from-orange-200 to-orange-300 flex items-center justify-center text-orange-700 text-xs font-bold">
-                            {emp.first_name?.[0]}{emp.last_name?.[0]}
-                          </div>
-                        )}
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-1 flex-wrap">
-                          <p className="text-xs font-semibold text-gray-900 truncate">{emp.first_name} {emp.last_name}</p>
-                          {isHead && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-orange-100 text-orange-700 font-medium flex-shrink-0">Head</span>}
-                        </div>
-                        {title && <p className="text-[11px] text-gray-500 truncate">{title}</p>}
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
-            )}
-          </div>
-        </div>
-
-        {hasChildren && isExpanded && (
-          <div className="relative" style={{ marginLeft: level * 28 + 16 }}>
-            <div className="absolute left-5 top-0 bottom-2 w-px bg-gray-200" />
-            <div className="pl-4">
-              {dept.children.map((child: any) => renderDepartmentNode(child, level + 1))}
-            </div>
-          </div>
-        )}
+  function EmpAvatar({ emp }: { emp: any }) {
+    const initials = `${emp.first_name?.[0] ?? ''}${emp.last_name?.[0] ?? ''}`.toUpperCase()
+    return emp.avatar_url ? (
+      <img
+        src={emp.avatar_url}
+        alt={`${emp.first_name} ${emp.last_name}`}
+        className="w-10 h-10 rounded-full object-cover ring-2 ring-white shadow-sm flex-shrink-0"
+      />
+    ) : (
+      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-orange-300 to-orange-400 flex items-center justify-center text-white text-sm font-bold ring-2 ring-white shadow-sm flex-shrink-0">
+        {initials}
       </div>
     )
   }
 
   if (isLoading) {
     return (
-      <div className="flex justify-center py-16">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-orange-500 border-t-transparent" />
+      <div className="flex justify-center py-20">
+        <div className="h-9 w-9 animate-spin rounded-full border-4 border-orange-500 border-t-transparent" />
       </div>
     )
   }
 
-  const totalDepts = departments.length
-  const totalEmployees = (employees as any[]).filter((e: any) => e.status === 'active').length
-  const maxDepth = departments.length ? Math.max(0, ...departments.map(d => {
-    let depth = 0, currentId = d.parent_id
-    while (currentId) {
-      depth++
-      currentId = departments.find(p => p.id === currentId)?.parent_id ?? null
-      if (depth > 10) break
-    }
-    return depth
-  })) : 0
-
   return (
-    <div className="space-y-6">
+    <div className="space-y-5 flex flex-col" style={{ height: 'calc(100vh - 140px)' }}>
       <div>
         <h1 className="text-2xl font-bold text-gray-900">Department Hierarchy</h1>
-        <p className="text-gray-600 mt-1">Departments, their structure, and the employees within each unit</p>
+        <p className="text-gray-500 mt-0.5 text-sm">Interactive org chart — click any node to view members</p>
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Card className="p-4">
-          <p className="text-sm text-gray-600">Total Departments</p>
-          <p className="text-2xl font-bold text-gray-900 mt-1">{totalDepts}</p>
-        </Card>
-        <Card className="p-4">
-          <p className="text-sm text-gray-600">Root Departments</p>
-          <p className="text-2xl font-bold text-blue-600 mt-1">{hierarchy.length}</p>
-        </Card>
-        <Card className="p-4">
-          <p className="text-sm text-gray-600">Max Depth</p>
-          <p className="text-2xl font-bold text-purple-600 mt-1">{maxDepth + 1}</p>
-        </Card>
-        <Card className="p-4">
-          <p className="text-sm text-gray-600">Active Employees</p>
-          <p className="text-2xl font-bold text-green-600 mt-1">{totalEmployees}</p>
-        </Card>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 flex-shrink-0">
+        {[
+          { label: 'Total Departments', value: departments.length, color: 'text-gray-900' },
+          { label: 'Root Departments',  value: rootCount,          color: 'text-blue-600' },
+          { label: 'Max Depth',         value: maxDepth + 1,       color: 'text-purple-600' },
+          { label: 'Active Employees',  value: activeEmpCount,     color: 'text-green-600' },
+        ].map(s => (
+          <Card key={s.label} className="p-4">
+            <p className="text-xs text-gray-500">{s.label}</p>
+            <p className={`text-2xl font-bold mt-0.5 ${s.color}`}>{s.value}</p>
+          </Card>
+        ))}
       </div>
 
-      <Card className="p-6">
-        {hierarchy.length === 0 ? (
-          <div className="text-center py-12">
-            <Building2 className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No departments yet</h3>
-            <p className="text-gray-500">Create departments in Company Structure to see the hierarchy here</p>
+      <div className="flex gap-4 flex-1 min-h-0">
+        {/* Chart card */}
+        <Card className="flex-1 flex flex-col overflow-hidden min-w-0">
+          {/* Toolbar */}
+          <div className="flex items-center gap-2 px-4 py-3 border-b border-gray-100 flex-shrink-0 flex-wrap">
+            <span className="text-xs font-semibold text-gray-400 uppercase tracking-wide mr-1">View</span>
+            <button onClick={() => chartRef.current?.zoomIn()} className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-600 transition-colors" title="Zoom In">
+              <ZoomIn className="w-4 h-4" />
+            </button>
+            <button onClick={() => chartRef.current?.zoomOut()} className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-600 transition-colors" title="Zoom Out">
+              <ZoomOut className="w-4 h-4" />
+            </button>
+            <button onClick={() => chartRef.current?.fit()} className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-600 transition-colors" title="Fit to screen">
+              <Maximize2 className="w-4 h-4" />
+            </button>
+            <div className="w-px h-5 bg-gray-200 mx-1" />
+            <button onClick={() => chartRef.current?.expandAll()} className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium text-gray-600 hover:bg-gray-100 transition-colors">
+              <ChevronDown className="w-3.5 h-3.5" /> Expand All
+            </button>
+            <button onClick={() => chartRef.current?.collapseAll()} className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium text-gray-600 hover:bg-gray-100 transition-colors">
+              <ChevronUp className="w-3.5 h-3.5" /> Collapse All
+            </button>
+            <div className="w-px h-5 bg-gray-200 mx-1" />
+            <button onClick={() => chartRef.current?.exportImg({ full: true })} className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium text-gray-600 hover:bg-gray-100 transition-colors">
+              <Download className="w-3.5 h-3.5" /> Export
+            </button>
           </div>
-        ) : (
-          <div className="space-y-1">
-            {hierarchy.map(dept => renderDepartmentNode(dept))}
+
+          {/* Chart canvas */}
+          <div className="flex-1 overflow-hidden">
+            {nodes.length === 0 ? (
+              <div className="flex flex-col items-center justify-center h-full text-gray-400 gap-3">
+                <Building2 className="w-12 h-12" />
+                <p className="text-sm">No departments to display</p>
+              </div>
+            ) : (
+              <OrgChartPanel nodes={nodes} onNodeClick={handleNodeClick} chartRef={chartRef} />
+            )}
+          </div>
+        </Card>
+
+        {/* Detail panel */}
+        {selectedDept && (
+          <div className="w-80 flex-shrink-0 flex flex-col gap-3 overflow-hidden">
+            <Card className="flex flex-col flex-1 overflow-hidden">
+              {/* Header */}
+              <div className="flex items-start justify-between px-4 py-3 border-b border-gray-100 flex-shrink-0">
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <div className="w-8 h-8 rounded-lg bg-orange-100 flex items-center justify-center flex-shrink-0">
+                    <Building2 className="w-4 h-4 text-orange-600" />
+                  </div>
+                  <div className="min-w-0">
+                    <h3 className="font-semibold text-gray-900 text-sm truncate">{selectedDept.name}</h3>
+                    <p className="text-xs text-gray-500">{deptMembers.length} active member{deptMembers.length !== 1 ? 's' : ''}</p>
+                  </div>
+                </div>
+                <button onClick={() => setSelectedDeptId(null)} className="p-1 rounded-lg hover:bg-gray-100 text-gray-400 flex-shrink-0 ml-2">
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              {/* Description */}
+              {selectedDept.description && (
+                <div className="px-4 py-2 border-b border-gray-100 flex-shrink-0">
+                  <p className="text-xs text-gray-500">{selectedDept.description}</p>
+                </div>
+              )}
+
+              {/* Dept head */}
+              {selectedDept.head_id && (() => {
+                const head = (employees as any[]).find((e: any) => e.id === selectedDept.head_id)
+                if (!head) return null
+                return (
+                  <div className="px-4 py-3 border-b border-gray-100 bg-orange-50 flex-shrink-0">
+                    <p className="text-[10px] uppercase tracking-widest text-orange-600 font-semibold mb-2">Department Head</p>
+                    <div className="flex items-center gap-3">
+                      <EmpAvatar emp={head} />
+                      <div className="min-w-0">
+                        <p className="text-sm font-semibold text-gray-900 truncate">{head.first_name} {head.last_name}</p>
+                        {head.job_title?.title && <p className="text-xs text-gray-500 truncate">{head.job_title.title}</p>}
+                      </div>
+                    </div>
+                  </div>
+                )
+              })()}
+
+              {/* Search */}
+              <div className="px-4 py-2 border-b border-gray-100 flex-shrink-0">
+                <div className="relative">
+                  <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
+                  <input
+                    type="text"
+                    placeholder="Search members…"
+                    value={memberSearch}
+                    onChange={e => setMemberSearch(e.target.value)}
+                    className="w-full pl-8 pr-3 py-1.5 text-xs border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400 bg-gray-50"
+                  />
+                </div>
+              </div>
+
+              {/* Members list */}
+              <div className="flex-1 overflow-y-auto px-4 py-2 space-y-1.5">
+                {filteredMembers.length === 0 ? (
+                  <p className="text-xs text-gray-400 text-center py-6">
+                    {deptMembers.length === 0 ? 'No active members' : 'No results'}
+                  </p>
+                ) : (
+                  filteredMembers.map((emp: any) => (
+                    <div
+                      key={emp.id}
+                      className={`flex items-center gap-2.5 p-2 rounded-lg border transition-colors ${
+                        emp.id === selectedDept.head_id
+                          ? 'border-orange-200 bg-orange-50'
+                          : 'border-gray-100 bg-white hover:bg-gray-50'
+                      }`}
+                    >
+                      <EmpAvatar emp={emp} />
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-1 flex-wrap">
+                          <p className="text-xs font-semibold text-gray-900 truncate">{emp.first_name} {emp.last_name}</p>
+                          {emp.id === selectedDept.head_id && (
+                            <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-orange-100 text-orange-700 font-semibold flex-shrink-0">Head</span>
+                          )}
+                        </div>
+                        {emp.job_title?.title && (
+                          <p className="text-[11px] text-gray-500 truncate">{emp.job_title.title}</p>
+                        )}
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </Card>
           </div>
         )}
-      </Card>
+      </div>
     </div>
   )
 }
