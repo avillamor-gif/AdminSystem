@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useCallback } from 'react'
+import { useEffect, useRef } from 'react'
 
 export interface EmpOrgNode {
   id: string
@@ -72,33 +72,42 @@ export default function EmployeeOrgPanel({ nodes, onNodeClick, chartRef, layout 
   const onClickRef = useRef(onNodeClick)
   onClickRef.current = onNodeClick
 
-  const initChart = useCallback(async () => {
+  useEffect(() => {
     if (!containerRef.current || nodes.length === 0) return
-    const { OrgChart } = await import('d3-org-chart')
+    let cancelled = false
 
-    if (chartRef.current) {
-      try { chartRef.current.clear() } catch (_) {}
-      chartRef.current = null
+    const run = async () => {
+      await new Promise<void>(resolve => requestAnimationFrame(() => resolve()))
+      if (cancelled || !containerRef.current) return
+
+      const { OrgChart } = await import('d3-org-chart')
+      if (cancelled || !containerRef.current) return
+
+      if (chartRef.current) {
+        try { chartRef.current.clear() } catch (_) {}
+        chartRef.current = null
+      }
+
+      chartRef.current = new OrgChart()
+      chartRef.current
+        .container(containerRef.current)
+        .data(nodes)
+        .layout(layout)
+        .nodeWidth(() => 224)
+        .nodeHeight(() => 108)
+        .childrenMargin(() => 40)
+        .compactMarginBetween(() => 20)
+        .compactMarginPair(() => 20)
+        .siblingsMargin(() => 16)
+        .nodeContent((d: any) => nodeHtml(d))
+        .onNodeClick((d: any) => onClickRef.current(d.id))
+        .render()
+        .fit()
     }
 
-    chartRef.current = new OrgChart()
-    chartRef.current
-      .container(containerRef.current)
-      .data(nodes)
-      .layout(layout)
-      .nodeWidth(() => 224)
-      .nodeHeight(() => 108)
-      .childrenMargin(() => 40)
-      .compactMarginBetween(() => 20)
-      .compactMarginPair(() => 20)
-      .siblingsMargin(() => 16)
-      .nodeContent((d: any) => nodeHtml(d))
-      .onNodeClick((d: any) => onClickRef.current(d.id))
-      .render()
-      .fit()
+    run()
+    return () => { cancelled = true }
   }, [nodes, layout, chartRef])
 
-  useEffect(() => { initChart() }, [initChart])
-
-  return <div ref={containerRef} style={{ width: '100%', height: '100%', minHeight: 540 }} />
+  return <div ref={containerRef} style={{ width: '100%', height: '600px' }} />
 }

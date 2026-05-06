@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useCallback } from 'react'
+import { useEffect, useRef } from 'react'
 
 export interface OrgChartNode {
   id: string
@@ -79,41 +79,46 @@ export default function OrgChartPanel({ nodes, onNodeClick, chartRef }: OrgChart
   const onNodeClickRef = useRef(onNodeClick)
   onNodeClickRef.current = onNodeClick
 
-  const initChart = useCallback(async () => {
+  useEffect(() => {
     if (!containerRef.current || nodes.length === 0) return
+    let cancelled = false
 
-    const { OrgChart } = await import('d3-org-chart')
+    const run = async () => {
+      await new Promise<void>(resolve => requestAnimationFrame(() => resolve()))
+      if (cancelled || !containerRef.current) return
 
-    // Destroy and recreate when data changes so node click handler stays fresh
-    if (chartRef.current) {
-      try { chartRef.current.clear() } catch (_) {}
-      chartRef.current = null
+      const { OrgChart } = await import('d3-org-chart')
+      if (cancelled || !containerRef.current) return
+
+      if (chartRef.current) {
+        try { chartRef.current.clear() } catch (_) {}
+        chartRef.current = null
+      }
+
+      chartRef.current = new OrgChart()
+      chartRef.current
+        .container(containerRef.current)
+        .data(nodes)
+        .nodeWidth(() => 244)
+        .nodeHeight((d: any) => (d.data.headName ? 102 : 72))
+        .childrenMargin(() => 50)
+        .compactMarginBetween(() => 30)
+        .compactMarginPair(() => 30)
+        .siblingsMargin(() => 20)
+        .nodeContent((d: any) => nodeHtml(d))
+        .onNodeClick((d: any) => onNodeClickRef.current(d.id))
+        .render()
+        .fit()
     }
 
-    chartRef.current = new OrgChart()
-    chartRef.current
-      .container(containerRef.current)
-      .data(nodes)
-      .nodeWidth(() => 244)
-      .nodeHeight((d: any) => (d.data.headName ? 102 : 72))
-      .childrenMargin(() => 50)
-      .compactMarginBetween(() => 30)
-      .compactMarginPair(() => 30)
-      .siblingsMargin(() => 20)
-      .nodeContent((d: any) => nodeHtml(d))
-      .onNodeClick((d: any) => onNodeClickRef.current(d.id))
-      .render()
-      .fit()
+    run()
+    return () => { cancelled = true }
   }, [nodes, chartRef])
-
-  useEffect(() => {
-    initChart()
-  }, [initChart])
 
   return (
     <div
       ref={containerRef}
-      style={{ width: '100%', height: '100%', minHeight: 480 }}
+      style={{ width: '100%', height: '600px' }}
     />
   )
 }
