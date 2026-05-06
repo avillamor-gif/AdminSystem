@@ -1,13 +1,13 @@
 'use client'
 
 import { useState } from 'react'
-import { useAssetAssignments, useAssets, useAssignAsset, useReturnAsset, useAssetRequests, type Asset } from '@/hooks/useAssets'
+import { useAssetAssignments, useAssets, useAssignAsset, useReturnAsset, type Asset } from '@/hooks/useAssets'
 import { useEmployees } from '@/hooks/useEmployees'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Select } from '@/components/ui/Select'
 import { Modal, ModalHeader, ModalBody, ModalFooter } from '@/components/ui/Modal'
-import { Plus, UserCheck, RotateCcw, ClipboardList, CheckCheck, ArrowLeftRight } from 'lucide-react'
+import { Plus, UserCheck, RotateCcw, ClipboardList, CheckCheck } from 'lucide-react'
 
 export default function AssignmentsPage() {
   const [statusFilter, setStatusFilter] = useState('')
@@ -29,7 +29,6 @@ export default function AssignmentsPage() {
   })
   const { data: availableAssets = [], refetch: refetchAssets } = useAssets({ status: 'available' })
   const { data: allAssets = [] } = useAssets({})
-  const { data: borrowRequests = [], isLoading: borrowLoading } = useAssetRequests({ status: 'fulfilled' })
   const { data: employees = [] } = useEmployees()
   const assignMutation = useAssignAsset()
   const returnMutation = useReturnAsset()
@@ -37,13 +36,6 @@ export default function AssignmentsPage() {
   // Lookup maps
   const employeeMap = Object.fromEntries(employees.map(e => [e.id, `${e.first_name} ${e.last_name}`]))
   const assetMap = Object.fromEntries(allAssets.map(a => [a.id, a]))
-
-  // Filter borrow requests by status filter
-  const filteredBorrows = borrowRequests.filter(r => {
-    if (statusFilter === 'active') return !r.returned_date
-    if (statusFilter === 'returned') return !!r.returned_date
-    return true
-  })
 
   const stats = {
     total: assignments.length,
@@ -222,76 +214,6 @@ export default function AssignmentsPage() {
                       </div>
                     </td>
                   </tr>
-                  )
-                })
-              )}
-            </tbody>
-          </table>
-        </div>
-      </Card>
-
-      {/* Borrow Requests (fulfilled) */}
-      <Card className="overflow-hidden p-0">
-        <div className="px-6 py-4 border-b border-gray-200 flex items-center gap-2">
-          <ArrowLeftRight className="h-4 w-4 text-purple-500" />
-          <h3 className="font-semibold text-gray-900">Borrow Requests</h3>
-          <span className="text-xs text-gray-400">(fulfilled / borrowed equipment)</span>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-gray-50 border-b border-gray-200">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Asset</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Borrower</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Borrow Start</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Borrow End</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Returned Date</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200">
-              {borrowLoading ? (
-                <tr>
-                  <td colSpan={6} className="px-6 py-12 text-center">
-                    <div className="flex justify-center">
-                      <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary-600 border-t-transparent" />
-                    </div>
-                  </td>
-                </tr>
-              ) : filteredBorrows.length === 0 ? (
-                <tr>
-                  <td colSpan={6} className="px-6 py-12 text-center text-gray-500">No borrow records found</td>
-                </tr>
-              ) : (
-                filteredBorrows.map(req => {
-                  const asset = req.assigned_asset_id ? assetMap[req.assigned_asset_id] : undefined
-                  const borrowerName = req.borrower_type === 'external'
-                    ? (req.external_borrower_name ?? '—')
-                    : (req.employee_id ? (employeeMap[req.employee_id] ?? '—') : '—')
-                  return (
-                    <tr key={req.id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-xs font-mono text-gray-500">{asset?.asset_tag ?? '—'}</div>
-                        <div className="text-sm font-medium text-gray-900">{asset?.name ?? req.item_description}</div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{borrowerName}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {req.borrow_start_date ? new Date(req.borrow_start_date).toLocaleDateString() : '—'}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {req.borrow_end_date ? new Date(req.borrow_end_date).toLocaleDateString() : '—'}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {req.returned_date ? new Date(req.returned_date).toLocaleDateString() : <span className="text-gray-400">—</span>}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        {req.returned_date ? (
-                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">Returned</span>
-                        ) : (
-                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">Borrowed</span>
-                        )}
-                      </td>
-                    </tr>
                   )
                 })
               )}
