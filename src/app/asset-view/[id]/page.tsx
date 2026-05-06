@@ -2,6 +2,10 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import Image from 'next/image'
 import { notFound } from 'next/navigation'
 
+// Always fetch fresh data — never serve a cached version
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
 function StatusBadge({ status }: { status: string | null }) {
