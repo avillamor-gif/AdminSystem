@@ -76,9 +76,9 @@ export function useDeletePartnerInstitution() {
 export function useUploadMoaFile() {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: async ({ file, institutionId }: { file: File; institutionId: string }) => {
-      const path = await partnerInstitutionService.uploadMoaFile(file, institutionId)
-      await partnerInstitutionService.update(institutionId, { moa_file_path: path })
+    mutationFn: async ({ file, institutionId, institutionName }: { file: File; institutionId: string; institutionName?: string }) => {
+      // API route handles storage upload + DB update + Drive sync
+      const path = await partnerInstitutionService.uploadMoaFile(file, institutionId, institutionName)
       return path
     },
     onSuccess: () => {

@@ -110,6 +110,7 @@ export async function POST(req: NextRequest) {
       employeeName,
       documentType,
       publicationTitle,
+      institutionName,
     } = await req.json()
 
     if (!fileUrl || !fileName) {
@@ -144,6 +145,11 @@ export async function POST(req: NextRequest) {
           : DOC_TYPE_FOLDER[documentType] ?? 'Attachments'
 
       targetFolderId = await getOrCreateFolder(drive, subFolderName, empFolderId, sharedDriveId)
+    } else if (type === 'moa') {
+      // Partner Institutions / {institutionName} / MOA Documents
+      const partnersRootId = await getOrCreateFolder(drive, 'Partner Institutions', rootId, sharedDriveId)
+      const instFolderId   = await getOrCreateFolder(drive, institutionName ?? 'Unknown Institution', partnersRootId, sharedDriveId)
+      targetFolderId       = await getOrCreateFolder(drive, 'MOA Documents', instFolderId, sharedDriveId)
     } else {
       // publication
       const pubsRootId = await getOrCreateFolder(drive, 'Publications', rootId, sharedDriveId)

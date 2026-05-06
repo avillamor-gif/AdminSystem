@@ -134,11 +134,11 @@ export default function PartnerInstitutionsPage() {
     e.preventDefault()
     try {
       if (selected) {
-        const updated = await updateMutation.mutateAsync({ id: selected.id, data: form })
-        if (moaFile) await uploadMoaMutation.mutateAsync({ file: moaFile, institutionId: updated.id })
+        await updateMutation.mutateAsync({ id: selected.id, data: form })
+        if (moaFile) await uploadMoaMutation.mutateAsync({ file: moaFile, institutionId: selected.id, institutionName: form.name })
       } else {
         const created = await createMutation.mutateAsync(form)
-        if (moaFile) await uploadMoaMutation.mutateAsync({ file: moaFile, institutionId: created.id })
+        if (moaFile) await uploadMoaMutation.mutateAsync({ file: moaFile, institutionId: created.id, institutionName: form.name })
       }
       setIsFormOpen(false)
     } catch { /* toast already shown in hook */ }

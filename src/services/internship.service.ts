@@ -132,14 +132,20 @@ export const partnerInstitutionService = {
     if (error) throw error
   },
 
-  // Upload MOA PDF to Supabase Storage
-  async uploadMoaFile(file: File, institutionId: string): Promise<string> {
-    const supabase = createClient()
-    const ext = file.name.split('.').pop()
-    const path = `${institutionId}/${Date.now()}.${ext}`
-    const { error } = await supabase.storage.from('moa-documents').upload(path, file, { upsert: true })
-    if (error) throw new Error(`MOA upload failed: ${error.message}`)
-    return path
+  // Upload MOA PDF via server-side API route (uses admin client + mirrors to Google Drive)
+  async uploadMoaFile(file: File, institutionId: string, institutionName?: string): Promise<string> {
+    const form = new FormData()
+    form.append('file', file)
+    form.append('institutionId', institutionId)
+    if (institutionName) form.append('institutionName', institutionName)
+
+    const res = await fetch('/api/internship/upload-moa', { method: 'POST', body: form })
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}))
+      throw new Error(body.error ?? 'MOA upload failed')
+    }
+    const { path } = await res.json()
+    return path as string
   },
 
   async getMoaUrl(filePath: string): Promise<string> {
