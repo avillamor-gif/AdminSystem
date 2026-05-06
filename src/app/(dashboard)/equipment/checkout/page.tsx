@@ -234,7 +234,7 @@ function CheckoutPageInner() {
   }, [preselectedId])
 
   const { data: availableAssets = [] } = useAssets({ status: 'available' })
-  const assets = availableAssets
+  const assets = availableAssets.filter(a => (a as any).borrowable_by && (a as any).borrowable_by !== 'none')
   const { data: currentEmployee } = useCurrentEmployee()
   const createMutation = useCreateAssetRequest()
 

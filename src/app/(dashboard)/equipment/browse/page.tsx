@@ -60,8 +60,8 @@ export default function BrowseEquipmentPage() {
     if (employeeMap[val]) borrowerMap[assetId] = employeeMap[val]
   }
 
-  // All shown assets are available; those with an active borrow request are marked Borrowed
-  const allAssets = availableAssets
+  // All shown assets must be borrowable (borrowable_by !== 'none' or null)
+  const allAssets = availableAssets.filter(a => (a as any).borrowable_by && (a as any).borrowable_by !== 'none')
 
   const filtered = allAssets.filter((a) => {
     const matchesSearch =
