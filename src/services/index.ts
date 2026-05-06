@@ -201,3 +201,6 @@ export { computePayslip } from './payroll.service'
 
 export { orgProfileService, generalSettingsService } from './orgProfile.service'
 export type { OrgProfile, OrgProfileUpdate, GeneralSetting } from './orgProfile.service'
+
+export { orgDocumentService, createOrgDocument, deleteOrgDocument, DOCUMENT_CATEGORIES } from './orgDocument.service'
+export type { OrgDocument, OrgDocumentInsert } from './orgDocument.service'

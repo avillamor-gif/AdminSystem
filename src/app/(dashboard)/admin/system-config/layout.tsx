@@ -2,6 +2,7 @@ import SecondaryNav from '@/components/layout/SecondaryNav'
 
 const systemConfigNavItems = [
   { label: 'Organization Profile',    href: '/admin/system-config/organization-profile',    requiresPermission: 'admin.system_config.organization_profile' },
+  { label: 'Organization Documents',  href: '/admin/system-config/organization-documents',  requiresPermission: 'admin.system_config.org_documents' },
   { label: 'General Settings',        href: '/admin/system-config/general-settings',        requiresPermission: 'admin.system_config.general_settings' },
   { label: 'Email Configuration',     href: '/admin/system-config/email-configuration',    requiresPermission: 'admin.system_config.email_configuration' },
   { label: 'Workflow Settings',       href: '/admin/system-config/workflow-settings',       requiresPermission: 'admin.system_config.workflow_settings' },
