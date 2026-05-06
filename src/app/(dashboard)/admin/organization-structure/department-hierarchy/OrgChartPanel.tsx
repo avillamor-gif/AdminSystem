@@ -87,8 +87,9 @@ export default function OrgChartPanel({ nodes, onNodeClick, chartRef }: OrgChart
       await new Promise<void>(resolve => requestAnimationFrame(() => resolve()))
       if (cancelled || !containerRef.current) return
 
-      const { OrgChart } = await import('d3-org-chart')
-      if (cancelled || !containerRef.current) return
+      const mod = await import('d3-org-chart/build/d3-org-chart.min.js' as any)
+      const OrgChart = mod.OrgChart ?? mod.default?.OrgChart
+      if (!OrgChart || cancelled || !containerRef.current) return
 
       if (chartRef.current) {
         try { chartRef.current.clear() } catch (_) {}
