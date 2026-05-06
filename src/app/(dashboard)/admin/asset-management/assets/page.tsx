@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect, useMemo, useCallback } from 'react'
 import { createPortal } from 'react-dom'
+import { useRouter } from 'next/navigation'
 import { useAssets, useAssetCategories, useAssetBrands, useAssetVendors, useAssetLocations, useCreateAsset, useUpdateAsset, useDeleteAsset, useReturnAsset, useAssetAssignments, type Asset, type AssetAssignment } from '@/hooks/useAssets'
 import { useEmployees } from '@/hooks/useEmployees'
 import { Card } from '@/components/ui/Card'
@@ -92,6 +93,7 @@ export default function AssetsPage() {
     borrowable_by: 'none' as 'employees' | 'external' | 'both' | 'none'
   })
 
+  const router = useRouter()
   const { data: assets = [], isLoading } = useAssets({
     category_id: categoryFilter || undefined,
     status: statusFilter || undefined,
@@ -533,10 +535,16 @@ export default function AssetsPage() {
           <h1 className="text-2xl font-bold text-gray-900">Asset Management</h1>
           <p className="text-gray-600">Manage all company assets and equipment</p>
         </div>
-        <Button onClick={() => handleOpenModal()}>
-          <Plus className="h-4 w-4 mr-2" />
-          Add Asset
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button variant="secondary" onClick={() => router.push('/admin/asset-management/print-qr')}>
+            <QrCode className="h-4 w-4 mr-2" />
+            Print QR Codes
+          </Button>
+          <Button onClick={() => handleOpenModal()}>
+            <Plus className="h-4 w-4 mr-2" />
+            Add Asset
+          </Button>
+        </div>
       </div>
 
       {/* Statistics */}
