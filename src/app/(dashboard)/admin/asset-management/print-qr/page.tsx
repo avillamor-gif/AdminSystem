@@ -51,7 +51,8 @@ async function generateQRWithLogo(url: string, size: number, logo: HTMLImageElem
   return canvas.toDataURL('image/png')
 }
 
-// ── QR cache ──────────────────────────────────────────────────────────────────
+// ── QR cache — parallel batches of 8 ─────────────────────────────────────────
+const BATCH_SIZE = 8
 function useQRCodes(assets: Asset[], origin: string, size: Size) {
   const [qrMap, setQrMap] = useState<Record<string, string>>({})
   const qrSize = SIZE_CONFIG[size].qrSize
@@ -62,13 +63,20 @@ function useQRCodes(assets: Asset[], origin: string, size: Size) {
     ;(async () => {
       let logo: HTMLImageElement
       try { logo = await loadLogo() } catch { return }
-      for (const a of assets) {
+      // Process in parallel batches so the browser stays responsive
+      for (let i = 0; i < assets.length; i += BATCH_SIZE) {
         if (cancelled) break
-        try {
-          const dataUrl = await generateQRWithLogo(`${origin}/asset-view/${a.id}`, qrSize, logo)
-          if (!cancelled) setQrMap(prev => ({ ...prev, [a.id]: dataUrl }))
-        } catch { /* skip */ }
-        await yieldToBrowser() // let browser breathe between each QR
+        const batch = assets.slice(i, i + BATCH_SIZE)
+        const results = await Promise.allSettled(
+          batch.map(a => generateQRWithLogo(`${origin}/asset-view/${a.id}`, qrSize, logo).then(url => ({ id: a.id, url })))
+        )
+        if (cancelled) break
+        const updates: Record<string, string> = {}
+        for (const r of results) {
+          if (r.status === 'fulfilled') updates[r.value.id] = r.value.url
+        }
+        setQrMap(prev => ({ ...prev, ...updates }))
+        await yieldToBrowser() // yield once per batch
       }
     })()
     return () => { cancelled = true }
