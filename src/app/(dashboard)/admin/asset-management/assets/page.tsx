@@ -463,12 +463,8 @@ export default function AssetsPage() {
       
       if (!ctx) return
       
-      // Generate QR code data URL
-      const assetData = JSON.stringify({
-        id: asset.id,
-        tag: asset.asset_tag,
-        name: asset.name
-      })
+      // Generate QR code data URL — encode URL so scanning opens the asset detail page
+      const assetData = `${window.location.origin}/asset-view/${asset.id}`
       
       // Generate QR code on canvas
       await QRCode.toCanvas(canvas, assetData, {

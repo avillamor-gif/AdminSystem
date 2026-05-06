@@ -44,7 +44,8 @@ export async function updateSession(request: NextRequest) {
   const isSetupPage = request.nextUrl.pathname.startsWith('/setup')
   const isApiRoute = request.nextUrl.pathname.startsWith('/api')
   const isMobileCapture = request.nextUrl.pathname.startsWith('/mobile-capture')
-  const isProtectedRoute = !isAuthPage && !isSetupPage && !isApiRoute && !isMobileCapture
+  const isAssetView = request.nextUrl.pathname.startsWith('/asset-view')
+  const isProtectedRoute = !isAuthPage && !isSetupPage && !isApiRoute && !isMobileCapture && !isAssetView
 
   if (!user && isProtectedRoute) {
     const loginUrl = new URL('/login', request.url)
