@@ -9,16 +9,6 @@ const path = require('path')
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  transpilePackages: [
-    'd3-org-chart',
-    'd3-flextree',
-    'd3-selection',
-    'd3-array',
-    'd3-hierarchy',
-    'd3-zoom',
-    'd3-shape',
-    'd3-group',
-  ],
   webpack(config) {
     // Force d3-org-chart to resolve to the pre-built UMD bundle,
     // bypassing the package "exports" field that blocks ./build/ subpaths.
