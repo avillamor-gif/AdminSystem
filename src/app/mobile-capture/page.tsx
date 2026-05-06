@@ -28,18 +28,22 @@ function MobileCaptureContent() {
   const [useCamera, setUseCamera] = useState(false)
   const [stream, setStream] = useState<MediaStream | null>(null)
 
+  // Attach stream to video element once it is rendered
+  useEffect(() => {
+    if (stream && videoRef.current) {
+      videoRef.current.srcObject = stream
+      videoRef.current.play().catch(() => {})
+    }
+  }, [stream, useCamera])
+
   // Start live camera stream
   const startCamera = async () => {
     try {
       const s = await navigator.mediaDevices.getUserMedia({
         video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 960 } }
       })
-      setStream(s)
-      setUseCamera(true)
-      if (videoRef.current) {
-        videoRef.current.srcObject = s
-        videoRef.current.play()
-      }
+      setUseCamera(true)   // render <video> first
+      setStream(s)          // then the effect attaches the stream
     } catch {
       // Fall back to file input
       fileInputRef.current?.click()
@@ -302,14 +306,12 @@ function MobileCaptureContent() {
                 </button>
                 <button
                   onClick={() => {
-                    // flip camera — restart with different facingMode
                     stopCamera()
                     navigator.mediaDevices.getUserMedia({
                       video: { facingMode: { exact: 'user' } }
                     }).then(s => {
-                      setStream(s)
                       setUseCamera(true)
-                      if (videoRef.current) { videoRef.current.srcObject = s; videoRef.current.play() }
+                      setStream(s)
                     }).catch(() => {})
                   }}
                   className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center text-white backdrop-blur-sm"
