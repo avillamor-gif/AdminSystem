@@ -51,12 +51,13 @@ export async function POST(req: NextRequest) {
     // For travel decisions: also CC the roles listed in workflow_configs.notify_on_decision
     // This replaces the old hardcoded 'travel_managers' flag.
     const requestTypeByTable: Record<string, string> = {
-      travel_request_notifications:      'travel',
-      publication_request_notifications: 'publication',
-      equipment_request_notifications:   'equipment',
-      supply_request_notifications:      'supply',
-      leave_request_notifications:       'leave',
-      leave_credit_notifications:        'leave_credit',
+      travel_request_notifications:         'travel',
+      publication_request_notifications:    'publication',
+      equipment_request_notifications:      'equipment',
+      supply_request_notifications:         'supply',
+      leave_request_notifications:          'leave',
+      leave_credit_notifications:           'leave_credit',
+      internship_request_notifications:     'internship',
     }
     const requestType = requestTypeByTable[table]
 
