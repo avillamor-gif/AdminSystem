@@ -101,19 +101,37 @@ export default async function AssetViewPage({ params }: { params: { id: string }
     ? asset.image_urls
     : asset.image_url ? [asset.image_url] : []
 
-  // Depreciation (straight-line only for display)
+  // Depreciation — current book value
   let bookValue: string | null = null
-  if (
-    asset.purchase_price &&
-    asset.purchase_date &&
-    asset.useful_life_years &&
-    asset.depreciation_method === 'straight_line'
-  ) {
-    const years = (Date.now() - new Date(asset.purchase_date).getTime()) / (1000 * 60 * 60 * 24 * 365.25)
+  let annualDepreciation: string | null = null
+  let totalDepreciated: string | null = null
+  let depreciationPct: number | null = null
+
+  if (asset.purchase_price && asset.purchase_date && asset.useful_life_years) {
+    const yearsElapsed = (Date.now() - new Date(asset.purchase_date).getTime()) / (1000 * 60 * 60 * 24 * 365.25)
     const salvage = asset.salvage_value ?? 0
-    const annual = (asset.purchase_price - salvage) / asset.useful_life_years
-    const bv = Math.max(salvage, asset.purchase_price - annual * years)
-    bookValue = formatCurrency(bv)
+    const depreciableAmount = asset.purchase_price - salvage
+
+    if (asset.depreciation_method === 'double_declining') {
+      // Double Declining Balance
+      const rate = (2 / asset.useful_life_years)
+      let bv = asset.purchase_price
+      for (let y = 0; y < Math.min(yearsElapsed, asset.useful_life_years); y++) {
+        const dep = bv * rate
+        bv = Math.max(salvage, bv - dep)
+      }
+      bookValue = formatCurrency(bv)
+      totalDepreciated = formatCurrency(asset.purchase_price - bv)
+      depreciationPct = Math.round(((asset.purchase_price - bv) / asset.purchase_price) * 100)
+    } else {
+      // Straight-line (default)
+      const annual = depreciableAmount / asset.useful_life_years
+      const bv = Math.max(salvage, asset.purchase_price - annual * yearsElapsed)
+      bookValue = formatCurrency(bv)
+      annualDepreciation = formatCurrency(annual)
+      totalDepreciated = formatCurrency(asset.purchase_price - bv)
+      depreciationPct = Math.round(((asset.purchase_price - bv) / asset.purchase_price) * 100)
+    }
   }
 
   return (
@@ -135,7 +153,7 @@ export default async function AssetViewPage({ params }: { params: { id: string }
         {images.length > 0 ? (
           <div className="rounded-2xl overflow-hidden bg-white shadow">
             {images.length === 1 ? (
-              <img src={images[0]} alt={asset.name} className="w-full aspect-video object-cover" />
+              <img src={images[0]} alt={asset.name} className="w-full aspect-[4/3] object-cover" />
             ) : (
               <div className="flex overflow-x-auto snap-x snap-mandatory gap-0 scrollbar-hide">
                 {images.map((url, i) => (
@@ -143,7 +161,7 @@ export default async function AssetViewPage({ params }: { params: { id: string }
                     key={i}
                     src={url}
                     alt={`${asset.name} ${i + 1}`}
-                    className="w-full shrink-0 snap-start aspect-video object-cover"
+                    className="w-full shrink-0 snap-start aspect-[4/3] object-cover"
                     style={{ minWidth: '100%' }}
                   />
                 ))}
@@ -154,7 +172,7 @@ export default async function AssetViewPage({ params }: { params: { id: string }
             )}
           </div>
         ) : (
-          <div className="rounded-2xl bg-white shadow flex items-center justify-center aspect-video text-gray-300">
+          <div className="rounded-2xl bg-white shadow flex items-center justify-center aspect-[4/3] text-gray-300">
             <svg className="w-16 h-16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
             </svg>
@@ -202,12 +220,53 @@ export default async function AssetViewPage({ params }: { params: { id: string }
         {/* Purchase & warranty */}
         {(asset.purchase_date || asset.purchase_price || asset.warranty_end_date) && (
           <div className="bg-white rounded-2xl shadow px-5 py-2">
-            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide pt-3 pb-1">Purchase & Warranty</p>
+            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide pt-3 pb-1">Purchase &amp; Warranty</p>
             <Row label="Purchase Date"    value={formatDate(asset.purchase_date)} />
             <Row label="Purchase Price"   value={formatCurrency(asset.purchase_price)} />
             <Row label="Warranty Starts"  value={formatDate(asset.warranty_start_date)} />
             <Row label="Warranty Expires" value={formatDate(asset.warranty_end_date)} />
-            {bookValue && <Row label="Est. Book Value" value={bookValue} />}
+          </div>
+        )}
+
+        {/* Depreciation / Current Value */}
+        {bookValue && (
+          <div className="bg-white rounded-2xl shadow px-5 py-4 space-y-3">
+            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Current Value</p>
+            <div className="flex items-end justify-between">
+              <div>
+                <p className="text-2xl font-bold text-gray-900">{bookValue}</p>
+                <p className="text-xs text-gray-400 mt-0.5">
+                  {asset.depreciation_method === 'double_declining' ? 'Double Declining Balance' : 'Straight-Line'} depreciation
+                </p>
+              </div>
+              {depreciationPct !== null && (
+                <span className={`text-sm font-semibold px-2 py-1 rounded-full ${
+                  depreciationPct < 30 ? 'bg-green-100 text-green-700' :
+                  depreciationPct < 60 ? 'bg-yellow-100 text-yellow-700' :
+                  'bg-red-100 text-red-700'
+                }`}>
+                  {depreciationPct}% depreciated
+                </span>
+              )}
+            </div>
+            {depreciationPct !== null && (
+              <div className="w-full bg-gray-100 rounded-full h-2">
+                <div
+                  className={`h-2 rounded-full transition-all ${
+                    depreciationPct < 30 ? 'bg-green-400' :
+                    depreciationPct < 60 ? 'bg-yellow-400' :
+                    'bg-red-400'
+                  }`}
+                  style={{ width: `${Math.min(depreciationPct, 100)}%` }}
+                />
+              </div>
+            )}
+            <div className="border-t border-gray-100 pt-2 space-y-0">
+              {annualDepreciation && <Row label="Annual Depreciation" value={annualDepreciation} />}
+              {totalDepreciated   && <Row label="Total Depreciated"   value={totalDepreciated} />}
+              {asset.salvage_value ? <Row label="Salvage Value" value={formatCurrency(asset.salvage_value)} /> : null}
+              {asset.useful_life_years ? <Row label="Useful Life" value={`${asset.useful_life_years} years`} /> : null}
+            </div>
           </div>
         )}
 
