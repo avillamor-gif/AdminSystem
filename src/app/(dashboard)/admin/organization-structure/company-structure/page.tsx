@@ -282,20 +282,39 @@ export default function CompanyStructurePage() {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Department / Unit Head
+                    Department Head
                   </label>
-                  <select
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
-                    value={formData.head_id || ''}
-                    onChange={(e) => setFormData({ ...formData, head_id: e.target.value || null })}
-                  >
-                    <option value="">None</option>
-                    {employees.map((emp: any) => (
-                      <option key={emp.id} value={emp.id}>
-                        {emp.first_name} {emp.last_name}
-                      </option>
-                    ))}
-                  </select>
+                  {(() => {
+                    const managerIds = new Set((employees as any[]).map((e: any) => e.manager_id).filter(Boolean))
+                    const activeEmps = (employees as any[]).filter((e: any) => e.status === 'active')
+                    const managers = activeEmps.filter((e: any) => managerIds.has(e.id))
+                    const others = activeEmps.filter((e: any) => !managerIds.has(e.id))
+                    const label = (e: any) => `${e.first_name} ${e.last_name}${e.job_title?.title ? ` — ${e.job_title.title}` : ''}`
+                    return (
+                      <select
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
+                        value={formData.head_id || ''}
+                        onChange={(e) => setFormData({ ...formData, head_id: e.target.value || null })}
+                      >
+                        <option value="">— None —</option>
+                        {managers.length > 0 && (
+                          <optgroup label="Managers">
+                            {managers.map((emp: any) => (
+                              <option key={emp.id} value={emp.id}>{label(emp)}</option>
+                            ))}
+                          </optgroup>
+                        )}
+                        {others.length > 0 && (
+                          <optgroup label="Other Employees">
+                            {others.map((emp: any) => (
+                              <option key={emp.id} value={emp.id}>{label(emp)}</option>
+                            ))}
+                          </optgroup>
+                        )}
+                      </select>
+                    )
+                  })()}
+                  <p className="text-xs text-gray-400 mt-1">Employees who manage others are listed first under "Managers".</p>
                 </div>
               </div>
 
