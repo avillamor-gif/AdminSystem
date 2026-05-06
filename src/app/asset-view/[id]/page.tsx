@@ -191,9 +191,10 @@ export default async function AssetViewPage({ params }: { params: { id: string }
             )}
             {asset.condition && <ConditionBadge condition={asset.condition} />}
           </div>
-          {asset.notes && (
-            <p className="text-sm text-gray-500 pt-1">{asset.notes}</p>
-          )}
+          {(() => {
+            const desc = (asset.notes || (asset as any).description || '').trim()
+            return desc ? <p className="text-sm text-gray-500 pt-1">{desc}</p> : null
+          })()}
         </div>
 
         {/* Assignment */}
