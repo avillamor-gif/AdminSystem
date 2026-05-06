@@ -5,6 +5,8 @@ const withPWA = require('next-pwa')({
   disable: true,  // disable next-pwa — plain sw.js in public/ handles push
 })
 
+const path = require('path')
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   transpilePackages: [
@@ -17,6 +19,15 @@ const nextConfig = {
     'd3-shape',
     'd3-group',
   ],
+  webpack(config) {
+    // Force d3-org-chart to resolve to the pre-built UMD bundle,
+    // bypassing the package "exports" field that blocks ./build/ subpaths.
+    config.resolve.alias['d3-org-chart'] = path.resolve(
+      __dirname,
+      'node_modules/d3-org-chart/build/d3-org-chart.min.js'
+    )
+    return config
+  },
 }
 
 module.exports = nextConfig
