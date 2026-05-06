@@ -101,6 +101,7 @@ export default function AssetsPage() {
   const { data: vendors = [] } = useAssetVendors()
   const { data: assetLocations = [] } = useAssetLocations()
   const { data: employees = [] } = useEmployees()
+  const employeeMap = Object.fromEntries(employees.map(e => [e.id, `${e.first_name} ${e.last_name}`]))
   const { data: assignmentHistory = [] } = useAssetAssignments(
     selectedAsset ? { asset_id: selectedAsset.id } : undefined
   )
@@ -1063,7 +1064,7 @@ export default function AssetsPage() {
                     onClick={() => {
                       const rows = assignmentHistory.map((a: AssetAssignment) => `
                         <tr>
-                          <td>${(a as any).employee ? `${(a as any).employee.first_name} ${(a as any).employee.last_name}` : a.employee_id}</td>
+                          <td>${employeeMap[a.employee_id] || a.employee_id}</td>
                           <td>${a.assigned_date}</td>
                           <td>${a.returned_date || '—'}</td>
                           <td>${a.condition_on_assignment || '—'}</td>
@@ -1134,9 +1135,7 @@ export default function AssetsPage() {
                       {assignmentHistory.map((a: AssetAssignment) => (
                         <tr key={a.id} className="border-b hover:bg-gray-50">
                           <td className="py-2 px-3">
-                            {(a as any).employee
-                              ? `${(a as any).employee.first_name} ${(a as any).employee.last_name}`
-                              : a.employee_id}
+                            {employeeMap[a.employee_id] || a.employee_id}
                           </td>
                           <td className="py-2 px-3">{a.assigned_date}</td>
                           <td className="py-2 px-3">{a.returned_date || '—'}</td>
