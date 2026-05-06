@@ -76,15 +76,18 @@ function nodeHtml(d: { data: OrgChartNode }) {
 
 export default function OrgChartPanel({ nodes, onNodeClick, chartRef }: OrgChartPanelProps) {
   const containerRef = useRef<HTMLDivElement>(null)
+  const onNodeClickRef = useRef(onNodeClick)
+  onNodeClickRef.current = onNodeClick
 
   const initChart = useCallback(async () => {
     if (!containerRef.current || nodes.length === 0) return
 
     const { OrgChart } = await import('d3-org-chart')
 
+    // Destroy and recreate when data changes so node click handler stays fresh
     if (chartRef.current) {
-      chartRef.current.data(nodes).render().fit()
-      return
+      try { chartRef.current.clear() } catch (_) {}
+      chartRef.current = null
     }
 
     chartRef.current = new OrgChart()
@@ -97,18 +100,11 @@ export default function OrgChartPanel({ nodes, onNodeClick, chartRef }: OrgChart
       .compactMarginBetween(() => 30)
       .compactMarginPair(() => 30)
       .siblingsMargin(() => 20)
-      .linkUpdate(function (this: any, d: any) {
-        // @ts-ignore
-        d3.select(this)
-          .attr('stroke', '#94a3b8')
-          .attr('stroke-width', 1.5)
-          .attr('stroke-dasharray', 'none')
-      })
       .nodeContent((d: any) => nodeHtml(d))
-      .onNodeClick((d: any) => onNodeClick(d.data.id))
+      .onNodeClick((d: any) => onNodeClickRef.current(d.id))
       .render()
       .fit()
-  }, [nodes, onNodeClick, chartRef])
+  }, [nodes, chartRef])
 
   useEffect(() => {
     initChart()
@@ -117,7 +113,7 @@ export default function OrgChartPanel({ nodes, onNodeClick, chartRef }: OrgChart
   return (
     <div
       ref={containerRef}
-      style={{ width: '100%', height: '100%' }}
+      style={{ width: '100%', height: '100%', minHeight: 480 }}
     />
   )
 }

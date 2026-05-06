@@ -160,7 +160,7 @@ export default function DepartmentHierarchyPage() {
           </div>
 
           {/* Chart canvas */}
-          <div className="flex-1 overflow-hidden">
+          <div className="flex-1 overflow-hidden" style={{ minHeight: 480 }}>
             {nodes.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-full text-gray-400 gap-3">
                 <Building2 className="w-12 h-12" />
