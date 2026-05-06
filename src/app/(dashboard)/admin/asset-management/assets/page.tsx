@@ -60,6 +60,7 @@ export default function AssetsPage() {
   const activeImageSlotRef = useRef(0)
   const [sliderIndex, setSliderIndex]   = useState(0)
   const imageInputRef = useRef<HTMLInputElement>(null)
+  const mobileChannelRef = useRef<any>(null)
   // Mobile pairing
   const [mobileSession, setMobileSession]       = useState<string>('')
   const [showMobileQR, setShowMobileQR]         = useState(false)
@@ -173,6 +174,10 @@ export default function AssetsPage() {
     setMobileSession('')
     setShowMobileQR(false)
     setMobileConnected(false)
+    if (mobileChannelRef.current) {
+      mobileChannelRef.current.unsubscribe()
+      mobileChannelRef.current = null
+    }
   }
 
   const handleOpenModal = (asset?: Asset) => {
@@ -322,9 +327,15 @@ export default function AssetsPage() {
     setMobileQRDataUrl(qr)
     setShowMobileQR(true)
 
-    // Subscribe to Realtime for this session
+    // Subscribe to Realtime for this session — keep channel alive for multi-photo
     const supabase = createClient()
+    // Clean up any previous channel
+    if (mobileChannelRef.current) {
+      mobileChannelRef.current.unsubscribe()
+      mobileChannelRef.current = null
+    }
     const channel = supabase.channel(`mobile-capture-${token}`)
+    mobileChannelRef.current = channel
     channel
       .on('broadcast', { event: 'photo' }, ({ payload }: any) => {
         const s: number = payload.slot ?? 0
@@ -332,14 +343,15 @@ export default function AssetsPage() {
         setSliderIndex(s)
         setMobileConnected(true)
         setShowMobileQR(false)
-        supabase.removeChannel(channel)
+        // Don't remove channel — phone may send more photos
       })
       .on('broadcast', { event: 'barcode' }, ({ payload }: any) => {
         // Fill serial_number with scanned barcode
         setFormData(prev => ({ ...prev, serial_number: payload.barcode }))
         setMobileConnected(true)
         setShowMobileQR(false)
-        supabase.removeChannel(channel)
+        channel.unsubscribe()
+        mobileChannelRef.current = null
       })
       .subscribe()
   }
@@ -417,8 +429,8 @@ export default function AssetsPage() {
       salvage_value: formData.salvage_value ? parseFloat(formData.salvage_value) : undefined,
       depreciation_method: formData.depreciation_method || undefined,
       notes: formData.notes || undefined,
-      image_url: uploadedUrls[0] || formData.image_url || undefined,
-      image_urls: uploadedUrls.length > 0 ? uploadedUrls : undefined,
+      image_url: uploadedUrls[0] || null,
+      image_urls: uploadedUrls.length > 0 ? uploadedUrls : null,
       status: resolvedStatus,
       condition: formData.condition,
       assigned_to: formData.assigned_to || (null as unknown as string),
