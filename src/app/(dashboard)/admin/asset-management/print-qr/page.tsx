@@ -9,56 +9,79 @@ import Image from 'next/image'
 type Size = 'large' | 'small'
 
 // ── Size config ───────────────────────────────────────────────────────────────
-// large : 2 cols × 4 rows = 8 per A4  (~95mm × 65mm each)
-// small : 4 cols × 8 rows = 32 per A4 (~45mm × 32mm each)
-const SIZE_CONFIG: Record<Size, { cols: number; labelW: string; labelH: string; qrSize: number; fontSize: string; tagSize: string }> = {
-  large: { cols: 2, labelW: '95mm', labelH: '65mm', qrSize: 140, fontSize: '9pt',  tagSize: '8pt'  },
-  small: { cols: 4, labelW: '45mm', labelH: '32mm', qrSize:  64, fontSize: '6pt',  tagSize: '5.5pt' },
+// large : 2 cols × 5 rows = 10 per A4  (~90mm × 55mm each)
+// small : 4 cols × 8 rows = 32 per A4 (~45mm × 27mm each)
+const SIZE_CONFIG: Record<Size, { cols: number; labelW: string; labelH: string; qrSize: number }> = {
+  large: { cols: 2, labelW: '90mm', labelH: '55mm', qrSize: 300 },
+  small: { cols: 4, labelW: '45mm', labelH: '27mm', qrSize: 160 },
+}
+
+// ── QR with logo (canvas) ────────────────────────────────────────────────────
+async function generateQRWithLogo(url: string, size: number): Promise<string> {
+  const canvas = document.createElement('canvas')
+  await QRCode.toCanvas(canvas, url, {
+    width: size, margin: 2,
+    color: { dark: '#000000', light: '#ffffff' },
+    errorCorrectionLevel: 'H', // high — needed to survive logo overlay
+  })
+  const ctx = canvas.getContext('2d')
+  if (!ctx) return canvas.toDataURL()
+
+  // Load IBON logo
+  const logo = await new Promise<HTMLImageElement>((resolve, reject) => {
+    const img = new window.Image()
+    img.crossOrigin = 'anonymous'
+    img.onload = () => resolve(img)
+    img.onerror = reject
+    img.src = '/ibon-icon.png'
+  })
+
+  const logoSize = Math.round(size * 0.22)
+  const cx = (canvas.width - logoSize) / 2
+  const cy = (canvas.height - logoSize) / 2
+  // White backing
+  ctx.fillStyle = '#ffffff'
+  ctx.fillRect(cx - 4, cy - 4, logoSize + 8, logoSize + 8)
+  ctx.drawImage(logo, cx, cy, logoSize, logoSize)
+
+  return canvas.toDataURL('image/png')
 }
 
 // ── QR cache ──────────────────────────────────────────────────────────────────
-function useQRCodes(assets: Asset[], origin: string) {
+function useQRCodes(assets: Asset[], origin: string, size: Size) {
   const [qrMap, setQrMap] = useState<Record<string, string>>({})
+  const qrSize = SIZE_CONFIG[size].qrSize
   useEffect(() => {
     if (!assets.length || !origin) return
+    setQrMap({}) // clear on size change
     let cancelled = false
     ;(async () => {
-      const entries: [string, string][] = await Promise.all(
-        assets.map(async a => {
-          const url = await QRCode.toDataURL(`${origin}/asset-view/${a.id}`, {
-            width: 200, margin: 1,
-            color: { dark: '#000000', light: '#ffffff' },
-          })
-          return [a.id, url] as [string, string]
-        })
-      )
-      if (!cancelled) setQrMap(Object.fromEntries(entries))
+      for (const a of assets) {
+        if (cancelled) break
+        try {
+          const dataUrl = await generateQRWithLogo(`${origin}/asset-view/${a.id}`, qrSize)
+          if (!cancelled) setQrMap(prev => ({ ...prev, [a.id]: dataUrl }))
+        } catch { /* skip */ }
+      }
     })()
     return () => { cancelled = true }
-  }, [assets, origin])
+  }, [assets, origin, qrSize])
   return qrMap
 }
 
-// ── Label ─────────────────────────────────────────────────────────────────────
+// ── Label — QR only, no text ─────────────────────────────────────────────────
 function Label({ asset, qrUrl, size }: { asset: Asset; qrUrl: string; size: Size }) {
   const cfg = SIZE_CONFIG[size]
+  const pad = size === 'large' ? '3mm' : '1.5mm'
   return (
     <div
-      className="label-item flex flex-col items-center justify-center border border-dashed border-gray-300 overflow-hidden bg-white"
-      style={{ width: cfg.labelW, height: cfg.labelH, padding: size === 'large' ? '4mm' : '1.5mm', boxSizing: 'border-box' }}
+      className="label-item flex items-center justify-center border border-dashed border-gray-300 bg-white overflow-hidden"
+      style={{ width: cfg.labelW, height: cfg.labelH, padding: pad, boxSizing: 'border-box' }}
     >
       {qrUrl ? (
-        <img src={qrUrl} alt={asset.asset_tag ?? asset.name} style={{ width: cfg.qrSize, height: cfg.qrSize, display: 'block' }} />
+        <img src={qrUrl} alt={asset.asset_tag ?? asset.name} style={{ maxWidth: '100%', maxHeight: '100%', display: 'block' }} />
       ) : (
-        <div style={{ width: cfg.qrSize, height: cfg.qrSize, background: '#f3f4f6' }} />
-      )}
-      <p style={{ fontSize: cfg.fontSize, fontWeight: 700, textAlign: 'center', margin: '1mm 0 0', lineHeight: 1.2, maxWidth: '100%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-        {asset.name}
-      </p>
-      {asset.asset_tag && (
-        <p style={{ fontSize: cfg.tagSize, color: '#6b7280', fontFamily: 'monospace', textAlign: 'center', margin: '0.5mm 0 0' }}>
-          {asset.asset_tag}
-        </p>
+        <div style={{ width: '60%', aspectRatio: '1', background: '#f3f4f6', borderRadius: 4 }} />
       )}
     </div>
   )
@@ -82,7 +105,7 @@ export default function PrintQRPage() {
   )
 
   const selectedAssets = allAssets.filter(a => selected.has(a.id))
-  const qrMap = useQRCodes(selectedAssets.length ? selectedAssets : allAssets, origin)
+  const qrMap = useQRCodes(selectedAssets.length ? selectedAssets : allAssets, origin, size)
 
   const toggleOne = (id: string) => setSelected(prev => {
     const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n
@@ -143,7 +166,7 @@ export default function PrintQRPage() {
           </div>
           <div>
             <h1 className="text-base font-bold text-gray-900">Bulk QR Print</h1>
-            <p className="text-xs text-gray-500">{toPrint.length} asset{toPrint.length !== 1 ? 's' : ''} · {Math.ceil(toPrint.length / (colCount === 2 ? 8 : 32))} page{Math.ceil(toPrint.length / (colCount === 2 ? 8 : 32)) !== 1 ? 's' : ''}</p>
+            <p className="text-xs text-gray-500">{toPrint.length} asset{toPrint.length !== 1 ? 's' : ''} · {Math.ceil(toPrint.length / (colCount === 2 ? 10 : 32))} page{Math.ceil(toPrint.length / (colCount === 2 ? 10 : 32)) !== 1 ? 's' : ''}</p>
           </div>
         </div>
 
@@ -153,7 +176,7 @@ export default function PrintQRPage() {
             onClick={() => setSize('large')}
             className={`px-3 py-1.5 font-medium transition-colors ${size === 'large' ? 'bg-[#ff7e15] text-white' : 'bg-white text-gray-600 hover:bg-gray-50'}`}
           >
-            Large <span className="text-xs opacity-70">(8/page)</span>
+            Large <span className="text-xs opacity-70">(10/page)</span>
           </button>
           <button
             onClick={() => setSize('small')}
@@ -237,7 +260,7 @@ export default function PrintQRPage() {
           <div className="bg-white rounded-xl border border-gray-200 p-4">
             <p className="text-xs text-gray-400 mb-3 flex items-center gap-1.5">
               <LayoutGrid className="w-3.5 h-3.5" />
-              Print preview — {size === 'large' ? '2 columns × 4 rows (Large)' : '4 columns × 8 rows (Small)'} · A4
+              Print preview — {size === 'large' ? '2 columns × 5 rows · Large (QR only)' : '4 columns × 8 rows · Small (QR only)'} · A4
               {Object.keys(qrMap).length < toPrint.length && (
                 <span className="ml-2 text-amber-500">Generating QR codes…</span>
               )}
