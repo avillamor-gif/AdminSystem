@@ -7,6 +7,7 @@ const navItems = [
   { label: 'Department Hierarchy',     href: '/admin/organization-structure/department-hierarchy',     requiresPermission: 'admin.organization.department_hierarchy' },
   { label: 'International Operations', href: '/admin/organization-structure/international-operations', requiresPermission: 'admin.organization.international_operations' },
   { label: 'Organizational Chart',     href: '/admin/organization-structure/organizational-chart',     requiresPermission: 'admin.organization.organizational_chart' },
+  { label: 'Committees',               href: '/admin/organization-structure/committees',               requiresPermission: 'admin.organization.committees' },
 ]
 
 export default function OrganizationStructureLayout({ children }: { children: React.ReactNode }) {

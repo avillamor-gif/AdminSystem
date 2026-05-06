@@ -1,15 +1,17 @@
 'use client'
 
 import { useState } from 'react'
-import { Plus, Edit2, Trash2, Building2, Users, X } from 'lucide-react'
+import { Plus, Edit2, Trash2, Building2, Users, X, User } from 'lucide-react'
 import { Card, Button, Input, Badge } from '@/components/ui'
 import toast from 'react-hot-toast'
 import { useDepartments, useCreateDepartment, useUpdateDepartment, useDeleteDepartment } from '@/hooks/useDepartments'
+import { useEmployees } from '@/hooks/useEmployees'
 
 interface DepartmentFormData {
   name: string
   description: string
   parent_id: string | null
+  head_id: string | null
 }
 
 export default function CompanyStructurePage() {
@@ -19,9 +21,11 @@ export default function CompanyStructurePage() {
     name: '',
     description: '',
     parent_id: null,
+    head_id: null,
   })
 
   const { data: departments = [], isLoading } = useDepartments()
+  const { data: employees = [] } = useEmployees({})
   const createMutation = useCreateDepartment()
   const updateMutation = useUpdateDepartment()
   const deleteMutation = useDeleteDepartment()
@@ -53,6 +57,7 @@ export default function CompanyStructurePage() {
       name: '',
       description: '',
       parent_id: parentId,
+      head_id: null,
     })
     setIsFormOpen(true)
   }
@@ -63,6 +68,7 @@ export default function CompanyStructurePage() {
       name: dept.name,
       description: dept.description || '',
       parent_id: dept.parent_id,
+      head_id: dept.head_id || null,
     })
     setIsFormOpen(true)
   }
@@ -115,6 +121,15 @@ export default function CompanyStructurePage() {
                 {dept.description && (
                   <p className="text-sm text-gray-500">{dept.description}</p>
                 )}
+                {dept.head_id && (() => {
+                  const head = employees.find((e: any) => e.id === dept.head_id)
+                  return head ? (
+                    <p className="text-xs text-orange-600 mt-0.5 flex items-center gap-1">
+                      <User className="w-3 h-3" />
+                      {head.first_name} {head.last_name}
+                    </p>
+                  ) : null
+                })()}
                 <div className="flex items-center gap-2 mt-1">
                   <Badge className="bg-gray-100 text-gray-700 text-xs">
                     Level {level + 1}
@@ -262,6 +277,24 @@ export default function CompanyStructurePage() {
                           {dept.name}
                         </option>
                       ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Department / Unit Head
+                  </label>
+                  <select
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
+                    value={formData.head_id || ''}
+                    onChange={(e) => setFormData({ ...formData, head_id: e.target.value || null })}
+                  >
+                    <option value="">None</option>
+                    {employees.map((emp: any) => (
+                      <option key={emp.id} value={emp.id}>
+                        {emp.first_name} {emp.last_name}
+                      </option>
+                    ))}
                   </select>
                 </div>
               </div>

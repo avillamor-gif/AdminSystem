@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { useQueryClient } from '@tanstack/react-query'
 import Link from 'next/link'
-import { ArrowLeft, Mail, Phone, MapPin, Calendar, Building2, Briefcase, User, Users, CreditCard, Shield, Award, FileText, Heart, Plane, Laptop, GraduationCap, Lock, Save, Paperclip, Upload, Download, Trash2, Edit, Eye, Camera, RotateCcw, Package, PenLine } from 'lucide-react'
+import { ArrowLeft, Mail, Phone, MapPin, Calendar, Building2, Briefcase, User, Users, CreditCard, Shield, Award, FileText, Heart, Plane, Laptop, GraduationCap, Lock, Save, Paperclip, Upload, Download, Trash2, Edit, Eye, Camera, RotateCcw, Package, PenLine, UsersRound } from 'lucide-react'
 import { Card, Avatar, Badge, Button, Input, Select } from '@/components/ui'
 import { formatDate } from '@/lib/utils'
 import { useEmployeeByEmployeeId, useUpdateEmployee, useEmployees, useCurrentEmployee, employeeKeys } from '@/hooks/useEmployees'
@@ -22,10 +22,88 @@ import { useImmigrationDocuments, useCreateImmigrationDocument, useUpdateImmigra
 import { EmergencyContactFormModal } from './EmergencyContactFormModal'
 import { SignatureTab } from './SignatureTab'
 import { uploadEmployeePhoto, deleteEmployeePhoto } from '@/lib/supabase/storage'
+import { useEmployeeCommittees } from '@/hooks/useCommittees'
 import { logAction } from '@/services/auditLog.service'
 import { toast } from 'sonner'
 
-type TabKey = 'personal' | 'contact' | 'employment' | 'emergency' | 'dependents' | 'banking' | 'benefits' | 'immigration' | 'assets' | 'qualifications' | 'security' | 'signature'
+// ── Committees sub-component (defined outside to avoid re-mount) ───────────────
+function EmployeeCommitteesTab({ employeeId }: { employeeId: string }) {
+  const { data: memberships = [], isLoading } = useEmployeeCommittees(employeeId)
+
+  const ROLE_COLORS: Record<string, string> = {
+    chair:     'bg-orange-100 text-orange-700',
+    secretary: 'bg-blue-100 text-blue-700',
+    member:    'bg-gray-100 text-gray-600',
+  }
+  const TYPE_LABELS: Record<string, string> = {
+    standing:  'Standing',
+    ad_hoc:    'Ad Hoc',
+    technical: 'Technical',
+    advisory:  'Advisory',
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center gap-3">
+          <div className="p-2 bg-orange/10 rounded-lg">
+            <UsersRound className="w-5 h-5 text-orange" />
+          </div>
+          <div>
+            <h3 className="text-lg font-semibold text-gray-900">Committee Memberships</h3>
+            <p className="text-sm text-gray-500 mt-1">Committees this employee is part of</p>
+          </div>
+        </div>
+      </div>
+
+      {isLoading ? (
+        <div className="flex justify-center py-8">
+          <div className="h-6 w-6 animate-spin rounded-full border-4 border-orange border-t-transparent" />
+        </div>
+      ) : memberships.length === 0 ? (
+        <div className="text-center py-12 bg-gray-50 rounded-xl">
+          <UsersRound className="w-10 h-10 text-gray-300 mx-auto mb-3" />
+          <p className="text-gray-500 font-medium">Not a member of any committee</p>
+          <p className="text-sm text-gray-400 mt-1">
+            Assign committees via <strong>Admin → Organization Structure → Committees</strong>
+          </p>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {memberships.map(c => {
+            const myMembership = c.members[0]
+            return (
+              <div key={c.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-xl border border-gray-100">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-lg bg-orange-100 flex items-center justify-center flex-shrink-0">
+                    <UsersRound className="w-5 h-5 text-orange-600" />
+                  </div>
+                  <div>
+                    <p className="font-semibold text-gray-900">{c.name}</p>
+                    {c.description && <p className="text-xs text-gray-500">{c.description}</p>}
+                    <p className="text-xs text-gray-400 mt-0.5">{TYPE_LABELS[c.type] ?? c.type}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  {myMembership && (
+                    <span className={`text-xs px-3 py-1 rounded-full font-medium ${ROLE_COLORS[myMembership.role]}`}>
+                      {myMembership.role === 'chair' ? 'Chairperson' : myMembership.role === 'secretary' ? 'Secretary' : 'Member'}
+                    </span>
+                  )}
+                  {!c.is_active && (
+                    <span className="text-xs px-2 py-1 rounded-full bg-red-100 text-red-600">Inactive</span>
+                  )}
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      )}
+    </div>
+  )
+}
+
+type TabKey = 'personal' | 'contact' | 'employment' | 'emergency' | 'dependents' | 'banking' | 'benefits' | 'immigration' | 'assets' | 'qualifications' | 'security' | 'signature' | 'committees'
 
 export function EmployeeDetailContent({
   backHref = '/employees',
@@ -455,6 +533,7 @@ export function EmployeeDetailContent({
     { key: 'qualifications' as TabKey, label: 'Qualifications', icon: GraduationCap },
     { key: 'security' as TabKey, label: 'Security & Privacy', icon: Lock },
     { key: 'signature' as TabKey, label: 'E-Signature', icon: PenLine },
+    { key: 'committees' as TabKey, label: 'Committees', icon: UsersRound },
   ]
 
   if (isLoading) {
@@ -2551,6 +2630,10 @@ export function EmployeeDetailContent({
             uploadAttachment={uploadEmployeeAttachment}
           />
         )
+      }
+
+      case 'committees': {
+        return <EmployeeCommitteesTab employeeId={employee.id} />
       }
 
       default:
