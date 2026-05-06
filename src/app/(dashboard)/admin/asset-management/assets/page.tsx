@@ -88,7 +88,7 @@ export default function AssetsPage() {
     condition: 'good' as Asset['condition'],
     assigned_to: '',
     assigned_date: '',
-    borrowable_by: 'both' as 'employees' | 'external' | 'both' | 'none'
+    borrowable_by: 'none' as 'employees' | 'external' | 'both' | 'none'
   })
 
   const { data: assets = [], isLoading } = useAssets({
@@ -202,7 +202,7 @@ export default function AssetsPage() {
         condition: asset.condition || 'good',
         assigned_to: asset.assigned_to || '',
         assigned_date: asset.assigned_date || '',
-        borrowable_by: ((asset as any).borrowable_by || 'both') as 'employees' | 'external' | 'both' | 'none'
+        borrowable_by: ((asset as any).borrowable_by ?? 'none') as 'employees' | 'external' | 'both' | 'none'
       })
       // Populate previews from image_urls (or fall back to single image_url)
       const urls: string[] = Array.isArray((asset as any).image_urls) && (asset as any).image_urls.length > 0
@@ -235,7 +235,7 @@ export default function AssetsPage() {
         condition: 'good',
         assigned_to: '',
         assigned_date: '',
-        borrowable_by: 'both'
+        borrowable_by: 'none'
       })
     }
     if (asset) {
@@ -277,7 +277,7 @@ export default function AssetsPage() {
       condition: 'good',
       assigned_to: '',
       assigned_date: '',
-      borrowable_by: 'both'
+      borrowable_by: 'none'
     })
   }
 
@@ -423,7 +423,7 @@ export default function AssetsPage() {
       condition: formData.condition,
       assigned_to: formData.assigned_to || (null as unknown as string),
       assigned_date: formData.assigned_to ? (formData.assigned_date || undefined) : (null as unknown as string),
-      borrowable_by: (formData.borrowable_by || 'both') as any
+      borrowable_by: (formData.borrowable_by || 'none') as any
     }
 
     if (selectedAsset) {
@@ -1376,7 +1376,7 @@ export default function AssetsPage() {
                     {/* Borrowable By */}
                     <Select
                       label="Borrowable By"
-                      value={formData.borrowable_by || 'both'}
+                      value={formData.borrowable_by || 'none'}
                       onChange={(e) => setFormData({ ...formData, borrowable_by: e.target.value as 'employees' | 'external' | 'both' | 'none' })}
                     >
                       <option value="both">Employees &amp; Partners</option>
