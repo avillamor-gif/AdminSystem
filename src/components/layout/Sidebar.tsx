@@ -19,6 +19,7 @@ import {
   BookOpen,
   Monitor,
   Package,
+  GraduationCap,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useState } from 'react'
@@ -44,9 +45,10 @@ const navigationItems: NavigationItem[] = [
   { name: 'Publications',      href: '/publications/library',  icon: BookOpen,   requiresPermission: 'nav.publications', activeBase: '/publications' },
   { name: 'Office Equipment',  href: '/equipment/browse',      icon: Monitor,    requiresPermission: 'nav.equipment',    activeBase: '/equipment' },
   { name: 'Office Supplies',   href: '/office-supplies',       icon: Package,    requiresPermission: 'nav.supplies' },
-  { name: 'My Info',           href: '/my-info',               icon: UserCircle, requiresPermission: 'nav.my_info',      badge: 'Personal Info' },
-  { name: 'Performance',       href: '/performance',           icon: FileText,   requiresPermission: 'nav.performance' },
-  { name: 'Directory',         href: '/directory',             icon: Building2,  requiresPermission: 'nav.directory' },
+  { name: 'My Info',           href: '/my-info',               icon: UserCircle,     requiresPermission: 'nav.my_info',      badge: 'Personal Info' },
+  { name: 'My Internship',     href: '/my-internship',         icon: GraduationCap,  requiresPermission: 'internship.view' },
+  { name: 'Performance',       href: '/performance',           icon: FileText,       requiresPermission: 'nav.performance' },
+  { name: 'Directory',         href: '/directory',             icon: Building2,      requiresPermission: 'nav.directory' },
 ]
 
 export function Sidebar() {

@@ -284,6 +284,27 @@ export const permissionService = {
         'performance.view',
         'reports.view',
       ],
+      // ── Intern ────────────────────────────────────────────────────────────
+      // Can only see: My Info (read-only profile), their own hours & certificate
+      'intern': [
+        'my_info.view',
+        'nav.my_info',
+        'internship.view',
+      ],
+      // ── Volunteer ─────────────────────────────────────────────────────────
+      // Same scope as intern
+      'volunteer': [
+        'my_info.view',
+        'nav.my_info',
+        'internship.view',
+      ],
+      // ── Consultant ────────────────────────────────────────────────────────
+      'consultant': [
+        'my_info.view', 'my_info.edit',
+        'nav.my_info',
+        'directory.view',
+        'nav.directory',
+      ],
     }
 
     return rolePermissions[role.toLowerCase()] ?? rolePermissions['employee']
