@@ -2,6 +2,7 @@ import SecondaryNav from '@/components/layout/SecondaryNav'
 
 const securityNavItems = [
   { label: 'User Management',          href: '/admin/user-access-security/user-management',   requiresPermission: 'admin.user_access.user_management' },
+  { label: 'Create Login Account',     href: '/admin/user-access-security/create-account',    requiresPermission: 'admin.user_access.user_management' },
   { label: 'Role-Based Access Control',href: '/admin/user-access-security/rbac',              requiresPermission: 'admin.user_access.rbac' },
   { label: 'Security Policies',        href: '/admin/user-access-security/security-policies',  requiresPermission: 'admin.user_access.security_policies' },
   { label: 'Session Management',       href: '/admin/user-access-security/session-management', requiresPermission: 'admin.user_access.session_management' },

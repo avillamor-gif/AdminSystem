@@ -1,9 +1,27 @@
 import { createClient } from '@supabase/supabase-js'
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { resend, FROM_ADDRESS } from '@/lib/resend'
 import { welcomeEmail } from '@/lib/emailTemplates'
+import { createClient as createServerClient } from '@/lib/supabase/server'
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
+  // ── Auth guard: only authenticated admins may call this ──────────────────
+  const serverSupabase = createServerClient()
+  const { data: { user }, error: authError } = await serverSupabase.auth.getUser()
+  if (authError || !user) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+  // Verify caller has an admin role
+  const { data: roleRow } = await serverSupabase
+    .from('user_roles')
+    .select('role')
+    .eq('user_id', user.id)
+    .single()
+  if (!roleRow || !['Super Admin', 'Admin', 'super_admin', 'admin'].includes(roleRow.role)) {
+    return NextResponse.json({ error: 'Forbidden: admin role required' }, { status: 403 })
+  }
+  // ─────────────────────────────────────────────────────────────────────────
+
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
   const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
 
