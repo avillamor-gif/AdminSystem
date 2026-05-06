@@ -19,9 +19,14 @@ const TIME_FORMATS  = ['12h', '24h']
 const CURRENCIES    = ['PHP', 'USD', 'EUR', 'GBP', 'JPY', 'SGD']
 const LANGUAGES     = ['en', 'fil', 'es', 'fr', 'de', 'ja']
 const LANG_LABELS: Record<string,string> = { en:'English', fil:'Filipino', es:'Español', fr:'Français', de:'Deutsch', ja:'日本語' }
-const LEAVE_BASES   = ['calendar_year', 'hire_anniversary']
-const LEAVE_BASE_LABELS: Record<string,string> = { calendar_year:'Calendar Year (Jan–Dec)', hire_anniversary:'Hire Anniversary' }
-const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December']
+const LEAVE_BASES   = ['calendar', 'anniversary']
+const LEAVE_BASE_LABELS: Record<string,string> = { calendar:'Calendar Year (Jan–Dec)', anniversary:'Hire Anniversary' }
+const FISCAL_MONTHS = ['01','02','03','04','05','06','07','08','09','10','11','12']
+const FISCAL_MONTH_LABELS: Record<string,string> = {
+  '01':'January','02':'February','03':'March','04':'April',
+  '05':'May','06':'June','07':'July','08':'August',
+  '09':'September','10':'October','11':'November','12':'December'
+}
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 function SectionHeader({ icon: Icon, title, description }: { icon: any; title: string; description: string }) {
@@ -156,10 +161,10 @@ export default function GeneralSettingsPage() {
       <Card className="p-6">
         <SectionHeader icon={CalendarDays} title="Fiscal & Leave Year" description="How annual periods are calculated" />
         <SettingRow label="Fiscal Year Start" description="Month when the fiscal year begins">
-          <SelectSetting settingKey="fiscal_year_start" current={get('fiscal_year_start','January')} options={MONTHS} />
+          <SelectSetting settingKey="fiscal_year_start" current={get('fiscal_year_start','01')} options={FISCAL_MONTHS} labelMap={FISCAL_MONTH_LABELS} />
         </SettingRow>
         <SettingRow label="Leave Year Basis" description="When employees' annual leave entitlement resets">
-          <SelectSetting settingKey="leave_year_basis" current={get('leave_year_basis','calendar_year')} options={LEAVE_BASES} labelMap={LEAVE_BASE_LABELS} />
+          <SelectSetting settingKey="leave_year_basis" current={get('leave_year_basis','calendar')} options={LEAVE_BASES} labelMap={LEAVE_BASE_LABELS} />
         </SettingRow>
       </Card>
 
