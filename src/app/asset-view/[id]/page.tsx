@@ -142,7 +142,7 @@ export default async function AssetViewPage({ params }: { params: { id: string }
           <Image src="/ibon-icon.png" alt="IBON" width={32} height={32} className="w-full h-full object-contain" />
         </div>
         <div>
-          <p className="text-white font-semibold text-sm leading-tight">IBON Admin</p>
+          <p className="text-white font-semibold text-sm leading-tight">IBON International Admin System</p>
           <p className="text-white/70 text-xs">Asset Detail</p>
         </div>
       </div>
