@@ -198,3 +198,6 @@ export type { WorkflowConfig, ApprovalStep, WorkflowConfigUpdate } from './workf
 export { payrollService } from './payroll.service'
 export type { PayrollRun, PayrollRunInsert, Payslip, BreakdownItem, PeriodType, PayrollRunStatus, PayslipStatus, ComputedPayslip } from './payroll.service'
 export { computePayslip } from './payroll.service'
+
+export { orgProfileService, generalSettingsService } from './orgProfile.service'
+export type { OrgProfile, OrgProfileUpdate, GeneralSetting } from './orgProfile.service'

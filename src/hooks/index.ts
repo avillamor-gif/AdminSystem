@@ -51,3 +51,5 @@ export * from './useInternship'
 export * from './useEmailTemplates'
 export * from './useGovernance'
 export * from './useCommittees'
+
+export * from './useOrgProfile'
