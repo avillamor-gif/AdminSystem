@@ -48,6 +48,9 @@ CREATE INDEX IF NOT EXISTS idx_partner_institutions_expiry  ON partner_instituti
 
 ALTER TABLE partner_institutions ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Authenticated users can read partner institutions" ON partner_institutions;
+DROP POLICY IF EXISTS "Admins can manage partner institutions" ON partner_institutions;
+
 CREATE POLICY "Authenticated users can read partner institutions"
   ON partner_institutions FOR SELECT TO authenticated USING (true);
 
@@ -107,6 +110,9 @@ CREATE INDEX IF NOT EXISTS idx_program_enrollments_type        ON program_enroll
 
 ALTER TABLE program_enrollments ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Authenticated users can read program enrollments" ON program_enrollments;
+DROP POLICY IF EXISTS "Admins can manage program enrollments" ON program_enrollments;
+
 CREATE POLICY "Authenticated users can read program enrollments"
   ON program_enrollments FOR SELECT TO authenticated USING (true);
 
@@ -131,3 +137,15 @@ VALUES
   ('Polytechnic University of the Philippines', 'PUP', 'university', NULL, NULL, 'MOA-2024-PUP-001', '2024-06-01', '2026-05-31', 'active', 15),
   ('Technological University of the Philippines', 'TUP', 'technical', NULL, NULL, 'MOA-2025-TUP-001', '2025-01-01', '2027-12-31', 'active', 10)
 ON CONFLICT DO NOTHING;
+
+-- =====================================================
+-- 5. Storage bucket: moa-documents (private)
+-- =====================================================
+INSERT INTO storage.buckets (id, name, public)
+VALUES ('moa-documents', 'moa-documents', false)
+ON CONFLICT (id) DO NOTHING;
+
+DROP POLICY IF EXISTS "Authenticated users can read moa documents" ON storage.objects;
+CREATE POLICY "Authenticated users can read moa documents"
+  ON storage.objects FOR SELECT TO authenticated
+  USING (bucket_id = 'moa-documents');
