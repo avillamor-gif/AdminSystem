@@ -5,11 +5,18 @@ import dynamic from 'next/dynamic'
 import {
   ZoomIn, ZoomOut, Maximize2, ChevronDown, ChevronUp,
   Download, X, Search, Users, Building2, Mail, Phone,
-  LayoutTemplate
+  LayoutTemplate, Settings, Plus, Pencil, Trash2, GripVertical
 } from 'lucide-react'
-import { Card } from '@/components/ui'
+import { Card, Modal, ModalHeader, ModalBody, ModalFooter, Button, ConfirmModal } from '@/components/ui'
 import { useDepartments } from '@/hooks/useDepartments'
 import { useEmployees } from '@/hooks/useEmployees'
+import {
+  useGovernanceNodes,
+  useCreateGovernanceNode,
+  useUpdateGovernanceNode,
+  useDeleteGovernanceNode,
+} from '@/hooks/useGovernanceNodes'
+import type { GovernanceNode } from '@/services/governanceNode.service'
 import type { EmpOrgNode } from './EmployeeOrgPanel'
 
 const EmployeeOrgPanel = dynamic(() => import('./EmployeeOrgPanel'), { ssr: false })
@@ -23,14 +30,254 @@ const LAYOUTS: { value: Layout; label: string }[] = [
   { value: 'right',  label: 'Right → Left' },
 ]
 
+const COLOR_PRESETS = [
+  { label: 'Navy',    value: '#1e3a5f' },
+  { label: 'Blue',    value: '#1d4ed8' },
+  { label: 'Indigo',  value: '#4338ca' },
+  { label: 'Purple',  value: '#7c3aed' },
+  { label: 'Teal',    value: '#0f766e' },
+  { label: 'Green',   value: '#15803d' },
+  { label: 'Crimson', value: '#b91c1c' },
+  { label: 'Slate',   value: '#334155' },
+]
+
+// ─── Governance Form Modal ────────────────────────────────────────────────────
+interface GovFormModalProps {
+  open: boolean
+  onClose: () => void
+  editing: GovernanceNode | null
+  siblings: GovernanceNode[]
+}
+function GovFormModal({ open, onClose, editing, siblings }: GovFormModalProps) {
+  const createMut = useCreateGovernanceNode()
+  const updateMut = useUpdateGovernanceNode()
+
+  const [name, setName] = useState(editing?.name ?? '')
+  const [description, setDescription] = useState(editing?.description ?? '')
+  const [parentId, setParentId] = useState(editing?.parent_id ?? '')
+  const [color, setColor] = useState(editing?.color ?? '#1e3a5f')
+  const [sortOrder, setSortOrder] = useState(String(editing?.sort_order ?? siblings.length))
+
+  // Reset when editing changes
+  useMemo(() => {
+    setName(editing?.name ?? '')
+    setDescription(editing?.description ?? '')
+    setParentId(editing?.parent_id ?? '')
+    setColor(editing?.color ?? '#1e3a5f')
+    setSortOrder(String(editing?.sort_order ?? siblings.length))
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [editing, open])
+
+  const isPending = createMut.isPending || updateMut.isPending
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    const payload = {
+      name: name.trim(),
+      description: description.trim() || null,
+      parent_id: parentId || null,
+      color,
+      sort_order: parseInt(sortOrder) || 0,
+    }
+    if (editing) {
+      await updateMut.mutateAsync({ id: editing.id, data: payload })
+    } else {
+      await createMut.mutateAsync(payload)
+    }
+    onClose()
+  }
+
+  // Only show other nodes as parent options (can't be own parent)
+  const parentOptions = siblings.filter(n => n.id !== editing?.id)
+
+  return (
+    <Modal isOpen={open} onClose={onClose} size="md">
+      <form onSubmit={handleSubmit}>
+        <ModalHeader onClose={onClose}>
+          {editing ? 'Edit Governance Tier' : 'Add Governance Tier'}
+        </ModalHeader>
+        <ModalBody>
+          <div className="space-y-4">
+            <div>
+              <label className="block text-xs font-semibold text-gray-700 mb-1">Name <span className="text-red-500">*</span></label>
+              <input
+                required
+                value={name}
+                onChange={e => setName(e.target.value)}
+                placeholder="e.g. Board of Trustees"
+                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-gray-700 mb-1">Description</label>
+              <textarea
+                value={description}
+                onChange={e => setDescription(e.target.value)}
+                placeholder="Short description shown on the chart card"
+                rows={2}
+                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 resize-none"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-gray-700 mb-1">Reports To (parent tier)</label>
+              <select
+                value={parentId}
+                onChange={e => setParentId(e.target.value)}
+                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white"
+              >
+                <option value="">— Top level (no parent) —</option>
+                {parentOptions.map(n => (
+                  <option key={n.id} value={n.id}>{n.name}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-gray-700 mb-1">Card Color</label>
+              <div className="flex flex-wrap gap-2 mt-1">
+                {COLOR_PRESETS.map(p => (
+                  <button
+                    key={p.value}
+                    type="button"
+                    title={p.label}
+                    onClick={() => setColor(p.value)}
+                    className={`w-7 h-7 rounded-full border-2 transition-all ${color === p.value ? 'border-gray-900 scale-110' : 'border-transparent'}`}
+                    style={{ background: p.value }}
+                  />
+                ))}
+                <input
+                  type="color"
+                  value={color}
+                  onChange={e => setColor(e.target.value)}
+                  title="Custom color"
+                  className="w-7 h-7 rounded-full border border-gray-200 cursor-pointer overflow-hidden p-0"
+                />
+              </div>
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-gray-700 mb-1">Display Order</label>
+              <input
+                type="number"
+                min={0}
+                value={sortOrder}
+                onChange={e => setSortOrder(e.target.value)}
+                className="w-24 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+              />
+              <p className="text-[11px] text-gray-400 mt-1">Lower number = higher in chain (0 = topmost)</p>
+            </div>
+          </div>
+        </ModalBody>
+        <ModalFooter>
+          <Button variant="secondary" type="button" onClick={onClose}>Cancel</Button>
+          <Button variant="primary" type="submit" disabled={isPending}>
+            {isPending ? 'Saving…' : editing ? 'Save Changes' : 'Add Tier'}
+          </Button>
+        </ModalFooter>
+      </form>
+    </Modal>
+  )
+}
+
+// ─── Manage Governance Modal ──────────────────────────────────────────────────
+function ManageGovernanceModal({ open, onClose }: { open: boolean; onClose: () => void }) {
+  const { data: govNodes = [] } = useGovernanceNodes()
+  const deleteMut = useDeleteGovernanceNode()
+
+  const [formOpen, setFormOpen] = useState(false)
+  const [editing, setEditing] = useState<GovernanceNode | null>(null)
+  const [deleteTarget, setDeleteTarget] = useState<GovernanceNode | null>(null)
+
+  // Build display name with parent chain
+  const getDisplayPath = (node: GovernanceNode): string => {
+    if (!node.parent_id) return node.name
+    const parent = govNodes.find(n => n.id === node.parent_id)
+    return parent ? `${parent.name} → ${node.name}` : node.name
+  }
+
+  return (
+    <>
+      <Modal isOpen={open} onClose={onClose} size="lg">
+        <ModalHeader onClose={onClose}>Manage Governance Tiers</ModalHeader>
+        <ModalBody>
+          <p className="text-sm text-gray-500 mb-4">
+            Governance tiers (e.g. General Assembly, Board of Trustees) appear above all employees in the organizational chart, showing the full leadership hierarchy.
+          </p>
+          {govNodes.length === 0 ? (
+            <div className="text-center py-8 text-gray-400">
+              <Users className="w-10 h-10 mx-auto mb-2 opacity-40" />
+              <p className="text-sm">No governance tiers yet. Add one to get started.</p>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {govNodes.map(node => (
+                <div key={node.id} className="flex items-center gap-3 p-3 rounded-xl border border-gray-100 bg-gray-50 group">
+                  <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ background: node.color }} />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-gray-900 truncate">{node.name}</p>
+                    {node.description && <p className="text-xs text-gray-500 truncate">{node.description}</p>}
+                    <p className="text-[10px] text-gray-400 mt-0.5">{getDisplayPath(node)} · Order: {node.sort_order}</p>
+                  </div>
+                  <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button
+                      onClick={() => { setEditing(node); setFormOpen(true) }}
+                      className="p-1.5 rounded-lg hover:bg-white hover:shadow text-gray-500 hover:text-blue-600 transition-colors"
+                    >
+                      <Pencil className="w-3.5 h-3.5" />
+                    </button>
+                    <button
+                      onClick={() => setDeleteTarget(node)}
+                      className="p-1.5 rounded-lg hover:bg-white hover:shadow text-gray-500 hover:text-red-500 transition-colors"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </ModalBody>
+        <ModalFooter>
+          <Button variant="secondary" onClick={onClose}>Close</Button>
+          <Button variant="primary" onClick={() => { setEditing(null); setFormOpen(true) }}>
+            <Plus className="w-3.5 h-3.5 mr-1" /> Add Tier
+          </Button>
+        </ModalFooter>
+      </Modal>
+
+      <GovFormModal
+        open={formOpen}
+        onClose={() => { setFormOpen(false); setEditing(null) }}
+        editing={editing}
+        siblings={govNodes}
+      />
+
+      {deleteTarget && (
+        <ConfirmModal
+          isOpen={!!deleteTarget}
+          onClose={() => setDeleteTarget(null)}
+          onConfirm={async () => {
+            await deleteMut.mutateAsync(deleteTarget.id)
+            setDeleteTarget(null)
+          }}
+          title="Delete Governance Tier"
+          message={`Are you sure you want to delete "${deleteTarget.name}"? Any tiers that report to it will become top-level.`}
+          confirmLabel="Delete"
+          variant="danger"
+        />
+      )}
+    </>
+  )
+}
+
 export default function OrganizationalChartPage() {
   const { data: departments = [] } = useDepartments()
   const { data: employees = [], isLoading } = useEmployees({})
+  const { data: govNodes = [] } = useGovernanceNodes()
 
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [search, setSearch] = useState('')
   const [deptFilter, setDeptFilter] = useState('')
   const [layout, setLayout] = useState<Layout>('top')
+  const [manageGovOpen, setManageGovOpen] = useState(false)
   const chartRef = useRef<any>(null)
 
   // Build flat node list for d3-org-chart (employee manager tree)
@@ -107,6 +354,42 @@ export default function OrganizationalChartPage() {
     }
     return fixed
   }, [nodes, search, deptFilter, employees])
+
+  // Merge governance tiers above the employee tree
+  const allChartNodes = useMemo<EmpOrgNode[]>(() => {
+    if (govNodes.length === 0) return filteredNodes
+
+    // Convert governance nodes to EmpOrgNode-compatible shape
+    const govChain: EmpOrgNode[] = govNodes.map(g => ({
+      id: `gov_${g.id}`,
+      parentNodeId: g.parent_id ? `gov_${g.parent_id}` : null,
+      firstName: g.name,
+      lastName: '',
+      jobTitle: g.description,
+      department: null,
+      avatarUrl: null,
+      status: 'active',
+      directReports: 0,
+      isGovernance: true,
+      govColor: g.color,
+    }))
+
+    // Find the leaf governance node (the bottom-most tier, closest to employees).
+    // Leaf = a governance node whose ID is NOT referenced as a parent by any other.
+    const govParentIds = new Set(
+      govNodes.filter(g => g.parent_id !== null).map(g => `gov_${g.parent_id}`)
+    )
+    const leafGov = govChain.find(g => !govParentIds.has(g.id)) ?? govChain[govChain.length - 1]
+
+    if (!leafGov) return filteredNodes
+
+    // Attach all top-level employee/virtual nodes to the leaf governance node
+    const attached = filteredNodes.map(n =>
+      n.parentNodeId === null ? { ...n, parentNodeId: leafGov.id } : n
+    )
+
+    return [...govChain, ...attached]
+  }, [govNodes, filteredNodes])
 
   const selectedEmp = useMemo(
     () => selectedId ? (employees as any[]).find((e: any) => e.id === selectedId) : null,
@@ -234,6 +517,14 @@ export default function OrganizationalChartPage() {
             <button onClick={() => chartRef.current?.exportImg({ full: true })} className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium text-gray-600 hover:bg-gray-100">
               <Download className="w-3.5 h-3.5" /> Export
             </button>
+            <div className="w-px h-5 bg-gray-200 mx-0.5" />
+            <button
+              onClick={() => setManageGovOpen(true)}
+              className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium text-blue-600 hover:bg-blue-50 border border-blue-200"
+              title="Add/edit governance tiers (e.g. General Assembly, Board of Trustees)"
+            >
+              <Settings className="w-3.5 h-3.5" /> Governance
+            </button>
           </div>
 
           {/* Chart */}
@@ -245,8 +536,8 @@ export default function OrganizationalChartPage() {
               </div>
             ) : (
               <EmployeeOrgPanel
-                key={`${layout}-${deptFilter}-${search}`}
-                nodes={filteredNodes}
+                key={`${layout}-${deptFilter}-${search}-${govNodes.length}`}
+                nodes={allChartNodes}
                 onNodeClick={handleNodeClick}
                 chartRef={chartRef}
                 layout={layout}
@@ -348,6 +639,8 @@ export default function OrganizationalChartPage() {
           </div>
         )}
       </div>
+
+      <ManageGovernanceModal open={manageGovOpen} onClose={() => setManageGovOpen(false)} />
     </div>
   )
 }

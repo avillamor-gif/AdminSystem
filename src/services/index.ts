@@ -204,3 +204,6 @@ export type { OrgProfile, OrgProfileUpdate, GeneralSetting } from './orgProfile.
 
 export { orgDocumentService, createOrgDocument, deleteOrgDocument, DOCUMENT_CATEGORIES } from './orgDocument.service'
 export type { OrgDocument, OrgDocumentInsert } from './orgDocument.service'
+
+export { governanceNodeService } from './governanceNode.service'
+export type { GovernanceNode, GovernanceNodeInsert } from './governanceNode.service'

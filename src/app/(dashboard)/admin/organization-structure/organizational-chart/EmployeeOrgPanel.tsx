@@ -12,6 +12,9 @@ export interface EmpOrgNode {
   avatarUrl: string | null
   status: string
   directReports: number
+  // Governance tier fields
+  isGovernance?: boolean
+  govColor?: string
 }
 
 interface EmployeeOrgPanelProps {
@@ -27,6 +30,28 @@ function nodeHtml(d: { data: EmpOrgNode }) {
   // Virtual root node — render as invisible connector
   if (n.id === '__virtual_root__') {
     return `<div style="width:1px;height:1px;overflow:hidden;opacity:0"></div>`
+  }
+
+  // Governance tier node — institutional card
+  if (n.isGovernance) {
+    const color = n.govColor ?? '#1e3a5f'
+    const desc = n.jobTitle ?? ''
+    return `
+      <div style="
+        font-family:Inter,system-ui,sans-serif;
+        width:220px;
+        background:linear-gradient(135deg,${color},${color}cc);
+        border-radius:14px;
+        box-shadow:0 6px 24px rgba(0,0,0,0.18);
+        padding:16px 18px;
+        text-align:center;
+        cursor:default;
+      ">
+        <div style="color:rgba(255,255,255,0.6);font-size:9px;text-transform:uppercase;letter-spacing:2.5px;font-weight:600;margin-bottom:6px">Governance</div>
+        <div style="color:#fff;font-size:14px;font-weight:700;line-height:1.3">${n.firstName}</div>
+        ${desc ? `<div style="color:rgba(255,255,255,0.7);font-size:11px;margin-top:5px;line-height:1.4">${desc}</div>` : ''}
+      </div>
+    `
   }
 
   const initials = `${n.firstName?.[0] ?? ''}${n.lastName?.[0] ?? ''}`.toUpperCase()
@@ -101,7 +126,7 @@ export default function EmployeeOrgPanel({ nodes, onNodeClick, chartRef, layout 
         .data(nodes)
         .layout(layout)
         .nodeWidth(() => 224)
-        .nodeHeight(() => 108)
+        .nodeHeight((d: any) => d.data.isGovernance ? 90 : (d.data.id === '__virtual_root__' ? 1 : 108))
         .childrenMargin(() => 40)
         .compactMarginBetween(() => 20)
         .compactMarginPair(() => 20)

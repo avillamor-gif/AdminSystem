@@ -55,3 +55,5 @@ export * from './useCommittees'
 export * from './useOrgProfile'
 
 export * from './useOrgDocuments'
+
+export * from './useGovernanceNodes'
