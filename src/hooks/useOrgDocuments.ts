@@ -23,9 +23,24 @@ export function useCreateOrgDocument() {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: (data: OrgDocumentInsert) => createOrgDocument(data),
-    onSuccess: () => {
+    onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: orgDocumentKeys.lists() })
       toast.success('Document uploaded successfully')
+
+      // Mirror to Google Drive (fire-and-forget)
+      if (result.file_url && result.file_name) {
+        fetch('/api/google/drive/sync', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            type: 'org_document',
+            fileUrl: result.file_url,
+            fileName: result.file_name,
+            mimeType: result.file_type ?? 'application/octet-stream',
+            documentCategory: result.category,
+          }),
+        }).catch(err => console.error('[Drive Sync] org document mirror failed:', err?.message ?? err))
+      }
     },
     onError: () => toast.error('Failed to upload document'),
   })
