@@ -254,14 +254,14 @@ function ManageGovernanceModal({ open, onClose }: { open: boolean; onClose: () =
         <ConfirmModal
           isOpen={!!deleteTarget}
           onClose={() => setDeleteTarget(null)}
-          onConfirm={async () => {
-            await deleteMut.mutateAsync(deleteTarget.id)
-            setDeleteTarget(null)
+          onConfirm={() => {
+            deleteMut.mutateAsync(deleteTarget.id).then(() => setDeleteTarget(null))
           }}
           title="Delete Governance Tier"
           message={`Are you sure you want to delete "${deleteTarget.name}"? Any tiers that report to it will become top-level.`}
-          confirmLabel="Delete"
+          confirmText="Delete"
           variant="danger"
+          isLoading={deleteMut.isPending}
         />
       )}
     </>
