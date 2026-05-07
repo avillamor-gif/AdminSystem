@@ -46,7 +46,9 @@ export default function EmployeeProfilesPage() {
   const deleteEmployee = useDeleteEmployee()
 
   // Filter by group after fetch (useEmployees already handles dept/search filters)
+  // Exclude Board of Trustees members — they are managed in the Governance section
   const employees = (allEmployeesRaw as EmployeeWithRelations[]).filter(e => {
+    if (e.department?.name?.toLowerCase() === 'board of trustees') return false
     if (employeeGroup === 'current') return e.status === 'active'
     if (employeeGroup === 'past') return e.status === 'inactive' || e.status === 'terminated'
     return true // 'all'

@@ -13,7 +13,10 @@ export default function DirectoryPage() {
   const [selectedDepartment, setSelectedDepartment] = useState('')
 
   const { data: employees, isLoading } = useEmployees({ search: searchQuery, department: selectedDepartment, status: 'active' })
-  const typedEmployees = (employees || []) as EmployeeWithRelations[]
+  // Exclude Board of Trustees members — managed in Governance section
+  const typedEmployees = ((employees || []) as EmployeeWithRelations[]).filter(
+    e => e.department?.name?.toLowerCase() !== 'board of trustees'
+  )
   const { data: departments = [] } = useDepartments()
 
   // Remove derived departments list - now using DB departments

@@ -130,7 +130,8 @@ export default function WorkforceAnalyticsPage() {
 
   // ── filtered employee list (drives all metrics) ────────────────────────────
   const filteredEmployees = useMemo(() => {
-    let list = allEmployees as any[]
+    // Exclude Board of Trustees members — managed in Governance section
+    let list = (allEmployees as any[]).filter(e => e.department?.name?.toLowerCase() !== 'board of trustees')
     if (filterStatus !== 'all') list = list.filter(e => e.status === filterStatus)
     if (filterEtId !== 'all')   list = list.filter(e => e.employment_type_id === filterEtId)
     if (filterDeptId !== 'all') list = list.filter(e => e.department_id === filterDeptId)
