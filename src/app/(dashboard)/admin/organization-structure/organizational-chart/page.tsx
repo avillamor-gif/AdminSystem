@@ -77,7 +77,35 @@ export default function OrganizationalChartPage() {
         (n.department ?? '').toLowerCase().includes(q)
       )
     }
-    return result
+    // Re-null any parentNodeId whose parent was filtered out — d3-org-chart
+    // silently fails if a parentNodeId references a node not in the dataset.
+    const filteredIds = new Set(result.map(n => n.id))
+    const fixed = result.map(n => ({
+      ...n,
+      parentNodeId: n.parentNodeId && filteredIds.has(n.parentNodeId) ? n.parentNodeId : null,
+    }))
+    // d3-org-chart requires exactly ONE root. If multiple roots exist (multiple
+    // employees with no parent in the filtered set), create a virtual root node
+    // and attach all orphans to it.
+    const roots = fixed.filter(n => !n.parentNodeId)
+    if (roots.length > 1) {
+      const virtualRoot: EmpOrgNode = {
+        id: '__virtual_root__',
+        parentNodeId: null,
+        firstName: 'Organization',
+        lastName: '',
+        jobTitle: null,
+        department: null,
+        avatarUrl: null,
+        status: 'active',
+        directReports: roots.length,
+      }
+      return [
+        virtualRoot,
+        ...fixed.map(n => n.parentNodeId === null ? { ...n, parentNodeId: '__virtual_root__' } : n),
+      ]
+    }
+    return fixed
   }, [nodes, search, deptFilter, employees])
 
   const selectedEmp = useMemo(

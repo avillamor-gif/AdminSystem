@@ -23,6 +23,12 @@ interface EmployeeOrgPanelProps {
 
 function nodeHtml(d: { data: EmpOrgNode }) {
   const n = d.data
+
+  // Virtual root node — render as invisible connector
+  if (n.id === '__virtual_root__') {
+    return `<div style="width:1px;height:1px;overflow:hidden;opacity:0"></div>`
+  }
+
   const initials = `${n.firstName?.[0] ?? ''}${n.lastName?.[0] ?? ''}`.toUpperCase()
   const avatarHtml = n.avatarUrl
     ? `<img src="${n.avatarUrl}" style="width:48px;height:48px;border-radius:50%;object-fit:cover;border:2.5px solid #fff;flex-shrink:0;box-shadow:0 2px 8px rgba(0,0,0,0.12)" />`
@@ -101,7 +107,7 @@ export default function EmployeeOrgPanel({ nodes, onNodeClick, chartRef, layout 
         .compactMarginPair(() => 20)
         .siblingsMargin(() => 16)
         .nodeContent((d: any) => nodeHtml(d))
-        .onNodeClick((d: any) => onClickRef.current(d.id))
+        .onNodeClick((d: any) => { if (d.id !== '__virtual_root__') onClickRef.current(d.id) })
         .render()
         .fit()
     }
