@@ -91,7 +91,7 @@ function GovFormModal({ open, onClose, editing, siblings }: GovFormModalProps) {
   const parentOptions = siblings.filter(n => n.id !== editing?.id)
 
   return (
-    <Modal isOpen={open} onClose={onClose} size="md">
+    <Modal open={open} onClose={onClose} size="md">
       <form onSubmit={handleSubmit}>
         <ModalHeader onClose={onClose}>
           {editing ? 'Edit Governance Tier' : 'Add Governance Tier'}
@@ -195,7 +195,7 @@ function ManageGovernanceModal({ open, onClose }: { open: boolean; onClose: () =
 
   return (
     <>
-      <Modal isOpen={open} onClose={onClose} size="lg">
+      <Modal open={open} onClose={onClose} size="lg">
         <ModalHeader onClose={onClose}>Manage Governance Tiers</ModalHeader>
         <ModalBody>
           <p className="text-sm text-gray-500 mb-4">
