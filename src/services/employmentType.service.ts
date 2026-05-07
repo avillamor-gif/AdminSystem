@@ -8,7 +8,7 @@ export interface EmploymentType {
   name: string
   code: string
   description: string | null
-  category: 'permanent' | 'contract' | 'temporary' | 'intern' | 'volunteer' | 'consultant' | 'board_member'
+  category: 'permanent' | 'contract' | 'temporary' | 'intern' | 'volunteer' | 'consultant'
   is_active: boolean
   benefits: any | null
   working_conditions: any | null

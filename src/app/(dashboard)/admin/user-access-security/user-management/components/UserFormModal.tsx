@@ -197,7 +197,7 @@ export function UserFormModal({ open, onClose, user }: UserFormModalProps) {
     // Determine primary role — role priority order
     const rolePriority = [
       'Super Admin', 'Admin', 'Executive Director', 'HR Manager',
-      'Manager', 'Board of Trustees', 'Employee', 'Intern', 'Volunteer', 'Consultant',
+      'Manager', 'Employee', 'Intern', 'Volunteer', 'Consultant',
     ]
     const orderedSelected = rolePriority.filter(r => selectedRoleNames.has(r))
     const primaryRoleName = orderedSelected[0] || Array.from(selectedRoleNames)[0] || 'Employee'
@@ -441,7 +441,7 @@ export function UserFormModal({ open, onClose, user }: UserFormModalProps) {
                 )}
               </p>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                {roles.filter(role => role.status === 'active').map(role => {
+                {roles.filter(role => role.status === 'active' && role.name.toLowerCase() !== 'board of trustees' && role.name.toLowerCase() !== 'board member').map(role => {
                   const isChecked = selectedRoleNames.has(role.name)
                   return (
                     <label
