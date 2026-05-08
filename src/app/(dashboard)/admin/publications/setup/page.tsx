@@ -600,7 +600,7 @@ function DistributionListsTab() {
         </Card>
         <Card className="p-6 flex flex-col items-center text-center">
           <div className="p-2 bg-orange-100 rounded-lg mb-2"><Tag className="w-6 h-6 text-orange-600" /></div>
-          <p className="text-2xl font-bold text-gray-900">{new Set(lists.map(l => l.publicationType)).size}</p>
+          <p className="text-2xl font-bold text-gray-900">{new Set(lists.map(l => l.publication_type)).size}</p>
           <p className="text-sm text-gray-500">Pub. Types</p>
         </Card>
       </div>
