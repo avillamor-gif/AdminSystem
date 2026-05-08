@@ -208,6 +208,31 @@ export default function AttendanceReportsPage() {
     return { ...(map[key] ?? { bg: 'bg-amber-50', text: 'text-amber-700' }), label: '' }
   }
 
+  // ── Monthly Sheet: leave + holiday data ─────────────────────────────────
+  const sheetMonthStart = `${sheetYear}-${String(sheetMonth + 1).padStart(2, '0')}-01`
+  const sheetMonthEnd   = localDateStr(new Date(sheetYear, sheetMonth + 1, 0))
+
+  const { data: sheetLeave = [] } = useLeaveRequests(
+    selectedEmployeeId
+      ? { employee_id: selectedEmployeeId, status: 'approved' }
+      : { status: 'approved' },
+  )
+  const { data: sheetHolidays = [] } = useHolidays({ year: sheetYear, is_active: true })
+
+  // Map leave category → SHEET_TYPES key
+  const LEAVE_CAT_TO_SHEET: Record<string, string> = {
+    vacation:    'vacation',
+    sick:        'sick',
+    personal:    'days-off',
+    emergency:   'sick',
+    bereavement: 'sick',
+    maternity:   'vacation',
+    paternity:   'vacation',
+    birthday:    'days-off',
+    'solo-parent': 'days-off',
+    other:       'days-off',
+  }
+
   // Fetch records — admin can query all or by specific employee
   const fetchStart = `${sheetYear - 1}-01-01`
   const fetchEnd   = `${sheetYear + 1}-12-31`
@@ -302,12 +327,44 @@ export default function AttendanceReportsPage() {
         if (sessions.length > 0 && sessions[0].timeIn) return sessions.some(s => s.type === t.key)
         return r.status === t.key
       })
+
+      // Leave days for print
+      const leaveDates = new Set<string>()
+      if (t.key !== 'holiday' && t.key !== 'rest-day') {
+        sheetLeave.forEach((lr: any) => {
+          const leaveSheetKey = LEAVE_CAT_TO_SHEET[lr.leave_type?.category ?? lr.leave_type?.code ?? ''] ?? 'vacation'
+          if (leaveSheetKey !== t.key) return
+          const start = new Date(lr.start_date + 'T00:00:00')
+          const end   = new Date(lr.end_date   + 'T00:00:00')
+          for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+            const ds = localDateStr(d)
+            if (ds >= sheetMonthStart && ds <= sheetMonthEnd) leaveDates.add(ds)
+          }
+        })
+      }
+
+      // Holiday dates for print
+      const holidayDates = new Set<string>()
+      if (t.key === 'holiday') {
+        sheetHolidays.forEach((h: any) => {
+          const ds = h.holiday_date as string
+          if (ds >= sheetMonthStart && ds <= sheetMonthEnd) holidayDates.add(ds)
+        })
+      }
+
+      const totalDays = matched.length + leaveDates.size + holidayDates.size
       const cells = Array.from({ length: daysInMonth }, (_, i) => {
         const ds = `${sheetYear}-${String(sheetMonth + 1).padStart(2, '0')}-${String(i + 1).padStart(2, '0')}`
-        const has = matched.some(r => r.date === ds)
-        return `<td style="border:1px solid #d1d5db;text-align:center;min-width:22px;height:24px;">${has ? '<span style="color:#2563eb;font-weight:700;">✓</span>' : ''}</td>`
+        const hasAttendance = matched.some(r => r.date === ds)
+        const hasLeave      = leaveDates.has(ds)
+        const hasHoliday    = holidayDates.has(ds)
+        let mark = ''
+        if (hasAttendance) mark = '<span style="color:#2563eb;font-weight:700;">✓</span>'
+        else if (hasLeave) mark = '<span style="color:#d97706;font-weight:700;">L</span>'
+        else if (hasHoliday) mark = '<span style="color:#db2777;font-weight:700;">H</span>'
+        return `<td style="border:1px solid #d1d5db;text-align:center;min-width:22px;height:24px;">${mark}</td>`
       }).join('')
-      return `<tr style="background:${t.bg};"><td style="border:1px solid #d1d5db;padding:4px 8px;white-space:nowrap;font-size:11px;">${t.label}</td><td style="border:1px solid #d1d5db;padding:4px 8px;text-align:center;font-weight:600;font-size:11px;">${matched.length.toFixed(1)}</td>${cells}</tr>`
+      return `<tr style="background:${t.bg};"><td style="border:1px solid #d1d5db;padding:4px 8px;white-space:nowrap;font-size:11px;">${t.label}</td><td style="border:1px solid #d1d5db;padding:4px 8px;text-align:center;font-weight:600;font-size:11px;">${totalDays.toFixed(1)}</td>${cells}</tr>`
     }).join('')
 
     win.document.write(`<!DOCTYPE html><html><head><title>Monthly Attendance Sheet</title>
@@ -687,20 +744,55 @@ body{font-family:Arial,sans-serif;font-size:11px;padding:12px;}
                   <tbody>
                     {SHEET_TYPES.map(t => {
                       const daysInMonth = new Date(sheetYear, sheetMonth + 1, 0).getDate()
+
+                      // Attendance records matching this row type
                       const matched = sheetRecords.filter(r => {
                         const sessions = parseSessions(r.notes)
                         if (sessions.length > 0 && sessions[0].timeIn) return sessions.some(s => s.type === t.key)
                         return r.status === t.key
                       })
+
+                      // Leave days matching this row type
+                      const leaveDates = new Set<string>()
+                      if (t.key !== 'holiday' && t.key !== 'rest-day') {
+                        sheetLeave.forEach((lr: any) => {
+                          const leaveSheetKey = LEAVE_CAT_TO_SHEET[lr.leave_type?.category ?? lr.leave_type?.code ?? ''] ?? 'vacation'
+                          if (leaveSheetKey !== t.key) return
+                          // iterate every day in the leave range that falls in this month
+                          const start = new Date(lr.start_date + 'T00:00:00')
+                          const end   = new Date(lr.end_date   + 'T00:00:00')
+                          for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+                            const ds = localDateStr(d)
+                            if (ds >= sheetMonthStart && ds <= sheetMonthEnd) leaveDates.add(ds)
+                          }
+                        })
+                      }
+
+                      // Holiday dates for the holiday row
+                      const holidayDates = new Set<string>()
+                      if (t.key === 'holiday') {
+                        sheetHolidays.forEach((h: any) => {
+                          const ds = h.holiday_date as string
+                          if (ds >= sheetMonthStart && ds <= sheetMonthEnd) holidayDates.add(ds)
+                        })
+                      }
+
+                      const totalDays = matched.length + leaveDates.size + holidayDates.size
+
                       return (
                         <tr key={t.key} style={{ background: t.bg }}>
                           <td className="border border-gray-300 px-2 py-2">{t.label}</td>
-                          <td className="border border-gray-300 px-2 py-2 text-center font-semibold">{matched.length.toFixed(1)}</td>
+                          <td className="border border-gray-300 px-2 py-2 text-center font-semibold">{totalDays.toFixed(1)}</td>
                           {Array.from({ length: daysInMonth }, (_, i) => {
                             const ds = `${sheetYear}-${String(sheetMonth + 1).padStart(2, '0')}-${String(i + 1).padStart(2, '0')}`
+                            const hasAttendance = matched.some(r => r.date === ds)
+                            const hasLeave      = leaveDates.has(ds)
+                            const hasHoliday    = holidayDates.has(ds)
                             return (
                               <td key={i} className="border border-gray-300 text-center w-8 h-8">
-                                {matched.some(r => r.date === ds) && <span className="text-blue-600 font-bold">✓</span>}
+                                {hasAttendance && <span className="text-blue-600 font-bold">✓</span>}
+                                {!hasAttendance && hasLeave && <span className="text-amber-600 font-bold" title="On Leave">L</span>}
+                                {!hasAttendance && !hasLeave && hasHoliday && <span className="text-pink-600 font-bold" title="Holiday">H</span>}
                               </td>
                             )
                           })}
