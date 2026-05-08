@@ -51,6 +51,10 @@ export default function AddPublicationPage() {
     quantity_available: 0,
     total_printed: 0,
     price_per_copy: 0,
+    est_weight_kg: '',
+    dim_length: '',
+    dim_width: '',
+    dim_height: '',
     printing_press: '',
     additional_notes: '',
   })
@@ -65,10 +69,13 @@ export default function AddPublicationPage() {
     const yearMatch = notes.match(/^Year: (.+)$/m)
     const totalMatch = notes.match(/^Total Printed: (.+)$/m)
     const pressMatch = notes.match(/^Printing Press: (.+)$/m)
+    const weightMatch = notes.match(/^Est. Weight \(kg\): (.+)$/m)
+    const dimMatch = notes.match(/^Dimensions \(LxWxH\): (.+)$/m)
     const pressEntry = pressMatch ? (printingPresses.find(p => p.name === pressMatch[1])?.id ?? '') : ''
+    const [dimL = '', dimW = '', dimH = ''] = dimMatch ? dimMatch[1].split('x').map((s: string) => s.trim()) : []
     const additionalNotes = notes
       .split('\n')
-      .filter((l: string) => !l.startsWith('Author:') && !l.startsWith('Year:') && !l.startsWith('Total Printed:') && !l.startsWith('Printing Press:'))
+      .filter((l: string) => !l.startsWith('Author:') && !l.startsWith('Year:') && !l.startsWith('Total Printed:') && !l.startsWith('Printing Press:') && !l.startsWith('Est. Weight') && !l.startsWith('Dimensions'))
       .join('\n').trim()
 
     setForm({
@@ -82,6 +89,10 @@ export default function AddPublicationPage() {
       quantity_available: existing.quantity ?? 0,
       total_printed: totalMatch ? Number(totalMatch[1]) : 0,
       price_per_copy: existing.estimated_cost ?? 0,
+      est_weight_kg: weightMatch?.[1] ?? '',
+      dim_length: dimL,
+      dim_width: dimW,
+      dim_height: dimH,
       printing_press: pressEntry,
       additional_notes: additionalNotes,
     })
@@ -180,10 +191,14 @@ export default function AddPublicationPage() {
     if (!form.title.trim()) { toast.error('Title is required'); return }
 
     // Pack extra fields into notes since DB doesn't have dedicated columns
+    const dimParts = [form.dim_length, form.dim_width, form.dim_height].map(s => s.trim())
+    const dimStr = dimParts.some(Boolean) ? dimParts.join(' x ') : null
     const notesLines = [
       form.author ? `Author: ${form.author}` : null,
       form.publication_year ? `Year: ${form.publication_year}` : null,
       `Total Printed: ${form.total_printed}`,
+      form.est_weight_kg ? `Est. Weight (kg): ${form.est_weight_kg}` : null,
+      dimStr ? `Dimensions (LxWxH): ${dimStr}` : null,
       form.printing_press ? `Printing Press: ${printingPresses.find(p => p.id === form.printing_press)?.name ?? form.printing_press}` : null,
       form.additional_notes || null,
     ].filter(Boolean).join('\n')
@@ -432,6 +447,56 @@ export default function AddPublicationPage() {
                 value={form.price_per_copy}
                 onChange={e => set('price_per_copy', Number(e.target.value))}
               />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Est. Weight (kg)</label>
+              <Input
+                type="number"
+                min={0}
+                step="0.01"
+                placeholder="0.00"
+                value={form.est_weight_kg}
+                onChange={e => set('est_weight_kg', e.target.value)}
+              />
+            </div>
+            <div className="sm:col-span-2">
+              <label className="block text-sm font-medium text-gray-700 mb-1">Dimensions (L × W × H)</label>
+              <div className="grid grid-cols-3 gap-2">
+                <div className="relative">
+                  <Input
+                    type="number"
+                    min={0}
+                    step="0.1"
+                    placeholder="Length"
+                    value={form.dim_length}
+                    onChange={e => set('dim_length', e.target.value)}
+                  />
+                  <span className="absolute right-2.5 top-2.5 text-xs text-gray-400 pointer-events-none">L</span>
+                </div>
+                <div className="relative">
+                  <Input
+                    type="number"
+                    min={0}
+                    step="0.1"
+                    placeholder="Width"
+                    value={form.dim_width}
+                    onChange={e => set('dim_width', e.target.value)}
+                  />
+                  <span className="absolute right-2.5 top-2.5 text-xs text-gray-400 pointer-events-none">W</span>
+                </div>
+                <div className="relative">
+                  <Input
+                    type="number"
+                    min={0}
+                    step="0.1"
+                    placeholder="Height"
+                    value={form.dim_height}
+                    onChange={e => set('dim_height', e.target.value)}
+                  />
+                  <span className="absolute right-2.5 top-2.5 text-xs text-gray-400 pointer-events-none">H</span>
+                </div>
+              </div>
+              <p className="text-xs text-gray-400 mt-1">Values in centimeters (cm)</p>
             </div>
           </div>
         </Card>
