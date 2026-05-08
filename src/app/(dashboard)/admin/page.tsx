@@ -240,7 +240,7 @@ export default function AdminPage() {
       icon: FileText,
       color: 'bg-purple-600',
       href: '/admin/publications',
-      items: ['Publication Library', 'Publications Request', 'Add Publication', 'Print Job Requests', 'Reports', 'Setup'],
+      items: ['Publication Library', 'Publications Request', 'Add Publication', 'Print Job Requests', 'Publications Reports', 'Publications Setup'],
       requiresPermission: 'admin.publications',
     },
     {
@@ -519,8 +519,8 @@ export default function AdminPage() {
                           'Publications Request': '/admin/publications/publication-management',
                           'Add Publication': '/admin/publications/add-publication',
                           'Print Job Requests': '/admin/publications/print-jobs',
-                          'Reports': '/admin/publications/reports',
-                          'Setup': '/admin/publications/setup',
+                          'Publications Reports': '/admin/publications/reports',
+                          'Publications Setup': '/admin/publications/setup',
 
                           // Internship & Volunteer routes
                           'Partner Institutions': '/admin/internship-volunteer/partner-institutions',
