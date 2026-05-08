@@ -78,6 +78,14 @@ export default function AddPublicationPage() {
       .filter((l: string) => !l.startsWith('Author:') && !l.startsWith('Year:') && !l.startsWith('Total Printed:') && !l.startsWith('Printing Press:') && !l.startsWith('Est. Weight') && !l.startsWith('Dimensions'))
       .join('\n').trim()
 
+    // Weight and dimensions: prefer dedicated columns, fall back to notes
+    const weightKg = (existing as any).est_weight_kg != null
+      ? String((existing as any).est_weight_kg)
+      : (weightMatch?.[1] ?? '')
+    const lenCm  = (existing as any).dim_length_cm != null ? String((existing as any).dim_length_cm) : dimL
+    const widCm  = (existing as any).dim_width_cm  != null ? String((existing as any).dim_width_cm)  : dimW
+    const hiCm   = (existing as any).dim_height_cm != null ? String((existing as any).dim_height_cm) : dimH
+
     setForm({
       title: existing.publication_title ?? '',
       author: authorMatch?.[1] ?? '',
@@ -89,10 +97,10 @@ export default function AddPublicationPage() {
       quantity_available: existing.quantity ?? 0,
       total_printed: totalMatch ? Number(totalMatch[1]) : 0,
       price_per_copy: existing.estimated_cost ?? 0,
-      est_weight_kg: weightMatch?.[1] ?? '',
-      dim_length: dimL,
-      dim_width: dimW,
-      dim_height: dimH,
+      est_weight_kg: weightKg,
+      dim_length: lenCm,
+      dim_width: widCm,
+      dim_height: hiCm,
       printing_press: pressEntry,
       additional_notes: additionalNotes,
     })
@@ -190,15 +198,12 @@ export default function AddPublicationPage() {
     e.preventDefault()
     if (!form.title.trim()) { toast.error('Title is required'); return }
 
-    // Pack extra fields into notes since DB doesn't have dedicated columns
+    // Pack extra fields into notes since DB doesn't have dedicated columns for these
     const dimParts = [form.dim_length, form.dim_width, form.dim_height].map(s => s.trim())
-    const dimStr = dimParts.some(Boolean) ? dimParts.join(' x ') : null
     const notesLines = [
       form.author ? `Author: ${form.author}` : null,
       form.publication_year ? `Year: ${form.publication_year}` : null,
       `Total Printed: ${form.total_printed}`,
-      form.est_weight_kg ? `Est. Weight (kg): ${form.est_weight_kg}` : null,
-      dimStr ? `Dimensions (LxWxH): ${dimStr}` : null,
       form.printing_press ? `Printing Press: ${printingPresses.find(p => p.id === form.printing_press)?.name ?? form.printing_press}` : null,
       form.additional_notes || null,
     ].filter(Boolean).join('\n')
@@ -234,6 +239,10 @@ export default function AddPublicationPage() {
       purpose: form.description || '',
       quantity: form.quantity_available || undefined,
       estimated_cost: form.price_per_copy > 0 ? form.price_per_copy : undefined,
+      est_weight_kg: form.est_weight_kg ? parseFloat(form.est_weight_kg) : null,
+      dim_length_cm: form.dim_length ? parseFloat(form.dim_length) : null,
+      dim_width_cm: form.dim_width ? parseFloat(form.dim_width) : null,
+      dim_height_cm: form.dim_height ? parseFloat(form.dim_height) : null,
       notes: notesLines || undefined,
       status: 'approved',
       ...(pdf_url && { pdf_url }),
