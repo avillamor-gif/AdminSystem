@@ -786,6 +786,7 @@ export default function AssetsPage() {
                 <div className="grid grid-cols-3 gap-4">
                   <div className="col-span-2 space-y-4">
 
+                    {/* Asset ID + Serial Number */}
                     <div className="grid grid-cols-2 gap-4">
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">Asset ID</label>
@@ -806,6 +807,7 @@ export default function AssetsPage() {
                       />
                     </div>
 
+                    {/* Brand + Vendor */}
                     <div className="grid grid-cols-2 gap-4">
                       <Select
                         label="Brand"
@@ -829,15 +831,13 @@ export default function AssetsPage() {
                       </Select>
                     </div>
 
+                    {/* Model + Category */}
                     <div className="grid grid-cols-2 gap-4">
                       <Input
                         label="Model"
                         value={formData.model}
                         onChange={(e) => setFormData({ ...formData, model: e.target.value })}
                       />
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4">
                       <Select
                         label="Category *"
                         value={formData.category_id}
@@ -849,6 +849,10 @@ export default function AssetsPage() {
                           <option key={category.id} value={category.id}>{category.name}</option>
                         ))}
                       </Select>
+                    </div>
+
+                    {/* Location + Acquired */}
+                    <div className="grid grid-cols-2 gap-4">
                       <Select
                         label="Location"
                         value={formData.location_id}
@@ -861,30 +865,32 @@ export default function AssetsPage() {
                           ...assetLocations.filter(l => l.is_active).map(l => ({ value: l.id, label: l.name }))
                         ]}
                       />
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4">
                       <Input
                         label="Acquired"
                         type="date"
                         value={formData.purchase_date}
                         onChange={(e) => setFormData({ ...formData, purchase_date: e.target.value })}
                       />
+                    </div>
+
+                    {/* Warranty Starts + Warranty Ends */}
+                    <div className="grid grid-cols-2 gap-4">
                       <Input
                         label="Warranty Starts"
                         type="date"
                         value={formData.warranty_start_date}
                         onChange={(e) => setFormData({ ...formData, warranty_start_date: e.target.value })}
                       />
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4">
                       <Input
                         label="Warranty Ends"
                         type="date"
                         value={formData.warranty_end_date}
                         onChange={(e) => setFormData({ ...formData, warranty_end_date: e.target.value })}
                       />
+                    </div>
+
+                    {/* Purchase Price + Useful Life */}
+                    <div className="grid grid-cols-2 gap-4">
                       <Input
                         label="Purchase Price"
                         type="number"
@@ -892,9 +898,6 @@ export default function AssetsPage() {
                         value={formData.purchase_price}
                         onChange={(e) => setFormData({ ...formData, purchase_price: e.target.value })}
                       />
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4">
                       <Input
                         label="Useful Life (Years)"
                         type="number"
@@ -902,6 +905,10 @@ export default function AssetsPage() {
                         value={formData.useful_life_years}
                         onChange={(e) => setFormData({ ...formData, useful_life_years: e.target.value })}
                       />
+                    </div>
+
+                    {/* Salvage Value + Depreciation */}
+                    <div className="grid grid-cols-2 gap-4">
                       <Input
                         label="Salvage Value"
                         type="number"
@@ -909,19 +916,6 @@ export default function AssetsPage() {
                         value={formData.salvage_value}
                         onChange={(e) => setFormData({ ...formData, salvage_value: e.target.value })}
                       />
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4">
-                      <Select
-                        label="Condition"
-                        value={formData.condition || 'good'}
-                        onChange={(e) => setFormData({ ...formData, condition: e.target.value as Asset['condition'] })}
-                      >
-                        <option value="excellent">Excellent</option>
-                        <option value="good">Good</option>
-                        <option value="fair">Fair</option>
-                        <option value="poor">Poor</option>
-                      </Select>
                       <Select
                         label="Depreciation Method"
                         value={formData.depreciation_method || 'straight_line'}
@@ -933,6 +927,45 @@ export default function AssetsPage() {
                       </Select>
                     </div>
 
+                    {/* Condition */}
+                    <Select
+                      label="Condition"
+                      value={formData.condition || 'good'}
+                      onChange={(e) => setFormData({ ...formData, condition: e.target.value as Asset['condition'] })}
+                    >
+                      <option value="excellent">Excellent</option>
+                      <option value="good">Good</option>
+                      <option value="fair">Fair</option>
+                      <option value="poor">Poor</option>
+                    </Select>
+
+                    {/* Status */}
+                    <Select
+                      label="Status"
+                      value={formData.status ?? 'available'}
+                      onChange={(e) => setFormData({ ...formData, status: e.target.value as Asset['status'] })}
+                    >
+                      <option value="available">Available</option>
+                      <option value="assigned">In-use</option>
+                      <option value="maintenance">Under Maintenance</option>
+                      <option value="retired">Retired</option>
+                      <option value="lost">Lost</option>
+                      <option value="damaged">Damaged</option>
+                    </Select>
+
+                    {/* Borrowable By */}
+                    <Select
+                      label="Borrowable By"
+                      value={formData.borrowable_by || 'none'}
+                      onChange={(e) => setFormData({ ...formData, borrowable_by: e.target.value as 'employees' | 'external' | 'both' | 'none' })}
+                    >
+                      <option value="both">Employees &amp; Partners</option>
+                      <option value="employees">Employees Only</option>
+                      <option value="external">External Partners Only</option>
+                      <option value="none">Not Available for Borrowing</option>
+                    </Select>
+
+                    {/* Description */}
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
                       <textarea
