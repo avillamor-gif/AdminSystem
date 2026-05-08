@@ -1,6 +1,7 @@
 import SecondaryNav from '@/components/layout/SecondaryNav'
 
 const publicationNavItems = [
+  { label: 'Publication Library',    href: '/admin/publications/publication-library',    requiresPermission: 'admin.publications.publication_management' },
   { label: 'Publication Management', href: '/admin/publications/publication-management', requiresPermission: 'admin.publications.publication_management' },
   { label: 'Add Publication',        href: '/admin/publications/add-publication',        requiresPermission: 'admin.publications.add_publication' },
   { label: 'Print Job Requests',     href: '/admin/publications/print-jobs',             requiresPermission: 'admin.publications.print_jobs' },
