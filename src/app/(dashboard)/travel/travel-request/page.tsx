@@ -686,17 +686,17 @@ export default function NewTravelRequestPage() {
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-3 items-stretch">
                   <div className="flex flex-col">
                     <label className="block text-sm font-medium text-gray-700 mb-1">Date(s)</label>
-                    <div className="flex flex-col gap-2 flex-1">
+                    <div className="flex items-center gap-2 flex-1">
                       <input
                         type="date"
-                        className="w-full border border-gray-300 rounded-md px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
+                        className="flex-1 min-w-0 border border-gray-300 rounded-md px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
                         value={row.date_from}
                         onChange={e => setMeetingRows(rows => rows.map((r, idx) => idx === i ? { ...r, date_from: e.target.value } : r))}
                       />
-                      <span className="text-gray-400 text-center text-xs">–</span>
+                      <span className="text-gray-400 shrink-0 text-xs">–</span>
                       <input
                         type="date"
-                        className="w-full border border-gray-300 rounded-md px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
+                        className="flex-1 min-w-0 border border-gray-300 rounded-md px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
                         min={row.date_from || undefined}
                         value={row.date_to}
                         onChange={e => setMeetingRows(rows => rows.map((r, idx) => idx === i ? { ...r, date_to: e.target.value } : r))}
@@ -705,8 +705,9 @@ export default function NewTravelRequestPage() {
                   </div>
                   <div className="md:col-span-3 flex flex-col">
                     <label className="block text-sm font-medium text-gray-700 mb-1">Agenda</label>
-                    <textarea
-                      className="w-full flex-1 border border-gray-300 rounded-md px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 resize-none"
+                    <input
+                      type="text"
+                      className="w-full flex-1 border border-gray-300 rounded-md px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
                       placeholder="Describe the meeting, event, or how your time will be spent..."
                       value={row.agenda}
                       onChange={e => setMeetingRows(rows => rows.map((r, idx) => idx === i ? { ...r, agenda: e.target.value } : r))}
