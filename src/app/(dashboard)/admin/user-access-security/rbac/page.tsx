@@ -56,6 +56,7 @@ const ADMIN_CARD_PREFIXES: { code: string; label: string }[] = [
   { code: 'admin.equipment',       label: 'Office Equipment' },
   { code: 'admin.supplies',        label: 'Office Supplies' },
   { code: 'admin.publications',    label: 'Publications' },
+  { code: 'admin.publications.print_jobs', label: 'Print Job Requests' },
   { code: 'admin.internship',      label: 'Internship & Volunteer' },
 ]
 
