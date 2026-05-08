@@ -515,10 +515,12 @@ export default function AdminPage() {
                           'General Assemblies': '/admin/governance/general-assemblies',
 
                           // Publications routes
-                          'Publication Management': '/admin/publications/publication-management',
+                          'Publication Library': '/admin/publications/publication-library',
+                          'Publications Request': '/admin/publications/publication-management',
                           'Add Publication': '/admin/publications/add-publication',
-                          'Printing Presses': '/admin/publications/printing-presses',
-                          'Distribution Lists': '/admin/publications/distribution-lists',
+                          'Print Job Requests': '/admin/publications/print-jobs',
+                          'Reports': '/admin/publications/reports',
+                          'Setup': '/admin/publications/setup',
 
                           // Internship & Volunteer routes
                           'Partner Institutions': '/admin/internship-volunteer/partner-institutions',
