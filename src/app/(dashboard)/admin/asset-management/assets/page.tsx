@@ -69,6 +69,7 @@ export default function AssetsPage() {
   const [mobileQRMode, setMobileQRMode]         = useState<'photo' | 'barcode'>('photo')
   const [mobileConnected, setMobileConnected]   = useState(false)
   const [formData, setFormData] = useState({
+    asset_tag: '',
     name: '',
     serial_number: '',
     brand_id: '',
@@ -188,6 +189,7 @@ export default function AssetsPage() {
     if (asset) {
       setSelectedAsset(asset)
       setFormData({
+        asset_tag: asset.asset_tag || '',
         name: asset.name,
         serial_number: asset.serial_number || '',
         brand_id: asset.brand_id || '',
@@ -221,6 +223,7 @@ export default function AssetsPage() {
     } else {
       setSelectedAsset(null)
       setFormData({
+        asset_tag: '',
         name: '',
         serial_number: '',
         brand_id: '',
@@ -263,6 +266,7 @@ export default function AssetsPage() {
     setShowAddPanel(false)
     resetImageState()
     setFormData({
+      asset_tag: '',
       name: '',
       serial_number: '',
       brand_id: '',
@@ -415,6 +419,7 @@ export default function AssetsPage() {
     }
 
     const data: Partial<Asset> = {
+      asset_tag: formData.asset_tag || undefined,
       name: formData.name,
       serial_number: formData.serial_number || undefined,
       brand_id: formData.brand_id || undefined,
@@ -782,12 +787,26 @@ export default function AssetsPage() {
                   <div className="col-span-2 space-y-4">
 
                     <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Asset ID</label>
+                        <input
+                          type="text"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm font-mono focus:outline-none focus:ring-2 focus:ring-orange-500"
+                          value={formData.asset_tag}
+                          onChange={(e) => setFormData({ ...formData, asset_tag: e.target.value })}
+                          placeholder="Auto-generated (e.g. AST-00001)"
+                        />
+                        <p className="mt-1 text-xs text-gray-400">Leave blank to auto-generate</p>
+                      </div>
                       <Input
                         label="Serial Number *"
                         value={formData.serial_number}
                         onChange={(e) => setFormData({ ...formData, serial_number: e.target.value })}
                         required
                       />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
                       <Select
                         label="Brand"
                         value={formData.brand_id}
@@ -798,9 +817,6 @@ export default function AssetsPage() {
                           <option key={brand.id} value={brand.id}>{brand.name}</option>
                         ))}
                       </Select>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4">
                       <Select
                         label="Vendor"
                         value={formData.vendor_id}
@@ -811,6 +827,9 @@ export default function AssetsPage() {
                           <option key={vendor.id} value={vendor.id}>{vendor.name}</option>
                         ))}
                       </Select>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
                       <Input
                         label="Model"
                         value={formData.model}
