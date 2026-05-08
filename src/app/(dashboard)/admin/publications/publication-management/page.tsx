@@ -265,28 +265,28 @@ export default function PublicationManagementPage() {
             <table className="w-full">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Request #</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Publication Title</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Requested By</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Request Type</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Priority</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Qty</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date Submitted</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                  <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">Request #</th>
+                  <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[260px]">Publication Title</th>
+                  <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">Requested By</th>
+                  <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">Request Type</th>
+                  <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Priority</th>
+                  <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Qty</th>
+                  <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">Date Submitted</th>
+                  <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                  <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
                 {filtered.map((item: any) => (
                   <tr key={item.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 text-xs font-mono text-gray-500 whitespace-nowrap">
+                    <td className="px-4 py-3 text-xs font-mono text-gray-500 whitespace-nowrap">
                       {item.request_number ?? '—'}
                     </td>
-                    <td className="px-6 py-4">
+                    <td className="px-4 py-3 min-w-[260px]">
                       <div className="text-sm font-medium text-gray-900">{item.publication_title}</div>
                       {item.publisher && <div className="text-xs text-gray-400">{item.publisher}</div>}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-4 py-3 whitespace-nowrap">
                       {item.employee ? (
                         <div className="text-sm text-gray-900">
                           {item.employee.first_name} {item.employee.last_name}
@@ -295,24 +295,24 @@ export default function PublicationManagementPage() {
                         <span className="text-sm text-gray-400">—</span>
                       )}
                     </td>
-                    <td className="px-6 py-4 text-sm capitalize text-gray-600 whitespace-nowrap">
+                    <td className="px-4 py-3 text-sm capitalize text-gray-600 whitespace-nowrap">
                       {item.request_type ?? '—'}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-4 py-3 whitespace-nowrap">
                       <Badge className={priorityColor[item.priority ?? 'normal'] ?? 'bg-gray-100 text-gray-600'}>
                         {item.priority ?? 'normal'}
                       </Badge>
                     </td>
-                    <td className="px-6 py-4 text-sm text-gray-700 whitespace-nowrap">{item.quantity ?? '—'}</td>
-                    <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+                    <td className="px-4 py-3 text-sm text-gray-700 whitespace-nowrap">{item.quantity ?? '—'}</td>
+                    <td className="px-4 py-3 text-sm text-gray-500 whitespace-nowrap">
                       {item.created_at ? fmt(item.created_at) : '—'}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-4 py-3 whitespace-nowrap">
                       <Badge className={statusColor[item.status ?? 'draft'] ?? 'bg-gray-100 text-gray-700'}>
                         {item.status ?? 'draft'}
                       </Badge>
                     </td>
-                    <td className="px-6 py-4">
+                    <td className="px-4 py-3">
                       <div className="flex space-x-1">
                         {(item.status === 'submitted' || item.status === 'draft') && (
                           <Button variant="ghost" size="sm" title="Approve" onClick={() => handleApprove(item)}>
