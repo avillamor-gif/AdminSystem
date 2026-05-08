@@ -207,6 +207,7 @@ export default function NewTravelRequestPage() {
     async function loadCatalogue() {
       const supabase = createClient()
       const { data, error } = await supabase
+        .from('publication_requests')
         .select('id, publication_id, publication_title, publication_type, publisher, quantity')
         .eq('request_type', 'catalogue')
         .eq('status', 'approved')
