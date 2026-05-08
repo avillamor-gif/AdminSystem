@@ -189,7 +189,9 @@ export default function PublicationManagementPage() {
 
   const handleDelete = async (id: string) => {
     if (confirm('Delete this publication request?')) {
-      await deleteMutation.mutateAsync(id)
+      try {
+        await deleteMutation.mutateAsync(id)
+      } catch {}
     }
   }
 

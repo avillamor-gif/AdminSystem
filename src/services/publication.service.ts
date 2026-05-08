@@ -303,17 +303,12 @@ export const publicationService = {
     await workflowService.cancelWorkflow(id, 'publication')
   },
 
-  // Delete publication request
+  // Delete publication request (via API route to bypass RLS)
   async delete(id: string): Promise<void> {
-    const supabase = createClient()
-    const { error } = await supabase
-      .from('publication_requests')
-      .delete()
-      .eq('id', id)
-
-    if (error) {
-      console.error('Error deleting publication request:', error)
-      throw new Error('Failed to delete publication request')
+    const res = await fetch(`/api/admin/publication-requests/${id}`, { method: 'DELETE' })
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}))
+      throw new Error(body.error ?? 'Failed to delete publication request')
     }
   },
 
