@@ -210,8 +210,8 @@ export default function PublicationManagementPage() {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Publication Management</h1>
-          <p className="text-gray-600 mt-1">Create and manage publication requests</p>
+          <h1 className="text-2xl font-bold text-gray-900">Publications Request</h1>
+          <p className="text-gray-600 mt-1">View and manage publication requests</p>
         </div>
         <div className="flex items-center gap-3">
           {publicationIdParam && (
@@ -219,9 +219,6 @@ export default function PublicationManagementPage() {
               Clear Filter
             </Button>
           )}
-          <Button onClick={openCreate}>
-            <Plus className="w-4 h-4 mr-2" />New Request
-          </Button>
         </div>
       </div>
 
