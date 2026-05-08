@@ -108,41 +108,28 @@ export const rbacService = {
   },
 
   async createRole(data: RoleInsert): Promise<Role> {
-    const supabase = createClient()
-    
-    const { data: role, error } = await supabase
-      .from('roles')
-      .insert(data as any)
-      .select()
-      .single()
-
-    if (error) throw error
-    return role as unknown as Role
+    const res = await fetch('/api/admin/roles', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    })
+    if (!res.ok) throw new Error(await res.text())
+    return res.json()
   },
 
   async updateRole(id: string, data: RoleUpdate): Promise<Role> {
-    const supabase = createClient()
-    
-    const { data: role, error } = await supabase
-      .from('roles')
-      .update({ ...data, updated_at: new Date().toISOString() })
-      .eq('id', id)
-      .select()
-      .single()
-
-    if (error) throw error
-    return role as unknown as Role
+    const res = await fetch('/api/admin/roles', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id, ...data }),
+    })
+    if (!res.ok) throw new Error(await res.text())
+    return res.json()
   },
 
   async deleteRole(id: string): Promise<void> {
-    const supabase = createClient()
-    
-    const { error } = await supabase
-      .from('roles')
-      .delete()
-      .eq('id', id)
-
-    if (error) throw error
+    const res = await fetch(`/api/admin/roles?id=${id}`, { method: 'DELETE' })
+    if (!res.ok) throw new Error(await res.text())
   },
 
   // Permissions
@@ -175,27 +162,12 @@ export const rbacService = {
 
   // Role Permissions
   async assignPermissionsToRole(roleId: string, permissionIds: string[]): Promise<void> {
-    const supabase = createClient()
-    
-    // First, remove all existing permissions for this role
-    await supabase
-      .from('role_permissions')
-      .delete()
-      .eq('role_id', roleId)
-
-    // Then, add new permissions
-    if (permissionIds.length > 0) {
-      const rolePermissions = permissionIds.map(permissionId => ({
-        role_id: roleId,
-        permission_id: permissionId
-      }))
-
-      const { error } = await supabase
-        .from('role_permissions')
-        .insert(rolePermissions as any)
-
-      if (error) throw error
-    }
+    const res = await fetch('/api/admin/roles/permissions', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ roleId, permissionIds }),
+    })
+    if (!res.ok) throw new Error(await res.text())
   },
 
   async getRolePermissions(roleId: string): Promise<Permission[]> {
