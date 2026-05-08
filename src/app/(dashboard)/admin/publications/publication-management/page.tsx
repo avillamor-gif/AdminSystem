@@ -350,7 +350,6 @@ export default function PublicationManagementPage() {
                             <Send className="w-4 h-4 text-blue-500" />
                           </Button>
                         )}
-                        <Button variant="ghost" size="sm" onClick={() => openEdit(item)}><Edit className="w-4 h-4" /></Button>
                         <Button variant="ghost" size="sm" onClick={() => handleDelete(item.id)}><Trash2 className="w-4 h-4 text-red-500" /></Button>
                       </div>
                     </td>
