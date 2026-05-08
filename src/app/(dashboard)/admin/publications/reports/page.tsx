@@ -5,12 +5,16 @@ import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Modal, ModalHeader, ModalBody, ModalFooter } from '@/components/ui/Modal'
 import { usePublicationRequests } from '@/hooks/usePublications'
+import { usePrintJobs } from '@/hooks/usePrintJobs'
 import toast from 'react-hot-toast'
 import * as XLSX from 'xlsx'
 import {
   BookOpen, DollarSign, Clock, CheckCircle, XCircle, BarChart3,
   PieChart, Download, Printer, CheckSquare, Square, TrendingUp,
+  Truck, Package, Users, AlertCircle,
 } from 'lucide-react'
+
+type ReportTab = 'requests' | 'distribution'
 
 // ── Field definitions ──────────────────────────────────────────────────────────
 const ALL_FIELDS = [
@@ -88,6 +92,384 @@ function getFieldValue(row: Row, key: string): string {
 
 // ── Page ───────────────────────────────────────────────────────────────────────
 export default function PublicationReportsPage() {
+  const [activeTab, setActiveTab] = useState<ReportTab>('requests')
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div>
+        <h1 className="text-2xl font-bold text-gray-900">Publication Reports</h1>
+        <p className="text-gray-600">Analytics and exports for publications and distribution</p>
+      </div>
+
+      {/* Tabs */}
+      <div className="border-b border-gray-200">
+        <nav className="-mb-px flex space-x-8">
+          {([
+            { id: 'requests',     label: 'Publication Requests', icon: BookOpen },
+            { id: 'distribution', label: 'Distribution Report',  icon: Truck },
+          ] as { id: ReportTab; label: string; icon: React.ElementType }[]).map(({ id, label, icon: Icon }) => (
+            <button
+              key={id}
+              onClick={() => setActiveTab(id)}
+              className={`py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2 ${
+                activeTab === id
+                  ? 'border-orange-500 text-orange-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              <Icon className="h-4 w-4" />
+              {label}
+            </button>
+          ))}
+        </nav>
+      </div>
+
+      {activeTab === 'requests'     && <PublicationRequestsReport />}
+      {activeTab === 'distribution' && <DistributionReport />}
+    </div>
+  )
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Tab 2: Distribution Report
+// ─────────────────────────────────────────────────────────────────────────────
+function DistributionReport() {
+  const { data: jobs = [], isLoading } = usePrintJobs({})
+  const [search, setSearch] = useState('')
+  const [statusFilter, setStatusFilter] = useState('')
+
+  // Flatten all distribution plan rows across all jobs
+  const allDistRows = useMemo(() =>
+    jobs.flatMap(j =>
+      (j.distribution_plan ?? []).map(r => ({ ...r, job: j }))
+    ), [jobs])
+
+  // ── Stats ──────────────────────────────────────────────────────────────────
+  const stats = useMemo(() => {
+    const totalCopies    = jobs.reduce((s, j) => s + j.quantity, 0)
+    const plannedCopies  = allDistRows.reduce((s, r) => s + (r.quantity ?? 0), 0)
+    const deliveredCopies = allDistRows.filter(r => r.status === 'delivered').reduce((s, r) => s + (r.quantity ?? 0), 0)
+    const inTransit      = allDistRows.filter(r => r.status === 'in_transit').reduce((s, r) => s + (r.quantity ?? 0), 0)
+    const pending        = allDistRows.filter(r => r.status === 'pending').reduce((s, r) => s + (r.quantity ?? 0), 0)
+    const onTimeRows     = allDistRows.filter(r => r.status === 'delivered' && r.target_date && r.actual_delivered_date && r.actual_delivered_date <= r.target_date).length
+    const deliveredRows  = allDistRows.filter(r => r.status === 'delivered').length
+    const onTimePct      = deliveredRows > 0 ? Math.round((onTimeRows / deliveredRows) * 100) : null
+    return { totalCopies, plannedCopies, deliveredCopies, inTransit, pending, onTimePct, totalJobs: jobs.length }
+  }, [jobs, allDistRows])
+
+  // ── By delivery method ─────────────────────────────────────────────────────
+  const byMethod = useMemo(() => {
+    const map = new Map<string, number>()
+    allDistRows.forEach(r => {
+      const m = r.delivery_method ?? 'unknown'
+      map.set(m, (map.get(m) ?? 0) + (r.quantity ?? 0))
+    })
+    return Array.from(map.entries()).map(([method, qty]) => ({ method, qty })).sort((a, b) => b.qty - a.qty)
+  }, [allDistRows])
+
+  // ── By recipient type ──────────────────────────────────────────────────────
+  const byRecipientType = useMemo(() => {
+    const map = new Map<string, number>()
+    allDistRows.forEach(r => {
+      const t = r.recipient_type ?? 'unknown'
+      map.set(t, (map.get(t) ?? 0) + (r.quantity ?? 0))
+    })
+    return Array.from(map.entries()).map(([type, qty]) => ({ type, qty })).sort((a, b) => b.qty - a.qty)
+  }, [allDistRows])
+
+  // ── Per-job table ──────────────────────────────────────────────────────────
+  const filteredJobs = useMemo(() =>
+    jobs.filter(j => {
+      const matchSearch = !search || j.title.toLowerCase().includes(search.toLowerCase()) || (j.request_number ?? '').toLowerCase().includes(search.toLowerCase())
+      const matchStatus = !statusFilter || j.status === statusFilter
+      return matchSearch && matchStatus
+    }), [jobs, search, statusFilter])
+
+  // ── Export ─────────────────────────────────────────────────────────────────
+  const handleExport = () => {
+    const rows = allDistRows.map(r => ({
+      'Job #':           r.job.request_number ?? '',
+      'Job Title':       r.job.title,
+      'Job Status':      r.job.status,
+      'Recipient Group': r.recipient_group,
+      'Recipient Type':  r.recipient_type ?? '',
+      'Qty Planned':     r.quantity,
+      'Delivery Method': r.delivery_method ?? '',
+      'Person in Charge': r.pic_name ?? '',
+      'Target Date':     r.target_date ?? '',
+      'Delivered Date':  r.actual_delivered_date ?? '',
+      'Status':          r.status ?? '',
+      'Notes':           r.notes ?? '',
+    }))
+    const ws = XLSX.utils.json_to_sheet(rows)
+    const wb = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(wb, ws, 'Distribution Report')
+    XLSX.writeFile(wb, `distribution-report-${new Date().toISOString().split('T')[0]}.xlsx`)
+  }
+
+  const fmt = (n: number) => n.toLocaleString()
+  const cap = (s: string) => s.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
+
+  const DIST_STATUS_CLS: Record<string, string> = {
+    pending:    'bg-gray-100 text-gray-600',
+    in_transit: 'bg-sky-100 text-sky-700',
+    delivered:  'bg-green-100 text-green-700',
+    partial:    'bg-amber-100 text-amber-700',
+    returned:   'bg-red-100 text-red-700',
+  }
+
+  if (isLoading) return (
+    <div className="flex justify-center py-16">
+      <div className="h-8 w-8 animate-spin rounded-full border-4 border-orange-500 border-t-transparent" />
+    </div>
+  )
+
+  return (
+    <div className="space-y-6">
+      {/* Export */}
+      <div className="flex justify-end">
+        <Button onClick={handleExport} disabled={allDistRows.length === 0}>
+          <Download className="h-4 w-4 mr-2" />Export Excel
+        </Button>
+      </div>
+
+      {/* Stats */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <Card className="p-5 flex flex-col items-center text-center">
+          <div className="p-2 bg-orange-100 rounded-lg mb-2"><Package className="w-5 h-5 text-orange-600" /></div>
+          <p className="text-2xl font-bold text-gray-900">{fmt(stats.totalCopies)}</p>
+          <p className="text-xs text-gray-500 mt-0.5">Total Copies Printed</p>
+        </Card>
+        <Card className="p-5 flex flex-col items-center text-center">
+          <div className="p-2 bg-green-100 rounded-lg mb-2"><CheckCircle className="w-5 h-5 text-green-600" /></div>
+          <p className="text-2xl font-bold text-green-700">{fmt(stats.deliveredCopies)}</p>
+          <p className="text-xs text-gray-500 mt-0.5">Copies Delivered</p>
+          {stats.plannedCopies > 0 && (
+            <p className="text-xs text-green-600 font-medium mt-1">{Math.round((stats.deliveredCopies / stats.plannedCopies) * 100)}% of planned</p>
+          )}
+        </Card>
+        <Card className="p-5 flex flex-col items-center text-center">
+          <div className="p-2 bg-sky-100 rounded-lg mb-2"><Truck className="w-5 h-5 text-sky-600" /></div>
+          <p className="text-2xl font-bold text-sky-700">{fmt(stats.inTransit)}</p>
+          <p className="text-xs text-gray-500 mt-0.5">In Transit</p>
+          <p className="text-xs text-amber-600 font-medium mt-1">{fmt(stats.pending)} pending</p>
+        </Card>
+        <Card className="p-5 flex flex-col items-center text-center">
+          <div className="p-2 bg-purple-100 rounded-lg mb-2"><AlertCircle className="w-5 h-5 text-purple-600" /></div>
+          {stats.onTimePct !== null ? (
+            <>
+              <p className={`text-2xl font-bold ${stats.onTimePct >= 80 ? 'text-green-700' : stats.onTimePct >= 50 ? 'text-amber-600' : 'text-red-600'}`}>
+                {stats.onTimePct}%
+              </p>
+              <p className="text-xs text-gray-500 mt-0.5">On-Time Delivery</p>
+            </>
+          ) : (
+            <>
+              <p className="text-2xl font-bold text-gray-400">—</p>
+              <p className="text-xs text-gray-500 mt-0.5">On-Time Delivery</p>
+              <p className="text-xs text-gray-400 mt-1">No deliveries yet</p>
+            </>
+          )}
+        </Card>
+      </div>
+
+      {/* Charts row */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* By delivery method */}
+        <Card className="p-0 overflow-hidden">
+          <div className="px-6 py-4 border-b border-gray-200">
+            <h3 className="font-semibold text-gray-900 flex items-center gap-2">
+              <Truck className="h-4 w-4" /> Copies by Delivery Method
+            </h3>
+          </div>
+          <div className="p-6 space-y-3">
+            {byMethod.length === 0 ? (
+              <p className="text-sm text-gray-400 text-center py-4">No distribution data yet</p>
+            ) : byMethod.map(({ method, qty }) => {
+              const pct = stats.plannedCopies > 0 ? (qty / stats.plannedCopies * 100).toFixed(1) : 0
+              return (
+                <div key={method}>
+                  <div className="flex justify-between text-xs mb-1">
+                    <span className="font-medium text-gray-700">{cap(method)}</span>
+                    <span className="text-gray-500">{fmt(qty)} copies ({pct}%)</span>
+                  </div>
+                  <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                    <div className="h-full bg-orange-400 rounded-full" style={{ width: `${pct}%` }} />
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </Card>
+
+        {/* By recipient type */}
+        <Card className="p-0 overflow-hidden">
+          <div className="px-6 py-4 border-b border-gray-200">
+            <h3 className="font-semibold text-gray-900 flex items-center gap-2">
+              <Users className="h-4 w-4" /> Copies by Recipient Type
+            </h3>
+          </div>
+          <div className="p-6 space-y-3">
+            {byRecipientType.length === 0 ? (
+              <p className="text-sm text-gray-400 text-center py-4">No distribution data yet</p>
+            ) : byRecipientType.map(({ type, qty }) => {
+              const pct = stats.plannedCopies > 0 ? (qty / stats.plannedCopies * 100).toFixed(1) : 0
+              return (
+                <div key={type}>
+                  <div className="flex justify-between text-xs mb-1">
+                    <span className="font-medium text-gray-700">{cap(type)}</span>
+                    <span className="text-gray-500">{fmt(qty)} copies ({pct}%)</span>
+                  </div>
+                  <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                    <div className="h-full bg-indigo-400 rounded-full" style={{ width: `${pct}%` }} />
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </Card>
+      </div>
+
+      {/* Per-job delivery progress table */}
+      <Card className="p-0 overflow-hidden">
+        <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between gap-4 flex-wrap">
+          <h3 className="font-semibold text-gray-900 flex items-center gap-2">
+            <BarChart3 className="h-4 w-4" /> Delivery Progress by Print Job
+          </h3>
+          <div className="flex items-center gap-3">
+            <input
+              className="border border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400"
+              placeholder="Search jobs…"
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+            />
+            <select
+              className="border border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400"
+              value={statusFilter}
+              onChange={e => setStatusFilter(e.target.value)}
+            >
+              <option value="">All Statuses</option>
+              {['draft','submitted','approved','press_assigned','in_production','quality_check','ready','distributing','completed','rejected','cancelled'].map(s => (
+                <option key={s} value={s}>{cap(s)}</option>
+              ))}
+            </select>
+          </div>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead className="bg-gray-50 border-b border-gray-200">
+              <tr>
+                {['Request #', 'Title', 'Type', 'Printed', 'Planned', 'Delivered', 'Progress', 'Status'].map(h => (
+                  <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase whitespace-nowrap">{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100">
+              {filteredJobs.length === 0 ? (
+                <tr><td colSpan={8} className="px-4 py-10 text-center text-gray-400">No print jobs found</td></tr>
+              ) : filteredJobs.map(job => {
+                const distRows    = job.distribution_plan ?? []
+                const planned     = distRows.reduce((s, r) => s + (r.quantity ?? 0), 0)
+                const delivered   = distRows.filter(r => r.status === 'delivered').reduce((s, r) => s + r.quantity, 0)
+                const pct         = job.quantity > 0 ? Math.round((delivered / job.quantity) * 100) : 0
+                return (
+                  <tr key={job.id} className="hover:bg-gray-50">
+                    <td className="px-4 py-3 font-mono text-xs text-gray-500 whitespace-nowrap">{job.request_number ?? '—'}</td>
+                    <td className="px-4 py-3">
+                      <div className="font-medium text-gray-900 max-w-[200px] truncate">{job.title}</div>
+                      <div className="text-xs text-gray-400">{distRows.length} recipient group{distRows.length !== 1 ? 's' : ''}</div>
+                    </td>
+                    <td className="px-4 py-3 text-xs capitalize text-gray-600 whitespace-nowrap">{job.publication_type}</td>
+                    <td className="px-4 py-3 font-medium whitespace-nowrap">{fmt(job.quantity)}</td>
+                    <td className="px-4 py-3 whitespace-nowrap">{fmt(planned)}</td>
+                    <td className="px-4 py-3 font-medium text-green-700 whitespace-nowrap">{fmt(delivered)}</td>
+                    <td className="px-4 py-3 min-w-[140px]">
+                      {distRows.length === 0 ? (
+                        <span className="text-xs text-gray-300">No plan</span>
+                      ) : (
+                        <div>
+                          <div className="flex justify-between text-xs text-gray-500 mb-1">
+                            <span>{pct}%</span>
+                          </div>
+                          <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                            <div
+                              className={`h-full rounded-full ${pct === 100 ? 'bg-green-500' : pct > 50 ? 'bg-orange-400' : 'bg-sky-400'}`}
+                              style={{ width: `${pct}%` }}
+                            />
+                          </div>
+                        </div>
+                      )}
+                    </td>
+                    <td className="px-4 py-3 whitespace-nowrap">
+                      <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${
+                        job.status === 'completed'   ? 'bg-green-100 text-green-700' :
+                        job.status === 'distributing'? 'bg-sky-100 text-sky-700' :
+                        job.status === 'ready'       ? 'bg-teal-100 text-teal-700' :
+                        job.status === 'in_production'?'bg-amber-100 text-amber-700' :
+                        job.status === 'rejected'    ? 'bg-red-100 text-red-700' :
+                        'bg-gray-100 text-gray-600'
+                      }`}>{cap(job.status)}</span>
+                    </td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
+        </div>
+      </Card>
+
+      {/* Detail: all distribution rows */}
+      {allDistRows.length > 0 && (
+        <Card className="p-0 overflow-hidden">
+          <div className="px-6 py-4 border-b border-gray-200">
+            <h3 className="font-semibold text-gray-900 flex items-center gap-2">
+              <Truck className="h-4 w-4" /> All Distribution Rows
+              <span className="text-xs font-normal text-gray-400">({allDistRows.length} rows across {stats.totalJobs} jobs)</span>
+            </h3>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="bg-gray-50 border-b border-gray-200">
+                <tr>
+                  {['Job', 'Recipient Group', 'Type', 'Qty', 'Method', 'PIC', 'Target', 'Delivered', 'Status'].map(h => (
+                    <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase whitespace-nowrap">{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {allDistRows.map((r, i) => (
+                  <tr key={i} className="hover:bg-gray-50">
+                    <td className="px-4 py-2">
+                      <div className="font-mono text-xs text-gray-500">{r.job.request_number ?? '—'}</div>
+                      <div className="text-xs text-gray-700 max-w-[160px] truncate">{r.job.title}</div>
+                    </td>
+                    <td className="px-4 py-2 font-medium text-gray-900 whitespace-nowrap">{r.recipient_group}</td>
+                    <td className="px-4 py-2 text-xs capitalize text-gray-600 whitespace-nowrap">{r.recipient_type ?? '—'}</td>
+                    <td className="px-4 py-2 font-medium whitespace-nowrap">{fmt(r.quantity)}</td>
+                    <td className="px-4 py-2 text-xs capitalize text-gray-600 whitespace-nowrap">{r.delivery_method ? cap(r.delivery_method) : '—'}</td>
+                    <td className="px-4 py-2 text-xs text-gray-600 whitespace-nowrap">{r.pic_name ?? '—'}</td>
+                    <td className="px-4 py-2 text-xs text-gray-600 whitespace-nowrap">{r.target_date ? new Date(r.target_date + 'T00:00:00').toLocaleDateString('en-PH', { month: 'short', day: 'numeric', year: 'numeric' }) : '—'}</td>
+                    <td className="px-4 py-2 text-xs text-gray-600 whitespace-nowrap">{r.actual_delivered_date ? new Date(r.actual_delivered_date + 'T00:00:00').toLocaleDateString('en-PH', { month: 'short', day: 'numeric', year: 'numeric' }) : '—'}</td>
+                    <td className="px-4 py-2 whitespace-nowrap">
+                      <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${DIST_STATUS_CLS[r.status ?? 'pending'] ?? 'bg-gray-100 text-gray-600'}`}>
+                        {cap(r.status ?? 'pending')}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </Card>
+      )}
+    </div>
+  )
+}
+// ─────────────────────────────────────────────────────────────────────────────
+// Tab 1: Publication Requests (existing logic extracted into sub-component)
+// ─────────────────────────────────────────────────────────────────────────────
+function PublicationRequestsReport() {
   const { data: rawRequests = [], isLoading } = usePublicationRequests({})
   const requests = rawRequests as Row[]
   // Print modal state
@@ -346,22 +728,16 @@ export default function PublicationReportsPage() {
   // ── Render ─────────────────────────────────────────────────────────────────
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Publication Reports</h1>
-          <p className="text-gray-600">Analytics and export for publication requests</p>
-        </div>
-        <div className="flex gap-2">
-          <Button type="button" variant="secondary" onClick={openPrintModal} disabled={isLoading}>
-            <Printer className="h-4 w-4 mr-2" />
-            Print
-          </Button>
-          <Button type="button" onClick={openExportModal} disabled={isLoading}>
-            <Download className="h-4 w-4 mr-2" />
-            Export CSV
-          </Button>
-        </div>
+      {/* Actions */}
+      <div className="flex justify-end gap-2">
+        <Button type="button" variant="secondary" onClick={openPrintModal} disabled={isLoading}>
+          <Printer className="h-4 w-4 mr-2" />
+          Print
+        </Button>
+        <Button type="button" onClick={openExportModal} disabled={isLoading}>
+          <Download className="h-4 w-4 mr-2" />
+          Export CSV
+        </Button>
       </div>
 
       {isLoading ? (
