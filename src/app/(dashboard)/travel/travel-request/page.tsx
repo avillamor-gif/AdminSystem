@@ -56,7 +56,8 @@ interface PublicationRow {
   publisher: string
   available_copies: number
   // user input
-  est_weight_kg: string
+  unit_weight_kg: string   // weight per single copy (from catalogue)
+  est_weight_kg: string    // total weight = unit_weight_kg × request_copies
   request_copies: string
 }
 
@@ -107,7 +108,7 @@ const emptyLeg = (): ItineraryLeg => ({
 })
 const emptyPublication = (): PublicationRow => ({
   search: '', dropdownOpen: false,
-  publication_id: '', title: '', publisher: '', available_copies: 0, est_weight_kg: '', request_copies: '1',
+  publication_id: '', title: '', publisher: '', available_copies: 0, unit_weight_kg: '', est_weight_kg: '', request_copies: '1',
 })
 const emptyEquipment = (): EquipmentRow => ({
   search: '', dropdownOpen: false,
@@ -180,6 +181,7 @@ export default function NewTravelRequestPage() {
           title: p.title ?? '',
           publisher: p.publisher ?? '',
           available_copies: p.available_copies ?? 0,
+          unit_weight_kg: p.unit_weight_kg != null ? String(p.unit_weight_kg) : '',
           est_weight_kg: String(p.est_weight_kg ?? ''),
           request_copies: String(p.request_copies ?? 1),
           search: p.title ?? '',
@@ -325,6 +327,7 @@ export default function NewTravelRequestPage() {
       title: pub.publication_title,
       publisher: pub.publisher ?? '',
       available_copies: pub.available_copies,
+      unit_weight_kg: pub.est_weight_kg != null ? String(pub.est_weight_kg) : '',
       est_weight_kg: pub.est_weight_kg != null ? String(pub.est_weight_kg) : '',
       search: pub.publication_title,
       dropdownOpen: false,
@@ -382,7 +385,8 @@ export default function NewTravelRequestPage() {
         title: p.title,
         publisher: p.publisher,
         available_copies: p.available_copies,
-        est_weight_kg: parseFloat(p.est_weight_kg) || null,
+        unit_weight_kg: parseFloat(p.unit_weight_kg) || null,
+        est_weight_kg: (() => { const u = parseFloat(p.unit_weight_kg); const c = Number(p.request_copies) || 1; return !isNaN(u) && u > 0 ? u * c : (parseFloat(p.est_weight_kg) || null) })(),
         request_copies: Number(p.request_copies) || 1,
       })),
     equipment_requested: equipmentRows
@@ -878,16 +882,16 @@ export default function NewTravelRequestPage() {
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Est. Weight (kg)</label>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Est. Total Weight (kg)</label>
                       <input
-                        type="number"
-                        min={0}
-                        step="0.1"
-                        placeholder="0.5"
-                        value={pub.est_weight_kg}
-                        onChange={e => updatePub(i, 'est_weight_kg', e.target.value)}
-                        className="w-full border border-gray-300 rounded-md px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 bg-white"
+                        readOnly
+                        value={(() => { const u = parseFloat(pub.unit_weight_kg); const c = Number(pub.request_copies) || 1; return !isNaN(u) && u > 0 ? (u * c).toFixed(3) : (pub.est_weight_kg || '') })()}
+                        placeholder="—"
+                        className="w-full border border-gray-200 rounded-md px-3 py-2.5 text-sm bg-gray-50 text-gray-700 font-medium cursor-not-allowed"
                       />
+                      {pub.unit_weight_kg && (
+                        <p className="text-xs text-gray-400 mt-1">{pub.unit_weight_kg} kg/pc × {pub.request_copies || 1} {Number(pub.request_copies) === 1 ? 'copy' : 'copies'}</p>
+                      )}
                     </div>
                   </div>
                 </div>
