@@ -360,8 +360,8 @@ export default function AttendanceReportsPage() {
         const hasHoliday    = holidayDates.has(ds)
         let mark = ''
         if (hasAttendance) mark = '<span style="color:#2563eb;font-weight:700;">✓</span>'
-        else if (hasLeave) mark = '<span style="color:#d97706;font-weight:700;">L</span>'
-        else if (hasHoliday) mark = '<span style="color:#db2777;font-weight:700;">H</span>'
+        else if (hasLeave) mark = '<span style="color:#d97706;font-weight:700;">✓</span>'
+        else if (hasHoliday) mark = '<span style="color:#db2777;font-weight:700;">✓</span>'
         return `<td style="border:1px solid #d1d5db;text-align:center;min-width:22px;height:24px;">${mark}</td>`
       }).join('')
       return `<tr style="background:${t.bg};"><td style="border:1px solid #d1d5db;padding:4px 8px;white-space:nowrap;font-size:11px;">${t.label}</td><td style="border:1px solid #d1d5db;padding:4px 8px;text-align:center;font-weight:600;font-size:11px;">${totalDays.toFixed(1)}</td>${cells}</tr>`
@@ -791,8 +791,8 @@ body{font-family:Arial,sans-serif;font-size:11px;padding:12px;}
                             return (
                               <td key={i} className="border border-gray-300 text-center w-8 h-8">
                                 {hasAttendance && <span className="text-blue-600 font-bold">✓</span>}
-                                {!hasAttendance && hasLeave && <span className="text-amber-600 font-bold" title="On Leave">L</span>}
-                                {!hasAttendance && !hasLeave && hasHoliday && <span className="text-pink-600 font-bold" title="Holiday">H</span>}
+                                {!hasAttendance && hasLeave && <span className="text-amber-600 font-bold" title="On Leave">✓</span>}
+                                {!hasAttendance && !hasLeave && hasHoliday && <span className="text-pink-600 font-bold" title="Holiday">✓</span>}
                               </td>
                             )
                           })}
