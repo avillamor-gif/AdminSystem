@@ -1,13 +1,12 @@
 'use client'
 
 import React, { useState } from 'react'
-import { Plus, Search, Edit, Trash2, Send, BookOpen, CheckCircle, Clock, XCircle, Inbox, Undo2 } from 'lucide-react'
+import { Search, Send, BookOpen, CheckCircle, Clock, XCircle, Inbox, Undo2, Trash2 } from 'lucide-react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Card, Button, Badge, Input, Modal, ModalHeader, ModalBody, ModalFooter } from '@/components/ui'
 import {
   usePublicationRequests,
   usePublicationStats,
-  useCreatePublicationRequest,
   useUpdatePublicationRequest,
   useDeletePublicationRequest,
   useSubmitPublicationRequest,
@@ -16,8 +15,6 @@ import { notifyRequesterOfDecision } from '@/services/requestNotification.helper
 import { createClient } from '@/lib/supabase/client'
 import toast from 'react-hot-toast'
 
-const PUBLICATION_TYPES = ['book', 'journal', 'magazine', 'newsletter', 'report', 'manual', 'brochure', 'other']
-
 export default function PublicationManagementPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -25,31 +22,30 @@ export default function PublicationManagementPage() {
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState('')
   const [priorityFilter, setPriorityFilter] = useState('')
-  const [isModalOpen, setIsModalOpen] = useState(false)
-  const [selectedItem, setSelectedItem] = useState<any>(null)
   const [returnModal, setReturnModal] = useState<{ open: boolean; req: any | null }>({ open: false, req: null })
   const [returnQty, setReturnQty] = useState(1)
   const [isReturning, setIsReturning] = useState(false)
-  const [formData, setFormData] = useState({
-    publication_title: '', publication_type: 'book', request_type: 'new',
-    publisher: '', isbn: '', purpose: '', notes: '',
-    quantity: 1, priority: 'normal', delivery_method: 'pickup',
-    estimated_cost: '', deadline: '',
-  })
 
-  const { data: requests = [], isLoading } = usePublicationRequests({
+  // Fetch only actual requests — exclude catalogue entries
+  const { data: allRequests = [], isLoading } = usePublicationRequests({
     status: statusFilter || undefined,
     priority: priorityFilter || undefined,
     publication_id: publicationIdParam,
   })
   const { data: stats } = usePublicationStats()
-  const createMutation = useCreatePublicationRequest()
   const updateMutation = useUpdatePublicationRequest()
   const deleteMutation = useDeletePublicationRequest()
   const submitMutation = useSubmitPublicationRequest()
 
-  const filtered = requests.filter(r =>
-    !search || r.publication_title?.toLowerCase().includes(search.toLowerCase())
+  // Exclude catalogue entries — those belong to the Publication Library
+  const requests = allRequests.filter((r: any) => r.request_type !== 'catalogue')
+
+  const filtered = requests.filter((r: any) =>
+    !search ||
+    r.publication_title?.toLowerCase().includes(search.toLowerCase()) ||
+    r.request_number?.toLowerCase().includes(search.toLowerCase()) ||
+    r.employee?.first_name?.toLowerCase().includes(search.toLowerCase()) ||
+    r.employee?.last_name?.toLowerCase().includes(search.toLowerCase())
   )
 
   const openReturn = (req: any) => {
@@ -94,41 +90,6 @@ export default function PublicationManagementPage() {
     }
   }
 
-  const openCreate = () => {
-    setSelectedItem(null)
-    setFormData({ publication_title: '', publication_type: 'book', request_type: 'new', publisher: '', isbn: '', purpose: '', notes: '', quantity: 1, priority: 'normal', delivery_method: 'pickup', estimated_cost: '', deadline: '' })
-    setIsModalOpen(true)
-  }
-
-  const openEdit = (item: any) => {
-    setSelectedItem(item)
-    setFormData({
-      publication_title: item.publication_title || '', publication_type: item.publication_type || 'book',
-      request_type: item.request_type || 'new', publisher: item.publisher || '',
-      isbn: item.isbn || '', purpose: item.purpose || '', notes: item.notes || '',
-      quantity: item.quantity || 1, priority: item.priority || 'normal',
-      delivery_method: item.delivery_method || 'pickup',
-      estimated_cost: item.estimated_cost?.toString() || '', deadline: item.deadline || '',
-    })
-    setIsModalOpen(true)
-  }
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    const payload: any = { ...formData }
-    if (payload.estimated_cost) payload.estimated_cost = parseFloat(payload.estimated_cost)
-    else delete payload.estimated_cost
-    if (!payload.deadline) delete payload.deadline
-    try {
-      if (selectedItem) {
-        await updateMutation.mutateAsync({ id: selectedItem.id, updates: payload })
-      } else {
-        await createMutation.mutateAsync(payload)
-      }
-      setIsModalOpen(false)
-    } catch {}
-  }
-
   const handleSendForApproval = async (item: any) => {
     try {
       await submitMutation.mutateAsync({ id: item.id, employeeId: 'admin', employeeName: 'Admin' })
@@ -154,7 +115,7 @@ export default function PublicationManagementPage() {
 
   const handleReject = async (item: any) => {
     const reason = prompt(`Reason for rejecting "${item.publication_title}":`)
-    if (reason === null) return // cancelled
+    if (reason === null) return
     try {
       await updateMutation.mutateAsync({ id: item.id, updates: { status: 'rejected', notes: reason ? `Rejected: ${reason}` : 'Rejected by admin' } })
       notifyRequesterOfDecision(
@@ -202,9 +163,17 @@ export default function PublicationManagementPage() {
     rejected: 'bg-red-100 text-red-700',
     fulfilled: 'bg-purple-100 text-purple-700',
     cancelled: 'bg-yellow-100 text-yellow-700',
+    returned: 'bg-teal-100 text-teal-700',
   }
 
-  const isSaving = createMutation.isPending || updateMutation.isPending
+  const priorityColor: Record<string, string> = {
+    urgent: 'bg-red-100 text-red-700',
+    high: 'bg-orange-100 text-orange-700',
+    normal: 'bg-gray-100 text-gray-600',
+    low: 'bg-gray-100 text-gray-400',
+  }
+
+  const fmt = (d: string) => new Date(d).toLocaleDateString('en-PH', { month: 'short', day: 'numeric', year: 'numeric' })
 
   return (
     <div className="space-y-6">
@@ -213,19 +182,17 @@ export default function PublicationManagementPage() {
           <h1 className="text-2xl font-bold text-gray-900">Publications Request</h1>
           <p className="text-gray-600 mt-1">View and manage publication requests</p>
         </div>
-        <div className="flex items-center gap-3">
-          {publicationIdParam && (
-            <Button variant="secondary" onClick={() => router.push('/admin/publications/publication-management')}>
-              Clear Filter
-            </Button>
-          )}
-        </div>
+        {publicationIdParam && (
+          <Button variant="secondary" onClick={() => router.push('/admin/publications/publication-management')}>
+            Clear Filter
+          </Button>
+        )}
       </div>
 
       {publicationIdParam && (
         <div className="flex items-center gap-2 px-4 py-3 bg-orange-50 border border-orange-200 rounded-lg text-sm text-orange-800">
           <Inbox className="w-4 h-4 shrink-0" />
-          Showing copy requests for publication <span className="font-semibold">{publicationIdParam}</span>
+          Showing requests for publication <span className="font-semibold">{publicationIdParam}</span>
         </div>
       )}
 
@@ -258,7 +225,7 @@ export default function PublicationManagementPage() {
         <div className="flex flex-col sm:flex-row gap-3">
           <div className="relative flex-1">
             <Search className="w-4 h-4 absolute left-3 top-3 text-gray-400" />
-            <Input placeholder="Search requests..." className="pl-10" value={search} onChange={e => setSearch(e.target.value)} />
+            <Input placeholder="Search by title, request # or requester..." className="pl-10" value={search} onChange={e => setSearch(e.target.value)} />
           </div>
           <select className="border border-gray-300 rounded-md px-3 py-2 text-sm" value={statusFilter} onChange={e => setStatusFilter(e.target.value)}>
             <option value="">All Statuses</option>
@@ -267,6 +234,8 @@ export default function PublicationManagementPage() {
             <option value="approved">Approved</option>
             <option value="rejected">Rejected</option>
             <option value="fulfilled">Fulfilled</option>
+            <option value="returned">Returned</option>
+            <option value="cancelled">Cancelled</option>
           </select>
           <select className="border border-gray-300 rounded-md px-3 py-2 text-sm" value={priorityFilter} onChange={e => setPriorityFilter(e.target.value)}>
             <option value="">All Priorities</option>
@@ -280,8 +249,9 @@ export default function PublicationManagementPage() {
 
       {/* Table */}
       <Card className="overflow-hidden p-0">
-        <div className="px-6 py-4 border-b border-gray-200">
-          <h3 className="font-semibold text-gray-900">Publications Request</h3>
+        <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+          <h3 className="font-semibold text-gray-900">All Requests</h3>
+          <span className="text-sm text-gray-400">{filtered.length} request{filtered.length !== 1 ? 's' : ''}</span>
         </div>
         {isLoading ? (
           <div className="p-12 text-center text-gray-500">Loading...</div>
@@ -289,36 +259,55 @@ export default function PublicationManagementPage() {
           <div className="p-12 text-center">
             <BookOpen className="w-12 h-12 text-gray-300 mx-auto mb-3" />
             <p className="text-gray-500">No publication requests found</p>
-            <Button className="mt-4" onClick={openCreate}><Plus className="w-4 h-4 mr-2" />Create First Request</Button>
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Title</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Priority</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Qty</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Request #</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Publication Title</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Requested By</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Request Type</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Priority</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Qty</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date Submitted</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {filtered.map(item => (
+                {filtered.map((item: any) => (
                   <tr key={item.id} className="hover:bg-gray-50">
+                    <td className="px-6 py-4 text-xs font-mono text-gray-500 whitespace-nowrap">
+                      {item.request_number ?? '—'}
+                    </td>
                     <td className="px-6 py-4">
                       <div className="text-sm font-medium text-gray-900">{item.publication_title}</div>
-                      {item.request_number && <div className="text-xs text-gray-500">{item.request_number}</div>}
+                      {item.publisher && <div className="text-xs text-gray-400">{item.publisher}</div>}
                     </td>
-                    <td className="px-6 py-4 text-sm text-gray-700 capitalize">{item.publication_type}</td>
-                    <td className="px-6 py-4">
-                      <Badge className={item.priority === 'urgent' ? 'bg-red-100 text-red-700' : item.priority === 'high' ? 'bg-orange-100 text-orange-700' : 'bg-gray-100 text-gray-600'}>
-                        {item.priority || 'normal'}
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      {item.employee ? (
+                        <div className="text-sm text-gray-900">
+                          {item.employee.first_name} {item.employee.last_name}
+                        </div>
+                      ) : (
+                        <span className="text-sm text-gray-400">—</span>
+                      )}
+                    </td>
+                    <td className="px-6 py-4 text-sm capitalize text-gray-600 whitespace-nowrap">
+                      {item.request_type ?? '—'}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <Badge className={priorityColor[item.priority ?? 'normal'] ?? 'bg-gray-100 text-gray-600'}>
+                        {item.priority ?? 'normal'}
                       </Badge>
                     </td>
-                    <td className="px-6 py-4 text-sm text-gray-700">{item.quantity ?? '—'}</td>
-                    <td className="px-6 py-4">
+                    <td className="px-6 py-4 text-sm text-gray-700 whitespace-nowrap">{item.quantity ?? '—'}</td>
+                    <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+                      {item.created_at ? fmt(item.created_at) : '—'}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
                       <Badge className={statusColor[item.status ?? 'draft'] ?? 'bg-gray-100 text-gray-700'}>
                         {item.status ?? 'draft'}
                       </Badge>
@@ -350,7 +339,9 @@ export default function PublicationManagementPage() {
                             <Send className="w-4 h-4 text-blue-500" />
                           </Button>
                         )}
-                        <Button variant="ghost" size="sm" onClick={() => handleDelete(item.id)}><Trash2 className="w-4 h-4 text-red-500" /></Button>
+                        <Button variant="ghost" size="sm" onClick={() => handleDelete(item.id)}>
+                          <Trash2 className="w-4 h-4 text-red-500" />
+                        </Button>
                       </div>
                     </td>
                   </tr>
@@ -360,96 +351,6 @@ export default function PublicationManagementPage() {
           </div>
         )}
       </Card>
-
-      {/* Modal */}
-      <Modal open={isModalOpen} onClose={() => setIsModalOpen(false)} size="lg">
-        <form onSubmit={handleSubmit}>
-          <ModalHeader><h2 className="text-lg font-semibold">{selectedItem ? 'Edit Request' : 'New Publication Request'}</h2></ModalHeader>
-          <ModalBody>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Title *</label>
-                <Input required value={formData.publication_title} onChange={e => setFormData(p => ({ ...p, publication_title: e.target.value }))} placeholder="Publication title" />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Publication Type</label>
-                  <select className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm" value={formData.publication_type} onChange={e => setFormData(p => ({ ...p, publication_type: e.target.value }))}>
-                    {PUBLICATION_TYPES.map(t => <option key={t} value={t}>{t.charAt(0).toUpperCase() + t.slice(1)}</option>)}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Request Type</label>
-                  <select className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm" value={formData.request_type} onChange={e => setFormData(p => ({ ...p, request_type: e.target.value }))}>
-                    <option value="new">New</option>
-                    <option value="reprint">Reprint</option>
-                    <option value="revision">Revision</option>
-                    <option value="translation">Translation</option>
-                  </select>
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Publisher</label>
-                  <Input value={formData.publisher} onChange={e => setFormData(p => ({ ...p, publisher: e.target.value }))} placeholder="Publisher name" />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">ISBN</label>
-                  <Input value={formData.isbn} onChange={e => setFormData(p => ({ ...p, isbn: e.target.value }))} placeholder="ISBN (optional)" />
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Quantity</label>
-                  <Input type="number" min={1} value={formData.quantity} onChange={e => setFormData(p => ({ ...p, quantity: Number(e.target.value) }))} />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Priority</label>
-                  <select className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm" value={formData.priority} onChange={e => setFormData(p => ({ ...p, priority: e.target.value }))}>
-                    <option value="low">Low</option>
-                    <option value="normal">Normal</option>
-                    <option value="high">High</option>
-                    <option value="urgent">Urgent</option>
-                  </select>
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Delivery Method</label>
-                  <select className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm" value={formData.delivery_method} onChange={e => setFormData(p => ({ ...p, delivery_method: e.target.value }))}>
-                    <option value="pickup">Pickup</option>
-                    <option value="delivery">Delivery</option>
-                    <option value="courier">Courier</option>
-                    <option value="digital">Digital</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Estimated Cost</label>
-                  <Input type="number" min={0} step="0.01" value={formData.estimated_cost} onChange={e => setFormData(p => ({ ...p, estimated_cost: e.target.value }))} placeholder="0.00" />
-                </div>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Deadline</label>
-                <Input type="date" value={formData.deadline} onChange={e => setFormData(p => ({ ...p, deadline: e.target.value }))} />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Purpose</label>
-                <Input value={formData.purpose} onChange={e => setFormData(p => ({ ...p, purpose: e.target.value }))} placeholder="Purpose of this publication request" />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Notes</label>
-                <textarea className="w-full p-2 border border-gray-300 rounded-md text-sm resize-none" rows={2} value={formData.notes} onChange={e => setFormData(p => ({ ...p, notes: e.target.value }))} placeholder="Additional notes..." />
-              </div>
-            </div>
-          </ModalBody>
-          <ModalFooter>
-            <Button type="button" variant="secondary" onClick={() => setIsModalOpen(false)}>Cancel</Button>
-            <Button type="submit" disabled={isSaving}>
-              {isSaving ? 'Saving...' : selectedItem ? 'Save Changes' : 'Create Request'}
-            </Button>
-          </ModalFooter>
-        </form>
-      </Modal>
 
       {/* Return Modal */}
       <Modal open={returnModal.open} onClose={() => setReturnModal({ open: false, req: null })} size="lg">
