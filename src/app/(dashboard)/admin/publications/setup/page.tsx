@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react'
 import {
   Plus, Edit, Trash2, Search, Printer, MapPin, Phone, Mail, Globe,
-  CheckCircle, XCircle, Users, Tag, BookOpen,
+  CheckCircle, XCircle, Users, Tag, BookOpen, X,
 } from 'lucide-react'
 import { Card, Button, Badge, Input, Modal, ModalHeader, ModalBody, ModalFooter } from '@/components/ui'
 import {
@@ -11,7 +11,12 @@ import {
   useCreatePublicationCategory,
   useUpdatePublicationCategory,
   useDeletePublicationCategory,
+  useDistributionLists,
+  useCreateDistributionList,
+  useUpdateDistributionList,
+  useDeleteDistributionList,
   type PublicationCategory,
+  type DistributionList,
 } from '@/hooks/usePublications'
 import { createClient } from '@/lib/supabase/client'
 import toast from 'react-hot-toast'
@@ -35,16 +40,6 @@ interface PrintingPress {
   notes: string | null
 }
 
-interface DistributionList {
-  id: string
-  name: string
-  description: string
-  recipients: string[]
-  publicationType: string
-  isActive: boolean
-  frequency: string
-}
-
 // ─── Constants ───────────────────────────────────────────────────────────────
 
 const SPECIALTY_OPTIONS = ['Books', 'Journals', 'Magazines', 'Newspapers', 'Newsletters', 'Reports', 'Manuals', 'Brochures', 'Posters', 'Large Format']
@@ -57,16 +52,13 @@ const emptyPressForm = {
   is_active: true, min_order_qty: 1, turnaround_days: 5, notes: '',
 }
 
-const emptyListForm: Omit<DistributionList, 'id'> = {
-  name: '', description: '', recipients: [], publicationType: 'All', isActive: true, frequency: 'monthly',
-}
-
 type TabType = 'printing-presses' | 'categories' | 'distribution-lists'
 
 // ─── Main Page ───────────────────────────────────────────────────────────────
 
-export default function PublicationsSetupPage() {
-  const [activeTab, setActiveTab] = useState<TabType>('printing-presses')
+export default function PublicationsSetupPage({ searchParams }: { searchParams?: { tab?: string } }) {
+  const initialTab = (searchParams?.tab as TabType) ?? 'printing-presses'
+  const [activeTab, setActiveTab] = useState<TabType>(initialTab)
 
   return (
     <div className="space-y-6">
@@ -539,40 +531,39 @@ function CategoriesTab() {
 // ─── Distribution Lists Tab ───────────────────────────────────────────────────
 
 function DistributionListsTab() {
-  const [lists, setLists] = useState<DistributionList[]>([
-    { id: '1', name: 'HR Department', description: 'All HR staff members', recipients: ['hr@company.com', 'hrmanager@company.com'], publicationType: 'All', isActive: true, frequency: 'monthly' },
-    { id: '2', name: 'Finance Team', description: 'Finance and accounting team', recipients: ['finance@company.com'], publicationType: 'Reports', isActive: true, frequency: 'quarterly' },
-  ])
+  const { data: lists = [], isLoading } = useDistributionLists()
+  const createMutation = useCreateDistributionList()
+  const updateMutation = useUpdateDistributionList()
+  const deleteMutation = useDeleteDistributionList()
+
   const [search, setSearch] = useState('')
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [selectedItem, setSelectedItem] = useState<DistributionList | null>(null)
-  const [formData, setFormData] = useState<Omit<DistributionList, 'id'>>(emptyListForm)
+  const [formData, setFormData] = useState({ name: '', description: '', publication_type: 'All', recipients: [] as string[], frequency: 'monthly', is_active: true })
   const [recipientInput, setRecipientInput] = useState('')
 
   const filtered = lists.filter(l =>
-    !search || l.name.toLowerCase().includes(search.toLowerCase()) || l.description.toLowerCase().includes(search.toLowerCase())
+    !search || l.name.toLowerCase().includes(search.toLowerCase()) || (l.description ?? '').toLowerCase().includes(search.toLowerCase())
   )
 
-  const openCreate = () => { setSelectedItem(null); setFormData(emptyListForm); setRecipientInput(''); setIsModalOpen(true) }
-  const openEdit = (item: DistributionList) => { setSelectedItem(item); setFormData({ ...item }); setRecipientInput(''); setIsModalOpen(true) }
+  const openCreate = () => { setSelectedItem(null); setFormData({ name: '', description: '', publication_type: 'All', recipients: [], frequency: 'monthly', is_active: true }); setRecipientInput(''); setIsModalOpen(true) }
+  const openEdit = (item: DistributionList) => { setSelectedItem(item); setFormData({ name: item.name, description: item.description ?? '', publication_type: item.publication_type ?? 'All', recipients: item.recipients ?? [], frequency: item.frequency ?? 'monthly', is_active: item.is_active }); setRecipientInput(''); setIsModalOpen(true) }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (selectedItem) {
-      setLists(prev => prev.map(l => l.id === selectedItem.id ? { ...formData, id: selectedItem.id } : l))
-      toast.success('Distribution list updated')
-    } else {
-      setLists(prev => [...prev, { ...formData, id: String(Date.now()) }])
-      toast.success('Distribution list created')
-    }
-    setIsModalOpen(false)
+    try {
+      if (selectedItem) {
+        await updateMutation.mutateAsync({ id: selectedItem.id, data: formData })
+      } else {
+        await createMutation.mutateAsync(formData)
+      }
+      setIsModalOpen(false)
+    } catch {}
   }
 
-  const handleDelete = (id: string) => {
-    if (confirm('Delete this distribution list?')) {
-      setLists(prev => prev.filter(l => l.id !== id))
-      toast.success('Distribution list deleted')
-    }
+  const handleDelete = async (id: string) => {
+    if (!confirm('Delete this distribution list?')) return
+    try { await deleteMutation.mutateAsync(id) } catch {}
   }
 
   const addRecipient = () => {
@@ -585,8 +576,8 @@ function DistributionListsTab() {
 
   const removeRecipient = (email: string) => setFormData(p => ({ ...p, recipients: p.recipients.filter(r => r !== email) }))
 
-  const activeCount = lists.filter(l => l.isActive).length
-  const totalRecipients = lists.reduce((acc, l) => acc + l.recipients.length, 0)
+  const activeCount = lists.filter(l => l.is_active).length
+  const totalRecipients = lists.reduce((acc, l) => acc + (l.recipients?.length ?? 0), 0)
 
   return (
     <div className="space-y-4">
@@ -627,7 +618,9 @@ function DistributionListsTab() {
 
       {/* Table */}
       <Card className="overflow-hidden p-0">
-        {filtered.length === 0 ? (
+        {isLoading ? (
+          <div className="p-12 text-center text-sm text-gray-400">Loading...</div>
+        ) : filtered.length === 0 ? (
           <div className="p-12 text-center">
             <Users className="w-12 h-12 text-gray-300 mx-auto mb-3" />
             <p className="text-gray-500">No distribution lists found</p>
@@ -653,12 +646,12 @@ function DistributionListsTab() {
                       <div className="text-sm font-medium text-gray-900">{list.name}</div>
                       {list.description && <div className="text-xs text-gray-500">{list.description}</div>}
                     </td>
-                    <td className="px-6 py-4 text-sm text-gray-700">{list.publicationType}</td>
-                    <td className="px-6 py-4 text-sm text-gray-700">{list.recipients.length} recipient{list.recipients.length !== 1 ? 's' : ''}</td>
-                    <td className="px-6 py-4 text-sm text-gray-700 capitalize">{list.frequency}</td>
+                    <td className="px-6 py-4 text-sm text-gray-700">{list.publication_type ?? 'All'}</td>
+                    <td className="px-6 py-4 text-sm text-gray-700">{(list.recipients?.length ?? 0)} recipient{(list.recipients?.length ?? 0) !== 1 ? 's' : ''}</td>
+                    <td className="px-6 py-4 text-sm text-gray-700 capitalize">{list.frequency ?? '—'}</td>
                     <td className="px-6 py-4">
-                      <Badge className={list.isActive ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'}>
-                        {list.isActive ? 'Active' : 'Inactive'}
+                      <Badge className={list.is_active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'}>
+                        {list.is_active ? 'Active' : 'Inactive'}
                       </Badge>
                     </td>
                     <td className="px-6 py-4">
@@ -692,7 +685,7 @@ function DistributionListsTab() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Publication Type</label>
-                  <select className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm" value={formData.publicationType} onChange={e => setFormData(p => ({ ...p, publicationType: e.target.value }))}>
+                  <select className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm" value={formData.publication_type} onChange={e => setFormData(p => ({ ...p, publication_type: e.target.value }))}>
                     {PUBLICATION_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
                   </select>
                 </div>
@@ -726,14 +719,16 @@ function DistributionListsTab() {
                 )}
               </div>
               <div className="flex items-center gap-3">
-                <input type="checkbox" id="listActive" checked={formData.isActive} onChange={e => setFormData(p => ({ ...p, isActive: e.target.checked }))} className="w-4 h-4 text-orange-600 rounded" />
+                <input type="checkbox" id="listActive" checked={formData.is_active} onChange={e => setFormData(p => ({ ...p, is_active: e.target.checked }))} className="w-4 h-4 text-orange-600 rounded" />
                 <label htmlFor="listActive" className="text-sm font-medium text-gray-700">Active list</label>
               </div>
             </div>
           </ModalBody>
           <ModalFooter>
             <Button type="button" variant="secondary" onClick={() => setIsModalOpen(false)}>Cancel</Button>
-            <Button type="submit">{selectedItem ? 'Save Changes' : 'Create List'}</Button>
+            <Button type="submit" disabled={createMutation.isPending || updateMutation.isPending}>
+              {selectedItem ? 'Save Changes' : 'Create List'}
+            </Button>
           </ModalFooter>
         </form>
       </Modal>

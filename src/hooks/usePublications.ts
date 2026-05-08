@@ -328,3 +328,93 @@ export function useDeletePublicationRequest() {
     },
   })
 }
+
+// ── Distribution Lists ──────────────────────────────────────────────────────
+
+export interface DistributionList {
+  id: string
+  name: string
+  description: string | null
+  publication_type: string | null
+  recipients: string[]
+  frequency: string | null
+  is_active: boolean
+  created_at: string
+  updated_at: string
+}
+
+const distListKeys = {
+  all:  ['distribution_lists'] as const,
+  list: () => [...distListKeys.all, 'list'] as const,
+}
+
+export function useDistributionLists() {
+  return useQuery({
+    queryKey: distListKeys.list(),
+    queryFn: async () => {
+      const supabase = createClient()
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data, error } = await (supabase as any).from('distribution_lists').select('*').order('name', { ascending: true })
+      if (error) throw error
+      return (data ?? []) as DistributionList[]
+    },
+  })
+}
+
+export function useCreateDistributionList() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async (data: Omit<DistributionList, 'id' | 'created_at' | 'updated_at'>) => {
+      const supabase = createClient()
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: result, error } = await (supabase as any).from('distribution_lists').insert(data).select('*').single()
+      if (error) throw error
+      return result as DistributionList
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: distListKeys.all })
+      toast.success('Distribution list created')
+    },
+    onError: () => toast.error('Failed to create distribution list'),
+  })
+}
+
+export function useUpdateDistributionList() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: Partial<Omit<DistributionList, 'id' | 'created_at' | 'updated_at'>> }) => {
+      const supabase = createClient()
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: result, error } = await (supabase as any)
+        .from('distribution_lists')
+        .update({ ...data, updated_at: new Date().toISOString() })
+        .eq('id', id)
+        .select('*')
+        .single()
+      if (error) throw error
+      return result as DistributionList
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: distListKeys.all })
+      toast.success('Distribution list updated')
+    },
+    onError: () => toast.error('Failed to update distribution list'),
+  })
+}
+
+export function useDeleteDistributionList() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const supabase = createClient()
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { error } = await (supabase as any).from('distribution_lists').delete().eq('id', id)
+      if (error) throw error
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: distListKeys.all })
+      toast.success('Distribution list deleted')
+    },
+    onError: () => toast.error('Failed to delete distribution list'),
+  })
+}
