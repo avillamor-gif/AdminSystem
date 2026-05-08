@@ -806,6 +806,26 @@ export default function TimePage() {
       {/* Timesheet Tab */}
       {activeTab === 'attendance' && (
         <Card className="overflow-hidden p-0">
+          {/* Month navigator */}
+          <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-gray-50">
+            <button
+              onClick={handlePrevMonth}
+              className="p-2 hover:bg-gray-200 rounded-lg transition-colors"
+            >
+              <ChevronRight className="w-5 h-5 rotate-180 text-gray-600" />
+            </button>
+            <h2 className="text-base font-semibold text-gray-900">{formatMonthYear(currentMonth)}</h2>
+            <button
+              onClick={handleNextMonth}
+              disabled={
+                currentMonth.getFullYear() === new Date().getFullYear() &&
+                currentMonth.getMonth() === new Date().getMonth()
+              }
+              className="p-2 hover:bg-gray-200 rounded-lg transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+            >
+              <ChevronRight className="w-5 h-5 text-gray-600" />
+            </button>
+          </div>
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead className="bg-gray-50 border-b border-gray-200">
