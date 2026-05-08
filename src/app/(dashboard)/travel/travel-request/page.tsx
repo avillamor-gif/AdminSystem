@@ -20,6 +20,7 @@ interface DestinationRow {
   date_to: string
   destination: string
   purpose: string
+  importance_of_participation: string
   hotel_provided: boolean
   activity_funded: boolean
   activity_funded_by: string
@@ -97,7 +98,7 @@ type FormData = z.infer<typeof schema>
 const CURRENCIES = ['PHP', 'USD', 'EUR', 'SGD', 'JPY']
 
 const emptyDestination = (): DestinationRow => ({
-  date_from: '', date_to: '', destination: '', purpose: '', hotel_provided: false, activity_funded: false, activity_funded_by: ''
+  date_from: '', date_to: '', destination: '', purpose: '', importance_of_participation: '', hotel_provided: false, activity_funded: false, activity_funded_by: ''
 })
 const emptyLeg = (): ItineraryLeg => ({
   date: '', from_location: '', to_location: '', departure_time: '', arrival_time: '',
@@ -572,6 +573,18 @@ export default function NewTravelRequestPage() {
                       onChange={e => updateDestRow(i, 'purpose', e.target.value)}
                     />
                   </div>
+                </div>
+
+                {/* Importance of Participation */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Importance of Participation</label>
+                  <textarea
+                    rows={3}
+                    className="w-full border border-gray-300 rounded-md px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 resize-none"
+                    placeholder="Describe the importance of this participation..."
+                    value={row.importance_of_participation ?? ''}
+                    onChange={e => updateDestRow(i, 'importance_of_participation', e.target.value)}
+                  />
                 </div>
 
                 {/* Row 2 — Hotel Provided, Activity Funded, Who Funds */}

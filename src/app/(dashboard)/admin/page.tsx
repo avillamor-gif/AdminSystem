@@ -240,7 +240,7 @@ export default function AdminPage() {
       icon: FileText,
       color: 'bg-purple-600',
       href: '/admin/publications',
-      items: ['Publication Management', 'Add Publication', 'Printing Presses', 'Distribution Lists'],
+      items: ['Publication Library', 'Publications Request', 'Add Publication', 'Print Job Requests', 'Reports', 'Setup'],
       requiresPermission: 'admin.publications',
     },
     {
