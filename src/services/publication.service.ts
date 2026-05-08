@@ -370,6 +370,9 @@ export const publicationService = {
     }
 
     const stats = (data as any[]).reduce((acc: any, request: any) => {
+      // Exclude catalogue entries — those are library inventory, not user requests
+      if (request.request_type === 'catalogue') return acc
+
       acc.total++
       if (request.status === 'submitted' || request.status === 'draft') acc.pending++
       if (request.status === 'approved') acc.approved++
