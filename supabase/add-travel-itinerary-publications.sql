@@ -69,3 +69,12 @@ COMMENT ON COLUMN travel_requests.publications_requested IS
 
 COMMENT ON COLUMN travel_requests.equipment_requested IS
   'Equipment/assets requested for the trip. Each row: {asset_id, asset_name, asset_tag, category, model, expected_return_date, purpose}. On approval, asset_assignments records are created and assets.status set to assigned. On rejection/cancellation they are released back to available.';
+
+-- ── meetings_schedule ────────────────────────────────────────────────────────
+-- Added: meetings / time allocation section
+-- Each row: { "date": "2026-05-15", "agenda": "Meeting with partner org" }
+ALTER TABLE travel_requests
+  ADD COLUMN IF NOT EXISTS meetings_schedule JSONB DEFAULT '[]'::JSONB;
+
+COMMENT ON COLUMN travel_requests.meetings_schedule IS
+  'Whom to meet and time allocation entries. Each row: {date, agenda}';

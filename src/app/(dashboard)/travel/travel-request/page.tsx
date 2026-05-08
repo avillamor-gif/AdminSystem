@@ -85,6 +85,11 @@ interface EquipmentRow {
   purpose: string
 }
 
+interface MeetingRow {
+  date: string
+  agenda: string
+}
+
 // ── Schema ───────────────────────────────────────────────────────────────────
 
 const schema = z.object({
@@ -115,6 +120,7 @@ const emptyEquipment = (): EquipmentRow => ({
   asset_id: '', asset_name: '', asset_tag: '', category: '', model: '',
   expected_return_date: '', purpose: '',
 })
+const emptyMeeting = (): MeetingRow => ({ date: '', agenda: '' })
 
 // ── Component ────────────────────────────────────────────────────────────────
 
@@ -139,6 +145,8 @@ export default function NewTravelRequestPage() {
   const [publications, setPublications] = useState<PublicationRow[]>([emptyPublication()])
   const [catalogue, setCatalogue] = useState<CataloguePub[]>([])
   const pubDropdownRefs = useRef<(HTMLDivElement | null)[]>([])
+  // Meetings / time allocation
+  const [meetingRows, setMeetingRows] = useState<MeetingRow[]>([emptyMeeting()])
 
   // Load existing draft if ?id= is provided
   useEffect(() => {
@@ -185,6 +193,12 @@ export default function NewTravelRequestPage() {
           est_weight_kg: String(p.est_weight_kg ?? ''),
           request_copies: String(p.request_copies ?? 1),
           search: p.title ?? '',
+        })))
+      }
+      if (Array.isArray(data.meetings_schedule) && data.meetings_schedule.length > 0) {
+        setMeetingRows(data.meetings_schedule.map((m: any) => ({
+          date: m.date ?? '',
+          agenda: m.agenda ?? '',
         })))
       }
       if (Array.isArray(data.equipment_requested) && data.equipment_requested.length > 0) {
@@ -389,6 +403,9 @@ export default function NewTravelRequestPage() {
         est_weight_kg: (() => { const u = parseFloat(p.unit_weight_kg); const c = Number(p.request_copies) || 1; return !isNaN(u) && u > 0 ? u * c : (parseFloat(p.est_weight_kg) || null) })(),
         request_copies: Number(p.request_copies) || 1,
       })),
+    meetings_schedule: meetingRows
+      .filter(m => m.date.trim() || m.agenda.trim())
+      .map(m => ({ date: m.date, agenda: m.agenda })),
     equipment_requested: equipmentRows
       .filter(r => r.asset_id || r.search.trim())
       .map(r => ({
@@ -742,7 +759,63 @@ export default function NewTravelRequestPage() {
           </CardContent>
         </Card>
 
-        {/* ── Section 4: Books / Publications ──────────────────────────────── */}
+        {/* ── Section 4: Meetings / Time Allocation ───────────────────────── */}
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-base flex items-center gap-2">
+                <MapPin className="w-4 h-4 text-orange-500" />
+                Whom do you expect to meet and how your time will be allocated?
+              </CardTitle>
+              <button
+                type="button"
+                onClick={() => setMeetingRows(r => [...r, emptyMeeting()])}
+                className="flex items-center gap-1 text-xs text-orange-600 hover:text-orange-700 font-medium"
+              >
+                <Plus className="w-3.5 h-3.5" /> Add Row
+              </button>
+            </div>
+            <p className="text-xs text-gray-500 mt-0.5">List each meeting, event, or activity with the date and a brief agenda or description of how your time will be spent.</p>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {meetingRows.map((row, i) => (
+              <div key={i} className="border border-gray-200 rounded-lg p-4 relative">
+                {meetingRows.length > 1 && (
+                  <button
+                    type="button"
+                    onClick={() => setMeetingRows(r => r.filter((_, idx) => idx !== i))}
+                    className="absolute top-3 right-3 text-gray-300 hover:text-red-400 transition-colors"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                )}
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-3 items-start">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Date</label>
+                    <input
+                      type="date"
+                      className="w-full border border-gray-300 rounded-md px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
+                      value={row.date}
+                      onChange={e => setMeetingRows(rows => rows.map((r, idx) => idx === i ? { ...r, date: e.target.value } : r))}
+                    />
+                  </div>
+                  <div className="md:col-span-3">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Agenda</label>
+                    <textarea
+                      rows={2}
+                      className="w-full border border-gray-300 rounded-md px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 resize-none"
+                      placeholder="Describe the meeting, event, or how your time will be spent..."
+                      value={row.agenda}
+                      onChange={e => setMeetingRows(rows => rows.map((r, idx) => idx === i ? { ...r, agenda: e.target.value } : r))}
+                    />
+                  </div>
+                </div>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+
+        {/* ── Section 5: Books / Publications ──────────────────────────────── */}
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
