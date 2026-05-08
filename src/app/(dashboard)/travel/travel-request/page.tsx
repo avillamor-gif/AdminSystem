@@ -43,6 +43,7 @@ interface CataloguePub {
   publication_type: string
   publisher: string | null
   available_copies: number
+  est_weight_kg: number | null
 }
 
 interface PublicationRow {
@@ -208,7 +209,7 @@ export default function NewTravelRequestPage() {
       const supabase = createClient()
       const { data, error } = await supabase
         .from('publication_requests')
-        .select('id, publication_id, publication_title, publication_type, publisher, quantity')
+        .select('id, publication_id, publication_title, publication_type, publisher, quantity, est_weight_kg')
         .eq('request_type', 'catalogue')
         .eq('status', 'approved')
         .order('publication_title', { ascending: true })
@@ -221,6 +222,7 @@ export default function NewTravelRequestPage() {
           publication_type: r.publication_type ?? 'other',
           publisher: r.publisher ?? null,
           available_copies: r.quantity ?? 0,
+          est_weight_kg: r.est_weight_kg ?? null,
         }))
       )
     }
@@ -323,6 +325,7 @@ export default function NewTravelRequestPage() {
       title: pub.publication_title,
       publisher: pub.publisher ?? '',
       available_copies: pub.available_copies,
+      est_weight_kg: pub.est_weight_kg != null ? String(pub.est_weight_kg) : '',
       search: pub.publication_title,
       dropdownOpen: false,
       request_copies: '1',
