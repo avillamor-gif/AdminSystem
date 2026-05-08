@@ -40,6 +40,8 @@ const ADMIN_CARD_PREFIXES: { code: string; label: string }[] = [
   { code: 'admin.organization',    label: 'Organization Structure' },
   { code: 'admin.job_management',  label: 'Job & Position Management' },
   { code: 'admin.employee_data',   label: 'Employee Data Management' },
+  { code: 'admin.employee_data.workforce_analytics', label: 'Workforce Analytics' },
+  { code: 'admin.employee_data.generate_id',         label: 'Generate ID' },
   { code: 'admin.time_attendance', label: 'Time & Attendance' },
   { code: 'admin.leave_management',label: 'Leave & Absence Management' },
   { code: 'admin.payroll_benefits',label: 'Payroll & Benefits' },
