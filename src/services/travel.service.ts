@@ -449,16 +449,13 @@ export const travelService = {
     await workflowService.cancelWorkflow(id, 'travel')
   },
 
-  // Delete travel request
+  // Delete travel request (via API route to bypass RLS)
   async delete(id: string): Promise<void> {
-    const { error } = await supabase
-      .from('travel_requests')
-      .delete()
-      .eq('id', id)
-
-    if (error) {
-      console.error('Error deleting travel request:', error)
-      throw new Error('Failed to delete travel request')
+    const res = await fetch(`/api/travel/requests/${id}`, { method: 'DELETE' })
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}))
+      console.error('Error deleting travel request:', body)
+      throw new Error(body.error ?? 'Failed to delete travel request')
     }
   },
 
