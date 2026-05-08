@@ -885,7 +885,7 @@ export default function NewTravelRequestPage() {
                       <label className="block text-sm font-medium text-gray-700 mb-1">Est. Total Weight (kg)</label>
                       <input
                         readOnly
-                        value={(() => { const u = parseFloat(pub.unit_weight_kg); const c = Number(pub.request_copies) || 1; return !isNaN(u) && u > 0 ? (u * c).toFixed(3) : (pub.est_weight_kg || '') })()}
+                        value={(() => { const u = parseFloat(pub.unit_weight_kg); const c = Number(pub.request_copies) || 1; return !isNaN(u) && u > 0 ? parseFloat((u * c).toFixed(3)).toString() : (pub.est_weight_kg || '') })()}
                         placeholder="—"
                         className="w-full border border-gray-200 rounded-md px-3 py-2.5 text-sm bg-gray-50 text-gray-700 font-medium cursor-not-allowed"
                       />
