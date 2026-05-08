@@ -317,9 +317,12 @@ export default function AttendanceReportsPage() {
     const pos  = (selectedEmployee as any)?.job_title?.title || ''
     const logoUrl = `${window.location.origin}/ibon-logo.png`
 
-    const dayHeaders = Array.from({ length: daysInMonth }, (_, i) =>
-      `<th style="border:1px solid #d1d5db;padding:4px 2px;text-align:center;font-size:10px;min-width:22px;">${i + 1}</th>`
-    ).join('')
+    const dayHeaders = Array.from({ length: daysInMonth }, (_, i) => {
+      const dow = new Date(sheetYear, sheetMonth, i + 1).getDay()
+      const isWeekend = dow === 0 || dow === 6
+      const bg = isWeekend ? 'background:#ef4444;color:#fff;' : ''
+      return `<th style="border:1px solid #d1d5db;padding:4px 2px;text-align:center;font-size:10px;min-width:22px;${bg}">${i + 1}</th>`
+    }).join('')
 
     const tableRows = SHEET_TYPES.map(t => {
       const matched = sheetRecords.filter(r => {
@@ -736,9 +739,13 @@ body{font-family:Arial,sans-serif;font-size:11px;padding:12px;}
                     <tr className="bg-gray-50">
                       <th className="border border-gray-300 px-2 py-2 text-left font-semibold">Description</th>
                       <th className="border border-gray-300 px-2 py-2 text-center font-semibold">Days</th>
-                      {Array.from({ length: new Date(sheetYear, sheetMonth + 1, 0).getDate() }, (_, i) => (
-                        <th key={i} className="border border-gray-300 px-1 py-2 text-center font-semibold">{i + 1}</th>
-                      ))}
+                      {Array.from({ length: new Date(sheetYear, sheetMonth + 1, 0).getDate() }, (_, i) => {
+                        const dow = new Date(sheetYear, sheetMonth, i + 1).getDay()
+                        const isWeekend = dow === 0 || dow === 6
+                        return (
+                          <th key={i} className={`border border-gray-300 px-1 py-2 text-center font-semibold ${isWeekend ? 'bg-red-500 text-white' : ''}`}>{i + 1}</th>
+                        )
+                      })}
                     </tr>
                   </thead>
                   <tbody>
