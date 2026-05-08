@@ -454,8 +454,7 @@ function CategoriesTab() {
             <table className="w-full">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Icon</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Category</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Description</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
                   <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Actions</th>
@@ -464,7 +463,6 @@ function CategoriesTab() {
               <tbody className="bg-white divide-y divide-gray-200">
                 {filtered.map(cat => (
                   <tr key={cat.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 text-2xl">{cat.icon || '📁'}</td>
                     <td className="px-6 py-4 text-sm font-medium text-gray-900">{cat.name}</td>
                     <td className="px-6 py-4 text-sm text-gray-500">{cat.description || '—'}</td>
                     <td className="px-6 py-4">
