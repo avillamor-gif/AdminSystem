@@ -46,40 +46,13 @@ export interface LeaveCreditRequestInsert {
 
 export const leaveCreditService = {
   async getAll(): Promise<LeaveCreditRequest[]> {
-    const supabase = createClient()
-    const { data, error } = await supabase
-      .from('leave_credit_requests')
-      .select('*')
-      .order('created_at', { ascending: false })
-    if (error) throw error
-
-    // Resolve employee, leave_type and reviewer in separate queries
-    const employeeIds = [...new Set((data || []).map((r: any) => r.employee_id).filter(Boolean))]
-    const leaveTypeIds = [...new Set((data || []).map((r: any) => r.leave_type_id).filter(Boolean))]
-    const reviewerIds = [...new Set((data || []).map((r: any) => r.reviewed_by).filter(Boolean))]
-
-    const [{ data: employees }, { data: leaveTypes }, { data: reviewers }] = await Promise.all([
-      employeeIds.length
-        ? supabase.from('employees').select('id, first_name, last_name, employee_id').in('id', employeeIds)
-        : { data: [] },
-      leaveTypeIds.length
-        ? supabase.from('leave_types').select('id, leave_type_name').in('id', leaveTypeIds as string[])
-        : { data: [] },
-      reviewerIds.length
-        ? supabase.from('employees').select('id, first_name, last_name').in('id', reviewerIds as string[])
-        : { data: [] },
-    ])
-
-    const empMap = new Map((employees || []).map((e: any) => [e.id, e]))
-    const ltMap = new Map((leaveTypes || []).map((t: any) => [t.id, t]))
-    const revMap = new Map((reviewers || []).map((e: any) => [e.id, e]))
-
-    return (data || []).map((r: any) => ({
-      ...r,
-      employee: empMap.get(r.employee_id) ?? null,
-      leave_type: r.leave_type_id ? (ltMap.get(r.leave_type_id) ?? null) : null,
-      reviewer: r.reviewed_by ? (revMap.get(r.reviewed_by) ?? null) : null,
-    })) as LeaveCreditRequest[]
+    // Use admin API route to bypass RLS — admins must see all employees' requests
+    const res = await fetch('/api/admin/leave-credits')
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}))
+      throw new Error(body.error ?? 'Failed to fetch leave credit requests')
+    }
+    return res.json()
   },
 
   async getByEmployee(employee_id: string): Promise<LeaveCreditRequest[]> {
