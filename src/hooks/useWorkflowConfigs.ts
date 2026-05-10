@@ -12,7 +12,7 @@ export function useWorkflowConfigs() {
   return useQuery({
     queryKey: workflowConfigKeys.lists(),
     queryFn: () => workflowConfigService.getAll(),
-    staleTime: 5 * 60 * 1000,
+    staleTime: 0, // always fetch fresh — settings must reflect latest DB state
   })
 }
 
@@ -21,7 +21,7 @@ export function useWorkflowConfig(requestType: string) {
     queryKey: workflowConfigKeys.detail(requestType),
     queryFn: () => workflowConfigService.getByType(requestType),
     enabled: !!requestType,
-    staleTime: 5 * 60 * 1000,
+    staleTime: 0, // always fetch fresh
   })
 }
 

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Plus, Trash2, GripVertical, Save, ChevronDown, ChevronUp, Bell, GitBranch, CheckCircle } from 'lucide-react'
 import { Card, CardHeader, CardTitle, CardContent, Button, Badge } from '@/components/ui'
 import { useWorkflowConfigs, useUpdateWorkflowConfig } from '@/hooks/useWorkflowConfigs'
@@ -197,6 +197,22 @@ function WorkflowConfigCard({ config }: { config: WorkflowConfig }) {
   const [notifyDecision, setNotifyDecision] = useState<string[]>(config.notify_on_decision)
   const [steps, setSteps]                   = useState<ApprovalStep[]>(config.approval_steps)
   const [isOpen, setIsOpen]                 = useState(false)
+
+  // Keep local state in sync with the latest config prop (e.g. after a background refetch
+  // or when another admin saves). Only sync when the card has no unsaved local edits.
+  useEffect(() => {
+    const localDirty =
+      JSON.stringify(notifySubmit)   !== JSON.stringify(config.notify_on_submit) ||
+      JSON.stringify(notifyDecision) !== JSON.stringify(config.notify_on_decision) ||
+      JSON.stringify(steps)          !== JSON.stringify(config.approval_steps)
+    // If there are truly no local edits yet (or after a successful save), sync from props
+    if (!localDirty) {
+      setNotifySubmit(config.notify_on_submit)
+      setNotifyDecision(config.notify_on_decision)
+      setSteps(config.approval_steps)
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [config])
 
   const isDirty =
     JSON.stringify(notifySubmit)   !== JSON.stringify(config.notify_on_submit) ||
