@@ -88,10 +88,8 @@ export const leaveCreditService = {
   },
 
   /**
-   * ED approves a credit request.
-   * - Updates status to 'approved' and records days_approved + reviewer info.
-   * - Automatically adds the approved days to the employee's leave balance.
-   * - Admin can later adjust the leave balance via the existing Allocate Leave Balance function.
+   * ED approves a credit request via admin API route (bypasses RLS).
+   * Auto-credits the approved days to the employee's leave balance.
    */
   async approve(
     id: string,
@@ -99,68 +97,14 @@ export const leaveCreditService = {
     reviewed_by: string,
     reviewer_notes?: string
   ): Promise<LeaveCreditRequest> {
-    const supabase = createClient()
-
-    // 1. Fetch the full request
-    const { data: req, error: fetchErr } = await supabase
-      .from('leave_credit_requests')
-      .select('*')
-      .eq('id', id)
-      .single()
-    if (fetchErr) throw fetchErr
-
-    // 2. Mark as approved
-    const { data, error } = await supabase
-      .from('leave_credit_requests')
-      .update({
-        status: 'approved',
-        days_approved,
-        reviewed_by,
-        reviewed_at: new Date().toISOString(),
-        reviewer_notes: reviewer_notes ?? null,
-      })
-      .eq('id', id)
-      .select('*')
-      .single()
-    if (error) throw error
-
-    // 3. Auto-credit the leave balance
-    //    We ADD the approved days on top of whatever is already allocated this year.
-    const year = new Date(req.work_date_from).getFullYear()
-    const leave_type_id = req.leave_type_id
-
-    if (leave_type_id) {
-      // Fetch existing balance for this employee + leave_type + year
-      const { data: existing } = await supabase
-        .from('leave_balances')
-        .select('id, total_allocated')
-        .eq('employee_id', req.employee_id)
-        .eq('leave_type_id', leave_type_id)
-        .eq('year', year)
-        .maybeSingle()
-
-      if (existing) {
-        const newTotal = (existing.total_allocated ?? 0) + days_approved
-        await supabase
-          .from('leave_balances')
-          .update({ total_allocated: newTotal })
-          .eq('id', existing.id)
-      } else {
-        await supabase
-          .from('leave_balances')
-          .insert({
-            employee_id: req.employee_id,
-            leave_type_id,
-            year,
-            total_allocated: days_approved,
-            used_days: 0,
-            pending_days: 0,
-            carried_over: 0,
-          })
-      }
-    }
-
-    return data as unknown as LeaveCreditRequest
+    const res = await fetch(`/api/admin/leave-credits/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'approve', days_approved, reviewed_by, reviewer_notes }),
+    })
+    const body = await res.json()
+    if (!res.ok) throw new Error(body.error ?? 'Failed to approve leave credit request')
+    return body as LeaveCreditRequest
   },
 
   async reject(
@@ -168,20 +112,14 @@ export const leaveCreditService = {
     reviewed_by: string,
     reviewer_notes: string
   ): Promise<LeaveCreditRequest> {
-    const supabase = createClient()
-    const { data, error } = await supabase
-      .from('leave_credit_requests')
-      .update({
-        status: 'rejected',
-        reviewed_by,
-        reviewed_at: new Date().toISOString(),
-        reviewer_notes,
-      })
-      .eq('id', id)
-      .select('*')
-      .single()
-    if (error) throw error
-    return data as unknown as LeaveCreditRequest
+    const res = await fetch(`/api/admin/leave-credits/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'reject', reviewed_by, reviewer_notes }),
+    })
+    const body = await res.json()
+    if (!res.ok) throw new Error(body.error ?? 'Failed to reject leave credit request')
+    return body as LeaveCreditRequest
   },
 
   async delete(id: string): Promise<void> {
