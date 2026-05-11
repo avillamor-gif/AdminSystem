@@ -20,6 +20,7 @@ import {
   Monitor,
   Package,
   GraduationCap,
+  Shield,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useState } from 'react'
@@ -47,6 +48,7 @@ const navigationItems: NavigationItem[] = [
   { name: 'Office Equipment',  href: '/equipment/browse',      icon: Monitor,    requiresPermission: 'nav.equipment',    activeBase: '/equipment' },
   { name: 'Office Supplies',   href: '/office-supplies',       icon: Package,    requiresPermission: 'nav.supplies' },
   { name: 'My Info',           href: '/my-info',               icon: UserCircle,     requiresPermission: 'nav.my_info',      badge: 'Personal Info' },
+  { name: 'My Benefits',       href: '/my-info/benefits',      icon: Shield,         requiresPermission: 'nav.my_info' },
   { name: 'My Internship',     href: '/my-internship',         icon: GraduationCap,  requiresPermission: 'internship.view' },
   { name: 'Performance',       href: '/performance',           icon: FileText,       requiresPermission: 'nav.performance' },
   { name: 'Directory',         href: '/directory',             icon: Building2,      requiresPermission: 'nav.directory' },

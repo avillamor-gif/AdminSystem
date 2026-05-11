@@ -5,6 +5,8 @@ const navItems = [
   { label: 'Pay Components',    href: '/admin/payroll-benefits/pay-components',    requiresPermission: 'admin.payroll_benefits.pay_components' },
   { label: 'Tax Configuration', href: '/admin/payroll-benefits/tax-configuration', requiresPermission: 'admin.payroll_benefits.tax_configuration' },
   { label: 'Benefits Plans',    href: '/admin/payroll-benefits/benefits-plans',    requiresPermission: 'admin.payroll_benefits.benefits_plans' },
+  { label: 'Benefits Enrollment', href: '/admin/payroll-benefits/benefits-enrollment', requiresPermission: 'admin.payroll_benefits.benefits_plans' },
+  { label: 'Bereavement Claims',  href: '/admin/payroll-benefits/bereavement-claims',  requiresPermission: 'admin.payroll_benefits.benefits_plans' },
   { label: 'Deductions',        href: '/admin/payroll-benefits/deductions',        requiresPermission: 'admin.payroll_benefits.deductions' },
   { label: 'Bonus Structures',  href: '/admin/payroll-benefits/bonus-structures',  requiresPermission: 'admin.payroll_benefits.bonus_structures' },
   { label: 'Reimbursements',    href: '/admin/payroll-benefits/reimbursements',    requiresPermission: 'admin.payroll_benefits.reimbursements' },
