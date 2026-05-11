@@ -1,6 +1,6 @@
 'use client'
 
-import { Bell, Smartphone, ChevronDown, HelpCircle, LogOut, Package, Calendar, AlertTriangle, Clock, BookOpen, ShoppingCart, Plane, Award } from 'lucide-react'
+import { Bell, Smartphone, ChevronDown, HelpCircle, LogOut, Package, Calendar, AlertTriangle, Clock, BookOpen, ShoppingCart, Plane, Award, UserCheck } from 'lucide-react'
 import { Avatar } from '@/components/ui'
 import { useState, useMemo, useEffect, useRef } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
@@ -25,7 +25,7 @@ export function Header({ user }: HeaderProps) {
   const dropdownRef = useRef<HTMLDivElement>(null)
   const notifRef = useRef<HTMLDivElement>(null)
 
-  const { notifications, timeAgo, markEquipmentNotifRead, markLeaveNotifRead, markLeaveCreditNotifRead, markTravelNotifRead, markPubNotifRead, markSupplyNotifRead } = useNotifications()
+  const { notifications, timeAgo, markEquipmentNotifRead, markLeaveNotifRead, markLeaveCreditNotifRead, markTravelNotifRead, markPubNotifRead, markSupplyNotifRead, markAttendanceNotifRead } = useNotifications()
   const totalCount = notifications.length
   const { permission, isSubscribed, isLoading: pushLoading, isSupported: pushSupported, subscribe, unsubscribe } = usePushNotifications()
 
@@ -213,6 +213,12 @@ export function Header({ user }: HeaderProps) {
                         iconColor: notif.urgency === 'warning' ? 'text-yellow-600' : 'text-green-600',
                         dot: notif.urgency === 'warning' ? 'bg-yellow-500' : 'bg-green-500',
                       },
+                      attendance_late_entry: {
+                        icon: UserCheck,
+                        iconBg: 'bg-teal-100 group-hover:bg-teal-200',
+                        iconColor: 'text-teal-600',
+                        dot: 'bg-teal-500',
+                      },
                     }
                     const { icon: Icon, iconBg, iconColor, dot } = config[notif.type]
                     return (
@@ -228,6 +234,7 @@ export function Header({ user }: HeaderProps) {
                             if (notif.type === 'travel_request') markTravelNotifRead(notif.id)
                             if (notif.type === 'publication_request') markPubNotifRead(notif.id)
                             if (notif.type === 'supply_request') markSupplyNotifRead(notif.id)
+                            if (notif.type === 'attendance_late_entry') markAttendanceNotifRead(notif.id)
                           }
                           router.push(notif.href)
                           setShowNotifications(false)

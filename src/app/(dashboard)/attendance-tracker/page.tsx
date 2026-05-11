@@ -5,6 +5,7 @@ import { useSearchParams } from 'next/navigation'
 import { Clock, Play, Square, Calendar, ChevronRight, Edit2 } from 'lucide-react'
 import { Card, Button, Badge } from '@/components/ui'
 import { AttendanceTypeModal } from '@/components/attendance/AttendanceTypeModal'
+import { LateEntryModal } from '@/components/attendance/LateEntryModal'
 import type { AttendanceType } from '@/components/attendance/AttendanceTypeModal'
 import { AttendanceEditModal } from '@/components/admin/AttendanceEditModal'
 import { usePunchInOut, parseSessions, serializeSessions, mapAttendanceTypeToStatus } from '@/hooks/usePunchInOut'
@@ -40,6 +41,9 @@ export default function TimePage() {
   const [currentMonth, setCurrentMonth] = useState(new Date(new Date().getFullYear(), new Date().getMonth()))
   const [editModal, setEditModal] = useState<{ open: boolean; dateStr: string; record: AttendanceRecord | null }>({
     open: false, dateStr: '', record: null,
+  })
+  const [lateEntryModal, setLateEntryModal] = useState<{ open: boolean; dateStr: string }>({
+    open: false, dateStr: '',
   })
 
   // Fetch current employee data
@@ -216,6 +220,34 @@ export default function TimePage() {
     setAttendanceNote('')
     setSelectedDate(null)
     setIsEditMode(false)
+  }
+
+  const handleLateEntrySubmit = async (payload: {
+    date: string
+    type: AttendanceType
+    timeIn: string
+    timeOut: string
+    reason: string
+  }) => {
+    // Convert HH:MM local time strings to ISO timestamps for the entry date
+    const toISO = (timeStr: string) => {
+      if (!timeStr) return null
+      return new Date(`${payload.date}T${timeStr}:00`).toISOString()
+    }
+    const res = await fetch('/api/attendance/late-entry', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        date: payload.date,
+        type: payload.type,
+        timeIn:  toISO(payload.timeIn),
+        timeOut: toISO(payload.timeOut),
+        reason:  payload.reason,
+      }),
+    })
+    const json = await res.json()
+    if (!res.ok) throw new Error(json.error ?? 'Failed to submit')
+    await refetch()
   }
 
   // handlePunchOut is provided by usePunchInOut (aliased as handlePunchOut above)
@@ -667,6 +699,11 @@ export default function TimePage() {
                     }
                   }
 
+                  // Whether this is a past date the employee can submit a late entry for
+                  const today = localDateStr(new Date())
+                  const isPast = dateStr < today
+                  const canSubmitLateEntry = !isAdmin && !holiday && isPast && !attendance && !leaveRequest
+
                   days.push(
                     <div
                       key={day}
@@ -682,9 +719,22 @@ export default function TimePage() {
                       }}
                       className={`min-h-[100px] p-2 border-b border-gray-200 ${holiday || !isAdmin ? 'cursor-default' : 'cursor-pointer hover:bg-gray-50'} transition-colors ${
                         !isLastCol ? 'border-r' : ''
-                      } ${bgColor}`}
+                      } ${bgColor} group relative`}
                     >
-                      <div className={`text-sm ${attendance || leaveRequest || holiday ? 'font-medium' : 'text-gray-500'}`}>{day}</div>
+                      <div className="flex items-start justify-between">
+                        <div className={`text-sm ${attendance || leaveRequest || holiday ? 'font-medium' : 'text-gray-500'}`}>{day}</div>
+
+                        {/* Late Entry button — shown for employees on empty past dates */}
+                        {canSubmitLateEntry && (
+                          <button
+                            onClick={e => { e.stopPropagation(); setLateEntryModal({ open: true, dateStr }) }}
+                            title="Add late attendance entry"
+                            className="opacity-0 group-hover:opacity-100 transition-opacity p-0.5 rounded text-gray-300 hover:text-teal-600 hover:bg-teal-50"
+                          >
+                            <span className="text-[10px] font-bold leading-none">+</span>
+                          </button>
+                        )}
+                      </div>
 
                       {/* Holiday */}
                       {holiday && displayInfo && (
@@ -707,8 +757,11 @@ export default function TimePage() {
                             const sInfo = getAttendanceTypeInfo(session.type)
                             return (
                               <div key={idx} className={`rounded px-1.5 py-1 ${sInfo.bgColor}`}>
-                                <div className={`text-xs font-semibold ${sInfo.textColor} truncate`}>
+                                <div className={`text-xs font-semibold ${sInfo.textColor} truncate flex items-center gap-1`}>
                                   {sInfo.label}
+                                  {(session as any).lateEntry && (
+                                    <span className="text-[9px] bg-amber-100 text-amber-700 px-1 py-0.5 rounded font-medium">Late</span>
+                                  )}
                                 </div>
                                 <div className="text-[10px] text-gray-500 leading-tight">
                                   <span className="font-medium">In:</span> {fmtTime(session.timeIn)}
@@ -799,6 +852,12 @@ export default function TimePage() {
                 <span className="text-xs text-gray-600">Public Holidays</span>
               </div>
             </div>
+            {/* Late entry hint for non-admin employees */}
+            {!isAdmin && (
+              <p className="mt-3 text-xs text-teal-600">
+                💡 Hover over an empty past date and click <strong>+</strong> to submit a forgotten attendance entry.
+              </p>
+            )}
           </div>
         </Card>
       )}
@@ -975,6 +1034,13 @@ export default function TimePage() {
         employeeName={currentEmployee ? `${currentEmployee.first_name} ${currentEmployee.last_name}` : ''}
         dateStr={editModal.dateStr}
         record={editModal.record}
+      />
+
+      <LateEntryModal
+        open={lateEntryModal.open}
+        dateStr={lateEntryModal.dateStr}
+        onClose={() => setLateEntryModal({ open: false, dateStr: '' })}
+        onSubmit={handleLateEntrySubmit}
       />
 
     </div>

@@ -12,6 +12,7 @@ export type NotificationType =
   | 'contract_expiring'
   | 'publication_request'
   | 'supply_request'
+  | 'attendance_late_entry'
 
 export interface Notification {
   id: string
@@ -94,6 +95,7 @@ export function useNotifications() {
   const { data: pubNotifs = [] }       = useNotifQuery('publication_request_notifications')
   const { data: supplyNotifs = [] }       = useNotifQuery('supply_request_notifications')
   const { data: leaveCreditNotifs = [] }   = useNotifQuery('leave_credit_notifications')
+  const { data: attendanceNotifs = [] }     = useNotifQuery('attendance_notifications')
 
   // Authoritative source for new_request leave notifications:
   // Calls the server API which resets is_read=false if the leave is still pending.
@@ -249,6 +251,21 @@ export function useNotifications() {
       })
     }
 
+    // ── Attendance late-entry notifications (admin/supervisor only) ──────────
+    for (const notif of attendanceNotifs) {
+      if (!isAdmin) continue
+      items.push({
+        id: `attendance-${notif.id}`,
+        type: 'attendance_late_entry' as NotificationType,
+        title: notif.title,
+        description: notif.message,
+        href: '/admin/time-attendance/reports?tab=calendar',
+        createdAt: notif.created_at,
+        urgency: 'normal',
+        actionRequired: false,
+      })
+    }
+
     return items.sort((a, b) => {
       const urgencyOrder = { urgent: 0, warning: 1, normal: 2 }
       if (urgencyOrder[a.urgency] !== urgencyOrder[b.urgency]) {
@@ -256,7 +273,7 @@ export function useNotifications() {
       }
       return new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()
     })
-  }, [roleLoaded, isAdmin, expiringContracts, equipmentNotifs, leaveNotifs, leaveCreditNotifs, travelNotifs, pubNotifs, supplyNotifs])
+  }, [roleLoaded, isAdmin, expiringContracts, equipmentNotifs, leaveNotifs, leaveCreditNotifs, travelNotifs, pubNotifs, supplyNotifs, attendanceNotifs])
 
   // Realtime subscriptions — invalidate queries instantly when rows are inserted or updated
   useEffect(() => {
@@ -269,6 +286,7 @@ export function useNotifications() {
       'equipment_request_notifications',
       'publication_request_notifications',
       'supply_request_notifications',
+      'attendance_notifications',
     ]
     const channels = tables.map((table) =>
       supabase
@@ -316,6 +334,8 @@ export function useNotifications() {
     markNotifRead('supply_request_notifications', id.replace('supply-', ''))
   const markLeaveCreditNotifRead = (id: string) =>
     markNotifRead('leave_credit_notifications', id.replace('leave-credit-', ''))
+  const markAttendanceNotifRead = (id: string) =>
+    markNotifRead('attendance_notifications', id.replace('attendance-', ''))
 
   /** Dismiss the leave `new_request` notification that belongs to a specific leave request. */
   const markLeaveNotifReadByRequestId = async (leaveRequestId: string) => {
@@ -348,5 +368,6 @@ export function useNotifications() {
     markTravelNotifRead,
     markPubNotifRead,
     markSupplyNotifRead,
+    markAttendanceNotifRead,
   }
 }
