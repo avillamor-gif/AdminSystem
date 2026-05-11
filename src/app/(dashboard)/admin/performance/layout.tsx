@@ -6,7 +6,8 @@ const navItems = [
   { label: 'Goal Templates',    href: '/admin/performance/goal-templates',     requiresPermission: 'admin.performance.goal_templates' },
   { label: 'Competency Models', href: '/admin/performance/competency-models',  requiresPermission: 'admin.performance.competency_models' },
   { label: 'KPI Frameworks',    href: '/admin/performance/kpi-frameworks',     requiresPermission: 'admin.performance.kpi_frameworks' },
-  { label: '360 Feedback',      href: '/admin/performance/360-feedback',       requiresPermission: 'admin.performance.360_feedback' },
+  { label: '360 Feedback',          href: '/admin/performance/360-feedback',          requiresPermission: 'admin.performance.360_feedback' },
+  { label: 'Probationary Reviews',  href: '/admin/performance/probationary-reviews',  requiresPermission: 'admin.performance.probationary_reviews' },
 ]
 
 export default function PerformanceLayout({ children }: { children: React.ReactNode }) {

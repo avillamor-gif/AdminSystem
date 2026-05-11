@@ -9,6 +9,8 @@ const navItems = [
   { label: 'Data Import/Export',       href: '/admin/employee-data/data-import-export',      requiresPermission: 'admin.employee_data.data_import_export' },
   { label: 'Employee Records',         href: '/admin/employee-data/employee-records',         requiresPermission: 'admin.employee_data.employee_records' },
   { label: 'Termination & Activation', href: '/admin/employee-data/termination-activation',  requiresPermission: 'admin.employee_data.termination_activation' },
+  { label: 'Clearance Tracking',       href: '/admin/employee-data/clearance-tracking',       requiresPermission: 'admin.employee_data.termination_activation' },
+  { label: 'Disciplinary Records',     href: '/admin/employee-data/disciplinary-records',     requiresPermission: 'admin.employee_data.termination_activation' },
 ]
 
 export default function EmployeeDataLayout({ children }: { children: React.ReactNode }) {

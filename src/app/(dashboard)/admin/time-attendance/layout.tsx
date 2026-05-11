@@ -8,6 +8,7 @@ const navItems = [
   { label: 'Time Tracking Methods', href: '/admin/time-attendance/time-tracking-methods', requiresPermission: 'admin.time_attendance.time_tracking_methods' },
   { label: 'Attendance Policies',   href: '/admin/time-attendance/attendance-policies',   requiresPermission: 'admin.time_attendance.attendance_policies' },
   { label: 'Attendance Reports',    href: '/admin/time-attendance/reports',               requiresPermission: 'admin.time_attendance.reports' },
+  { label: 'OT / OB Requests',      href: '/admin/time-attendance/ot-ob-requests',         requiresPermission: 'admin.time_attendance.overtime_rules' },
 ]
 
 export default function TimeAttendanceLayout({ children }: { children: React.ReactNode }) {

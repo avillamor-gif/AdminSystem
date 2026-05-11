@@ -41,6 +41,7 @@ const navigationItems: NavigationItem[] = [
   { name: 'Admin',             href: '/admin',                 icon: Settings,   requiresPermission: 'admin.any',        activeBase: '/admin' },
   { name: 'Leave',             href: '/leave/my-requests',     icon: Calendar,   requiresPermission: 'nav.leave',        activeBase: '/leave' },
   { name: 'Attendance Tracker',href: '/attendance-tracker',    icon: Clock,      requiresPermission: 'nav.attendance' },
+  { name: 'OT / OB Requests', href: '/overtime',              icon: Clock,      requiresPermission: 'nav.attendance' },
   { name: 'Travel',            href: '/travel/travel-request', icon: Plane,      requiresPermission: 'nav.travel',       activeBase: '/travel' },
   { name: 'Publications',      href: '/publications/library',  icon: BookOpen,   requiresPermission: 'nav.publications', activeBase: '/publications' },
   { name: 'Office Equipment',  href: '/equipment/browse',      icon: Monitor,    requiresPermission: 'nav.equipment',    activeBase: '/equipment' },
