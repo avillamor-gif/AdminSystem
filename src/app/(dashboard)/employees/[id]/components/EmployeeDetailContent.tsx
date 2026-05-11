@@ -24,7 +24,157 @@ import { SignatureTab } from './SignatureTab'
 import { uploadEmployeePhoto, deleteEmployeePhoto } from '@/lib/supabase/storage'
 import { useEmployeeCommittees } from '@/hooks/useCommittees'
 import { logAction } from '@/services/auditLog.service'
+import { useMyBenefitsEnrollments, useMyBereavementClaims, useCreateBereavementClaim } from '@/hooks'
+import type { BereavementRelationship, BereavementClaimStatus } from '@/services'
 import { toast } from 'sonner'
+
+const BERE_STATUS_COLORS: Record<BereavementClaimStatus, string> = {
+  pending:  'bg-yellow-100 text-yellow-800',
+  approved: 'bg-blue-100 text-blue-800',
+  released: 'bg-green-100 text-green-800',
+  rejected: 'bg-red-100 text-red-700',
+}
+const BERE_REL_LABELS: Record<BereavementRelationship, string> = {
+  parent: 'Parent', sibling: 'Sibling', spouse: 'Spouse', child: 'Child', other: 'Other',
+}
+
+function BenefitsTabContent({ employeeId, selfService }: { employeeId: string; selfService: boolean }) {
+  const { data: enrollments = [] } = useMyBenefitsEnrollments(employeeId)
+  const { data: claims = [] } = useMyBereavementClaims(employeeId)
+  const createMutation = useCreateBereavementClaim()
+
+  const [showClaimForm, setShowClaimForm] = useState(false)
+  const [deceasedName, setDeceasedName] = useState('')
+  const [relationship, setRelationship] = useState<BereavementRelationship>('parent')
+  const [dateOfDeath, setDateOfDeath] = useState('')
+  const [notes, setNotes] = useState('')
+
+  const handleSubmitClaim = async () => {
+    if (!deceasedName || !dateOfDeath) return
+    await createMutation.mutateAsync({
+      employee_id: employeeId,
+      deceased_name: deceasedName,
+      relationship,
+      date_of_death: dateOfDeath,
+      amount: 15000,
+      notes: notes || null,
+      requested_by: employeeId,
+    })
+    setShowClaimForm(false)
+    setDeceasedName(''); setDateOfDeath(''); setNotes('')
+    toast.success('Bereavement claim submitted.')
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center gap-3 mb-2">
+        <div className="p-2 bg-orange/10 rounded-lg">
+          <Shield className="w-5 h-5 text-orange" />
+        </div>
+        <div>
+          <h3 className="text-lg font-semibold text-gray-900">Benefits & Insurance</h3>
+          <p className="text-sm text-gray-500">Health insurance, retirement plans, and bereavement assistance</p>
+        </div>
+      </div>
+      <div className="border-t border-gray-200" />
+
+      {/* Enrollments */}
+      <div>
+        <h4 className="text-sm font-semibold text-gray-700 mb-3">Benefit Enrollments</h4>
+        {(enrollments as any[]).length === 0 ? (
+          <div className="text-center py-8 text-gray-400 text-sm bg-gray-50 rounded-lg">No active enrollments on file. Contact HR.</div>
+        ) : (
+          <div className="space-y-2">
+            {(enrollments as any[]).map((e: any) => (
+              <div key={e.id} className={`flex items-center justify-between p-3 rounded-lg border ${e.is_active ? 'bg-green-50 border-green-200' : 'bg-gray-50 border-gray-200'}`}>
+                <div>
+                  <div className="font-medium text-gray-900 text-sm">{e.plan?.plan_name ?? '—'}</div>
+                  <div className="text-xs text-gray-500 mt-0.5">
+                    Coverage: {e.coverage_type ?? '—'} · Employee share: ₱{e.employee_share?.toLocaleString() ?? '0'}/mo
+                  </div>
+                  <div className="text-xs text-gray-400">Enrolled {formatDate(e.enrollment_date)}</div>
+                </div>
+                <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${e.is_active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'}`}>
+                  {e.is_active ? 'Active' : 'Ended'}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Bereavement */}
+      <div>
+        <div className="flex items-center justify-between mb-3">
+          <h4 className="text-sm font-semibold text-gray-700">Bereavement Assistance (₱15,000)</h4>
+          {selfService && !showClaimForm && (
+            <Button variant="secondary" onClick={() => setShowClaimForm(true)}>+ File a Claim</Button>
+          )}
+        </div>
+
+        {showClaimForm && (
+          <div className="border border-gray-200 rounded-lg p-4 mb-4 space-y-3 bg-gray-50">
+            <div className="bg-rose-50 border border-rose-200 rounded-lg p-2 text-xs text-rose-700">
+              IBON provides <strong>₱15,000</strong> for death of a parent, sibling, spouse, or child.
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1">Deceased Name *</label>
+              <input type="text" value={deceasedName} onChange={e => setDeceasedName(e.target.value)}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-medium text-gray-700 mb-1">Relationship *</label>
+                <select value={relationship} onChange={e => setRelationship(e.target.value as BereavementRelationship)}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
+                  {Object.entries(BERE_REL_LABELS).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-700 mb-1">Date of Death *</label>
+                <input type="date" value={dateOfDeath} onChange={e => setDateOfDeath(e.target.value)}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" />
+              </div>
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1">Notes</label>
+              <textarea rows={2} value={notes} onChange={e => setNotes(e.target.value)}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" />
+            </div>
+            <div className="flex gap-2">
+              <Button variant="primary" onClick={handleSubmitClaim}
+                disabled={!deceasedName || !dateOfDeath || createMutation.isPending}>
+                {createMutation.isPending ? 'Submitting…' : 'Submit Claim'}
+              </Button>
+              <Button variant="secondary" onClick={() => setShowClaimForm(false)}>Cancel</Button>
+            </div>
+          </div>
+        )}
+
+        {(claims as any[]).length === 0 ? (
+          <div className="text-center py-6 text-gray-400 text-sm bg-gray-50 rounded-lg">No bereavement claims on file.</div>
+        ) : (
+          <div className="space-y-2">
+            {(claims as any[]).map((c: any) => (
+              <div key={c.id} className="flex items-center justify-between p-3 border rounded-lg bg-gray-50">
+                <div>
+                  <div className="text-sm font-medium text-gray-900">{c.deceased_name}</div>
+                  <div className="text-xs text-gray-500">{BERE_REL_LABELS[c.relationship as BereavementRelationship]} · {formatDate(c.date_of_death)}</div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className="text-sm font-semibold text-gray-900">₱{c.amount.toLocaleString()}</span>
+                  <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${BERE_STATUS_COLORS[c.status as BereavementClaimStatus] ?? 'bg-gray-100 text-gray-600'}`}>
+                    {c.status.charAt(0).toUpperCase() + c.status.slice(1)}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
 
 // ── Committees sub-component (defined outside to avoid re-mount) ───────────────
 function EmployeeCommitteesTab({ employeeId }: { employeeId: string }) {
@@ -1892,27 +2042,7 @@ export function EmployeeDetailContent({
         )
       
       case 'benefits':
-        return (
-          <div className="space-y-4">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="p-2 bg-orange/10 rounded-lg">
-                <Shield className="w-5 h-5 text-orange" />
-              </div>
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900">Benefits & Insurance</h3>
-                <p className="text-sm text-gray-500 mt-1">Health insurance, retirement plans, and other benefits</p>
-              </div>
-            </div>
-            <div className="border-t border-gray-200 mb-6"></div>
-            <div className="flex flex-col items-center justify-center py-12 text-center">
-              <div className="p-4 bg-gray-100 rounded-full mb-4">
-                <Shield className="w-8 h-8 text-gray-400" />
-              </div>
-              <p className="text-gray-600 font-medium">Benefits & Insurance module coming soon</p>
-              <p className="text-sm text-gray-400 mt-1">This section will display health, life insurance, and retirement plan details once the module is configured.</p>
-            </div>
-          </div>
-        )
+        return <BenefitsTabContent employeeId={employee.id} selfService={selfService} />
       
       case 'immigration':
         return (
