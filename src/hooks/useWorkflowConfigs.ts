@@ -12,7 +12,8 @@ export function useWorkflowConfigs() {
   return useQuery({
     queryKey: workflowConfigKeys.lists(),
     queryFn: () => workflowConfigService.getAll(),
-    staleTime: 0, // always fetch fresh — settings must reflect latest DB state
+    staleTime: 60 * 1000,          // treat as fresh for 60 s
+    refetchOnWindowFocus: false,   // prevent refetch from clobbering in-progress edits
   })
 }
 
@@ -21,7 +22,8 @@ export function useWorkflowConfig(requestType: string) {
     queryKey: workflowConfigKeys.detail(requestType),
     queryFn: () => workflowConfigService.getByType(requestType),
     enabled: !!requestType,
-    staleTime: 0, // always fetch fresh
+    staleTime: 60 * 1000,
+    refetchOnWindowFocus: false,
   })
 }
 
@@ -30,7 +32,13 @@ export function useUpdateWorkflowConfig() {
   return useMutation({
     mutationFn: ({ id, updates }: { id: string; updates: WorkflowConfigUpdate }) =>
       updateWorkflowConfig(id, updates),
-    onSuccess: () => {
+    onSuccess: (savedConfig) => {
+      // Optimistically update the cache with the saved data so stale state is cleared
+      queryClient.setQueryData(workflowConfigKeys.lists(), (old: any) =>
+        Array.isArray(old)
+          ? old.map((c: any) => (c.id === savedConfig.id ? savedConfig : c))
+          : old
+      )
       queryClient.invalidateQueries({ queryKey: workflowConfigKeys.all })
       toast.success('Workflow settings saved')
     },
