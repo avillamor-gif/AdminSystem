@@ -174,7 +174,7 @@ export const bereavementService = {
       .eq('employee_id', employeeId)
       .order('created_at', { ascending: false })
     if (error) throw error
-    return (data || []).map(c => ({ ...c, employee: null })) as BereavementClaimWithRelations[]
+    return ((data || []) as BereavementClaim[]).map((c: BereavementClaim) => ({ ...c, employee: null })) as BereavementClaimWithRelations[]
   },
 
   async create(payload: BereavementClaimInsert): Promise<BereavementClaim> {
