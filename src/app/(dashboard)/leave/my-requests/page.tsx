@@ -333,11 +333,13 @@ export default function MyLeavePage() {
                   className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-lg bg-gray-100 text-gray-500 cursor-not-allowed"
                 />
               </div>
-              {leaveTypes.filter(lt => lt.is_active).length === 0 ? (
+              {leaveTypes.filter(lt => lt.is_active && balances.some(b => b.leave_type_id === lt.id)).length === 0 ? (
                 <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 text-sm">
                   <p className="font-semibold text-amber-800 mb-1">No Leave Types Available</p>
                   <p className="text-amber-700">
-                    No active leave types are configured. Please contact HR.
+                    {leaveTypes.filter(lt => lt.is_active).length === 0
+                      ? 'No active leave types are configured. Please contact HR.'
+                      : 'No leave balances have been allocated to your account yet. Please contact HR.'}
                   </p>
                 </div>
               ) : (
@@ -348,11 +350,11 @@ export default function MyLeavePage() {
                   required
                 >
                   <option value="">Select leave type</option>
-                  {leaveTypes.filter(lt => lt.is_active).map(type => {
+                  {leaveTypes.filter(lt => lt.is_active && balances.some(b => b.leave_type_id === lt.id)).map(type => {
                     const bal = balances.find(b => b.leave_type_id === type.id)
                     return (
                       <option key={type.id} value={type.id}>
-                        {type.leave_type_name}{bal ? ` (${bal.available_days} days available)` : ''}
+                        {type.leave_type_name} ({bal?.available_days ?? 0} day{bal?.available_days !== 1 ? 's' : ''} available)
                       </option>
                     )
                   })}
