@@ -51,10 +51,9 @@ export default function BorrowedEquipmentPage() {
   const activeCount = requests.filter(r => !(r as any).returned_date).length
   const overdueCount = requests.filter(r => {
     if ((r as any).returned_date) return false
-    // Consider overdue if fulfilled more than 30 days ago with no return
-    const fulfilled = (r as any).fulfilled_date
-    if (!fulfilled) return false
-    return new Date(fulfilled) < new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
+    const endDate = r.borrow_end_date
+    if (!endDate) return false
+    return new Date(endDate) < new Date(new Date().toISOString().split('T')[0])
   }).length
 
   function getBorrowerDisplay(r: AssetRequest) {
@@ -166,8 +165,8 @@ export default function BorrowedEquipmentPage() {
                   const fulfilledDate = (r as any).fulfilled_date || r.requested_date
                   const isOverdue =
                     !isReturned &&
-                    fulfilledDate &&
-                    new Date(fulfilledDate) < new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
+                    r.borrow_end_date &&
+                    new Date(r.borrow_end_date) < new Date(new Date().toISOString().split('T')[0])
 
                   return (
                     <tr key={r.id} className="hover:bg-gray-50">

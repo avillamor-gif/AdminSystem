@@ -17,33 +17,22 @@ export default function BrowseEquipmentPage() {
   const [categoryFilter, setCategoryFilter] = useState('')
   const [availabilityFilter, setAvailabilityFilter] = useState<'all' | 'available' | 'borrowed'>('all')
 
-  // Load only available assets — assigned assets are not borrowable and never shown
-  const { data: availableAssets = [], isLoading } = useAssets({ status: 'available' })
+  // Load ALL borrowable assets — available AND currently assigned (borrowed)
+  const { data: availableAssets = [], isLoading: loadingAvailable } = useAssets({ status: 'available' })
+  const { data: assignedAssets = [], isLoading: loadingAssigned } = useAssets({ status: 'assigned' })
+  const isLoading = loadingAvailable || loadingAssigned
   const { data: categories = [] } = useAssetCategories()
 
-  // Active borrow requests to determine when borrowed items will be free
+  // Active borrow requests to get return dates and borrower names
   const { data: fulfilledRequests = [] } = useAssetRequests({ status: 'fulfilled' })
-  const { data: approvedRequests = [] } = useAssetRequests({ status: 'approved' })
-  const { data: pendingRequests = [] } = useAssetRequests({ status: 'pending' })
 
-  // Build assetId → latest borrow_end_date for non-returned active borrows
-  const borrowedEndMap: Record<string, string | null> = {}
-  const borrowerMap: Record<string, string> = {}
-  for (const r of [...fulfilledRequests, ...approvedRequests, ...pendingRequests]) {
+  // Build assetId → request for non-returned fulfilled borrows
+  const borrowRequestMap: Record<string, any> = {}
+  for (const r of fulfilledRequests) {
     if (!(r as any).returned_date) {
-      const assetId = (r as any).asset_id || (r as any).assigned_asset_id
-      if (assetId) {
-        const existing = borrowedEndMap[assetId]
-        const end = r.borrow_end_date ?? null
-        if (!existing || (end && end > existing)) borrowedEndMap[assetId] = end
-        // Track borrower (first match wins — most recent fulfilled)
-        if (!borrowerMap[assetId]) {
-          if ((r as any).borrower_type === 'external' && (r as any).external_borrower_name) {
-            borrowerMap[assetId] = (r as any).external_borrower_name
-          } else if ((r as any).employee_id) {
-            borrowerMap[assetId] = (r as any).employee_id // resolve to name below
-          }
-        }
+      const assetId = (r as any).assigned_asset_id || (r as any).asset_id
+      if (assetId && !borrowRequestMap[assetId]) {
+        borrowRequestMap[assetId] = r
       }
     }
   }
@@ -54,30 +43,27 @@ export default function BrowseEquipmentPage() {
   for (const emp of employees) {
     employeeMap[emp.id] = `${emp.first_name} ${emp.last_name}`
   }
-  // Replace UUIDs in borrowerMap with resolved names
-  for (const assetId in borrowerMap) {
-    const val = borrowerMap[assetId]
-    if (employeeMap[val]) borrowerMap[assetId] = employeeMap[val]
-  }
 
-  // All shown assets must be borrowable (borrowable_by !== 'none' or null)
-  const allAssets = availableAssets.filter(a => (a as any).borrowable_by && (a as any).borrowable_by !== 'none')
+  // All shown assets must be borrowable
+  const allBorrowable = [...availableAssets, ...assignedAssets].filter(
+    a => (a as any).borrowable_by && (a as any).borrowable_by !== 'none'
+  )
 
-  const filtered = allAssets.filter((a) => {
+  const filtered = allBorrowable.filter((a) => {
     const matchesSearch =
       !searchQuery ||
       a.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       a.asset_tag?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       (a as any).category?.name?.toLowerCase().includes(searchQuery.toLowerCase())
     const matchesCategory = !categoryFilter || (a as any).category_id === categoryFilter
-    const isBorrowed = !!borrowedEndMap[a.id]
+    const isBorrowed = a.status === 'assigned'
     if (availabilityFilter === 'available' && isBorrowed) return false
     if (availabilityFilter === 'borrowed' && !isBorrowed) return false
     return matchesSearch && matchesCategory
   })
 
-  const availableCount = allAssets.filter(a => !borrowedEndMap[a.id]).length
-  const borrowedCount  = allAssets.filter(a => !!borrowedEndMap[a.id]).length
+  const availableCount = allBorrowable.filter(a => a.status !== 'assigned').length
+  const borrowedCount  = allBorrowable.filter(a => a.status === 'assigned').length
 
   function goToCheckout(asset: Asset) {
     router.push(`/equipment/checkout?asset=${asset.id}`)
@@ -180,8 +166,14 @@ export default function BrowseEquipmentPage() {
               <tbody className="bg-white divide-y divide-gray-200">
                 {filtered.map((asset) => {
                   const a = asset as any
-                  const isBorrowed = !!borrowedEndMap[asset.id]
-                  const endDate = borrowedEndMap[asset.id]
+                  const isBorrowed = asset.status === 'assigned'
+                  const borrowReq = borrowRequestMap[asset.id]
+                  const endDate = borrowReq?.borrow_end_date ?? null
+                  const borrowerName = borrowReq
+                    ? (borrowReq.borrower_type === 'external'
+                        ? borrowReq.external_borrower_name
+                        : employeeMap[borrowReq.employee_id] ?? null)
+                    : null
                   const nextAvailable = endDate
                     ? (() => { const d = new Date(endDate + 'T00:00:00'); d.setDate(d.getDate() + 1); return localDateStr(d) })()
                     : null
@@ -206,8 +198,8 @@ export default function BrowseEquipmentPage() {
                             <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-red-100 text-red-700">
                               <CalendarX className="w-3 h-3" /> Borrowed
                             </span>
-                            {borrowerMap[asset.id] && (
-                              <p className="text-[11px] text-gray-500 mt-0.5">by {borrowerMap[asset.id]}</p>
+                            {borrowerName && (
+                              <p className="text-[11px] text-gray-500 mt-0.5">by {borrowerName}</p>
                             )}
                             {nextAvailable && (
                               <p className="text-[11px] text-green-700 font-medium mt-0.5">Free from {nextAvailable}</p>

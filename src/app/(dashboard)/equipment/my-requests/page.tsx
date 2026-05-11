@@ -153,7 +153,7 @@ export default function MyEquipmentRequestsPage() {
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50 border-b border-gray-200">
                 <tr>
-                  {['Item Description', 'Category', 'Priority', 'Requested Date', 'Status', 'Notes', 'Actions'].map(
+                  {['Item Description', 'Category', 'Priority', 'Borrow Period', 'Status', 'Notes', 'Actions'].map(
                     (h) => (
                       <th
                         key={h}
@@ -184,14 +184,35 @@ export default function MyEquipmentRequestsPage() {
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                        {formatDate(req.requested_date)}
+                        {r.borrow_start_date || r.borrow_end_date ? (
+                          <>
+                            <div>{formatDate(r.borrow_start_date)}</div>
+                            <div className="text-xs text-gray-400">to {formatDate(r.borrow_end_date)}</div>
+                          </>
+                        ) : formatDate(req.requested_date)}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <span
-                          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium capitalize ${statusBadge[req.status ?? 'pending'] || 'bg-gray-100 text-gray-600'}`}
-                        >
-                          {req.status}
-                        </span>
+                        <div className="space-y-1">
+                          <span
+                            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium capitalize ${statusBadge[req.status ?? 'pending'] || 'bg-gray-100 text-gray-600'}`}
+                          >
+                            {req.status}
+                          </span>
+                          {req.status === 'fulfilled' && r.returned_date && (
+                            <div>
+                              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-teal-100 text-teal-700">
+                                Returned {formatDate(r.returned_date)}
+                              </span>
+                            </div>
+                          )}
+                          {req.status === 'fulfilled' && !r.returned_date && (
+                            <div>
+                              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-700">
+                                With you
+                              </span>
+                            </div>
+                          )}
+                        </div>
                       </td>
                       <td className="px-6 py-4 text-sm text-gray-500 max-w-xs truncate">
                         {req.rejection_reason || req.notes || '—'}
