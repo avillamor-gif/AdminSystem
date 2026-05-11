@@ -700,9 +700,10 @@ export default function TimePage() {
                   }
 
                   // Whether this is a past date the employee can submit a late entry for
+                  // Show for all roles — My Calendar always shows the logged-in user's own records
                   const today = localDateStr(new Date())
                   const isPast = dateStr < today
-                  const canSubmitLateEntry = !isAdmin && !holiday && isPast && !attendance && !leaveRequest
+                  const canSubmitLateEntry = !holiday && isPast && !attendance && !leaveRequest
 
                   days.push(
                     <div
@@ -852,12 +853,10 @@ export default function TimePage() {
                 <span className="text-xs text-gray-600">Public Holidays</span>
               </div>
             </div>
-            {/* Late entry hint for non-admin employees */}
-            {!isAdmin && (
-              <p className="mt-3 text-xs text-teal-600">
-                💡 Click the <strong>+</strong> icon on an empty past date to submit a forgotten attendance entry.
-              </p>
-            )}
+            {/* Late entry hint for all users */}
+            <p className="mt-3 text-xs text-teal-600">
+              💡 Click the <strong>+</strong> icon on an empty past date to submit a forgotten attendance entry.
+            </p>
           </div>
         </Card>
       )}
