@@ -9,7 +9,6 @@ const leaveManagementNavItems = [
   { label: 'Leave Balances',         href: '/admin/leave-management/leave-balances',        requiresPermission: 'admin.leave_management.leave_balances' },
   { label: 'Holiday Calendar',       href: '/admin/leave-management/holiday-calendar',      requiresPermission: 'admin.leave_management.holiday_calendar' },
   { label: 'Absence Categories',     href: '/admin/leave-management/absence-categories',    requiresPermission: 'admin.leave_management.absence_categories' },
-  { label: 'Approval Workflows',     href: '/admin/leave-management/approval-workflows',    requiresPermission: 'admin.leave_management.approval_workflows' },
 ]
 
 export default function LeaveManagementLayout({ children }: { children: React.ReactNode }) {
