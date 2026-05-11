@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react'
 import { useSearchParams } from 'next/navigation'
-import { Clock, Play, Square, Calendar, ChevronRight, Edit2 } from 'lucide-react'
+import { Clock, Play, Square, Calendar, ChevronRight, Edit2, Plus } from 'lucide-react'
 import { Card, Button, Badge } from '@/components/ui'
 import { AttendanceTypeModal } from '@/components/attendance/AttendanceTypeModal'
 import { LateEntryModal } from '@/components/attendance/LateEntryModal'
@@ -729,9 +729,9 @@ export default function TimePage() {
                           <button
                             onClick={e => { e.stopPropagation(); setLateEntryModal({ open: true, dateStr }) }}
                             title="Add late attendance entry"
-                            className="opacity-0 group-hover:opacity-100 transition-opacity p-0.5 rounded text-gray-300 hover:text-teal-600 hover:bg-teal-50"
+                            className="p-1 rounded-full text-teal-500 hover:text-teal-700 hover:bg-teal-50 transition-colors"
                           >
-                            <span className="text-[10px] font-bold leading-none">+</span>
+                            <Plus className="w-3.5 h-3.5" />
                           </button>
                         )}
                       </div>
@@ -855,7 +855,7 @@ export default function TimePage() {
             {/* Late entry hint for non-admin employees */}
             {!isAdmin && (
               <p className="mt-3 text-xs text-teal-600">
-                💡 Hover over an empty past date and click <strong>+</strong> to submit a forgotten attendance entry.
+                💡 Click the <strong>+</strong> icon on an empty past date to submit a forgotten attendance entry.
               </p>
             )}
           </div>
