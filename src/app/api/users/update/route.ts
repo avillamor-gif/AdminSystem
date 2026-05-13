@@ -55,24 +55,8 @@ export async function PUT(request: NextRequest) {
       .from('user_roles')
       .update(updateRoleData)
       .eq('user_id', id)
-      .select(`
-        id,
-        user_id,
-        role,
-        created_at,
-        updated_at,
-        employee:employees(
-          id,
-          employee_id,
-          first_name,
-          last_name,
-          email,
-          status,
-          avatar_url,
-          department_id,
-          job_title_id
-        )
-      `)
+      .select('*')
+      .limit(1)
       .single()
 
     if (roleError) {
@@ -83,8 +67,16 @@ export async function PUT(request: NextRequest) {
       )
     }
 
-    // Transform response
-    const employee = (roleData as any).employee
+    // Fetch employee separately to avoid PGRST200 from aliased joins
+    let employee: any = null
+    if ((roleData as any).employee_id) {
+      const { data: empRow } = await supabaseAdmin
+        .from('employees')
+        .select('id, employee_id, first_name, last_name, email, status, avatar_url, department_id, job_title_id')
+        .eq('id', (roleData as any).employee_id)
+        .maybeSingle()
+      employee = empRow
+    }
     const name = employee 
       ? `${employee.first_name} ${employee.last_name}` 
       : email || 'Updated User'

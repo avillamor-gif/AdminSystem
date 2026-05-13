@@ -47,6 +47,22 @@ export async function POST(request: NextRequest) {
       if (insertError) throw insertError
     }
 
+    // Also keep user_roles.role in sync with the highest-priority role
+    const PRIORITY_ORDER = ['Super Admin', 'Admin', 'Executive Director', 'HR Manager', 'Manager', 'Employee', 'Intern', 'Volunteer', 'Consultant']
+    const ROLE_TO_ENUM: Record<string, string> = {
+      'Super Admin': 'super admin', 'Admin': 'admin', 'Executive Director': 'ed',
+      'HR Manager': 'hr', 'Manager': 'manager', 'Employee': 'employee',
+      'Intern': 'intern', 'Volunteer': 'volunteer', 'Consultant': 'consultant',
+    }
+    const primaryRoleName = PRIORITY_ORDER.find(r => role_names.includes(r))
+    const primaryEnum = primaryRoleName ? ROLE_TO_ENUM[primaryRoleName] : null
+    if (primaryEnum) {
+      await admin
+        .from('user_roles')
+        .update({ role: primaryEnum as any, updated_at: new Date().toISOString() })
+        .eq('user_id', user_id)
+    }
+
     return NextResponse.json({ success: true, assigned: roleIds.length })
   } catch (error: any) {
     console.error('Error assigning user roles:', error)

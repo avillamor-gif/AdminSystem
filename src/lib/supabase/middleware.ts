@@ -94,7 +94,9 @@ export async function updateSession(request: NextRequest) {
       .from('user_roles')
       .select('role, employee_id')
       .eq('user_id', user.id)
-      .single()
+      .order('updated_at', { ascending: false })
+      .limit(1)
+      .maybeSingle()
 
     // If user is not in user_roles table, they're not authorized
     if (!userRole) {
@@ -109,8 +111,9 @@ export async function updateSession(request: NextRequest) {
     if (isAdminRoute || isSuperAdminRoute) {
       const role = userRole.role
 
-      // Super admin routes: only 'admin' enum role
-      if (isSuperAdminRoute && role !== 'admin') {
+      // Super admin routes: admin, super admin, or ed only
+      const isSuperRole = ['admin', 'super admin', 'ed'].includes(role || '')
+      if (isSuperAdminRoute && !isSuperRole) {
         return NextResponse.redirect(new URL('/', request.url))
       }
 
