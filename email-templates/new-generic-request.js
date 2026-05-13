@@ -66,7 +66,7 @@ function newGenericRequestEmail(opts) {
   const urlMap = {
     'Travel': '/admin/travel',
     'Publication': '/admin/publications/publication-management',
-    'Equipment': '/admin/asset-management/equipment-requests',
+    'Equipment': '/admin/office-equipment/equipment-requests',
     'Supply': '/admin/office-supplies/supply-requests',
     'Leave Credit': '/admin/leave-management/leave-credits',
   }

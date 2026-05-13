@@ -185,10 +185,19 @@ export async function POST(req: NextRequest) {
     }
 
     // ── Fire-and-forget push notifications ───────────────────────────────────
+    const pushUrlMap: Record<string, string> = {
+      leave_request_notifications:        '/admin/leave-management',
+      travel_request_notifications:       '/admin/travel',
+      equipment_request_notifications:    '/admin/office-equipment/equipment-requests',
+      supply_request_notifications:       '/admin/office-supplies/supply-requests',
+      publication_request_notifications:  '/admin/publications/publication-management',
+      leave_credit_notifications:         '/admin/leave-management/leave-credits',
+    }
+    const pushUrl = pushUrlMap[table] ?? '/admin'
     sendPushToUsers([...recipientUserIds], {
       title: title.replace('{name}', name),
       body: message.replace('{name}', name),
-      url: '/admin/leave-management',
+      url: pushUrl,
       tag: `new-request-${requestId}`,
     }).catch(() => {})
 
