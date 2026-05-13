@@ -73,14 +73,14 @@ export async function PATCH(req: NextRequest) {
 
     const admin = createAdminClient()
 
-    // Check role
-    const { data: roleRow } = await admin
+    // Check role — user may have multiple user_roles rows; accept if any is admin/ed/hr
+    const { data: roleRows } = await admin
       .from('user_roles')
       .select('role')
       .eq('user_id', user.id)
-      .maybeSingle()
 
-    if (!roleRow || !['admin', 'ed', 'hr'].includes(roleRow.role as string)) {
+    const hasAccess = (roleRows ?? []).some((r: any) => ['admin', 'ed', 'hr'].includes(r.role))
+    if (!hasAccess) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
