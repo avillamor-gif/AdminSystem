@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Building2, UserCheck, RotateCcw } from 'lucide-react'
+import { Building2, UserCheck, RotateCcw, History } from 'lucide-react'
 import { Card, Button, Badge, Modal, ModalHeader, ModalBody, ModalFooter } from '@/components/ui'
 import { useAssetRequests, useMarkEquipmentReturned, useAssets } from '@/hooks/useAssets'
 import { useEmployees } from '@/hooks'
@@ -15,19 +15,20 @@ const BORROWER_FILTER_OPTIONS = [
 ]
 
 const STATUS_FILTER_OPTIONS = [
+  { value: '', label: 'All Records' },
   { value: 'active', label: 'Currently Borrowed' },
   { value: 'returned', label: 'Returned' },
-  { value: '', label: 'All' },
 ]
 
 export default function BorrowedEquipmentPage() {
   const [borrowerFilter, setBorrowerFilter] = useState<'' | 'employee' | 'external'>('')
-  const [statusFilter, setStatusFilter] = useState<'active' | 'returned' | ''>('active')
+  const [statusFilter, setStatusFilter] = useState<'active' | 'returned' | ''>('')
   const [returnModal, setReturnModal] = useState<{ open: boolean; req: AssetRequest | null }>({
     open: false,
     req: null,
   })
   const [returnNotes, setReturnNotes] = useState('')
+  const [historyModal, setHistoryModal] = useState<{ open: boolean; assetId: string | null; assetName: string }>({ open: false, assetId: null, assetName: '' })
 
   // Fetch only fulfilled requests (equipment that was given out)
   const { data: requests = [], isLoading } = useAssetRequests({ status: 'fulfilled' })
@@ -153,6 +154,7 @@ export default function BorrowedEquipmentPage() {
                   <th className="text-left px-5 py-3 font-medium text-gray-600">Asset Tag</th>
                   <th className="text-left px-5 py-3 font-medium text-gray-600">Purpose</th>
                   <th className="text-left px-5 py-3 font-medium text-gray-600">Date Borrowed</th>
+                  <th className="text-left px-5 py-3 font-medium text-gray-600">Expected Return</th>
                   <th className="text-left px-5 py-3 font-medium text-gray-600">Date Returned</th>
                   <th className="text-left px-5 py-3 font-medium text-gray-600">Status</th>
                   <th className="text-right px-5 py-3 font-medium text-gray-600">Actions</th>
@@ -190,6 +192,16 @@ export default function BorrowedEquipmentPage() {
                       <td className="px-5 py-3.5 text-gray-500 whitespace-nowrap">
                         {fulfilledDate ? formatDate(fulfilledDate) : '—'}
                       </td>
+                      <td className="px-5 py-3.5 whitespace-nowrap">
+                        {r.borrow_end_date ? (
+                          <span className={isOverdue ? 'text-red-600 font-medium' : 'text-gray-500'}>
+                            {formatDate(r.borrow_end_date)}
+                            {isOverdue && <span className="ml-1 text-[10px] bg-red-100 text-red-600 px-1 py-0.5 rounded font-semibold">OVERDUE</span>}
+                          </span>
+                        ) : (
+                          <span className="text-gray-400">—</span>
+                        )}
+                      </td>
                       <td className="px-5 py-3.5 text-gray-500 whitespace-nowrap">
                         {isReturned ? (
                           <span className="text-green-700">{formatDate((r as any).returned_date)}</span>
@@ -213,16 +225,26 @@ export default function BorrowedEquipmentPage() {
                         )}
                       </td>
                       <td className="px-5 py-3.5 text-right">
-                        {!isReturned && (
-                          <Button
-                            variant="secondary"
-                            className="text-xs py-1 px-3 h-auto inline-flex items-center gap-1.5"
-                            onClick={() => setReturnModal({ open: true, req: r })}
+                        <div className="flex items-center justify-end gap-2">
+                          <button
+                            className="inline-flex items-center gap-1.5 text-xs text-gray-500 hover:text-green-700 px-2 py-1 rounded hover:bg-gray-100"
+                            onClick={() => setHistoryModal({ open: true, assetId: (r as any).assigned_asset_id || r.asset_id || null, assetName: r.item_description || '' })}
+                            title="View borrow history for this item"
                           >
-                            <RotateCcw className="w-3.5 h-3.5" />
-                            Mark Returned
-                          </Button>
-                        )}
+                            <History className="w-3.5 h-3.5" />
+                            History
+                          </button>
+                          {!isReturned && (
+                            <Button
+                              variant="secondary"
+                              className="text-xs py-1 px-3 h-auto inline-flex items-center gap-1.5"
+                              onClick={() => setReturnModal({ open: true, req: r })}
+                            >
+                              <RotateCcw className="w-3.5 h-3.5" />
+                              Mark Returned
+                            </Button>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   )
@@ -232,6 +254,87 @@ export default function BorrowedEquipmentPage() {
           </div>
         )}
       </Card>
+
+      {/* History Modal */}
+      <Modal open={historyModal.open} onClose={() => setHistoryModal({ open: false, assetId: null, assetName: '' })}>
+        <ModalHeader>
+          <div className="flex items-center gap-2">
+            <History className="w-4 h-4 text-green-600" />
+            Borrow History — {historyModal.assetName}
+          </div>
+        </ModalHeader>
+        <ModalBody>
+          {(() => {
+            const history = requests
+              .filter(r => {
+                const aid = (r as any).assigned_asset_id || r.asset_id
+                return aid === historyModal.assetId
+              })
+              .sort((a, b) => {
+                const aDate = (a as any).fulfilled_date || a.requested_date || ''
+                const bDate = (b as any).fulfilled_date || b.requested_date || ''
+                return bDate.localeCompare(aDate)
+              })
+            if (history.length === 0) {
+              return <p className="text-sm text-gray-400 text-center py-4">No borrow history found for this item.</p>
+            }
+            return (
+              <div className="space-y-2">
+                <p className="text-xs text-gray-500 mb-3">{history.length} borrow record{history.length !== 1 ? 's' : ''} found</p>
+                {history.map((r, i) => {
+                  const isReturned = !!(r as any).returned_date
+                  const bt = (r as any).borrower_type || 'employee'
+                  const borrowerName = bt === 'external'
+                    ? ((r as any).external_borrower_name || 'External')
+                    : (employeeMap[(r as any).employee_id] || '—')
+                  const borrowerSub = bt === 'external'
+                    ? ((r as any).external_borrower_org || 'External')
+                    : 'Internal Employee'
+                  const fulfilledDate = (r as any).fulfilled_date || r.requested_date
+                  const isOverdueH = !isReturned && r.borrow_end_date &&
+                    new Date(r.borrow_end_date) < new Date(new Date().toISOString().split('T')[0])
+                  return (
+                    <div key={r.id} className={`p-3.5 rounded-lg border text-sm ${
+                      isReturned ? 'bg-green-50 border-green-200' :
+                      isOverdueH ? 'bg-red-50 border-red-200' :
+                      'bg-yellow-50 border-yellow-200'
+                    }`}>
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <div className="flex items-center gap-1.5">
+                            {bt === 'external' ? <Building2 className="w-3.5 h-3.5 text-blue-500" /> : <UserCheck className="w-3.5 h-3.5 text-green-600" />}
+                            <span className="font-medium text-gray-900">{borrowerName}</span>
+                            <span className="text-xs text-gray-400">{borrowerSub}</span>
+                          </div>
+                          <p className="text-xs text-gray-500 mt-0.5">{r.justification || 'No purpose stated'}</p>
+                          {(r as any).return_notes && (
+                            <p className="text-xs text-gray-400 mt-0.5 italic">Return note: {(r as any).return_notes}</p>
+                          )}
+                        </div>
+                        <span className={`shrink-0 text-xs font-semibold px-2 py-0.5 rounded ${
+                          isReturned ? 'bg-green-100 text-green-700' :
+                          isOverdueH ? 'bg-red-100 text-red-700' :
+                          'bg-yellow-100 text-yellow-700'
+                        }`}>
+                          {isReturned ? 'Returned' : isOverdueH ? 'Overdue' : 'With Borrower'}
+                        </span>
+                      </div>
+                      <div className="flex gap-4 mt-2 text-xs text-gray-500">
+                        <span>Borrowed: <strong className="text-gray-700">{fulfilledDate ? formatDate(fulfilledDate) : '—'}</strong></span>
+                        {r.borrow_end_date && <span>Due: <strong className={isOverdueH ? 'text-red-600' : 'text-gray-700'}>{formatDate(r.borrow_end_date)}</strong></span>}
+                        {isReturned && <span>Returned: <strong className="text-green-700">{formatDate((r as any).returned_date)}</strong></span>}
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            )
+          })()}
+        </ModalBody>
+        <ModalFooter>
+          <Button variant="secondary" onClick={() => setHistoryModal({ open: false, assetId: null, assetName: '' })}>Close</Button>
+        </ModalFooter>
+      </Modal>
 
       {/* Return Modal */}
       <Modal open={returnModal.open} onClose={() => setReturnModal({ open: false, req: null })}>
