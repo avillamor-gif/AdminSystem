@@ -3,7 +3,7 @@
 import { useState, Component, type ReactNode } from 'react'
 import { 
   Users, Plus, Edit2, Trash2, Shield, Eye, Search, 
-  Filter, Download, Upload, MoreHorizontal, Check, X, AlertTriangle
+  Filter, Download, Upload, MoreHorizontal, Check, X, AlertTriangle, KeyRound, Mail
 } from 'lucide-react'
 import { Card, Button, Badge, Input, Avatar } from '@/components/ui'
 import { useUsers, useDeleteUser, useUpdateUserStatus, useCurrentUserPermissions } from '@/hooks'
@@ -77,6 +77,28 @@ function UserManagementContent() {
 
   const handleStatusChange = async (id: string, status: 'active' | 'inactive' | 'suspended') => {
     await updateUserStatus.mutateAsync({ id, status })
+  }
+
+  const [sendingResetFor, setSendingResetFor] = useState<string | null>(null)
+  const isSuperAdmin = ['super admin', 'admin', 'executive director'].includes(roleInfo?.role_name?.toLowerCase() || '')
+
+  const handleSendResetEmail = async (userId: string, email: string, name: string) => {
+    if (!window.confirm(`Send a password reset email to ${name} (${email})?`)) return
+    setSendingResetFor(userId)
+    try {
+      const res = await fetch('/api/admin/users/reset-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ user_id: userId, email }),
+      })
+      const json = await res.json()
+      if (!res.ok) throw new Error(json.error || 'Failed')
+      alert(`Password reset email sent to ${email}`)
+    } catch (err: any) {
+      alert(`Error: ${err.message}`)
+    } finally {
+      setSendingResetFor(null)
+    }
   }
 
   const handleCloseForm = () => {
@@ -350,6 +372,19 @@ function UserManagementContent() {
                             onClick={() => handleEdit(user)}
                           >
                             <Edit2 className="w-3 h-3" />
+                          </Button>
+                        )}
+                        {isSuperAdmin && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            title="Send password reset email"
+                            disabled={sendingResetFor === user.id}
+                            onClick={() => handleSendResetEmail(user.id, user.email, user.name)}
+                          >
+                            {sendingResetFor === user.id
+                              ? <div className="w-3 h-3 border border-gray-400 border-t-transparent rounded-full animate-spin" />
+                              : <Mail className="w-3 h-3" />}
                           </Button>
                         )}
                         <select
