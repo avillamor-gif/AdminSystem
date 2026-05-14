@@ -210,7 +210,7 @@ export default function AdminPage() {
       icon: Monitor,
       color: 'bg-cyan-600',
       href: '/admin/office-equipment',
-      items: ['Equipment Requests', 'Borrowed Equipment'],
+      items: ['Equipment Requests', 'Borrowed Equipment', 'Analytics'],
       requiresPermission: 'admin.assets',
     },
     {
@@ -505,6 +505,7 @@ export default function AdminPage() {
                           // Office Equipment routes
                           'Equipment Requests': '/admin/office-equipment/equipment-requests',
                           'Borrowed Equipment': '/admin/office-equipment/borrowed-equipment',
+                          'Analytics': '/admin/office-equipment/analytics',
                           'Equipment Assignment': '/admin/office-equipment/equipment-assignment',
                           'Maintenance Records': '/admin/office-equipment/maintenance-records',
                           'Warranty Tracking': '/admin/office-equipment/warranty-tracking',
