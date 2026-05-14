@@ -1,12 +1,12 @@
 'use client'
 
 import { useState } from 'react'
-import { Building2, UserCheck, RotateCcw, History } from 'lucide-react'
-import { Card, Button, Badge, Modal, ModalHeader, ModalBody, ModalFooter } from '@/components/ui'
-import { useAssetRequests, useMarkEquipmentReturned, useAssets } from '@/hooks/useAssets'
+import { Building2, UserCheck, RotateCcw, History, Plus } from 'lucide-react'
+import { Card, Button, Badge, Modal, ModalHeader, ModalBody, ModalFooter, Input } from '@/components/ui'
+import { useAssetRequests, useMarkEquipmentReturned, useAssets, useCreateAssetRequest } from '@/hooks/useAssets'
 import { useEmployees } from '@/hooks'
 import type { AssetRequest } from '@/services/asset.service'
-import { formatDate } from '@/lib/utils'
+import { formatDate, localDateStr } from '@/lib/utils'
 
 const BORROWER_FILTER_OPTIONS = [
   { value: '', label: 'All Borrowers' },
@@ -29,10 +29,23 @@ export default function BorrowedEquipmentPage() {
   })
   const [returnNotes, setReturnNotes] = useState('')
   const [historyModal, setHistoryModal] = useState<{ open: boolean; assetId: string | null; assetName: string }>({ open: false, assetId: null, assetName: '' })
+  const [manualModal, setManualModal] = useState(false)
+  const [manualForm, setManualForm] = useState({
+    borrowerType: 'employee' as 'employee' | 'external',
+    employee_id: '',
+    external_name: '',
+    external_org: '',
+    asset_id: '',
+    purpose: '',
+    borrow_start_date: localDateStr(new Date()),
+    borrow_end_date: '',
+  })
+  const [manualError, setManualError] = useState('')
 
   // Fetch only fulfilled requests (equipment that was given out)
   const { data: requests = [], isLoading } = useAssetRequests({ status: 'fulfilled' })
   const markReturnedMutation = useMarkEquipmentReturned()
+  const createRequestMutation = useCreateAssetRequest()
   const { data: employees = [] } = useEmployees()
   const employeeMap = Object.fromEntries(employees.map(e => [e.id, `${e.first_name} ${e.last_name}`]))
   const { data: allAssets = [] } = useAssets({})
@@ -92,6 +105,34 @@ export default function BorrowedEquipmentPage() {
     setReturnNotes('')
   }
 
+  async function handleManualSubmit() {
+    setManualError('')
+    const asset = allAssets.find(a => a.id === manualForm.asset_id)
+    if (!manualForm.asset_id || !asset) { setManualError('Please select an asset.'); return }
+    if (manualForm.borrowerType === 'employee' && !manualForm.employee_id) { setManualError('Please select an employee.'); return }
+    if (manualForm.borrowerType === 'external' && !manualForm.external_name.trim()) { setManualError('Please enter the borrower name.'); return }
+    if (!manualForm.borrow_start_date) { setManualError('Please enter a borrow date.'); return }
+
+    await createRequestMutation.mutateAsync({
+      asset_id: manualForm.asset_id,
+      assigned_asset_id: manualForm.asset_id,
+      item_description: asset.name,
+      justification: manualForm.purpose || null,
+      priority: 'normal',
+      status: 'fulfilled',
+      requested_date: manualForm.borrow_start_date,
+      fulfilled_date: manualForm.borrow_start_date,
+      borrow_start_date: manualForm.borrow_start_date,
+      borrow_end_date: manualForm.borrow_end_date || null,
+      borrower_type: manualForm.borrowerType,
+      employee_id: manualForm.borrowerType === 'employee' ? manualForm.employee_id || null : null,
+      external_borrower_name: manualForm.borrowerType === 'external' ? manualForm.external_name : null,
+      external_borrower_org: manualForm.borrowerType === 'external' ? manualForm.external_org || null : null,
+    })
+    setManualModal(false)
+    setManualForm({ borrowerType: 'employee', employee_id: '', external_name: '', external_org: '', asset_id: '', purpose: '', borrow_start_date: localDateStr(new Date()), borrow_end_date: '' })
+  }
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -100,15 +141,21 @@ export default function BorrowedEquipmentPage() {
           <h1 className="text-2xl font-bold text-gray-900">Borrowed Equipment</h1>
           <p className="text-gray-600 mt-1">Track all equipment currently checked out or previously returned</p>
         </div>
-        <div className="flex gap-3 text-sm">
-          <div className="px-3 py-1.5 bg-blue-50 border border-blue-200 rounded-lg text-blue-700 font-medium">
-            {activeCount} Currently Out
-          </div>
-          {overdueCount > 0 && (
-            <div className="px-3 py-1.5 bg-red-50 border border-red-200 rounded-lg text-red-700 font-medium">
-              {overdueCount} Overdue
+        <div className="flex items-center gap-3">
+          <div className="flex gap-3 text-sm">
+            <div className="px-3 py-1.5 bg-blue-50 border border-blue-200 rounded-lg text-blue-700 font-medium">
+              {activeCount} Currently Out
             </div>
-          )}
+            {overdueCount > 0 && (
+              <div className="px-3 py-1.5 bg-red-50 border border-red-200 rounded-lg text-red-700 font-medium">
+                {overdueCount} Overdue
+              </div>
+            )}
+          </div>
+          <Button onClick={() => setManualModal(true)}>
+            <Plus className="w-4 h-4 mr-1.5" />
+            Log Borrow
+          </Button>
         </div>
       </div>
 
@@ -254,6 +301,112 @@ export default function BorrowedEquipmentPage() {
           </div>
         )}
       </Card>
+
+      {/* Manual Borrow Modal */}
+      <Modal open={manualModal} onClose={() => { setManualModal(false); setManualError('') }}>
+        <ModalHeader>
+          <div className="flex items-center gap-2">
+            <Plus className="w-4 h-4 text-green-600" />
+            Log Manual Borrow
+          </div>
+        </ModalHeader>
+        <ModalBody>
+          <div className="space-y-4">
+            {/* Borrower type toggle */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Borrower Type</label>
+              <div className="flex gap-2">
+                {(['employee', 'external'] as const).map(t => (
+                  <button
+                    key={t}
+                    type="button"
+                    onClick={() => setManualForm(f => ({ ...f, borrowerType: t }))}
+                    className={`px-4 py-1.5 text-sm rounded-lg border font-medium transition-colors ${
+                      manualForm.borrowerType === t
+                        ? 'bg-green-600 text-white border-green-600'
+                        : 'bg-white text-gray-600 border-gray-300 hover:border-gray-400'
+                    }`}
+                  >
+                    {t === 'employee' ? 'Employee' : 'External / Partner'}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Borrower */}
+            {manualForm.borrowerType === 'employee' ? (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Employee <span className="text-red-500">*</span></label>
+                <select
+                  value={manualForm.employee_id}
+                  onChange={e => setManualForm(f => ({ ...f, employee_id: e.target.value }))}
+                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                >
+                  <option value="">Select employee…</option>
+                  {employees.map(e => (
+                    <option key={e.id} value={e.id}>{e.first_name} {e.last_name}</option>
+                  ))}
+                </select>
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Name <span className="text-red-500">*</span></label>
+                  <Input value={manualForm.external_name} onChange={e => setManualForm(f => ({ ...f, external_name: e.target.value }))} placeholder="e.g. John Dugan" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Organization</label>
+                  <Input value={manualForm.external_org} onChange={e => setManualForm(f => ({ ...f, external_org: e.target.value }))} placeholder="e.g. Partner NGO" />
+                </div>
+              </div>
+            )}
+
+            {/* Asset */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Equipment <span className="text-red-500">*</span></label>
+              <select
+                value={manualForm.asset_id}
+                onChange={e => setManualForm(f => ({ ...f, asset_id: e.target.value }))}
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+              >
+                <option value="">Select asset…</option>
+                {allAssets.map(a => (
+                  <option key={a.id} value={a.id}>{a.name}{a.asset_tag ? ` (${a.asset_tag})` : ''}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Dates */}
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Date Borrowed <span className="text-red-500">*</span></label>
+                <Input type="date" value={manualForm.borrow_start_date} onChange={e => setManualForm(f => ({ ...f, borrow_start_date: e.target.value }))} />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Expected Return</label>
+                <Input type="date" value={manualForm.borrow_end_date} onChange={e => setManualForm(f => ({ ...f, borrow_end_date: e.target.value }))} />
+              </div>
+            </div>
+
+            {/* Purpose */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Purpose / Notes</label>
+              <Input value={manualForm.purpose} onChange={e => setManualForm(f => ({ ...f, purpose: e.target.value }))} placeholder="e.g. Field documentation" />
+            </div>
+
+            {manualError && <p className="text-sm text-red-600">{manualError}</p>}
+          </div>
+        </ModalBody>
+        <ModalFooter>
+          <Button variant="secondary" onClick={() => { setManualModal(false); setManualError('') }}>Cancel</Button>
+          <Button
+            onClick={handleManualSubmit}
+            disabled={createRequestMutation.isPending}
+          >
+            {createRequestMutation.isPending ? 'Saving…' : 'Log Borrow'}
+          </Button>
+        </ModalFooter>
+      </Modal>
 
       {/* History Modal */}
       <Modal open={historyModal.open} onClose={() => setHistoryModal({ open: false, assetId: null, assetName: '' })}>
