@@ -229,6 +229,21 @@ export default function EquipmentRequestsPage() {
                               </Button>
                             </>
                           )}
+                          {r.status === 'pending' && (
+                            <Button
+                              variant="primary"
+                              className="text-xs py-1 px-3 h-auto"
+                              disabled={approveMutation.isPending || fulfillMutation.isPending}
+                              onClick={async () => {
+                                if (!currentEmployee?.id) return
+                                await approveMutation.mutateAsync({ id: r.id, approvedBy: currentEmployee.id })
+                                setFulfillModal({ open: true, req: { ...r, status: 'approved' } })
+                              }}
+                              title="Approve and immediately mark as fulfilled"
+                            >
+                              Approve &amp; Fulfill
+                            </Button>
+                          )}
                           {r.status === 'approved' && (
                             <Button
                               variant="primary"

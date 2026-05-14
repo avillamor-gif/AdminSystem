@@ -824,7 +824,9 @@ export const assetRequestService = {
     if (error) throw error
 
     // Flip the physical asset to 'assigned' so it stops appearing as available
-    const linkedAssetId = (assetId && assetId !== id) ? assetId : (data as any).asset_id
+    const linkedAssetId = (assetId && assetId !== id)
+      ? assetId
+      : (data as any).assigned_asset_id   // only use the FK that definitely exists in DB
     if (linkedAssetId) {
       await supabase.from('assets').update({
         status: 'assigned',

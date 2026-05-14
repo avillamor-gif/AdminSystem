@@ -3,8 +3,8 @@
 import { useState } from 'react'
 import { Building2, UserCheck, RotateCcw, History, Plus, Search } from 'lucide-react'
 import { Card, Button, Badge, Modal, ModalHeader, ModalBody, ModalFooter, Input } from '@/components/ui'
-import { useAssetRequests, useMarkEquipmentReturned, useAssets, useCreateAssetRequest, useFulfillAssetRequest } from '@/hooks/useAssets'
-import { useEmployees } from '@/hooks'
+import { useAssetRequests, useMarkEquipmentReturned, useAssets, useCreateAssetRequest, useFulfillAssetRequest, useApproveAssetRequest } from '@/hooks/useAssets'
+import { useEmployees, useCurrentEmployee } from '@/hooks'
 import type { AssetRequest } from '@/services/asset.service'
 import { formatDate, localDateStr } from '@/lib/utils'
 
@@ -16,9 +16,16 @@ const BORROWER_FILTER_OPTIONS = [
 
 const STATUS_FILTER_OPTIONS = [
   { value: '', label: 'All Records' },
-  { value: 'active', label: 'Currently Borrowed' },
+  { value: 'active', label: 'Active (Out / Pending)' },
   { value: 'returned', label: 'Returned' },
 ]
+
+const REQUEST_STATUS_BADGE: Record<string, { label: string; cls: string }> = {
+  pending:   { label: 'Pending Approval', cls: 'bg-yellow-100 text-yellow-700' },
+  approved:  { label: 'Approved',         cls: 'bg-blue-100 text-blue-700' },
+  fulfilled: { label: 'With Borrower',    cls: 'bg-orange-100 text-orange-700' },
+  rejected:  { label: 'Rejected',         cls: 'bg-red-100 text-red-700' },
+}
 
 export default function BorrowedEquipmentPage() {
   const [borrowerFilter, setBorrowerFilter] = useState<'' | 'employee' | 'external'>('')
@@ -43,19 +50,23 @@ export default function BorrowedEquipmentPage() {
   })
   const [manualError, setManualError] = useState('')
 
-  // Fetch only fulfilled requests (equipment that was given out)
-  const { data: requests = [], isLoading } = useAssetRequests({ status: 'fulfilled' })
+  // Fetch ALL non-rejected requests so admin can see items at every stage
+  const { data: requests = [], isLoading } = useAssetRequests({})
   const markReturnedMutation = useMarkEquipmentReturned()
+  const approveMutation = useApproveAssetRequest()
   const createRequestMutation = useCreateAssetRequest()
   const fulfillRequestMutation = useFulfillAssetRequest()
   const { data: employees = [] } = useEmployees()
+  const { data: currentEmployee } = useCurrentEmployee()
   const employeeMap = Object.fromEntries(employees.map(e => [e.id, `${e.first_name} ${e.last_name}`]))
   const { data: allAssets = [] } = useAssets({})
   const assetTagMap = Object.fromEntries(allAssets.map(a => [a.id, a.asset_tag || '']))
 
   const filtered = requests.filter(r => {
+    if ((r.status as string) === 'rejected') return false
     const isReturned = !!(r as any).returned_date
     if (statusFilter === 'active' && isReturned) return false
+    if (statusFilter === 'active' && (r.status as string) === 'rejected') return false
     if (statusFilter === 'returned' && !isReturned) return false
     if (borrowerFilter) {
       const bt = (r as any).borrower_type || 'employee'
@@ -73,7 +84,7 @@ export default function BorrowedEquipmentPage() {
     return true
   })
 
-  const activeCount = requests.filter(r => !(r as any).returned_date).length
+  const activeCount = requests.filter(r => !(r as any).returned_date && r.status !== 'rejected').length
   const overdueCount = requests.filter(r => {
     if ((r as any).returned_date) return false
     const endDate = r.borrow_end_date
@@ -116,6 +127,18 @@ export default function BorrowedEquipmentPage() {
     setReturnNotes('')
   }
 
+  async function handleApproveFulfill(r: AssetRequest) {
+    try {
+      if (r.status === 'pending') {
+        if (!currentEmployee?.id) return
+        await approveMutation.mutateAsync({ id: r.id, approvedBy: currentEmployee.id })
+      }
+      await fulfillRequestMutation.mutateAsync({ id: r.id, assetId: r.assigned_asset_id ?? undefined })
+    } catch (_) {
+      // toast shown by mutation onError
+    }
+  }
+
   async function handleManualSubmit() {
     setManualError('')
     const asset = allAssets.find(a => a.id === manualForm.asset_id)
@@ -124,39 +147,43 @@ export default function BorrowedEquipmentPage() {
     if (manualForm.borrowerType === 'external' && !manualForm.external_name.trim()) { setManualError('Please enter the borrower name.'); return }
     if (!manualForm.borrow_start_date) { setManualError('Please enter a borrow date.'); return }
 
-    // Step 1: create the request as 'pending'
-    const created = await createRequestMutation.mutateAsync({
-      asset_id: manualForm.asset_id,
-      item_description: asset.name,
-      justification: manualForm.purpose || null,
-      priority: 'normal',
-      status: 'pending',
-      requested_date: manualForm.borrow_start_date,
-      borrow_start_date: manualForm.borrow_start_date,
-      borrow_end_date: manualForm.borrow_end_date || null,
-      borrower_type: manualForm.borrowerType,
-      employee_id: manualForm.borrowerType === 'employee' ? manualForm.employee_id || null : null,
-      external_borrower_name: manualForm.borrowerType === 'external' ? manualForm.external_name : null,
-      external_borrower_org: manualForm.borrowerType === 'external' ? manualForm.external_org || null : null,
-    })
+    try {
+      // Step 1: create the request as 'pending'
+      const created = await createRequestMutation.mutateAsync({
+        assigned_asset_id: manualForm.asset_id || null,
+        item_description: asset.name,
+        justification: manualForm.purpose || null,
+        priority: 'normal',
+        status: 'pending',
+        requested_date: manualForm.borrow_start_date,
+        borrow_start_date: manualForm.borrow_start_date,
+        borrow_end_date: manualForm.borrow_end_date || null,
+        borrower_type: manualForm.borrowerType,
+        employee_id: manualForm.borrowerType === 'employee' ? manualForm.employee_id || null : null,
+        external_borrower_name: manualForm.borrowerType === 'external' ? manualForm.external_name : null,
+        external_borrower_org: manualForm.borrowerType === 'external' ? manualForm.external_org || null : null,
+      })
 
-    // Step 2: fulfill it — this sets asset_requests.status = 'fulfilled' AND assets.status = 'assigned'
-    await fulfillRequestMutation.mutateAsync({ id: created.id, assetId: manualForm.asset_id })
+      // Step 2: fulfill it — sets asset_requests.status = 'fulfilled' AND assets.status = 'assigned'
+      await fulfillRequestMutation.mutateAsync({ id: created.id, assetId: manualForm.asset_id })
 
-    // Step 3: patch the fulfilled_date and borrow_start_date to the actual borrow date (fulfill() uses today)
-    if (manualForm.borrow_start_date !== localDateStr(new Date())) {
-      await fetch(`/api/admin/asset-requests/${created.id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          fulfilled_date: manualForm.borrow_start_date,
-          borrow_start_date: manualForm.borrow_start_date,
-        }),
-      }).catch(() => null) // best-effort date correction
+      // Step 3: patch the fulfilled_date and borrow_start_date to the actual borrow date (fulfill() uses today)
+      if (manualForm.borrow_start_date !== localDateStr(new Date())) {
+        await fetch(`/api/admin/asset-requests/${created.id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            fulfilled_date: manualForm.borrow_start_date,
+            borrow_start_date: manualForm.borrow_start_date,
+          }),
+        }).catch(() => null) // best-effort date correction
+      }
+
+      setManualModal(false)
+      setManualForm({ borrowerType: 'employee', employee_id: '', external_name: '', external_org: '', asset_id: '', purpose: '', borrow_start_date: localDateStr(new Date()), borrow_end_date: '' })
+    } catch (err: any) {
+      setManualError(err?.message || 'Failed to save. Please check the details and try again.')
     }
-
-    setManualModal(false)
-    setManualForm({ borrowerType: 'employee', employee_id: '', external_name: '', external_org: '', asset_id: '', purpose: '', borrow_start_date: localDateStr(new Date()), borrow_end_date: '' })
   }
 
   return (
@@ -295,16 +322,14 @@ export default function BorrowedEquipmentPage() {
                       </td>
                       <td className="px-5 py-3.5">
                         {isReturned ? (
-                          <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-700">
-                            Returned
-                          </span>
+                          <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-700">Returned</span>
                         ) : isOverdue ? (
-                          <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-700">
-                            Overdue
-                          </span>
+                          <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-700">Overdue</span>
                         ) : (
-                          <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-100 text-yellow-700">
-                            With Borrower
+                          <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
+                            REQUEST_STATUS_BADGE[r.status ?? 'pending']?.cls ?? 'bg-gray-100 text-gray-600'
+                          }`}>
+                            {REQUEST_STATUS_BADGE[r.status ?? 'pending']?.label ?? r.status}
                           </span>
                         )}
                       </td>
@@ -312,13 +337,23 @@ export default function BorrowedEquipmentPage() {
                         <div className="flex items-center justify-end gap-2">
                           <button
                             className="inline-flex items-center gap-1.5 text-xs text-gray-500 hover:text-green-700 px-2 py-1 rounded hover:bg-gray-100"
-                            onClick={() => setHistoryModal({ open: true, assetId: (r as any).assigned_asset_id || r.asset_id || null, assetName: r.item_description || '' })}
+                            onClick={() => setHistoryModal({ open: true, assetId: (r as any).assigned_asset_id || null, assetName: r.item_description || '' })}
                             title="View borrow history for this item"
                           >
                             <History className="w-3.5 h-3.5" />
                             History
                           </button>
-                          {!isReturned && (
+                          {(r.status === 'pending' || r.status === 'approved') && !isReturned && (
+                            <Button
+                              variant="primary"
+                              className="text-xs py-1 px-3 h-auto inline-flex items-center gap-1.5"
+                              disabled={approveMutation.isPending || fulfillRequestMutation.isPending}
+                              onClick={() => handleApproveFulfill(r)}
+                            >
+                              {r.status === 'pending' ? 'Approve & Fulfill' : 'Mark Fulfilled'}
+                            </Button>
+                          )}
+                          {r.status === 'fulfilled' && !isReturned && (
                             <Button
                               variant="secondary"
                               className="text-xs py-1 px-3 h-auto inline-flex items-center gap-1.5"

@@ -613,6 +613,7 @@ export function useFulfillAssetRequest() {
       assetRequestService.fulfill(id, assetId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: assetRequestKeys.lists() })
+      queryClient.invalidateQueries({ queryKey: assetKeys.lists() })
       toast.success('Asset request fulfilled successfully')
     },
     onError: (error: any) => {
@@ -629,6 +630,7 @@ export function useMarkEquipmentReturned() {
       assetRequestService.markReturned(id, notes),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: assetRequestKeys.lists() })
+      queryClient.invalidateQueries({ queryKey: assetKeys.lists() })
       toast.success('Equipment marked as returned')
     },
     onError: (error: any) => {
