@@ -1,9 +1,9 @@
 'use client'
 
 import { useState } from 'react'
-import { Building2, UserCheck, RotateCcw, History, Plus } from 'lucide-react'
+import { Building2, UserCheck, RotateCcw, History, Plus, Search } from 'lucide-react'
 import { Card, Button, Badge, Modal, ModalHeader, ModalBody, ModalFooter, Input } from '@/components/ui'
-import { useAssetRequests, useMarkEquipmentReturned, useAssets, useCreateAssetRequest } from '@/hooks/useAssets'
+import { useAssetRequests, useMarkEquipmentReturned, useAssets, useCreateAssetRequest, useFulfillAssetRequest } from '@/hooks/useAssets'
 import { useEmployees } from '@/hooks'
 import type { AssetRequest } from '@/services/asset.service'
 import { formatDate, localDateStr } from '@/lib/utils'
@@ -23,6 +23,7 @@ const STATUS_FILTER_OPTIONS = [
 export default function BorrowedEquipmentPage() {
   const [borrowerFilter, setBorrowerFilter] = useState<'' | 'employee' | 'external'>('')
   const [statusFilter, setStatusFilter] = useState<'active' | 'returned' | ''>('')
+  const [searchQuery, setSearchQuery] = useState('')
   const [returnModal, setReturnModal] = useState<{ open: boolean; req: AssetRequest | null }>({
     open: false,
     req: null,
@@ -46,6 +47,7 @@ export default function BorrowedEquipmentPage() {
   const { data: requests = [], isLoading } = useAssetRequests({ status: 'fulfilled' })
   const markReturnedMutation = useMarkEquipmentReturned()
   const createRequestMutation = useCreateAssetRequest()
+  const fulfillRequestMutation = useFulfillAssetRequest()
   const { data: employees = [] } = useEmployees()
   const employeeMap = Object.fromEntries(employees.map(e => [e.id, `${e.first_name} ${e.last_name}`]))
   const { data: allAssets = [] } = useAssets({})
@@ -58,6 +60,15 @@ export default function BorrowedEquipmentPage() {
     if (borrowerFilter) {
       const bt = (r as any).borrower_type || 'employee'
       if (bt !== borrowerFilter) return false
+    }
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase()
+      const empName = employeeMap[(r as any).employee_id]?.toLowerCase() || ''
+      const extName = ((r as any).external_borrower_name || '').toLowerCase()
+      const extOrg  = ((r as any).external_borrower_org  || '').toLowerCase()
+      const item    = (r.item_description || '').toLowerCase()
+      const tag     = (assetTagMap[(r as any).assigned_asset_id] || '').toLowerCase()
+      if (!empName.includes(q) && !extName.includes(q) && !extOrg.includes(q) && !item.includes(q) && !tag.includes(q)) return false
     }
     return true
   })
@@ -113,15 +124,14 @@ export default function BorrowedEquipmentPage() {
     if (manualForm.borrowerType === 'external' && !manualForm.external_name.trim()) { setManualError('Please enter the borrower name.'); return }
     if (!manualForm.borrow_start_date) { setManualError('Please enter a borrow date.'); return }
 
-    await createRequestMutation.mutateAsync({
+    // Step 1: create the request as 'pending'
+    const created = await createRequestMutation.mutateAsync({
       asset_id: manualForm.asset_id,
-      assigned_asset_id: manualForm.asset_id,
       item_description: asset.name,
       justification: manualForm.purpose || null,
       priority: 'normal',
-      status: 'fulfilled',
+      status: 'pending',
       requested_date: manualForm.borrow_start_date,
-      fulfilled_date: manualForm.borrow_start_date,
       borrow_start_date: manualForm.borrow_start_date,
       borrow_end_date: manualForm.borrow_end_date || null,
       borrower_type: manualForm.borrowerType,
@@ -129,6 +139,22 @@ export default function BorrowedEquipmentPage() {
       external_borrower_name: manualForm.borrowerType === 'external' ? manualForm.external_name : null,
       external_borrower_org: manualForm.borrowerType === 'external' ? manualForm.external_org || null : null,
     })
+
+    // Step 2: fulfill it — this sets asset_requests.status = 'fulfilled' AND assets.status = 'assigned'
+    await fulfillRequestMutation.mutateAsync({ id: created.id, assetId: manualForm.asset_id })
+
+    // Step 3: patch the fulfilled_date and borrow_start_date to the actual borrow date (fulfill() uses today)
+    if (manualForm.borrow_start_date !== localDateStr(new Date())) {
+      await fetch(`/api/admin/asset-requests/${created.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          fulfilled_date: manualForm.borrow_start_date,
+          borrow_start_date: manualForm.borrow_start_date,
+        }),
+      }).catch(() => null) // best-effort date correction
+    }
+
     setManualModal(false)
     setManualForm({ borrowerType: 'employee', employee_id: '', external_name: '', external_org: '', asset_id: '', purpose: '', borrow_start_date: localDateStr(new Date()), borrow_end_date: '' })
   }
@@ -160,7 +186,18 @@ export default function BorrowedEquipmentPage() {
       </div>
 
       {/* Filters */}
-      <div className="flex flex-wrap gap-3">
+      <div className="flex flex-wrap gap-3 items-center">
+        {/* Search */}
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={e => setSearchQuery(e.target.value)}
+            placeholder="Search borrower, item, tag…"
+            className="pl-9 pr-3 py-2 text-sm border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-green-500 w-64"
+          />
+        </div>
         {STATUS_FILTER_OPTIONS.map(opt => (
           <button
             key={opt.value}
@@ -401,9 +438,9 @@ export default function BorrowedEquipmentPage() {
           <Button variant="secondary" onClick={() => { setManualModal(false); setManualError('') }}>Cancel</Button>
           <Button
             onClick={handleManualSubmit}
-            disabled={createRequestMutation.isPending}
+            disabled={createRequestMutation.isPending || fulfillRequestMutation.isPending}
           >
-            {createRequestMutation.isPending ? 'Saving…' : 'Log Borrow'}
+            {(createRequestMutation.isPending || fulfillRequestMutation.isPending) ? 'Saving…' : 'Log Borrow'}
           </Button>
         </ModalFooter>
       </Modal>
