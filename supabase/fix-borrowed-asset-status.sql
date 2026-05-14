@@ -6,13 +6,13 @@
 
 UPDATE assets
 SET
-  status       = 'assigned',
+  status        = 'assigned',
   assigned_date = COALESCE(assigned_date, now()::date)
 WHERE id IN (
-  SELECT DISTINCT COALESCE(assigned_asset_id, asset_id)
+  SELECT DISTINCT assigned_asset_id
   FROM asset_requests
-  WHERE status        = 'fulfilled'
-    AND returned_date IS NULL
-    AND COALESCE(assigned_asset_id, asset_id) IS NOT NULL
+  WHERE status            = 'fulfilled'
+    AND returned_date     IS NULL
+    AND assigned_asset_id IS NOT NULL
 )
 AND status = 'available';
