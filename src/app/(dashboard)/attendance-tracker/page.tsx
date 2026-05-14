@@ -46,6 +46,7 @@ function OtObTab({ employeeId }: { employeeId: string }) {
   const [dayType, setDayType] = useState<OvertimeDayType>('regular')
   const [location, setLocation] = useState('')
   const [purpose, setPurpose] = useState('')
+  const [statusFilter, setStatusFilter] = useState('')
 
   const totalHours = startTime && endTime ? computeHours(startTime, endTime) : 0
   const multiplier = OT_RATE_MULTIPLIERS[dayType]
@@ -73,78 +74,161 @@ function OtObTab({ employeeId }: { employeeId: string }) {
     setRequestDate(''); setStartTime(''); setEndTime(''); setLocation(''); setPurpose('')
   }
 
+  const filtered = statusFilter
+    ? myRequests.filter(r => r.status === statusFilter)
+    : myRequests
+
+  const pendingCount  = myRequests.filter(r => r.status === 'pending').length
+  const approvedCount = myRequests.filter(r => r.status === 'approved').length
+
   return (
-    <div className="max-w-3xl mx-auto space-y-6">
-      <div className="flex items-center justify-between">
-        <p className="text-sm text-gray-500">Submit overtime, stay-on, or official business requests</p>
+    <div className="space-y-6">
+
+      {/* Header */}
+      <div className="flex items-start justify-between">
+        <div>
+          <h2 className="text-lg font-semibold text-gray-900">OT / OB Requests</h2>
+          <p className="text-sm text-gray-500 mt-0.5">Submit overtime, stay-on, or official business requests</p>
+        </div>
         <Button variant="primary" onClick={() => setShowForm(s => !s)}>
-          {showForm ? 'Cancel' : '+ New Request'}
+          <Plus className="w-4 h-4 mr-1.5" />
+          {showForm ? 'Cancel' : 'New Request'}
         </Button>
       </div>
 
+      {/* Summary cards */}
+      <div className="grid grid-cols-3 gap-4">
+        <Card className="p-4 flex items-center gap-3">
+          <div className="p-2.5 rounded-xl bg-blue-100 text-blue-600"><Clock className="w-4 h-4" /></div>
+          <div>
+            <p className="text-xl font-bold text-gray-900">{myRequests.length}</p>
+            <p className="text-xs text-gray-500">Total Requests</p>
+          </div>
+        </Card>
+        <Card className="p-4 flex items-center gap-3">
+          <div className="p-2.5 rounded-xl bg-yellow-100 text-yellow-600"><Clock className="w-4 h-4" /></div>
+          <div>
+            <p className="text-xl font-bold text-yellow-600">{pendingCount}</p>
+            <p className="text-xs text-gray-500">Pending</p>
+          </div>
+        </Card>
+        <Card className="p-4 flex items-center gap-3">
+          <div className="p-2.5 rounded-xl bg-green-100 text-green-600"><Clock className="w-4 h-4" /></div>
+          <div>
+            <p className="text-xl font-bold text-green-600">{approvedCount}</p>
+            <p className="text-xs text-gray-500">Approved</p>
+          </div>
+        </Card>
+      </div>
+
+      {/* New Request Form */}
       {showForm && (
-        <Card>
-          <div className="p-4 border-b"><p className="font-semibold text-gray-900">New Request</p></div>
-          <div className="p-4 space-y-4">
+        <Card className="overflow-hidden">
+          <div className="px-5 py-4 border-b border-gray-100 bg-gray-50">
+            <h3 className="text-sm font-semibold text-gray-900">New Request</h3>
+          </div>
+          <div className="p-5 space-y-4">
+            {/* Request Type */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Request Type *</label>
-              <select value={requestType} onChange={e => setRequestType(e.target.value as OvertimeRequestType)}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">Request Type <span className="text-red-500">*</span></label>
+              <select
+                value={requestType}
+                onChange={e => setRequestType(e.target.value as OvertimeRequestType)}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+              >
                 {Object.entries(REQUEST_TYPE_LABELS).map(([val, label]) => (
                   <option key={val} value={val}>{label}</option>
                 ))}
               </select>
             </div>
-            <div className="grid grid-cols-2 gap-3">
+
+            {/* Date + Day Type */}
+            <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Date *</label>
-                <input type="date" value={requestDate} onChange={e => setRequestDate(e.target.value)}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" />
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">Date <span className="text-red-500">*</span></label>
+                <input
+                  type="date"
+                  value={requestDate}
+                  onChange={e => setRequestDate(e.target.value)}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+                />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Day Type *</label>
-                <select value={dayType} onChange={e => setDayType(e.target.value as OvertimeDayType)}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">Day Type <span className="text-red-500">*</span></label>
+                <select
+                  value={dayType}
+                  onChange={e => setDayType(e.target.value as OvertimeDayType)}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+                >
                   {Object.entries(DAY_TYPE_LABELS).map(([val, label]) => (
                     <option key={val} value={val}>{label}</option>
                   ))}
                 </select>
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-3">
+
+            {/* Start / End Time */}
+            <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Start Time *</label>
-                <input type="time" value={startTime} onChange={e => setStartTime(e.target.value)}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" />
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">Start Time <span className="text-red-500">*</span></label>
+                <input
+                  type="time"
+                  value={startTime}
+                  onChange={e => setStartTime(e.target.value)}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+                />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">End Time *</label>
-                <input type="time" value={endTime} onChange={e => setEndTime(e.target.value)}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" />
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">End Time <span className="text-red-500">*</span></label>
+                <input
+                  type="time"
+                  value={endTime}
+                  onChange={e => setEndTime(e.target.value)}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+                />
               </div>
             </div>
+
+            {/* Hours summary */}
             {startTime && endTime && (
-              <div className="bg-blue-50 rounded-lg p-3 text-sm">
-                <span className="font-medium text-blue-800">Total: {totalHours.toFixed(2)} hours</span>
-                {!isOB && <span className="text-blue-600 ml-2">· Rate: ×{multiplier} ({DAY_TYPE_LABELS[dayType]})</span>}
-                {isOB && <span className="text-blue-600 ml-2">· OB — attendance credit only, no OT pay</span>}
+              <div className="flex items-center gap-3 bg-blue-50 border border-blue-100 rounded-lg px-4 py-3 text-sm">
+                <Clock className="w-4 h-4 text-blue-500 shrink-0" />
+                <span className="font-semibold text-blue-800">{totalHours.toFixed(2)} hours</span>
+                {!isOB
+                  ? <span className="text-blue-600">· Rate ×{multiplier} ({DAY_TYPE_LABELS[dayType]})</span>
+                  : <span className="text-blue-600">· Official Business — attendance credit, no OT pay</span>
+                }
               </div>
             )}
+
+            {/* Location (OB only) */}
             {isOB && (
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Location / Destination *</label>
-                <input type="text" value={location} onChange={e => setLocation(e.target.value)}
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">Location / Destination <span className="text-red-500">*</span></label>
+                <input
+                  type="text"
+                  value={location}
+                  onChange={e => setLocation(e.target.value)}
                   placeholder="e.g. Client office, Government agency…"
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" />
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+                />
               </div>
             )}
+
+            {/* Purpose */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Purpose / Task *</label>
-              <textarea rows={3} value={purpose} onChange={e => setPurpose(e.target.value)}
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">Purpose / Task <span className="text-red-500">*</span></label>
+              <textarea
+                rows={3}
+                value={purpose}
+                onChange={e => setPurpose(e.target.value)}
                 placeholder="Describe what work will be done…"
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" />
+                className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 resize-none"
+              />
             </div>
-            <div className="flex gap-3">
+
+            {/* Actions */}
+            <div className="flex gap-3 pt-1">
               <Button variant="primary" onClick={handleSubmit} disabled={createMutation.isPending}>
                 {createMutation.isPending ? 'Submitting…' : 'Submit Request'}
               </Button>
@@ -154,44 +238,95 @@ function OtObTab({ employeeId }: { employeeId: string }) {
         </Card>
       )}
 
-      <Card>
-        <div className="p-4 border-b"><p className="font-semibold text-gray-900">My Requests</p></div>
-        <div className="p-0">
-          {isLoading ? (
-            <div className="py-10 text-center text-gray-400">Loading…</div>
-          ) : myRequests.length === 0 ? (
-            <div className="py-10 text-center">
-              <Clock className="w-8 h-8 text-gray-300 mx-auto mb-2" />
-              <p className="text-gray-500 text-sm">No requests yet.</p>
-            </div>
-          ) : (
-            <div className="divide-y">
-              {myRequests.map(r => (
-                <div key={r.id} className="px-4 py-3 flex items-start justify-between gap-4">
-                  <div className="space-y-0.5">
-                    <div className="flex items-center gap-2">
-                      <span className="font-medium text-gray-900">{REQUEST_TYPE_LABELS[r.request_type]}</span>
-                      <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${OT_STATUS_COLORS[r.status]}`}>
+      {/* Status filter pills */}
+      <Card className="px-4 py-3">
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className="text-sm font-medium text-gray-700 mr-1">Filter:</span>
+          {['', 'pending', 'approved', 'rejected', 'cancelled'].map(s => (
+            <button
+              key={s}
+              onClick={() => setStatusFilter(s)}
+              className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
+                statusFilter === s
+                  ? 'bg-green-600 text-white'
+                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+              }`}
+            >
+              {s === '' ? 'All' : s.charAt(0).toUpperCase() + s.slice(1)}
+            </button>
+          ))}
+        </div>
+      </Card>
+
+      {/* Requests table */}
+      <Card className="overflow-hidden">
+        {isLoading ? (
+          <div className="p-12 text-center text-gray-400 text-sm">Loading requests…</div>
+        ) : filtered.length === 0 ? (
+          <div className="p-12 text-center">
+            <Clock className="w-10 h-10 text-gray-300 mx-auto mb-3" />
+            <p className="text-gray-500 font-medium">No requests found</p>
+            <p className="text-gray-400 text-sm mt-1">
+              {statusFilter ? 'Try a different filter' : 'Click "New Request" to submit your first OT/OB request'}
+            </p>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-gray-50 border-b border-gray-200">
+                <tr>
+                  {['Type', 'Date', 'Time', 'Hours', 'Day Type', 'Purpose', 'Status', 'Actions'].map(h => (
+                    <th key={h} className="px-5 py-3 text-left text-xs font-medium text-gray-500 uppercase whitespace-nowrap">{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {filtered.map(r => (
+                  <tr key={r.id} className="hover:bg-gray-50">
+                    <td className="px-5 py-3.5">
+                      <span className="text-sm font-medium text-gray-900">{REQUEST_TYPE_LABELS[r.request_type]}</span>
+                    </td>
+                    <td className="px-5 py-3.5 text-sm text-gray-700 whitespace-nowrap">
+                      {formatDate(r.request_date)}
+                    </td>
+                    <td className="px-5 py-3.5 text-sm text-gray-600 whitespace-nowrap">
+                      {r.start_time} – {r.end_time}
+                    </td>
+                    <td className="px-5 py-3.5 text-sm text-gray-700 whitespace-nowrap font-medium">
+                      {r.total_hours?.toFixed(2)}h
+                    </td>
+                    <td className="px-5 py-3.5 text-sm text-gray-600 whitespace-nowrap">
+                      {DAY_TYPE_LABELS[r.day_type ?? 'regular']}
+                    </td>
+                    <td className="px-5 py-3.5 max-w-[200px]">
+                      <p className="text-sm text-gray-600 truncate">{r.purpose}</p>
+                      {r.location && <p className="text-xs text-gray-400 truncate">{r.location}</p>}
+                      {r.rejection_reason && (
+                        <p className="text-xs text-red-500 mt-0.5">Reason: {r.rejection_reason}</p>
+                      )}
+                    </td>
+                    <td className="px-5 py-3.5 whitespace-nowrap">
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${OT_STATUS_COLORS[r.status]}`}>
                         {r.status.charAt(0).toUpperCase() + r.status.slice(1)}
                       </span>
-                    </div>
-                    <div className="text-xs text-gray-500">
-                      {formatDate(r.request_date)} · {r.start_time}–{r.end_time} · {r.total_hours?.toFixed(2)}h
-                    </div>
-                    <div className="text-xs text-gray-400">{r.purpose}</div>
-                    {r.rejection_reason && <div className="text-xs text-red-500">Reason: {r.rejection_reason}</div>}
-                  </div>
-                  {r.status === 'pending' && (
-                    <Button variant="ghost" onClick={() => cancelMutation.mutateAsync(r.id)}
-                      className="text-xs text-gray-400 flex-shrink-0" disabled={cancelMutation.isPending}>
-                      Cancel
-                    </Button>
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
+                    </td>
+                    <td className="px-5 py-3.5">
+                      {r.status === 'pending' && (
+                        <button
+                          onClick={() => cancelMutation.mutateAsync(r.id)}
+                          disabled={cancelMutation.isPending}
+                          className="text-xs text-gray-400 hover:text-red-600 px-2 py-1 rounded hover:bg-red-50 transition-colors"
+                        >
+                          Cancel
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </Card>
     </div>
   )
