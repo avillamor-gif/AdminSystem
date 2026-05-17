@@ -4,7 +4,7 @@ export { leavePolicyService } from './leavePolicy.service'
 export { attendanceService } from './attendance.service'
 export * from './timeAttendance.service'
 export { departmentService } from './department.service'
-export { recruitmentService } from './recruitment.service'
+export { recruitmentService, jobPostingService } from './recruitment.service'
 export { performanceService } from './performance.service'
 export { contractDocumentService } from './contractDocument.service'
 export { employeeAssetService } from './employeeAsset.service'
@@ -116,17 +116,30 @@ export type {
   JobDescriptionWithRelations,
   JobDescriptionFilters
 } from './jobDescription.service'
+export {
+  jobPostingService,
+  recruitmentCandidateService,
+  recruitmentApplicationService,
+  recruitmentInterviewService,
+  recruitmentOfferService,
+  recruitmentOnboardingService,
+  screeningQuestionService,
+  hiringWorkflowService,
+  jobBoardService,
+} from './recruitment.service'
 export type {
-  Vacancy,
-  VacancyInsert,
-  VacancyUpdate,
-  VacancyWithRelations,
-  Candidate,
-  CandidateInsert,
-  CandidateUpdate,
-  CandidateWithRelations,
-  VacancyFilters,
-  CandidateFilters
+  JobPosting, JobPostingInsert, JobPostingUpdate, JobPostingFilters,
+  RecruitmentCandidate, RecruitmentCandidateInsert, RecruitmentCandidateUpdate,
+  RecruitmentApplication, RecruitmentApplicationInsert, RecruitmentApplicationUpdate,
+  RecruitmentInterview, RecruitmentInterviewInsert, RecruitmentInterviewUpdate,
+  RecruitmentOffer, RecruitmentOfferInsert, RecruitmentOfferUpdate,
+  RecruitmentOnboarding, RecruitmentOnboardingInsert, RecruitmentOnboardingUpdate,
+  ScreeningQuestion, ScreeningQuestionInsert, ScreeningQuestionUpdate,
+  HiringWorkflow, HiringWorkflowInsert, HiringWorkflowUpdate,
+  JobBoard, JobBoardInsert, JobBoardUpdate,
+  ApplicationFilters, InterviewFilters, CandidateFilters, VacancyFilters,
+  Vacancy, VacancyInsert, VacancyUpdate, VacancyWithRelations,
+  Candidate, CandidateInsert, CandidateUpdate, CandidateWithRelations,
 } from './recruitment.service'
 export type {
   PerformanceReview,
