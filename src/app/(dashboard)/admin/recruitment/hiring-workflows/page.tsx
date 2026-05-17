@@ -90,7 +90,7 @@ export default function HiringWorkflowsPage() {
         </div>
       )}
 
-      <Modal isOpen={modalOpen} onClose={() => setModalOpen(false)}>
+      <Modal open={modalOpen} onClose={() => setModalOpen(false)}>
         <ModalHeader>{selected ? 'Edit Workflow' : 'New Workflow'}</ModalHeader>
         <ModalBody>
           <div className="space-y-4">

@@ -111,7 +111,7 @@ export default function ApplicationTrackingPage() {
         </CardContent>
       </Card>
 
-      <Modal isOpen={modalOpen} onClose={() => setModalOpen(false)}>
+      <Modal open={modalOpen} onClose={() => setModalOpen(false)}>
         <ModalHeader>{selected ? 'Update Application' : 'Add Application'}</ModalHeader>
         <ModalBody>
           <div className="space-y-4">

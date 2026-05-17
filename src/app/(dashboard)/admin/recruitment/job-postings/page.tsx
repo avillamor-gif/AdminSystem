@@ -175,7 +175,7 @@ export default function JobPostingsPage() {
       </Card>
 
       {/* Create/Edit Modal */}
-      <Modal isOpen={modalOpen} onClose={() => setModalOpen(false)} size="lg">
+      <Modal open={modalOpen} onClose={() => setModalOpen(false)} size="lg">
         <ModalHeader>{selected ? 'Edit Job Posting' : 'New Job Posting'}</ModalHeader>
         <ModalBody>
           <div className="space-y-4">

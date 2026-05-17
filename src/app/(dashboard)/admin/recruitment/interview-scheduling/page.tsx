@@ -100,7 +100,7 @@ export default function InterviewSchedulingPage() {
         </CardContent>
       </Card>
 
-      <Modal isOpen={modalOpen} onClose={() => setModalOpen(false)} size="lg">
+      <Modal open={modalOpen} onClose={() => setModalOpen(false)} size="lg">
         <ModalHeader>{selected ? 'Update Interview' : 'Schedule Interview'}</ModalHeader>
         <ModalBody>
           <div className="space-y-4">

@@ -74,7 +74,7 @@ export default function JobBoardsIntegrationPage() {
         </div>
       )}
 
-      <Modal isOpen={modalOpen} onClose={() => setModalOpen(false)}>
+      <Modal open={modalOpen} onClose={() => setModalOpen(false)}>
         <ModalHeader>{selected ? 'Edit Job Board' : 'Add Job Board'}</ModalHeader>
         <ModalBody>
           <div className="space-y-4">

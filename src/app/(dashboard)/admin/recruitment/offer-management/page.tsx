@@ -92,7 +92,7 @@ export default function OfferManagementPage() {
         </CardContent>
       </Card>
 
-      <Modal isOpen={modalOpen} onClose={() => setModalOpen(false)}>
+      <Modal open={modalOpen} onClose={() => setModalOpen(false)}>
         <ModalHeader>{selected ? 'Update Offer' : 'Create Offer'}</ModalHeader>
         <ModalBody>
           <div className="space-y-4">

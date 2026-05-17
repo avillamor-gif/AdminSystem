@@ -128,7 +128,7 @@ export default function CandidateManagementPage() {
         </CardContent>
       </Card>
 
-      <Modal isOpen={modalOpen} onClose={() => setModalOpen(false)} size="lg">
+      <Modal open={modalOpen} onClose={() => setModalOpen(false)} size="lg">
         <ModalHeader>{selected ? 'Edit Candidate' : 'Add Candidate'}</ModalHeader>
         <ModalBody>
           <div className="space-y-4">

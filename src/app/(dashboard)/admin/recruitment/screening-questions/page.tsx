@@ -89,7 +89,7 @@ export default function ScreeningQuestionsPage() {
         </CardContent>
       </Card>
 
-      <Modal isOpen={modalOpen} onClose={() => setModalOpen(false)}>
+      <Modal open={modalOpen} onClose={() => setModalOpen(false)}>
         <ModalHeader>{selected ? 'Edit Question' : 'Add Question'}</ModalHeader>
         <ModalBody>
           <div className="space-y-4">

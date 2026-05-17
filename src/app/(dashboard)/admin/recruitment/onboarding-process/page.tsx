@@ -101,7 +101,7 @@ export default function OnboardingProcessPage() {
         </CardContent>
       </Card>
 
-      <Modal isOpen={modalOpen} onClose={() => setModalOpen(false)}>
+      <Modal open={modalOpen} onClose={() => setModalOpen(false)}>
         <ModalHeader>Add Onboarding Task</ModalHeader>
         <ModalBody>
           <div className="space-y-4">
