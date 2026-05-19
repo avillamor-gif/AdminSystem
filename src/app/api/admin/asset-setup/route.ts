@@ -32,7 +32,9 @@ async function handleWrite(req: NextRequest, operation: 'insert' | 'update' | 'd
       .select('role')
       .eq('user_id', user.id)
 
-    const hasAccess = (roleRows ?? []).some((r: any) => ['admin', 'hr', 'ed'].includes(r.role))
+    const hasAccess = (roleRows ?? []).some((r: any) =>
+      ['admin', 'hr', 'ed', 'manager', 'super admin'].includes(r.role)
+    )
     if (!hasAccess) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
     const body = await req.json()
