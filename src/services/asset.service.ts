@@ -736,7 +736,7 @@ export const assetRequestService = {
         '{name} has submitted an equipment request for "' + (request.item_description ?? 'an item') + '".',
         '',
         (request as any).request_number,
-        'admin_resources'
+        'equipment'
       )
     }
 

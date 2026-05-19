@@ -115,7 +115,7 @@ export default function RequestSuppliesPage() {
         `{name} has submitted a supply request for ${item?.name ?? form.item_name}.`,
         requesterName,
         reqNum,
-        'admin_resources'
+        'supply'
       ).catch(() => {})
       logAction({
         employee_id: empRes.data.id,
