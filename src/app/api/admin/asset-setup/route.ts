@@ -22,19 +22,19 @@ export async function DELETE(req: NextRequest) {
 
 async function handleWrite(req: NextRequest, operation: 'insert' | 'update' | 'delete') {
   try {
-    const supabaseServer = createClient()
-    const { data: { user } } = await supabaseServer.auth.getUser()
+    const supabase = createClient()
+    const { data: { user } } = await supabase.auth.getUser()
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
     const admin = createAdminClient()
+
+    // Check caller has a role permitted to manage assets
+    const allowedRoles = ['admin', 'hr', 'ed', 'manager', 'super admin']
     const { data: roleRows } = await admin
       .from('user_roles')
       .select('role')
       .eq('user_id', user.id)
-
-    const hasAccess = (roleRows ?? []).some((r: any) =>
-      ['admin', 'hr', 'ed', 'manager', 'super admin'].includes(r.role)
-    )
+    const hasAccess = (roleRows ?? []).some((r: any) => allowedRoles.includes(r.role))
     if (!hasAccess) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
     const body = await req.json()

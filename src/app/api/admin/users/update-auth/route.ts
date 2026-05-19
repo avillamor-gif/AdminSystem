@@ -1,15 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient as createServerClient } from '@/lib/supabase/server'
+import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 
 export async function POST(req: NextRequest) {
   try {
     // Verify the requesting user is authenticated
-    const supabase = createServerClient()
+    const supabase = createClient()
     const { data: { user } } = await supabase.auth.getUser()
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
     const { user_id, email, password } = await req.json()
 
@@ -25,8 +23,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ message: 'Nothing to update' })
     }
 
-    const supabaseAdmin = createAdminClient()
-    const { error } = await supabaseAdmin.auth.admin.updateUserById(user_id, updateData)
+    const admin = createAdminClient()
+    const { error } = await admin.auth.admin.updateUserById(user_id, updateData)
     if (error) {
       console.error('Auth update error:', error)
       return NextResponse.json({ error: error.message }, { status: 500 })

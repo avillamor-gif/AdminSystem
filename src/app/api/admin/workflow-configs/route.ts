@@ -64,25 +64,21 @@ async function syncLeaveApprovalWorkflow(
 
 export async function PATCH(req: NextRequest) {
   try {
-    // Verify caller is an authenticated admin / ed user
-    const supabaseServer = createClient()
-    const { data: { user } } = await supabaseServer.auth.getUser()
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    // Verify caller is authenticated and has a permitted role
+    const supabase = createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
     const admin = createAdminClient()
 
-    // Check role — user may have multiple user_roles rows; accept if any is admin/ed/hr
+    // Check caller has a role permitted to manage workflow configs
+    const allowedRoles = ['admin', 'hr', 'ed', 'super admin']
     const { data: roleRows } = await admin
       .from('user_roles')
       .select('role')
       .eq('user_id', user.id)
-
-    const hasAccess = (roleRows ?? []).some((r: any) => ['admin', 'ed', 'hr'].includes(r.role))
-    if (!hasAccess) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-    }
+    const hasAccess = (roleRows ?? []).some((r: any) => allowedRoles.includes(r.role))
+    if (!hasAccess) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
     const body = await req.json()
     const { id, ...updates } = body

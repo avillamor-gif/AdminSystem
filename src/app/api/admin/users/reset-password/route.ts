@@ -15,22 +15,19 @@ import { createAdminClient } from '@/lib/supabase/admin'
 export async function POST(request: NextRequest) {
   try {
     const supabase = createClient()
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-    // Check caller is admin / super admin / ed
     const admin = createAdminClient()
-    const { data: callerRoles } = await admin
+
+    // Check caller has a role permitted to reset passwords
+    const allowedRoles = ['admin', 'super admin', 'ed']
+    const { data: roleRows } = await admin
       .from('user_roles')
       .select('role')
       .eq('user_id', user.id)
-    const allowedRoles = ['admin', 'super admin', 'ed']
-    const isAllowed = (callerRoles || []).some((r: any) => allowedRoles.includes(r.role))
-    if (!isAllowed) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-    }
+    const hasAccess = (roleRows ?? []).some((r: any) => allowedRoles.includes(r.role))
+    if (!hasAccess) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
     const { user_id, email, new_password } = await request.json()
     if (!user_id && !email) {

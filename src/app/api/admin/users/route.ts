@@ -6,14 +6,11 @@ export async function GET(request: NextRequest) {
   try {
     // Verify the user is authenticated
     const supabase = createClient()
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
-    
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
     // Use admin client for all DB queries — bypasses RLS, avoids join alias PGRST200
-    const adminClient = createAdminClient()
+    const admin = createAdminClient()
     
     // Get query parameters
     const searchParams = request.nextUrl.searchParams
@@ -21,7 +18,7 @@ export async function GET(request: NextRequest) {
     const search = searchParams.get('search')
     
     // Fetch user_roles (no join — plain columns only)
-    let rolesQuery = adminClient
+    let rolesQuery = admin
       .from('user_roles')
       .select('id, user_id, role, employee_id, created_at, updated_at')
     
@@ -51,15 +48,15 @@ export async function GET(request: NextRequest) {
       { data: departments },
       { data: jobTitles },
     ] = await Promise.all([
-      adminClient.auth.admin.listUsers(),
+      admin.auth.admin.listUsers(),
       employeeIds.length
-        ? adminClient.from('employees').select('id, first_name, last_name, avatar_url, department_id, job_title_id, employee_id').in('id', employeeIds)
+        ? admin.from('employees').select('id, first_name, last_name, avatar_url, department_id, job_title_id, employee_id').in('id', employeeIds)
         : Promise.resolve({ data: [] }),
       employeeIds.length
-        ? adminClient.from('employees').select('id, first_name, last_name, avatar_url, department_id, job_title_id, employee_id').in('employee_id', employeeIds)
+        ? admin.from('employees').select('id, first_name, last_name, avatar_url, department_id, job_title_id, employee_id').in('employee_id', employeeIds)
         : Promise.resolve({ data: [] }),
-      adminClient.from('departments').select('id, name'),
-      adminClient.from('job_titles').select('id, title'),
+      admin.from('departments').select('id, name'),
+      admin.from('job_titles').select('id, title'),
     ])
 
     if (authUsersError) {
