@@ -185,35 +185,20 @@ export const assetCategoryService = {
   },
 
   async create(category: Partial<AssetCategory>): Promise<AssetCategory> {
-    const { data, error } = await supabase
-      .from('asset_categories')
-      .insert(category as any)
-      .select()
-      .single()
-    
-    if (error) throw error
-    return data as any
+    const res = await fetch('/api/admin/asset-setup', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ table: 'asset_categories', data: category }) })
+    if (!res.ok) { const e = await res.json().catch(() => ({})); throw new Error(e.error ?? 'Failed to create category') }
+    return res.json()
   },
 
   async update(id: string, updates: Partial<AssetCategory>): Promise<AssetCategory> {
-    const { data, error } = await supabase
-      .from('asset_categories')
-      .update({ ...updates, updated_at: new Date().toISOString() })
-      .eq('id', id)
-      .select()
-      .single()
-    
-    if (error) throw error
-    return data as any
+    const res = await fetch('/api/admin/asset-setup', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ table: 'asset_categories', id, data: updates }) })
+    if (!res.ok) { const e = await res.json().catch(() => ({})); throw new Error(e.error ?? 'Failed to update category') }
+    return res.json()
   },
 
   async delete(id: string): Promise<void> {
-    const { error } = await supabase
-      .from('asset_categories')
-      .delete()
-      .eq('id', id)
-    
-    if (error) throw error
+    const res = await fetch('/api/admin/asset-setup', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ table: 'asset_categories', id }) })
+    if (!res.ok) { const e = await res.json().catch(() => ({})); throw new Error(e.error ?? 'Failed to delete category') }
   }
 }
 
@@ -244,35 +229,20 @@ export const assetBrandService = {
   },
 
   async create(brand: Partial<AssetBrand>): Promise<AssetBrand> {
-    const { data, error } = await supabase
-      .from('asset_brands')
-      .insert(brand as any)
-      .select()
-      .single()
-    
-    if (error) throw error
-    return data as any
+    const res = await fetch('/api/admin/asset-setup', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ table: 'asset_brands', data: brand }) })
+    if (!res.ok) { const e = await res.json().catch(() => ({})); throw new Error(e.error ?? 'Failed to create brand') }
+    return res.json()
   },
 
   async update(id: string, updates: Partial<AssetBrand>): Promise<AssetBrand> {
-    const { data, error } = await supabase
-      .from('asset_brands')
-      .update({ ...updates, updated_at: new Date().toISOString() })
-      .eq('id', id)
-      .select()
-      .single()
-    
-    if (error) throw error
-    return data as any
+    const res = await fetch('/api/admin/asset-setup', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ table: 'asset_brands', id, data: updates }) })
+    if (!res.ok) { const e = await res.json().catch(() => ({})); throw new Error(e.error ?? 'Failed to update brand') }
+    return res.json()
   },
 
   async delete(id: string): Promise<void> {
-    const { error } = await supabase
-      .from('asset_brands')
-      .delete()
-      .eq('id', id)
-    
-    if (error) throw error
+    const res = await fetch('/api/admin/asset-setup', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ table: 'asset_brands', id }) })
+    if (!res.ok) { const e = await res.json().catch(() => ({})); throw new Error(e.error ?? 'Failed to delete brand') }
   }
 }
 
@@ -303,35 +273,20 @@ export const assetVendorService = {
   },
 
   async create(vendor: Partial<AssetVendor>): Promise<AssetVendor> {
-    const { data, error } = await supabase
-      .from('asset_vendors')
-      .insert(vendor as any)
-      .select()
-      .single()
-    
-    if (error) throw error
-    return data as any
+    const res = await fetch('/api/admin/asset-setup', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ table: 'asset_vendors', data: vendor }) })
+    if (!res.ok) { const e = await res.json().catch(() => ({})); throw new Error(e.error ?? 'Failed to create vendor') }
+    return res.json()
   },
 
   async update(id: string, updates: Partial<AssetVendor>): Promise<AssetVendor> {
-    const { data, error } = await supabase
-      .from('asset_vendors')
-      .update({ ...updates, updated_at: new Date().toISOString() })
-      .eq('id', id)
-      .select()
-      .single()
-    
-    if (error) throw error
-    return data as any
+    const res = await fetch('/api/admin/asset-setup', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ table: 'asset_vendors', id, data: updates }) })
+    if (!res.ok) { const e = await res.json().catch(() => ({})); throw new Error(e.error ?? 'Failed to update vendor') }
+    return res.json()
   },
 
   async delete(id: string): Promise<void> {
-    const { error } = await supabase
-      .from('asset_vendors')
-      .delete()
-      .eq('id', id)
-    
-    if (error) throw error
+    const res = await fetch('/api/admin/asset-setup', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ table: 'asset_vendors', id }) })
+    if (!res.ok) { const e = await res.json().catch(() => ({})); throw new Error(e.error ?? 'Failed to delete vendor') }
   }
 }
 
@@ -350,32 +305,20 @@ export const assetLocationService = {
   },
 
   async create(location: Partial<AssetLocation>): Promise<AssetLocation> {
-    const { data, error } = await supabase
-      .from('asset_locations')
-      .insert(location as any)
-      .select('*')
-      .single()
-    if (error) throw error
-    return data as unknown as AssetLocation
+    const res = await fetch('/api/admin/asset-setup', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ table: 'asset_locations', data: location }) })
+    if (!res.ok) { const e = await res.json().catch(() => ({})); throw new Error(e.error ?? 'Failed to create location') }
+    return res.json()
   },
 
   async update(id: string, updates: Partial<AssetLocation>): Promise<AssetLocation> {
-    const { data, error } = await supabase
-      .from('asset_locations')
-      .update({ ...updates, updated_at: new Date().toISOString() } as any)
-      .eq('id', id)
-      .select('*')
-      .single()
-    if (error) throw error
-    return data as unknown as AssetLocation
+    const res = await fetch('/api/admin/asset-setup', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ table: 'asset_locations', id, data: updates }) })
+    if (!res.ok) { const e = await res.json().catch(() => ({})); throw new Error(e.error ?? 'Failed to update location') }
+    return res.json()
   },
 
   async delete(id: string): Promise<void> {
-    const { error } = await supabase
-      .from('asset_locations')
-      .delete()
-      .eq('id', id)
-    if (error) throw error
+    const res = await fetch('/api/admin/asset-setup', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ table: 'asset_locations', id }) })
+    if (!res.ok) { const e = await res.json().catch(() => ({})); throw new Error(e.error ?? 'Failed to delete location') }
   },
 }
 
