@@ -858,7 +858,7 @@ export const assetRequestService = {
     if (error) throw error
 
     // Restore the physical asset to 'available'
-    const linkedAssetId = (data as any).assigned_asset_id || (data as any).asset_id
+    const linkedAssetId = (data as any).assigned_asset_id
     if (linkedAssetId) {
       await supabase.from('assets').update({
         status: 'available',
@@ -913,18 +913,8 @@ export const assetRequestService = {
       return [...(d1 || []), ...(d2 || [])] as any[]
     }
 
-    const [byAssigned, byRequested] = await Promise.all([
-      run('assigned_asset_id'),
-      run('asset_id'),
-    ])
-
-    // Deduplicate by id
-    const seen = new Set<string>()
-    const results: AssetRequest[] = []
-    for (const r of [...byAssigned, ...byRequested]) {
-      if (!seen.has(r.id)) { seen.add(r.id); results.push(r) }
-    }
-    return results
+    const results = await run('assigned_asset_id')
+    return results as AssetRequest[]
   },
 
   /**
@@ -935,7 +925,7 @@ export const assetRequestService = {
     const { data } = await supabase
       .from('asset_requests')
       .select('borrow_end_date')
-      .or(`assigned_asset_id.eq.${assetId},asset_id.eq.${assetId}`)
+      .eq('assigned_asset_id', assetId)
       .in('status', ['pending', 'approved', 'fulfilled'])
       .is('returned_date', null)
       .not('borrow_end_date', 'is', null)

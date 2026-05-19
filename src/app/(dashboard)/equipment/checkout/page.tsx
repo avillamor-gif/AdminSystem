@@ -361,7 +361,7 @@ function CheckoutPageInner() {
     if (borrowerType === 'employee') {
       await createMutation.mutateAsync({
         employee_id: currentEmployee!.id,
-        asset_id: formData.asset_id || undefined,
+        assigned_asset_id: formData.asset_id || undefined,
         borrower_type: 'employee',
         category_id: (selectedAsset as any)?.category_id || undefined,
         item_description: selectedAsset?.name || formData.asset_id,
@@ -376,7 +376,7 @@ function CheckoutPageInner() {
     } else {
       await createMutation.mutateAsync({
         employee_id: null,
-        asset_id: formData.asset_id || undefined,
+        assigned_asset_id: formData.asset_id || undefined,
         borrower_type: 'external',
         external_borrower_name: external.name.trim(),
         external_borrower_org: external.org.trim(),
