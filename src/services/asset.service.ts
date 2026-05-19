@@ -393,35 +393,20 @@ export const assetService = {
   },
 
   async create(asset: Partial<Asset>): Promise<Asset> {
-    const { data, error } = await supabase
-      .from('assets')
-      .insert(asset as any)
-      .select()
-      .single()
-    
-    if (error) throw error
-    return data as unknown as Asset
+    const res = await fetch('/api/admin/asset-setup', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ table: 'assets', data: asset }) })
+    if (!res.ok) { const e = await res.json().catch(() => ({})); throw new Error(e.error ?? 'Failed to create asset') }
+    return res.json()
   },
 
   async update(id: string, updates: Partial<Asset>): Promise<Asset> {
-    const { data, error } = await supabase
-      .from('assets')
-      .update({ ...updates, updated_at: new Date().toISOString() })
-      .eq('id', id)
-      .select()
-      .single()
-    
-    if (error) throw error
-    return data as unknown as Asset
+    const res = await fetch('/api/admin/asset-setup', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ table: 'assets', id, data: updates }) })
+    if (!res.ok) { const e = await res.json().catch(() => ({})); throw new Error(e.error ?? 'Failed to update asset') }
+    return res.json()
   },
 
   async delete(id: string): Promise<void> {
-    const { error } = await supabase
-      .from('assets')
-      .delete()
-      .eq('id', id)
-    
-    if (error) throw error
+    const res = await fetch('/api/admin/asset-setup', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ table: 'assets', id }) })
+    if (!res.ok) { const e = await res.json().catch(() => ({})); throw new Error(e.error ?? 'Failed to delete asset') }
   },
 
   async assign(assetId: string, employeeId: string, assignedBy: string, condition?: string): Promise<AssetAssignment> {
@@ -584,35 +569,20 @@ export const assetMaintenanceService = {
   },
 
   async create(maintenance: Partial<AssetMaintenance>): Promise<AssetMaintenance> {
-    const { data, error } = await supabase
-      .from('asset_maintenance')
-      .insert(maintenance as any)
-      .select()
-      .single()
-    
-    if (error) throw error
-    return data as unknown as AssetMaintenance
+    const res = await fetch('/api/admin/asset-setup', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ table: 'asset_maintenance', data: maintenance }) })
+    if (!res.ok) { const e = await res.json().catch(() => ({})); throw new Error(e.error ?? 'Failed to create maintenance record') }
+    return res.json()
   },
 
   async update(id: string, updates: Partial<AssetMaintenance>): Promise<AssetMaintenance> {
-    const { data, error } = await supabase
-      .from('asset_maintenance')
-      .update({ ...updates, updated_at: new Date().toISOString() })
-      .eq('id', id)
-      .select()
-      .single()
-    
-    if (error) throw error
-    return data as unknown as AssetMaintenance
+    const res = await fetch('/api/admin/asset-setup', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ table: 'asset_maintenance', id, data: updates }) })
+    if (!res.ok) { const e = await res.json().catch(() => ({})); throw new Error(e.error ?? 'Failed to update maintenance record') }
+    return res.json()
   },
 
   async delete(id: string): Promise<void> {
-    const { error } = await supabase
-      .from('asset_maintenance')
-      .delete()
-      .eq('id', id)
-    
-    if (error) throw error
+    const res = await fetch('/api/admin/asset-setup', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ table: 'asset_maintenance', id }) })
+    if (!res.ok) { const e = await res.json().catch(() => ({})); throw new Error(e.error ?? 'Failed to delete maintenance record') }
   }
 }
 
@@ -661,13 +631,9 @@ export const assetRequestService = {
   },
 
   async create(request: Partial<AssetRequest>): Promise<AssetRequest> {
-    const { data, error } = await supabase
-      .from('asset_requests')
-      .insert(request as any)
-      .select()
-      .single()
-    
-    if (error) throw error
+    const res = await fetch('/api/admin/asset-setup', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ table: 'asset_requests', data: request }) })
+    if (!res.ok) { const e = await res.json().catch(() => ({})); throw new Error(e.error ?? 'Failed to create request') }
+    const data = await res.json()
 
     // Notify supervisor + admins (employee requests only — external borrowers have no user account)
     if (request.employee_id && request.borrower_type !== 'external') {
@@ -687,15 +653,9 @@ export const assetRequestService = {
   },
 
   async update(id: string, updates: Partial<AssetRequest>): Promise<AssetRequest> {
-    const { data, error } = await supabase
-      .from('asset_requests')
-      .update({ ...updates, updated_at: new Date().toISOString() } as any)
-      .eq('id', id)
-      .select()
-      .single()
-    
-    if (error) throw error
-    return data as any
+    const res = await fetch('/api/admin/asset-setup', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ table: 'asset_requests', id, data: updates }) })
+    if (!res.ok) { const e = await res.json().catch(() => ({})); throw new Error(e.error ?? 'Failed to update request') }
+    return res.json()
   },
 
   async approve(id: string, approvedBy: string | null): Promise<AssetRequest> {

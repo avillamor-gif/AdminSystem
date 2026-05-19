@@ -2,7 +2,10 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
 
-const ALLOWED_TABLES = ['asset_categories', 'asset_brands', 'asset_vendors', 'asset_locations'] as const
+const ALLOWED_TABLES = [
+  'asset_categories', 'asset_brands', 'asset_vendors', 'asset_locations',
+  'assets', 'asset_maintenance', 'asset_requests', 'asset_assignments',
+] as const
 type AllowedTable = typeof ALLOWED_TABLES[number]
 
 export async function POST(req: NextRequest) {
