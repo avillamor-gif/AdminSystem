@@ -52,8 +52,67 @@ export interface Member {
   date_admitted: string | null
   notes: string | null
   avatar_url: string | null
+  opt_out_email: boolean
   created_at: string | null
   updated_at: string | null
+}
+
+// ── Member Dues ────────────────────────────────────────────────────────────────
+
+export interface MemberDue {
+  id: string
+  member_id: string
+  period_label: string
+  amount: number
+  currency: string
+  due_date: string | null
+  paid_date: string | null
+  status: 'pending' | 'paid' | 'overdue' | 'waived'
+  payment_method: string | null
+  reference_number: string | null
+  notes: string | null
+  created_at: string | null
+  updated_at: string | null
+}
+
+// ── Member Campaigns ───────────────────────────────────────────────────────────
+
+export interface MemberCampaignFilter {
+  all?: boolean
+  membership_types?: string[]
+  statuses?: string[]
+}
+
+export interface MemberCampaign {
+  id: string
+  title: string
+  subject: string
+  preview_text: string | null
+  body_html: string
+  status: 'draft' | 'sending' | 'sent' | 'scheduled'
+  recipient_filter: MemberCampaignFilter
+  scheduled_at: string | null
+  sent_at: string | null
+  recipient_count: number
+  sent_count: number
+  failed_count: number
+  created_by: string | null
+  created_at: string | null
+  updated_at: string | null
+}
+
+export interface MemberCampaignRecipient {
+  id: string
+  campaign_id: string
+  member_id: string
+  email: string
+  status: 'pending' | 'sent' | 'failed' | 'bounced'
+  sent_at: string | null
+  error_message: string | null
+  created_at: string | null
+  // Joined
+  member?: Member | null
+  campaign?: MemberCampaign | null
 }
 
 export interface GeneralAssembly {
@@ -304,5 +363,128 @@ export const gaAttendeeService = {
     const rows = memberIds.map(mid => ({ ga_id: gaId, member_id: mid }))
     const { error } = await supabase.from('ga_attendees').upsert(rows, { onConflict: 'ga_id,member_id' })
     if (error) throw error
+  },
+}
+
+// ── Member Dues ────────────────────────────────────────────────────────────────
+
+export const memberDuesService = {
+  async getByMember(memberId: string): Promise<MemberDue[]> {
+    const { data, error } = await supabase
+      .from('member_dues')
+      .select('*')
+      .eq('member_id', memberId)
+      .order('due_date', { ascending: false })
+    if (error) throw error
+    return (data || []) as MemberDue[]
+  },
+
+  async create(payload: Omit<MemberDue, 'id' | 'created_at' | 'updated_at'>): Promise<MemberDue> {
+    const { data, error } = await supabase
+      .from('member_dues')
+      .insert(payload)
+      .select('*')
+      .single()
+    if (error) throw error
+    return data as MemberDue
+  },
+
+  async update(id: string, payload: Partial<MemberDue>): Promise<MemberDue> {
+    const { data, error } = await supabase
+      .from('member_dues')
+      .update({ ...payload, updated_at: new Date().toISOString() })
+      .eq('id', id)
+      .select('*')
+      .single()
+    if (error) throw error
+    return data as MemberDue
+  },
+
+  async delete(id: string): Promise<void> {
+    const { error } = await supabase.from('member_dues').delete().eq('id', id)
+    if (error) throw error
+  },
+}
+
+// ── Member Campaigns ───────────────────────────────────────────────────────────
+
+export const memberCampaignService = {
+  async getAll(): Promise<MemberCampaign[]> {
+    const { data, error } = await supabase
+      .from('member_campaigns')
+      .select('*')
+      .order('created_at', { ascending: false })
+    if (error) throw error
+    return (data || []) as MemberCampaign[]
+  },
+
+  async getById(id: string): Promise<MemberCampaign | null> {
+    const { data, error } = await supabase
+      .from('member_campaigns')
+      .select('*')
+      .eq('id', id)
+      .single()
+    if (error) throw error
+    return data as MemberCampaign | null
+  },
+
+  async create(payload: Omit<MemberCampaign, 'id' | 'created_at' | 'updated_at'>): Promise<MemberCampaign> {
+    const { data, error } = await supabase
+      .from('member_campaigns')
+      .insert(payload)
+      .select('*')
+      .single()
+    if (error) throw error
+    return data as MemberCampaign
+  },
+
+  async update(id: string, payload: Partial<MemberCampaign>): Promise<MemberCampaign> {
+    const { data, error } = await supabase
+      .from('member_campaigns')
+      .update({ ...payload, updated_at: new Date().toISOString() })
+      .eq('id', id)
+      .select('*')
+      .single()
+    if (error) throw error
+    return data as MemberCampaign
+  },
+
+  async delete(id: string): Promise<void> {
+    const { error } = await supabase.from('member_campaigns').delete().eq('id', id)
+    if (error) throw error
+  },
+
+  async getRecipients(campaignId: string): Promise<MemberCampaignRecipient[]> {
+    const { data, error } = await supabase
+      .from('member_campaign_recipients')
+      .select('*')
+      .eq('campaign_id', campaignId)
+      .order('sent_at', { ascending: false })
+    if (error) throw error
+    const recipients = (data || []) as MemberCampaignRecipient[]
+    if (recipients.length === 0) return recipients
+    const memberIds = [...new Set(recipients.map(r => r.member_id))]
+    const { data: membersData } = await supabase.from('members').select('*').in('id', memberIds)
+    const memberMap: Record<string, Member> = Object.fromEntries(
+      (membersData || []).map((m: Member) => [m.id, m])
+    )
+    return recipients.map(r => ({ ...r, member: memberMap[r.member_id] || null }))
+  },
+
+  async getMemberHistory(memberId: string): Promise<MemberCampaignRecipient[]> {
+    const { data, error } = await supabase
+      .from('member_campaign_recipients')
+      .select('*')
+      .eq('member_id', memberId)
+      .order('sent_at', { ascending: false })
+    if (error) throw error
+    const recipients = (data || []) as MemberCampaignRecipient[]
+    if (recipients.length === 0) return recipients
+    const campaignIds = [...new Set(recipients.map(r => r.campaign_id))]
+    const { data: campaigns } = await supabase.from('member_campaigns').select('*').in('id', campaignIds)
+    const campaignMap: Record<string, MemberCampaign> = Object.fromEntries(
+      (campaigns || []).map((c: MemberCampaign) => [c.id, c])
+    )
+    return recipients.map(r => ({ ...r, campaign: campaignMap[r.campaign_id] || null }))
   },
 }

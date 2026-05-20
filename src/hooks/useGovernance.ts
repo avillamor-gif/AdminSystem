@@ -4,22 +4,31 @@ import {
   boardTrusteeService,
   boardTermService,
   memberService,
+  memberDuesService,
+  memberCampaignService,
   generalAssemblyService,
   gaAttendeeService,
   type BoardTrustee,
   type BoardTerm,
   type Member,
+  type MemberDue,
+  type MemberCampaign,
   type GeneralAssembly,
 } from '@/services/governance.service'
 
 // ── Query Keys ─────────────────────────────────────────────────────────────────
 
 export const governanceKeys = {
-  trustees:    ['board_trustees'] as const,
-  terms:       (filters?: object) => ['board_terms', filters] as const,
-  members:     (filters?: object) => ['members', filters] as const,
-  assemblies:  ['general_assemblies'] as const,
-  attendees:   (gaId: string) => ['ga_attendees', gaId] as const,
+  trustees:         ['board_trustees'] as const,
+  terms:            (filters?: object) => ['board_terms', filters] as const,
+  members:          (filters?: object) => ['members', filters] as const,
+  assemblies:       ['general_assemblies'] as const,
+  attendees:        (gaId: string) => ['ga_attendees', gaId] as const,
+  dues:             (memberId: string) => ['member_dues', memberId] as const,
+  campaigns:        ['member_campaigns'] as const,
+  campaignDetail:   (id: string) => ['member_campaign', id] as const,
+  campaignRecipients: (id: string) => ['member_campaign_recipients', id] as const,
+  memberCampaignHistory: (memberId: string) => ['member_campaign_history', memberId] as const,
 }
 
 // ── Board Trustees ─────────────────────────────────────────────────────────────
@@ -259,5 +268,117 @@ export function useBulkAddGaAttendees() {
       toast.success('Attendance recorded')
     },
     onError: () => toast.error('Failed to record attendance'),
+  })
+}
+
+// ── Member Dues ────────────────────────────────────────────────────────────────
+
+export function useMemberDues(memberId: string) {
+  return useQuery({
+    queryKey: governanceKeys.dues(memberId),
+    queryFn: () => memberDuesService.getByMember(memberId),
+    enabled: !!memberId,
+  })
+}
+
+export function useCreateMemberDue() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (data: Parameters<typeof memberDuesService.create>[0]) =>
+      memberDuesService.create(data),
+    onSuccess: (result) => {
+      qc.invalidateQueries({ queryKey: governanceKeys.dues(result.member_id) })
+      toast.success('Dues record added')
+    },
+    onError: () => toast.error('Failed to add dues record'),
+  })
+}
+
+export function useUpdateMemberDue() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, memberId, data }: { id: string; memberId: string; data: Partial<MemberDue> }) =>
+      memberDuesService.update(id, data),
+    onSuccess: (_, { memberId }) => {
+      qc.invalidateQueries({ queryKey: governanceKeys.dues(memberId) })
+      toast.success('Dues record updated')
+    },
+    onError: () => toast.error('Failed to update dues record'),
+  })
+}
+
+export function useDeleteMemberDue() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, memberId }: { id: string; memberId: string }) =>
+      memberDuesService.delete(id),
+    onSuccess: (_, { memberId }) => {
+      qc.invalidateQueries({ queryKey: governanceKeys.dues(memberId) })
+      toast.success('Dues record removed')
+    },
+    onError: () => toast.error('Failed to remove dues record'),
+  })
+}
+
+// ── Member Campaigns ───────────────────────────────────────────────────────────
+
+export function useMemberCampaigns() {
+  return useQuery({
+    queryKey: governanceKeys.campaigns,
+    queryFn: () => memberCampaignService.getAll(),
+  })
+}
+
+export function useCreateMemberCampaign() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (data: Omit<MemberCampaign, 'id' | 'created_at' | 'updated_at'>) =>
+      memberCampaignService.create(data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: governanceKeys.campaigns })
+      toast.success('Campaign saved')
+    },
+    onError: () => toast.error('Failed to save campaign'),
+  })
+}
+
+export function useUpdateMemberCampaign() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: Partial<MemberCampaign> }) =>
+      memberCampaignService.update(id, data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: governanceKeys.campaigns })
+      toast.success('Campaign updated')
+    },
+    onError: () => toast.error('Failed to update campaign'),
+  })
+}
+
+export function useDeleteMemberCampaign() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (id: string) => memberCampaignService.delete(id),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: governanceKeys.campaigns })
+      toast.success('Campaign deleted')
+    },
+    onError: () => toast.error('Failed to delete campaign'),
+  })
+}
+
+export function useCampaignRecipients(campaignId: string) {
+  return useQuery({
+    queryKey: governanceKeys.campaignRecipients(campaignId),
+    queryFn: () => memberCampaignService.getRecipients(campaignId),
+    enabled: !!campaignId,
+  })
+}
+
+export function useMemberCampaignHistory(memberId: string) {
+  return useQuery({
+    queryKey: governanceKeys.memberCampaignHistory(memberId),
+    queryFn: () => memberCampaignService.getMemberHistory(memberId),
+    enabled: !!memberId,
   })
 }
