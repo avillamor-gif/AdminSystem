@@ -375,38 +375,35 @@ export const holidayService = {
   },
 
   async create(holiday: Omit<Holiday, 'id' | 'created_at' | 'updated_at'>) {
-    const supabase = createClient()
-    const { data, error } = await supabase
-      .from('holidays')
-      .insert(holiday as any)
-      .select()
-      .single()
-
-    if (error) throw error
-    return data as unknown as Holiday
+    const res = await fetch('/api/admin/holidays', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(holiday),
+    })
+    const json = await res.json()
+    if (!res.ok) throw new Error(json.error || 'Failed to create holiday')
+    return json as Holiday
   },
 
   async update(id: string, holiday: Partial<Holiday>) {
-    const supabase = createClient()
-    const { data, error } = await supabase
-      .from('holidays')
-      .update(holiday)
-      .eq('id', id)
-      .select()
-      .single()
-
-    if (error) throw error
-    return data as unknown as Holiday
+    const res = await fetch('/api/admin/holidays', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id, ...holiday }),
+    })
+    const json = await res.json()
+    if (!res.ok) throw new Error(json.error || 'Failed to update holiday')
+    return json as Holiday
   },
 
   async delete(id: string) {
-    const supabase = createClient()
-    const { error } = await supabase
-      .from('holidays')
-      .delete()
-      .eq('id', id)
-
-    if (error) throw error
+    const res = await fetch('/api/admin/holidays', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id }),
+    })
+    const json = await res.json()
+    if (!res.ok) throw new Error(json.error || 'Failed to delete holiday')
   },
 }
 
