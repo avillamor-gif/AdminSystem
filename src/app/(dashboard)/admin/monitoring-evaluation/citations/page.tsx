@@ -463,16 +463,16 @@ export default function CitationsPage() {
 
       {/* Delete confirm */}
       <ConfirmModal
-        open={!!deleteTarget}
+        isOpen={!!deleteTarget}
         title="Delete Citation"
         message={`Remove "${deleteTarget?.title}" from the citation tracker? This cannot be undone.`}
-        confirmLabel="Delete"
+        confirmText="Delete"
         variant="danger"
         onConfirm={async () => {
           if (deleteTarget) await deleteMutation.mutateAsync(deleteTarget.id)
           setDeleteTarget(null)
         }}
-        onCancel={() => setDeleteTarget(null)}
+        onClose={() => setDeleteTarget(null)}
       />
     </div>
   )
