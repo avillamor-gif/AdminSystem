@@ -370,6 +370,15 @@ export default function AdminPage() {
                           router.push(`${module.href}/${itemSlugMap[item]}`)
                           return
                         }
+                        // Module-specific overrides for ambiguous labels
+                        if (item === 'Reports') {
+                          router.push(`${module.href}/reports`)
+                          return
+                        }
+                        if (item === 'Dashboard') {
+                          router.push(`${module.href}/dashboard`)
+                          return
+                        }
                         const routeMap: Record<string, string> = {
                           // User Access & Security routes
                           'User Management': '/admin/user-access-security/user-management',
@@ -504,7 +513,6 @@ export default function AdminPage() {
                           'Maintenance': '/admin/asset-management/maintenance',
                           'Requests': '/admin/asset-management/requests',
                           'Setup': '/admin/asset-management/setup',
-                          'Reports': '/admin/asset-management/reports',
                           
                           // Office Supplies routes — handled by itemSlugMap above
                           'Supply Inventory': '/admin/office-supplies/supply-inventory',
@@ -538,7 +546,14 @@ export default function AdminPage() {
                           'Enrollments': '/admin/internship-volunteer/enrollments',
                           'Hours Monitoring': '/admin/internship-volunteer/hours-monitoring',
                           'Certificates': '/admin/internship-volunteer/certificates',
-                                                  }
+
+                          // Monitoring & Evaluation routes
+                          'Dashboard': '/admin/monitoring-evaluation/dashboard',
+                          'Programs': '/admin/monitoring-evaluation/programs',
+                          'Projects': '/admin/monitoring-evaluation/projects',
+                          'Indicators': '/admin/monitoring-evaluation/indicators',
+                          'Data Entry': '/admin/monitoring-evaluation/data-entry',
+                        }
                         const route = routeMap[item]
                         if (route) router.push(route)
                       }}
