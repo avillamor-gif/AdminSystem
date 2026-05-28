@@ -63,3 +63,5 @@ export * from './useOrgProfile'
 export * from './useOrgDocuments'
 
 export * from './useGovernanceNodes'
+
+export * from './useMonitoring'

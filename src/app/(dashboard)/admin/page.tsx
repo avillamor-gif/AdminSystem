@@ -253,6 +253,16 @@ export default function AdminPage() {
       items: ['Partner Institutions', 'Enrollments', 'Hours Monitoring', 'Certificates'],
       requiresPermission: 'admin.internship',
     },
+    {
+      id: 'monitoring-evaluation',
+      title: 'Monitoring & Evaluation',
+      description: 'Track programs, projects, indicators, and staff data entries for M&E',
+      icon: BarChart3,
+      color: 'bg-cyan-700',
+      href: '/admin/monitoring-evaluation',
+      items: ['Dashboard', 'Programs', 'Projects', 'Indicators', 'Data Entry', 'Reports'],
+      requiresPermission: 'admin.manage',
+    },
   ]
 
   const adminModules = allAdminModules.filter(m =>

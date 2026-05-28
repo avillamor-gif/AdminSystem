@@ -233,3 +233,6 @@ export type { OrgDocument, OrgDocumentInsert } from './orgDocument.service'
 
 export { governanceNodeService } from './governanceNode.service'
 export type { GovernanceNode, GovernanceNodeInsert } from './governanceNode.service'
+
+export { programService, projectService, indicatorService, dataEntryService, meReportService } from './monitoring.service'
+export type { MEProgram, MEProject, MEIndicator, MEDataEntry, MEReport } from './monitoring.service'
