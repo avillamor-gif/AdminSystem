@@ -9,6 +9,7 @@ const navItems = [
   { label: 'Indicators', href: '/admin/monitoring-evaluation/indicators' },
   { label: 'Data Entry', href: '/admin/monitoring-evaluation/data-entry' },
   { label: 'Reports', href: '/admin/monitoring-evaluation/reports' },
+  { label: 'Citations', href: '/admin/monitoring-evaluation/citations' },
 ]
 
 export default function MonitoringEvaluationLayout({ children }: { children: React.ReactNode }) {

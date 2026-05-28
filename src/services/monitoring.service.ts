@@ -454,3 +454,117 @@ export const meReportService = {
     if (!res.ok) throw new Error(await res.text())
   },
 }
+
+// ─── Citation types ───────────────────────────────────────────────────────────
+
+type CitationRow = {
+  id: string
+  title: string
+  source_name: string
+  source_type: MECitation['source_type']
+  url: string | null
+  publication_date: string | null
+  authors: string | null
+  program_id: string | null
+  project_id: string | null
+  work_type: MECitation['work_type']
+  work_title: string | null
+  notes: string | null
+  tags: string[] | null
+  added_by: string | null
+  created_at: string
+  updated_at: string
+}
+
+export interface MECitation {
+  id: string
+  title: string
+  source_name: string
+  source_type:
+    | 'news_article' | 'academic_journal' | 'policy_document'
+    | 'government_report' | 'social_media' | 'book' | 'conference' | 'website' | 'other'
+  url: string | null
+  publication_date: string | null
+  authors: string | null
+  program_id: string | null
+  project_id: string | null
+  work_type: 'research' | 'advocacy' | 'policy' | 'program' | 'project' | 'publication' | 'other'
+  work_title: string | null
+  notes: string | null
+  tags: string[] | null
+  added_by: string | null
+  created_at: string
+  updated_at: string
+  // joined
+  program?: { id: string; name: string } | null
+  project?: { id: string; name: string } | null
+  added_by_emp?: { id: string; first_name: string; last_name: string } | null
+}
+
+export const citationService = {
+  async getAll(): Promise<MECitation[]> {
+    const supabase = createClient()
+    const { data: rawData, error } = await supabase
+      .from('me_citations')
+      .select('*')
+      .order('publication_date', { ascending: false })
+    if (error) throw error
+    const data = (rawData ?? []) as CitationRow[]
+
+    // Resolve programs
+    const programIds = [...new Set(data.map((c) => c.program_id).filter(Boolean))] as string[]
+    let programMap: Record<string, NameRow> = {}
+    if (programIds.length) {
+      const { data: progs } = await supabase.from('me_programs').select('id, name').in('id', programIds)
+      ;(progs as NameRow[] ?? []).forEach((p) => { programMap[p.id] = p })
+    }
+
+    // Resolve projects
+    const projectIds = [...new Set(data.map((c) => c.project_id).filter(Boolean))] as string[]
+    let projectMap: Record<string, NameRow> = {}
+    if (projectIds.length) {
+      const { data: projs } = await supabase.from('me_projects').select('id, name').in('id', projectIds)
+      ;(projs as NameRow[] ?? []).forEach((p) => { projectMap[p.id] = p })
+    }
+
+    // Resolve staff who added the citation
+    const staffIds = [...new Set(data.map((c) => c.added_by).filter(Boolean))] as string[]
+    let staffMap: Record<string, StaffRow> = {}
+    if (staffIds.length) {
+      const { data: staff } = await supabase.from('employees').select('id, first_name, last_name').in('id', staffIds)
+      ;(staff as StaffRow[] ?? []).forEach((s) => { staffMap[s.id] = s })
+    }
+
+    return data.map((c) => ({
+      ...c,
+      program: c.program_id ? programMap[c.program_id] ?? null : null,
+      project: c.project_id ? projectMap[c.project_id] ?? null : null,
+      added_by_emp: c.added_by ? staffMap[c.added_by] ?? null : null,
+    }))
+  },
+
+  async create(payload: Omit<MECitation, 'id' | 'created_at' | 'updated_at' | 'program' | 'project' | 'added_by_emp'>) {
+    const res = await fetch('/api/admin/me/citations', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    })
+    if (!res.ok) throw new Error(await res.text())
+    return res.json()
+  },
+
+  async update(id: string, payload: Partial<MECitation>) {
+    const res = await fetch('/api/admin/me/citations', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id, ...payload }),
+    })
+    if (!res.ok) throw new Error(await res.text())
+    return res.json()
+  },
+
+  async delete(id: string) {
+    const res = await fetch(`/api/admin/me/citations?id=${id}`, { method: 'DELETE' })
+    if (!res.ok) throw new Error(await res.text())
+  },
+}

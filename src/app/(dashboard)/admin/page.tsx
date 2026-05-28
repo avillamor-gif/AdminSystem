@@ -260,7 +260,7 @@ export default function AdminPage() {
       icon: BarChart3,
       color: 'bg-cyan-700',
       href: '/admin/monitoring-evaluation',
-      items: ['Dashboard', 'Programs', 'Projects', 'Indicators', 'Data Entry', 'Reports'],
+      items: ['Dashboard', 'Programs', 'Projects', 'Indicators', 'Data Entry', 'Reports', 'Citations'],
       requiresPermission: 'admin.manage',
     },
   ]
@@ -553,6 +553,7 @@ export default function AdminPage() {
                           'Projects': '/admin/monitoring-evaluation/projects',
                           'Indicators': '/admin/monitoring-evaluation/indicators',
                           'Data Entry': '/admin/monitoring-evaluation/data-entry',
+                          'Citations': '/admin/monitoring-evaluation/citations',
                         }
                         const route = routeMap[item]
                         if (route) router.push(route)

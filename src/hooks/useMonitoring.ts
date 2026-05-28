@@ -6,11 +6,13 @@ import {
   indicatorService,
   dataEntryService,
   meReportService,
+  citationService,
   type MEProgram,
   type MEProject,
   type MEIndicator,
   type MEDataEntry,
   type MEReport,
+  type MECitation,
 } from '@/services/monitoring.service'
 
 // ─── Query Keys ───────────────────────────────────────────────────────────────
@@ -23,6 +25,7 @@ export const meKeys = {
     [...meKeys.all, 'indicators', JSON.stringify(filters ?? {})] as const,
   dataEntries: (indicatorId?: string) => [...meKeys.all, 'data-entries', indicatorId ?? 'all'] as const,
   reports: () => [...meKeys.all, 'reports'] as const,
+  citations: () => [...meKeys.all, 'citations'] as const,
 }
 
 // ─── Programs ─────────────────────────────────────────────────────────────────
@@ -252,6 +255,50 @@ export function useDeleteMEReport() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: meKeys.reports() })
       toast.success('Report deleted')
+    },
+    onError: (e: Error) => toast.error(e.message),
+  })
+}
+
+// ─── Citations ────────────────────────────────────────────────────────────────
+
+export function useCitations() {
+  return useQuery({ queryKey: meKeys.citations(), queryFn: () => citationService.getAll() })
+}
+
+export function useCreateCitation() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (data: Omit<MECitation, 'id' | 'created_at' | 'updated_at' | 'program' | 'project' | 'added_by_emp'>) =>
+      citationService.create(data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: meKeys.citations() })
+      toast.success('Citation added')
+    },
+    onError: (e: Error) => toast.error(e.message),
+  })
+}
+
+export function useUpdateCitation() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: Partial<MECitation> }) =>
+      citationService.update(id, data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: meKeys.citations() })
+      toast.success('Citation updated')
+    },
+    onError: (e: Error) => toast.error(e.message),
+  })
+}
+
+export function useDeleteCitation() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (id: string) => citationService.delete(id),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: meKeys.citations() })
+      toast.success('Citation deleted')
     },
     onError: (e: Error) => toast.error(e.message),
   })
