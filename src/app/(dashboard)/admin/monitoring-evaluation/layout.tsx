@@ -1,6 +1,6 @@
 'use client'
 
-import { SecondaryNav } from '@/components/layout/SecondaryNav'
+import SecondaryNav from '@/components/layout/SecondaryNav'
 
 const navItems = [
   { label: 'Dashboard', href: '/admin/monitoring-evaluation/dashboard' },
