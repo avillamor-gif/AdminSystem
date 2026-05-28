@@ -173,7 +173,7 @@ export default function IndicatorsPage() {
         )}
       </div>
 
-      <Modal isOpen={showModal} onClose={() => setShowModal(false)} size="lg">
+      <Modal open={showModal} onClose={() => setShowModal(false)} size="lg">
         <ModalHeader>{selected ? 'Edit Indicator' : 'New Indicator'}</ModalHeader>
         <ModalBody>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

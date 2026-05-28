@@ -179,7 +179,7 @@ export default function ProgramsPage() {
       </div>
 
       {/* Form Modal */}
-      <Modal isOpen={showModal} onClose={() => setShowModal(false)} size="lg">
+      <Modal open={showModal} onClose={() => setShowModal(false)} size="lg">
         <ModalHeader>{selected ? 'Edit Program' : 'New Program'}</ModalHeader>
         <ModalBody>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

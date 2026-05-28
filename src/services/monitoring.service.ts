@@ -1,6 +1,44 @@
 import { createClient } from '@/lib/supabase/client'
 
-// ─── Types ────────────────────────────────────────────────────────────────────
+// ─── Raw DB row types (mirrors the SQL tables) ────────────────────────────────
+
+type ProgramRow = {
+  id: string; name: string; description: string | null
+  program_type: MEProgram['program_type']; status: MEProgram['status']
+  start_date: string | null; end_date: string | null; budget: number | null
+  currency: string; lead_staff_id: string | null; beneficiary_target: number | null
+  beneficiary_count: number; location: string | null; notes: string | null
+  created_by: string | null; created_at: string; updated_at: string
+}
+type ProjectRow = {
+  id: string; program_id: string | null; name: string; description: string | null
+  project_type: MEProject['project_type']; status: MEProject['status']
+  start_date: string | null; end_date: string | null; budget: number | null
+  currency: string; lead_staff_id: string | null; location: string | null
+  notes: string | null; created_by: string | null; created_at: string; updated_at: string
+}
+type IndicatorRow = {
+  id: string; program_id: string | null; project_id: string | null; name: string
+  description: string | null; indicator_type: MEIndicator['indicator_type']
+  unit_of_measure: string; baseline_value: number | null; target_value: number
+  frequency: MEIndicator['frequency']; data_source: string | null
+  responsible_staff_id: string | null; is_active: boolean; created_at: string; updated_at: string
+}
+type DataEntryRow = {
+  id: string; indicator_id: string; period_label: string; period_start: string
+  period_end: string; actual_value: number; narrative: string | null
+  entered_by: string | null; verified_by: string | null; status: MEDataEntry['status']
+  attachments: unknown[]; created_at: string; updated_at: string
+}
+type ReportRow = {
+  id: string; title: string; program_id: string | null; project_id: string | null
+  report_type: MEReport['report_type']; period_label: string | null
+  period_start: string | null; period_end: string | null; content: string | null
+  status: MEReport['status']; prepared_by: string | null; created_at: string; updated_at: string
+}
+type StaffRow = { id: string; first_name: string; last_name: string }
+type NameRow = { id: string; name: string }
+type IndicatorNameRow = { id: string; name: string; unit_of_measure: string; target_value: number }
 
 export interface MEProgram {
   id: string
@@ -111,24 +149,25 @@ export interface MEReport {
 export const programService = {
   async getAll(): Promise<MEProgram[]> {
     const supabase = createClient()
-    const { data, error } = await supabase
+    const { data: rawData, error } = await supabase
       .from('me_programs')
       .select('*')
       .order('created_at', { ascending: false })
     if (error) throw error
+    const data = (rawData ?? []) as ProgramRow[]
 
     // Fetch lead staff separately
-    const staffIds = [...new Set((data ?? []).map((p) => p.lead_staff_id).filter(Boolean))]
-    let staffMap: Record<string, { id: string; first_name: string; last_name: string }> = {}
+    const staffIds = [...new Set(data.map((p) => p.lead_staff_id).filter(Boolean))] as string[]
+    let staffMap: Record<string, StaffRow> = {}
     if (staffIds.length) {
       const { data: staff } = await supabase
         .from('employees')
         .select('id, first_name, last_name')
-        .in('id', staffIds as string[])
-      ;(staff ?? []).forEach((s) => { staffMap[s.id] = s })
+        .in('id', staffIds)
+      ;(staff as StaffRow[] ?? []).forEach((s) => { staffMap[s.id] = s })
     }
 
-    return (data ?? []).map((p) => ({
+    return data.map((p) => ({
       ...p,
       lead_staff: p.lead_staff_id ? staffMap[p.lead_staff_id] ?? null : null,
     }))
@@ -167,30 +206,31 @@ export const projectService = {
     const supabase = createClient()
     let query = supabase.from('me_projects').select('*').order('created_at', { ascending: false })
     if (programId) query = query.eq('program_id', programId)
-    const { data, error } = await query
+    const { data: rawData, error } = await query
     if (error) throw error
+    const data = (rawData ?? []) as ProjectRow[]
 
-    const programIds = [...new Set((data ?? []).map((p) => p.program_id).filter(Boolean))]
-    const staffIds = [...new Set((data ?? []).map((p) => p.lead_staff_id).filter(Boolean))]
-    let programMap: Record<string, { id: string; name: string }> = {}
-    let staffMap: Record<string, { id: string; first_name: string; last_name: string }> = {}
+    const programIds = [...new Set(data.map((p) => p.program_id).filter(Boolean))] as string[]
+    const staffIds = [...new Set(data.map((p) => p.lead_staff_id).filter(Boolean))] as string[]
+    let programMap: Record<string, NameRow> = {}
+    let staffMap: Record<string, StaffRow> = {}
 
     if (programIds.length) {
       const { data: programs } = await supabase
         .from('me_programs')
         .select('id, name')
-        .in('id', programIds as string[])
-      ;(programs ?? []).forEach((p) => { programMap[p.id] = p })
+        .in('id', programIds)
+      ;(programs as NameRow[] ?? []).forEach((p) => { programMap[p.id] = p })
     }
     if (staffIds.length) {
       const { data: staff } = await supabase
         .from('employees')
         .select('id, first_name, last_name')
-        .in('id', staffIds as string[])
-      ;(staff ?? []).forEach((s) => { staffMap[s.id] = s })
+        .in('id', staffIds)
+      ;(staff as StaffRow[] ?? []).forEach((s) => { staffMap[s.id] = s })
     }
 
-    return (data ?? []).map((p) => ({
+    return data.map((p) => ({
       ...p,
       program: p.program_id ? programMap[p.program_id] ?? null : null,
       lead_staff: p.lead_staff_id ? staffMap[p.lead_staff_id] ?? null : null,
@@ -231,30 +271,31 @@ export const indicatorService = {
     let query = supabase.from('me_indicators').select('*').order('created_at', { ascending: false })
     if (filters?.program_id) query = query.eq('program_id', filters.program_id)
     if (filters?.project_id) query = query.eq('project_id', filters.project_id)
-    const { data, error } = await query
+    const { data: rawData, error } = await query
     if (error) throw error
+    const data = (rawData ?? []) as IndicatorRow[]
 
-    const programIds = [...new Set((data ?? []).map((i) => i.program_id).filter(Boolean))]
-    const projectIds = [...new Set((data ?? []).map((i) => i.project_id).filter(Boolean))]
-    const staffIds = [...new Set((data ?? []).map((i) => i.responsible_staff_id).filter(Boolean))]
-    let programMap: Record<string, { id: string; name: string }> = {}
-    let projectMap: Record<string, { id: string; name: string }> = {}
-    let staffMap: Record<string, { id: string; first_name: string; last_name: string }> = {}
+    const programIds = [...new Set(data.map((i) => i.program_id).filter(Boolean))] as string[]
+    const projectIds = [...new Set(data.map((i) => i.project_id).filter(Boolean))] as string[]
+    const staffIds = [...new Set(data.map((i) => i.responsible_staff_id).filter(Boolean))] as string[]
+    let programMap: Record<string, NameRow> = {}
+    let projectMap: Record<string, NameRow> = {}
+    let staffMap: Record<string, StaffRow> = {}
 
     if (programIds.length) {
-      const { data: programs } = await supabase.from('me_programs').select('id, name').in('id', programIds as string[])
-      ;(programs ?? []).forEach((p) => { programMap[p.id] = p })
+      const { data: programs } = await supabase.from('me_programs').select('id, name').in('id', programIds)
+      ;(programs as NameRow[] ?? []).forEach((p) => { programMap[p.id] = p })
     }
     if (projectIds.length) {
-      const { data: projects } = await supabase.from('me_projects').select('id, name').in('id', projectIds as string[])
-      ;(projects ?? []).forEach((p) => { projectMap[p.id] = p })
+      const { data: projects } = await supabase.from('me_projects').select('id, name').in('id', projectIds)
+      ;(projects as NameRow[] ?? []).forEach((p) => { projectMap[p.id] = p })
     }
     if (staffIds.length) {
-      const { data: staff } = await supabase.from('employees').select('id, first_name, last_name').in('id', staffIds as string[])
-      ;(staff ?? []).forEach((s) => { staffMap[s.id] = s })
+      const { data: staff } = await supabase.from('employees').select('id, first_name, last_name').in('id', staffIds)
+      ;(staff as StaffRow[] ?? []).forEach((s) => { staffMap[s.id] = s })
     }
 
-    return (data ?? []).map((i) => ({
+    return data.map((i) => ({
       ...i,
       program: i.program_id ? programMap[i.program_id] ?? null : null,
       project: i.project_id ? projectMap[i.project_id] ?? null : null,
@@ -295,27 +336,28 @@ export const dataEntryService = {
     const supabase = createClient()
     let query = supabase.from('me_data_entries').select('*').order('period_start', { ascending: false })
     if (indicatorId) query = query.eq('indicator_id', indicatorId)
-    const { data, error } = await query
+    const { data: rawData, error } = await query
     if (error) throw error
+    const data = (rawData ?? []) as DataEntryRow[]
 
-    const indicatorIds = [...new Set((data ?? []).map((e) => e.indicator_id).filter(Boolean))]
-    const staffIds = [...new Set((data ?? []).map((e) => e.entered_by).filter(Boolean))]
-    let indicatorMap: Record<string, { id: string; name: string; unit_of_measure: string; target_value: number }> = {}
-    let staffMap: Record<string, { id: string; first_name: string; last_name: string }> = {}
+    const indicatorIds = [...new Set(data.map((e) => e.indicator_id).filter(Boolean))] as string[]
+    const staffIds = [...new Set(data.map((e) => e.entered_by).filter(Boolean))] as string[]
+    let indicatorMap: Record<string, IndicatorNameRow> = {}
+    let staffMap: Record<string, StaffRow> = {}
 
     if (indicatorIds.length) {
       const { data: indicators } = await supabase
         .from('me_indicators')
         .select('id, name, unit_of_measure, target_value')
-        .in('id', indicatorIds as string[])
-      ;(indicators ?? []).forEach((i) => { indicatorMap[i.id] = i })
+        .in('id', indicatorIds)
+      ;(indicators as IndicatorNameRow[] ?? []).forEach((i) => { indicatorMap[i.id] = i })
     }
     if (staffIds.length) {
-      const { data: staff } = await supabase.from('employees').select('id, first_name, last_name').in('id', staffIds as string[])
-      ;(staff ?? []).forEach((s) => { staffMap[s.id] = s })
+      const { data: staff } = await supabase.from('employees').select('id, first_name, last_name').in('id', staffIds)
+      ;(staff as StaffRow[] ?? []).forEach((s) => { staffMap[s.id] = s })
     }
 
-    return (data ?? []).map((e) => ({
+    return data.map((e) => ({
       ...e,
       indicator: indicatorMap[e.indicator_id] ?? null,
       entered_by_emp: e.entered_by ? staffMap[e.entered_by] ?? null : null,
@@ -353,33 +395,33 @@ export const dataEntryService = {
 export const meReportService = {
   async getAll(): Promise<MEReport[]> {
     const supabase = createClient()
-    const { data, error } = await supabase
+    const { data: rawData, error } = await supabase
       .from('me_reports')
       .select('*')
       .order('created_at', { ascending: false })
     if (error) throw error
+    const data = (rawData ?? []) as ReportRow[]
 
-    const programIds = [...new Set((data ?? []).map((r) => r.program_id).filter(Boolean))]
-    const projectIds = [...new Set((data ?? []).map((r) => r.project_id).filter(Boolean))]
-    const staffIds = [...new Set((data ?? []).map((r) => r.prepared_by).filter(Boolean))]
-    let programMap: Record<string, { id: string; name: string }> = {}
-    let projectMap: Record<string, { id: string; name: string }> = {}
-    let staffMap: Record<string, { id: string; first_name: string; last_name: string }> = {}
-    const supabase2 = createClient()
+    const programIds = [...new Set(data.map((r) => r.program_id).filter(Boolean))] as string[]
+    const projectIds = [...new Set(data.map((r) => r.project_id).filter(Boolean))] as string[]
+    const staffIds = [...new Set(data.map((r) => r.prepared_by).filter(Boolean))] as string[]
+    let programMap: Record<string, NameRow> = {}
+    let projectMap: Record<string, NameRow> = {}
+    let staffMap: Record<string, StaffRow> = {}
     if (programIds.length) {
-      const { data: programs } = await supabase2.from('me_programs').select('id, name').in('id', programIds as string[])
-      ;(programs ?? []).forEach((p) => { programMap[p.id] = p })
+      const { data: programs } = await supabase.from('me_programs').select('id, name').in('id', programIds)
+      ;(programs as NameRow[] ?? []).forEach((p) => { programMap[p.id] = p })
     }
     if (projectIds.length) {
-      const { data: projects } = await supabase2.from('me_projects').select('id, name').in('id', projectIds as string[])
-      ;(projects ?? []).forEach((p) => { projectMap[p.id] = p })
+      const { data: projects } = await supabase.from('me_projects').select('id, name').in('id', projectIds)
+      ;(projects as NameRow[] ?? []).forEach((p) => { projectMap[p.id] = p })
     }
     if (staffIds.length) {
-      const { data: staff } = await supabase2.from('employees').select('id, first_name, last_name').in('id', staffIds as string[])
-      ;(staff ?? []).forEach((s) => { staffMap[s.id] = s })
+      const { data: staff } = await supabase.from('employees').select('id, first_name, last_name').in('id', staffIds)
+      ;(staff as StaffRow[] ?? []).forEach((s) => { staffMap[s.id] = s })
     }
 
-    return (data ?? []).map((r) => ({
+    return data.map((r) => ({
       ...r,
       program: r.program_id ? programMap[r.program_id] ?? null : null,
       project: r.project_id ? projectMap[r.project_id] ?? null : null,

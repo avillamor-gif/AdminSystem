@@ -182,7 +182,7 @@ export default function ProjectsPage() {
         )}
       </div>
 
-      <Modal isOpen={showModal} onClose={() => setShowModal(false)} size="lg">
+      <Modal open={showModal} onClose={() => setShowModal(false)} size="lg">
         <ModalHeader>{selected ? 'Edit Project' : 'New Project'}</ModalHeader>
         <ModalBody>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

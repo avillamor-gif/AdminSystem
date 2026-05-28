@@ -123,7 +123,7 @@ export default function ReportsPage() {
       </div>
 
       {/* Create/Edit Modal */}
-      <Modal isOpen={showModal} onClose={() => setShowModal(false)} size="lg">
+      <Modal open={showModal} onClose={() => setShowModal(false)} size="lg">
         <ModalHeader>{selected ? 'Edit Report' : 'New Report'}</ModalHeader>
         <ModalBody>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -208,7 +208,7 @@ export default function ReportsPage() {
 
       {/* View Report Modal */}
       {viewReport && (
-        <Modal isOpen={!!viewReport} onClose={() => setViewReport(null)} size="lg">
+        <Modal open={!!viewReport} onClose={() => setViewReport(null)} size="lg">
           <ModalHeader>
             <div className="flex items-center gap-3">
               <span>{viewReport.title}</span>

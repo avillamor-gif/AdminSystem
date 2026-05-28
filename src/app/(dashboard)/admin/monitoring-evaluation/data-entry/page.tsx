@@ -194,7 +194,7 @@ export default function DataEntryPage() {
         )}
       </div>
 
-      <Modal isOpen={showModal} onClose={() => setShowModal(false)} size="lg">
+      <Modal open={showModal} onClose={() => setShowModal(false)} size="lg">
         <ModalHeader>{selected ? 'Edit Data Entry' : 'New Data Entry'}</ModalHeader>
         <ModalBody>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
