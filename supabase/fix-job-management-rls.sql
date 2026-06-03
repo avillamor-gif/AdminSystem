@@ -29,6 +29,13 @@ CREATE POLICY "Admins can update job titles"
       WHERE user_roles.user_id = auth.uid()
       AND user_roles.role IN ('admin', 'hr', 'manager')
     )
+  )
+  WITH CHECK (
+    EXISTS (
+      SELECT 1 FROM user_roles
+      WHERE user_roles.user_id = auth.uid()
+      AND user_roles.role IN ('admin', 'hr', 'manager')
+    )
   );
 
 CREATE POLICY "Admins can delete job titles"
@@ -67,6 +74,13 @@ CREATE POLICY "Admins can update employment types"
       WHERE user_roles.user_id = auth.uid()
       AND user_roles.role IN ('admin', 'hr', 'manager')
     )
+  )
+  WITH CHECK (
+    EXISTS (
+      SELECT 1 FROM user_roles
+      WHERE user_roles.user_id = auth.uid()
+      AND user_roles.role IN ('admin', 'hr', 'manager')
+    )
   );
 
 CREATE POLICY "Admins can delete employment types"
@@ -100,6 +114,13 @@ CREATE POLICY "Admins can update job categories"
   ON job_categories FOR UPDATE
   TO authenticated
   USING (
+    EXISTS (
+      SELECT 1 FROM user_roles
+      WHERE user_roles.user_id = auth.uid()
+      AND user_roles.role IN ('admin', 'hr', 'manager')
+    )
+  )
+  WITH CHECK (
     EXISTS (
       SELECT 1 FROM user_roles
       WHERE user_roles.user_id = auth.uid()
@@ -149,6 +170,13 @@ CREATE POLICY "Admins can update job descriptions"
   ON job_descriptions FOR UPDATE
   TO authenticated
   USING (
+    EXISTS (
+      SELECT 1 FROM user_roles
+      WHERE user_roles.user_id = auth.uid()
+      AND user_roles.role IN ('admin', 'hr', 'manager')
+    )
+  )
+  WITH CHECK (
     EXISTS (
       SELECT 1 FROM user_roles
       WHERE user_roles.user_id = auth.uid()

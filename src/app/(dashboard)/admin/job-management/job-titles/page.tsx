@@ -19,9 +19,6 @@ interface JobTitleForm {
   description: string
   job_category_id: string
   employment_type: string
-  experience_level: string
-  min_salary: number | null
-  max_salary: number | null
   is_active: boolean
 }
 
@@ -61,9 +58,6 @@ export default function JobTitlesPage() {
       description: title.description || '',
       job_category_id: title.job_category_id || '',
       employment_type: title.employment_type || '',
-      experience_level: title.experience_level || '',
-      min_salary: title.min_salary,
-      max_salary: title.max_salary,
       is_active: title.is_active ?? true,
     })
     setIsFormOpen(true)
@@ -77,9 +71,6 @@ export default function JobTitlesPage() {
       description: '',
       job_category_id: '',
       employment_type: '',
-      experience_level: '',
-      min_salary: null,
-      max_salary: null,
       is_active: true,
     })
     setIsFormOpen(true)
@@ -287,77 +278,31 @@ export default function JobTitlesPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Job Category</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Unit</label>
                 <select
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
                   value={formData.job_category_id}
                   onChange={(e) => setFormData({ ...formData, job_category_id: e.target.value })}
                 >
-                  <option value="">Select Category</option>
+                  <option value="">Select Unit</option>
                   {jobCategories.filter(c => c.is_active).map((cat) => (
                     <option key={cat.id} value={cat.id}>{cat.name}</option>
                   ))}
                 </select>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Experience Level *</label>
-                  <select
-                    required
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
-                    value={formData.experience_level}
-                    onChange={(e) => setFormData({ ...formData, experience_level: e.target.value })}
-                  >
-                    <option value="">Select Level</option>
-                    <option value="Entry-Level">Entry-Level</option>
-                    <option value="Junior">Junior</option>
-                    <option value="Mid-Level">Mid-Level</option>
-                    <option value="Senior">Senior</option>
-                    <option value="Lead">Lead</option>
-                    <option value="Manager">Manager</option>
-                    <option value="Director">Director</option>
-                    <option value="Executive">Executive</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Employment Type</label>
-                  <select
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
-                    value={formData.employment_type}
-                    onChange={(e) => setFormData({ ...formData, employment_type: e.target.value })}
-                  >
-                    <option value="">Select Type</option>
-                    {employmentTypes.map((et) => (
-                      <option key={et.id} value={et.name}>{et.name}</option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Min Salary</label>
-                  <Input
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    value={formData.min_salary || ''}
-                    onChange={(e) => setFormData({ ...formData, min_salary: e.target.value ? parseFloat(e.target.value) : null })}
-                    placeholder="0.00"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Max Salary</label>
-                  <Input
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    value={formData.max_salary || ''}
-                    onChange={(e) => setFormData({ ...formData, max_salary: e.target.value ? parseFloat(e.target.value) : null })}
-                    placeholder="0.00"
-                  />
-                </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Employment Type</label>
+                <select
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
+                  value={formData.employment_type}
+                  onChange={(e) => setFormData({ ...formData, employment_type: e.target.value })}
+                >
+                  <option value="">Select Type</option>
+                  {employmentTypes.map((et) => (
+                    <option key={et.id} value={et.name}>{et.name}</option>
+                  ))}
+                </select>
               </div>
 
               <div>
