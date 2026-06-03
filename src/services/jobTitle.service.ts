@@ -27,6 +27,7 @@ export interface JobTitleInsert {
   code?: string
   description?: string | null
   job_category_id?: string | null
+  department_id?: string | null
   min_salary?: number | null
   max_salary?: number | null
   employment_type?: string
@@ -40,6 +41,7 @@ export interface JobTitleUpdate {
   code?: string
   description?: string | null
   job_category_id?: string | null
+  department_id?: string | null
   min_salary?: number | null
   max_salary?: number | null
   employment_type?: string
