@@ -32,9 +32,6 @@ export default function JobTitlesPage() {
     description: '',
     job_category_id: '',
     employment_type: '',
-    experience_level: '',
-    min_salary: null,
-    max_salary: null,
     is_active: true,
   })
 
