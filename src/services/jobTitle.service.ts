@@ -109,58 +109,36 @@ export const jobTitleService = {
   },
 
   async create(jobTitleData: JobTitleInsert): Promise<JobTitle> {
-    console.log('Creating job title in Supabase:', jobTitleData)
-    const supabase = createClient()
-    
-    const { data, error } = await supabase
-      .from('job_titles')
-      .insert([jobTitleData])
-      .select()
-      .single()
-    
-    if (error) {
-      console.error('Error creating job title:', error)
-      throw new Error(`Failed to create job title: ${error.message}`)
-    }
-    
-    console.log('Created job title in Supabase:', data)
-    return data as unknown as JobTitle
+    const res = await fetch('/api/admin/job-titles', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(jobTitleData),
+    })
+    const json = await res.json()
+    if (!res.ok) throw new Error(json.error || 'Failed to create job title')
+    return json as JobTitle
   },
 
   async update(id: string, jobTitleData: JobTitleUpdate): Promise<JobTitle> {
-    console.log('Updating job title in Supabase:', id, jobTitleData)
-    const supabase = createClient()
-    
-    const { data, error } = await supabase
-      .from('job_titles')
-      .update(jobTitleData)
-      .eq('id', id)
-      .select()
-      .single()
-    
-    if (error) {
-      console.error('Error updating job title:', error)
-      throw new Error(`Failed to update job title: ${error.message}`)
-    }
-    
-    console.log('Updated job title in Supabase:', data)
-    return data as unknown as JobTitle
+    const res = await fetch('/api/admin/job-titles', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id, ...jobTitleData }),
+    })
+    const json = await res.json()
+    if (!res.ok) throw new Error(json.error || 'Failed to update job title')
+    return json as JobTitle
   },
 
   async delete(id: string): Promise<void> {
-    console.log('Deleting job title from Supabase:', id)
-    const supabase = createClient()
-    
-    const { error } = await supabase
-      .from('job_titles')
-      .delete()
-      .eq('id', id)
-    
-    if (error) {
-      console.error('Error deleting job title:', error)
-      throw new Error(`Failed to delete job title: ${error.message}`)
+    const res = await fetch('/api/admin/job-titles', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id }),
+    })
+    if (!res.ok) {
+      const json = await res.json()
+      throw new Error(json.error || 'Failed to delete job title')
     }
-    
-    console.log('Deleted job title from Supabase:', id)
   },
 }

@@ -161,19 +161,20 @@ export const employeeService = {
   },
 
   async create(employee: EmployeeInsert): Promise<Employee> {
-    const supabase = createClient()
-    const { data, error } = await supabase
-      .from('employees')
-      .insert(employee as never)
-      .select()
-      .single()
-
-    if (error) {
-      console.error('Supabase create error:', error)
-      throw error
+    // Use the server API route to bypass RLS
+    const res = await fetch('/api/employees', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(employee),
+    })
+    const json = await res.json()
+    if (!res.ok) {
+      console.error('Employee create error:', json)
+      const err: any = new Error(json.error || 'Failed to create employee')
+      err.code = json.code
+      throw err
     }
-    
-    return data as unknown as Employee
+    return json as Employee
   },
 
   async update(id: string, employee: EmployeeUpdate): Promise<Employee> {
