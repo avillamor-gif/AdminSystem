@@ -16,7 +16,7 @@ CREATE POLICY "Admins can create job titles"
     EXISTS (
       SELECT 1 FROM user_roles
       WHERE user_roles.user_id = auth.uid()
-      AND user_roles.role IN ('admin', 'hr', 'hr_manager', 'hr_staff')
+      AND user_roles.role IN ('admin', 'hr', 'manager')
     )
   );
 
@@ -27,7 +27,7 @@ CREATE POLICY "Admins can update job titles"
     EXISTS (
       SELECT 1 FROM user_roles
       WHERE user_roles.user_id = auth.uid()
-      AND user_roles.role IN ('admin', 'hr', 'hr_manager', 'hr_staff')
+      AND user_roles.role IN ('admin', 'hr', 'manager')
     )
   );
 
@@ -38,7 +38,7 @@ CREATE POLICY "Admins can delete job titles"
     EXISTS (
       SELECT 1 FROM user_roles
       WHERE user_roles.user_id = auth.uid()
-      AND user_roles.role IN ('admin', 'hr', 'hr_manager', 'hr_staff')
+      AND user_roles.role IN ('admin', 'hr', 'manager')
     )
   );
 
@@ -54,7 +54,7 @@ CREATE POLICY "Admins can create employment types"
     EXISTS (
       SELECT 1 FROM user_roles
       WHERE user_roles.user_id = auth.uid()
-      AND user_roles.role IN ('admin', 'hr', 'hr_manager', 'hr_staff')
+      AND user_roles.role IN ('admin', 'hr', 'manager')
     )
   );
 
@@ -65,7 +65,7 @@ CREATE POLICY "Admins can update employment types"
     EXISTS (
       SELECT 1 FROM user_roles
       WHERE user_roles.user_id = auth.uid()
-      AND user_roles.role IN ('admin', 'hr', 'hr_manager', 'hr_staff')
+      AND user_roles.role IN ('admin', 'hr', 'manager')
     )
   );
 
@@ -76,7 +76,7 @@ CREATE POLICY "Admins can delete employment types"
     EXISTS (
       SELECT 1 FROM user_roles
       WHERE user_roles.user_id = auth.uid()
-      AND user_roles.role IN ('admin', 'hr', 'hr_manager', 'hr_staff')
+      AND user_roles.role IN ('admin', 'hr', 'manager')
     )
   );
 
@@ -92,7 +92,7 @@ CREATE POLICY "Admins can create job categories"
     EXISTS (
       SELECT 1 FROM user_roles
       WHERE user_roles.user_id = auth.uid()
-      AND user_roles.role IN ('admin', 'hr', 'hr_manager', 'hr_staff')
+      AND user_roles.role IN ('admin', 'hr', 'manager')
     )
   );
 
@@ -103,7 +103,7 @@ CREATE POLICY "Admins can update job categories"
     EXISTS (
       SELECT 1 FROM user_roles
       WHERE user_roles.user_id = auth.uid()
-      AND user_roles.role IN ('admin', 'hr', 'hr_manager', 'hr_staff')
+      AND user_roles.role IN ('admin', 'hr', 'manager')
     )
   );
 
@@ -114,7 +114,7 @@ CREATE POLICY "Admins can delete job categories"
     EXISTS (
       SELECT 1 FROM user_roles
       WHERE user_roles.user_id = auth.uid()
-      AND user_roles.role IN ('admin', 'hr', 'hr_manager', 'hr_staff')
+      AND user_roles.role IN ('admin', 'hr', 'manager')
     )
   );
 
@@ -141,7 +141,7 @@ CREATE POLICY "Admins can create job descriptions"
     EXISTS (
       SELECT 1 FROM user_roles
       WHERE user_roles.user_id = auth.uid()
-      AND user_roles.role IN ('admin', 'hr', 'hr_manager', 'hr_staff')
+      AND user_roles.role IN ('admin', 'hr', 'manager')
     )
   );
 
@@ -152,7 +152,7 @@ CREATE POLICY "Admins can update job descriptions"
     EXISTS (
       SELECT 1 FROM user_roles
       WHERE user_roles.user_id = auth.uid()
-      AND user_roles.role IN ('admin', 'hr', 'hr_manager', 'hr_staff')
+      AND user_roles.role IN ('admin', 'hr', 'manager')
     )
   );
 
@@ -163,6 +163,6 @@ CREATE POLICY "Admins can delete job descriptions"
     EXISTS (
       SELECT 1 FROM user_roles
       WHERE user_roles.user_id = auth.uid()
-      AND user_roles.role IN ('admin', 'hr', 'hr_manager', 'hr_staff')
+      AND user_roles.role IN ('admin', 'hr', 'manager')
     )
   );
