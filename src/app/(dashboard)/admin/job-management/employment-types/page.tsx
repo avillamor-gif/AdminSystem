@@ -252,6 +252,25 @@ export default function EmploymentTypesPage() {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Category *
+                  </label>
+                  <select
+                    required
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
+                    value={formData.category}
+                    onChange={(e) => setFormData({ ...formData, category: e.target.value as typeof formData.category })}
+                  >
+                    <option value="permanent">Permanent</option>
+                    <option value="contract">Contract</option>
+                    <option value="temporary">Temporary</option>
+                    <option value="intern">Intern</option>
+                    <option value="volunteer">Volunteer</option>
+                    <option value="consultant">Consultant</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
                     Status
                   </label>
                   <select

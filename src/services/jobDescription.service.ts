@@ -31,7 +31,7 @@ export const jobDescriptionService = {
         .order('updated_at', { ascending: false })
 
       if (filters?.search) {
-        query = query.or(`job_code.ilike.%${filters.search}%,summary.ilike.%${filters.search}%,reports_to.ilike.%${filters.search}%`)
+        query = query.or(`title.ilike.%${filters.search}%,code.ilike.%${filters.search}%,summary.ilike.%${filters.search}%`)
       }
 
       if (filters?.status) {
