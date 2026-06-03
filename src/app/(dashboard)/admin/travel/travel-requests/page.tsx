@@ -150,7 +150,7 @@ const TravelRequestsPage = () => {
             onChange={(e) => setDepartmentFilter(e.target.value)}
             className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange focus:border-transparent"
           >
-            <option value="">All Departments</option>
+            <option value="">All Units</option>
             {departments.map(dept => (
               <option key={dept.id} value={dept.id}>{dept.name}</option>
             ))}

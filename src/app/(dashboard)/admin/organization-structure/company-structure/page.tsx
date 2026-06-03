@@ -187,15 +187,15 @@ export default function CompanyStructurePage() {
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card className="p-4">
-          <p className="text-sm text-gray-600">Total Departments</p>
+          <p className="text-sm text-gray-600">Total Units</p>
           <p className="text-2xl font-bold text-gray-900 mt-1">{totalDepts}</p>
         </Card>
         <Card className="p-4">
-          <p className="text-sm text-gray-600">Top-Level Departments</p>
+          <p className="text-sm text-gray-600">Top-Level Units</p>
           <p className="text-2xl font-bold text-blue-600 mt-1">{topLevelDepts}</p>
         </Card>
         <Card className="p-4">
-          <p className="text-sm text-gray-600">Sub-Departments</p>
+          <p className="text-sm text-gray-600">Sub-Units</p>
           <p className="text-2xl font-bold text-purple-600 mt-1">{totalDepts - topLevelDepts}</p>
         </Card>
       </div>
@@ -204,11 +204,11 @@ export default function CompanyStructurePage() {
         {hierarchy.length === 0 ? (
           <Card className="p-12 text-center">
             <Building2 className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No departments yet</h3>
-            <p className="text-gray-600 mb-4">Get started by creating your first department</p>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">No units yet</h3>
+            <p className="text-gray-600 mb-4">Get started by creating your first unit</p>
             <Button onClick={() => handleAdd()}>
               <Plus className="w-4 h-4 mr-2" />
-              Add First Department
+              Add First Unit
             </Button>
           </Card>
         ) : (
@@ -222,7 +222,7 @@ export default function CompanyStructurePage() {
           <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl mx-4">
             <div className="flex items-center justify-between p-6 border-b border-gray-200">
               <h2 className="text-xl font-semibold text-gray-900">
-                {selectedDeptId ? 'Edit Department' : 'Add New Department'}
+                {selectedDeptId ? 'Edit Unit' : 'Add New Unit'}
               </h2>
               <button
                 onClick={() => setIsFormOpen(false)}
@@ -236,14 +236,14 @@ export default function CompanyStructurePage() {
               <div className="p-6 space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Department Name *
+                    Unit Name *
                   </label>
                   <Input
                     type="text"
                     required
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    placeholder="e.g., Engineering"
+                    placeholder="e.g., Finance Unit"
                   />
                 </div>
 
@@ -256,13 +256,13 @@ export default function CompanyStructurePage() {
                     rows={3}
                     value={formData.description}
                     onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                    placeholder="Brief description of the department"
+                    placeholder="Brief description of the unit"
                   />
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Parent Department
+                    Parent Unit
                   </label>
                   <select
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
@@ -282,7 +282,7 @@ export default function CompanyStructurePage() {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Department Head
+                    Unit Head
                   </label>
                   {(() => {
                     const managerIds = new Set((employees as any[]).map((e: any) => e.manager_id).filter(Boolean))
@@ -331,7 +331,7 @@ export default function CompanyStructurePage() {
                   type="submit"
                   disabled={createMutation.isPending || updateMutation.isPending}
                 >
-                  {createMutation.isPending || updateMutation.isPending ? 'Saving...' : selectedDeptId ? 'Update' : 'Create'} Department
+                  {createMutation.isPending || updateMutation.isPending ? 'Saving...' : selectedDeptId ? 'Update' : 'Create'} Unit
                 </Button>
               </div>
             </form>

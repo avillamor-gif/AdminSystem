@@ -62,7 +62,7 @@ export default function DirectoryPage() {
             value={selectedDepartment}
             onChange={(e) => setSelectedDepartment(e.target.value)}
           >
-            <option value="">All Departments</option>
+            <option value="">All Units</option>
             {departments.map((dept) => (
               <option key={dept.id} value={dept.id}>{dept.name}</option>
             ))}
@@ -143,7 +143,7 @@ export default function DirectoryPage() {
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Employee</th>
                   <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Job Title</th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Department</th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Unit</th>
                   <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Location</th>
                   <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Contact</th>
                 </tr>

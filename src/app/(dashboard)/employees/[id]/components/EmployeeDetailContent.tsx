@@ -1362,7 +1362,7 @@ export function EmployeeDetailContent({
                 disabled={!isEditMode || !isAdmin} 
               />
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Department/Unit</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Unit</label>
                 <select
                   value={employmentFormData.department_id}
                   onChange={(e) => handleEmploymentInputChange('department_id', e.target.value)}

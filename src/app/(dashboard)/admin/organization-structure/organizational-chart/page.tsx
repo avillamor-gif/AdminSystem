@@ -285,7 +285,7 @@ export default function OrganizationalChartPage() {
               onChange={e => setDeptFilter(e.target.value)}
               className="text-xs border border-gray-200 rounded-lg px-2 py-1.5 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-orange-400 text-gray-600"
             >
-              <option value="">All Departments</option>
+              <option value="">All Units</option>
               {(departments as any[]).map((d: any) => (
                 <option key={d.id} value={d.id}>{d.name}</option>
               ))}

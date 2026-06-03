@@ -166,7 +166,7 @@ function EnrollmentCard({ enrollment: e, isActive }: { enrollment: ProgramEnroll
         </div>
         {e.department && (
           <div>
-            <p className="text-xs text-gray-500 uppercase tracking-wide mb-0.5">Department</p>
+            <p className="text-xs text-gray-500 uppercase tracking-wide mb-0.5">Unit</p>
             <p className="text-gray-800 font-medium">{e.department.name}</p>
           </div>
         )}

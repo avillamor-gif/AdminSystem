@@ -113,14 +113,14 @@ export default function DepartmentHierarchyPage() {
   return (
     <div className="space-y-5 flex flex-col" style={{ height: 'calc(100vh - 140px)' }}>
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Department Hierarchy</h1>
+        <h1 className="text-2xl font-bold text-gray-900">Unit Hierarchy</h1>
         <p className="text-gray-500 mt-0.5 text-sm">Interactive org chart — click any node to view members</p>
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 flex-shrink-0">
         {[
-          { label: 'Total Departments', value: departments.length, color: 'text-gray-900' },
-          { label: 'Root Departments',  value: rootCount,          color: 'text-blue-600' },
+          { label: 'Total Units',   value: departments.length, color: 'text-gray-900' },
+          { label: 'Root Units',    value: rootCount,          color: 'text-blue-600' },
           { label: 'Max Depth',         value: maxDepth + 1,       color: 'text-purple-600' },
           { label: 'Active Employees',  value: activeEmpCount,     color: 'text-green-600' },
         ].map(s => (
@@ -164,7 +164,7 @@ export default function DepartmentHierarchyPage() {
             {nodes.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-full text-gray-400 gap-3">
                 <Building2 className="w-12 h-12" />
-                <p className="text-sm">No departments to display</p>
+                <p className="text-sm">No units to display</p>
               </div>
             ) : (
               <OrgChartPanel nodes={nodes} onNodeClick={handleNodeClick} chartRef={chartRef} />
