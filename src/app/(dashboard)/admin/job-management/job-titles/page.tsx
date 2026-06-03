@@ -9,6 +9,7 @@ import {
   useUpdateJobTitle, 
   useDeleteJobTitle,
   useEmploymentTypes,
+  useJobCategories,
 } from '@/hooks'
 import type { JobTitleInsert, JobTitleUpdate } from '@/services/jobTitle.service'
 
@@ -16,6 +17,7 @@ interface JobTitleForm {
   title: string
   code: string
   description: string
+  job_category_id: string
   employment_type: string
   experience_level: string
   min_salary: number | null
@@ -31,6 +33,7 @@ export default function JobTitlesPage() {
     title: '',
     code: '',
     description: '',
+    job_category_id: '',
     employment_type: '',
     experience_level: '',
     min_salary: null,
@@ -44,6 +47,7 @@ export default function JobTitlesPage() {
   const updateMutation = useUpdateJobTitle()
   const deleteMutation = useDeleteJobTitle()
   const { data: employmentTypes = [] } = useEmploymentTypes()
+  const { data: jobCategories = [] } = useJobCategories({})
 
   const filteredTitles = jobTitles
 
@@ -55,6 +59,7 @@ export default function JobTitlesPage() {
       title: title.title,
       code: title.code || '',
       description: title.description || '',
+      job_category_id: title.job_category_id || '',
       employment_type: title.employment_type || '',
       experience_level: title.experience_level || '',
       min_salary: title.min_salary,
@@ -70,6 +75,7 @@ export default function JobTitlesPage() {
       title: '',
       code: '',
       description: '',
+      job_category_id: '',
       employment_type: '',
       experience_level: '',
       min_salary: null,
@@ -82,16 +88,21 @@ export default function JobTitlesPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
+    const payload = {
+      ...formData,
+      job_category_id: formData.job_category_id || null,
+    }
+
     try {
       if (selectedTitleId) {
         // Update existing
         await updateMutation.mutateAsync({
           id: selectedTitleId,
-          data: formData as JobTitleUpdate
+          data: payload as JobTitleUpdate
         })
       } else {
         // Create new
-        await createMutation.mutateAsync(formData as JobTitleInsert)
+        await createMutation.mutateAsync(payload as JobTitleInsert)
       }
       
       setIsFormOpen(false)
@@ -191,6 +202,7 @@ export default function JobTitlesPage() {
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Code</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Job Title</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Category</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Experience Level</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Employment Type</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
@@ -207,6 +219,7 @@ export default function JobTitlesPage() {
                       <div className="text-sm text-gray-500">{title.description || 'No description'}</div>
                     </div>
                   </td>
+                  <td className="px-6 py-4 text-sm text-gray-900">{jobCategories.find(c => c.id === title.job_category_id)?.name || '-'}</td>
                   <td className="px-6 py-4 text-sm text-gray-900">{title.experience_level || '-'}</td>
                   <td className="px-6 py-4 text-sm text-gray-900">{title.employment_type || '-'}</td>
                   <td className="px-6 py-4">
@@ -271,6 +284,20 @@ export default function JobTitlesPage() {
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                   placeholder="Brief description of the role"
                 />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Job Category</label>
+                <select
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
+                  value={formData.job_category_id}
+                  onChange={(e) => setFormData({ ...formData, job_category_id: e.target.value })}
+                >
+                  <option value="">Select Category</option>
+                  {jobCategories.filter(c => c.is_active).map((cat) => (
+                    <option key={cat.id} value={cat.id}>{cat.name}</option>
+                  ))}
+                </select>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
