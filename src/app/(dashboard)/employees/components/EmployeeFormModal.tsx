@@ -72,7 +72,7 @@ export function EmployeeFormModal({ open, onClose, employee }: EmployeeFormModal
   })
 
   const departmentOptions = [
-    { value: '', label: 'Select Unit' },
+    { value: '', label: 'Select Department' },
     ...typedDepartments.map((d) => ({ value: d.id, label: d.name })),
   ]
 
@@ -208,7 +208,7 @@ export function EmployeeFormModal({ open, onClose, employee }: EmployeeFormModal
             {...register('hire_date')}
           />
           <Select
-            label="Unit"
+            label="Department"
             options={departmentOptions}
             error={errors.department_id?.message}
             {...register('department_id')}

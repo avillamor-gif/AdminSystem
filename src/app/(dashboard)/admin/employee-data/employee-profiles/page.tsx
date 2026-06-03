@@ -95,7 +95,7 @@ export default function EmployeeProfilesPage() {
   }
 
   const handleExport = () => {
-    const headers = ['Employee ID', 'Name', 'Email', 'Unit', 'Job Title', 'Status', 'Hire Date']
+    const headers = ['Employee ID', 'Name', 'Email', 'Department', 'Job Title', 'Status', 'Hire Date']
     const rows = typedEmployees.map(emp => [
       emp.employee_id || '',
       `${emp.first_name} ${emp.last_name}`,
@@ -135,7 +135,7 @@ export default function EmployeeProfilesPage() {
   ]
 
   const departmentOptions = [
-    { value: '', label: 'All Units' },
+    { value: '', label: 'All Departments' },
     ...typedDepartments.map((d) => ({ value: String(d.id), label: d.name })),
   ]
 
@@ -247,7 +247,7 @@ export default function EmployeeProfilesPage() {
               <thead className="bg-gray-50 border-b border-gray-200">
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Employee</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Unit</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Department</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Job Title</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>

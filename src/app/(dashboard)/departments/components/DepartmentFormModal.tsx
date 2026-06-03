@@ -98,7 +98,7 @@ export function DepartmentFormModal({ open, onClose, department }: DepartmentFor
   return (
     <Modal open={open} onClose={handleClose} size="lg">
       <ModalHeader onClose={handleClose}>
-        {isEdit ? 'Edit Unit' : 'Add Unit'}
+        {isEdit ? 'Edit Department' : 'Add Department'}
       </ModalHeader>
       <form onSubmit={handleSubmit(onSubmit)}>
         <ModalBody className="space-y-4">
@@ -108,7 +108,7 @@ export function DepartmentFormModal({ open, onClose, department }: DepartmentFor
             {...register('name')}
           />
           <Select
-            label="Parent Unit"
+            label="Parent Department"
             options={parentOptions}
             error={errors.parent_id?.message}
             {...register('parent_id')}
@@ -128,7 +128,7 @@ export function DepartmentFormModal({ open, onClose, department }: DepartmentFor
             Cancel
           </Button>
           <Button type="submit" loading={isSubmitting}>
-            {isEdit ? 'Save Changes' : 'Add Unit'}
+            {isEdit ? 'Save Changes' : 'Add Department'}
           </Button>
         </ModalFooter>
       </form>

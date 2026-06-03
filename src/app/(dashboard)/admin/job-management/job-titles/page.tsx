@@ -9,7 +9,7 @@ import {
   useUpdateJobTitle, 
   useDeleteJobTitle,
   useEmploymentTypes,
-  useJobCategories,
+  useDepartments,
 } from '@/hooks'
 import type { JobTitleInsert, JobTitleUpdate } from '@/services/jobTitle.service'
 
@@ -17,7 +17,7 @@ interface JobTitleForm {
   title: string
   code: string
   description: string
-  job_category_id: string
+  department_id: string
   employment_type: string
   is_active: boolean
 }
@@ -30,7 +30,7 @@ export default function JobTitlesPage() {
     title: '',
     code: '',
     description: '',
-    job_category_id: '',
+    department_id: '',
     employment_type: '',
     is_active: true,
   })
@@ -41,7 +41,7 @@ export default function JobTitlesPage() {
   const updateMutation = useUpdateJobTitle()
   const deleteMutation = useDeleteJobTitle()
   const { data: employmentTypes = [] } = useEmploymentTypes()
-  const { data: jobCategories = [] } = useJobCategories({})
+  const { data: departments = [] } = useDepartments()
 
   const filteredTitles = jobTitles
 
@@ -53,7 +53,7 @@ export default function JobTitlesPage() {
       title: title.title,
       code: title.code || '',
       description: title.description || '',
-      job_category_id: title.job_category_id || '',
+      department_id: title.department_id || '',
       employment_type: title.employment_type || '',
       is_active: title.is_active ?? true,
     })
@@ -66,7 +66,7 @@ export default function JobTitlesPage() {
       title: '',
       code: '',
       description: '',
-      job_category_id: '',
+      department_id: '',
       employment_type: '',
       is_active: true,
     })
@@ -78,7 +78,7 @@ export default function JobTitlesPage() {
     
     const payload = {
       ...formData,
-      job_category_id: formData.job_category_id || null,
+      department_id: formData.department_id || null,
     }
 
     try {
@@ -275,15 +275,15 @@ export default function JobTitlesPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Unit</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Department</label>
                 <select
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
-                  value={formData.job_category_id}
-                  onChange={(e) => setFormData({ ...formData, job_category_id: e.target.value })}
+                  value={formData.department_id}
+                  onChange={(e) => setFormData({ ...formData, department_id: e.target.value })}
                 >
-                  <option value="">Select Unit</option>
-                  {jobCategories.filter(c => c.is_active).map((cat) => (
-                    <option key={cat.id} value={cat.id}>{cat.name}</option>
+                  <option value="">Select Department</option>
+                  {departments.map((dept) => (
+                    <option key={dept.id} value={dept.id}>{dept.name}</option>
                   ))}
                 </select>
               </div>

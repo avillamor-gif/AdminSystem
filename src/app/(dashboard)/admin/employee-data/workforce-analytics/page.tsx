@@ -346,13 +346,13 @@ export default function WorkforceAnalyticsPage() {
         </div>
 
         <div className="flex items-center gap-2">
-          <label className="text-xs font-medium text-gray-500 shrink-0">Unit</label>
+          <label className="text-xs font-medium text-gray-500 shrink-0">Department</label>
           <select
             value={filterDeptId}
             onChange={e => setFilterDeptId(e.target.value)}
             className="text-sm border border-gray-200 rounded-lg px-3 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-orange-300"
           >
-            <option value="all">All Units</option>
+            <option value="all">All Departments</option>
             {(departments as any[]).map((d: any) => (
               <option key={d.id} value={d.id}>{d.name}</option>
             ))}
@@ -448,7 +448,7 @@ export default function WorkforceAnalyticsPage() {
 
           {/* Department Headcount */}
           <Card className="p-5 lg:col-span-2">
-            <SectionHeader title="Headcount by Unit" subtitle="Active employees" />
+            <SectionHeader title="Headcount by Department" subtitle="Active employees" />
             <div className="space-y-3">
               {metrics.deptRows.map((row, i) => (
                 <HorizontalBar key={row.name} label={row.name} value={row.count} total={metrics.active} color={barColors[i % barColors.length]} />
@@ -700,7 +700,7 @@ export default function WorkforceAnalyticsPage() {
 
           {/* Department breakdown with employment type context */}
           <Card className="p-5">
-            <SectionHeader title="Unit vs Employment Type" subtitle="Active employees" />
+            <SectionHeader title="Department vs Employment Type" subtitle="Active employees" />
             <div className="space-y-4">
               {metrics.deptRows.slice(0, 6).map((dept, i) => (
                 <div key={dept.name} className="border border-gray-100 rounded-lg p-3">
@@ -756,7 +756,7 @@ export default function WorkforceAnalyticsPage() {
                   color: 'text-emerald-600',
                 },
                 {
-                  label: 'Units',
+                  label: 'Departments',
                   value: `${metrics.deptRows.filter(r => r.name !== 'Unassigned').length} active`,
                   icon: Building2,
                   color: 'text-orange-500',

@@ -47,7 +47,7 @@ export default function AdminPage() {
       icon: Building2,
       color: 'bg-blue-500',
       href: '/admin/organization-structure',
-      items: ['Company Structure', 'Locations Management', 'Location Types', 'Unit Hierarchy', 'International Operations', 'Organizational Chart'],
+      items: ['Company Structure', 'Locations Management', 'Location Types', 'Department Hierarchy', 'International Operations', 'Organizational Chart'],
       requiresPermission: 'admin.organization',
     },
     {
@@ -392,7 +392,7 @@ export default function AdminPage() {
                           'Company Structure': '/admin/organization-structure/company-structure',
                           'Locations Management': '/admin/organization-structure/locations-management',
                           'Location Types': '/admin/organization-structure/location-types',
-                          'Unit Hierarchy': '/admin/organization-structure/department-hierarchy',
+                          'Department Hierarchy': '/admin/organization-structure/department-hierarchy',
                           'International Operations': '/admin/organization-structure/international-operations',
                           'Organizational Chart': '/admin/organization-structure/organizational-chart',
                           

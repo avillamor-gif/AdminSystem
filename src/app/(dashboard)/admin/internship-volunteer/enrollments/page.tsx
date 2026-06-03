@@ -308,7 +308,7 @@ export default function EnrollmentsPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Unit</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Department</label>
                   <select className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
                     value={form.department_id ?? ''} onChange={e => setForm(p => ({ ...p, department_id: e.target.value || null }))}>
                     <option value="">— Select —</option>

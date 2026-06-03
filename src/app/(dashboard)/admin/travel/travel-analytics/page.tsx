@@ -373,7 +373,7 @@ const TravelAnalyticsPage = () => {
       {/* Department breakdown — live */}
       {liveStats.departmentStats.length > 0 && (
         <Card className="p-6">
-            <h3 className="font-semibold text-gray-900 mb-4">Travel by Unit</h3>
+            <h3 className="font-semibold text-gray-900 mb-4">Travel by Department</h3>
           <div className="space-y-3">
             {liveStats.departmentStats.map(dept => (
               <div key={dept.name} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">

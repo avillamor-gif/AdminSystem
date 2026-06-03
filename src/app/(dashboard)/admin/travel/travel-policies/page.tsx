@@ -391,7 +391,7 @@ const TravelPoliciesPage = () => {
       </div>
 
       <Card className="p-6">
-        <h3 className="font-semibold text-gray-900 mb-4">Policy Compliance by Unit</h3>
+        <h3 className="font-semibold text-gray-900 mb-4">Policy Compliance by Department</h3>
         <div className="space-y-4">
           {[
             { department: 'Sales', compliance: 96, violations: 8, color: 'bg-green-500' },

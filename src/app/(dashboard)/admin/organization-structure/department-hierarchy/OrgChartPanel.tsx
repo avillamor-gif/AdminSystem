@@ -69,7 +69,7 @@ function nodeHtml(d: { data: OrgChartNode }) {
           ${n.headTitle ? `<div style="font-size:11px;color:#6b7280;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${n.headTitle}</div>` : ''}
         </div>
       </div>
-      ` : `<div style="padding:8px 14px;font-size:11px;color:#9ca3af;font-style:italic">No unit head assigned</div>`}
+      ` : `<div style="padding:8px 14px;font-size:11px;color:#9ca3af;font-style:italic">No department head assigned</div>`}
     </div>
   `
 }
