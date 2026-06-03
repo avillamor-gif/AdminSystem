@@ -104,32 +104,37 @@ export const partnerInstitutionService = {
   },
 
   async create(payload: PartnerInstitutionInsert): Promise<PartnerInstitution> {
-    const supabase = createClient()
-    const { data, error } = await (supabase as any)
-      .from('partner_institutions')
-      .insert(payload)
-      .select('*')
-      .single()
-    if (error) throw error
-    return data
+    const res = await fetch('/api/admin/partner-institutions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    })
+    const json = await res.json()
+    if (!res.ok) throw new Error(json.error || 'Failed to create partner institution')
+    return json as PartnerInstitution
   },
 
   async update(id: string, payload: PartnerInstitutionUpdate): Promise<PartnerInstitution> {
-    const supabase = createClient()
-    const { data, error } = await (supabase as any)
-      .from('partner_institutions')
-      .update({ ...payload, updated_at: new Date().toISOString() })
-      .eq('id', id)
-      .select('*')
-      .single()
-    if (error) throw error
-    return data
+    const res = await fetch('/api/admin/partner-institutions', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id, ...payload }),
+    })
+    const json = await res.json()
+    if (!res.ok) throw new Error(json.error || 'Failed to update partner institution')
+    return json as PartnerInstitution
   },
 
   async delete(id: string): Promise<void> {
-    const supabase = createClient()
-    const { error } = await (supabase as any).from('partner_institutions').delete().eq('id', id)
-    if (error) throw error
+    const res = await fetch('/api/admin/partner-institutions', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id }),
+    })
+    if (!res.ok) {
+      const json = await res.json()
+      throw new Error(json.error || 'Failed to delete partner institution')
+    }
   },
 
   // Upload MOA PDF via server-side API route (uses admin client + mirrors to Google Drive)
@@ -216,32 +221,37 @@ export const programEnrollmentService = {
   },
 
   async create(payload: ProgramEnrollmentInsert): Promise<ProgramEnrollment> {
-    const supabase = createClient()
-    const { data, error } = await (supabase as any)
-      .from('program_enrollments')
-      .insert(payload)
-      .select('*')
-      .single()
-    if (error) throw error
-    return data
+    const res = await fetch('/api/admin/program-enrollments', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    })
+    const json = await res.json()
+    if (!res.ok) throw new Error(json.error || 'Failed to create enrollment')
+    return json as ProgramEnrollment
   },
 
   async update(id: string, payload: ProgramEnrollmentUpdate): Promise<ProgramEnrollment> {
-    const supabase = createClient()
-    const { data, error } = await (supabase as any)
-      .from('program_enrollments')
-      .update({ ...payload, updated_at: new Date().toISOString() })
-      .eq('id', id)
-      .select('*')
-      .single()
-    if (error) throw error
-    return data
+    const res = await fetch('/api/admin/program-enrollments', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id, ...payload }),
+    })
+    const json = await res.json()
+    if (!res.ok) throw new Error(json.error || 'Failed to update enrollment')
+    return json as ProgramEnrollment
   },
 
   async delete(id: string): Promise<void> {
-    const supabase = createClient()
-    const { error } = await (supabase as any).from('program_enrollments').delete().eq('id', id)
-    if (error) throw error
+    const res = await fetch('/api/admin/program-enrollments', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id }),
+    })
+    if (!res.ok) {
+      const json = await res.json()
+      throw new Error(json.error || 'Failed to delete enrollment')
+    }
   },
 
   async markCertificateIssued(id: string, filePath?: string): Promise<ProgramEnrollment> {
