@@ -1,11 +1,13 @@
 'use client'
 
-import { useState } from 'react'
-import { Clock, TrendingUp, Users, AlertCircle } from 'lucide-react'
-import { Card, Input } from '@/components/ui'
+import { useState, useEffect, useCallback } from 'react'
+import { Clock, TrendingUp, Users, AlertCircle, ListOrdered, Plus, Edit2, Trash2, X } from 'lucide-react'
+import { Card, Input, Button, Modal, ModalHeader, ModalBody, ModalFooter } from '@/components/ui'
 import { useProgramEnrollments, useUpdateProgramEnrollment } from '@/hooks/useInternship'
 import type { ProgramEnrollmentWithRelations } from '@/services/internship.service'
-import { formatDate } from '@/lib/utils'
+import type { AttendanceRecord } from '@/services/attendance.service'
+import { formatDate, localDateStr } from '@/lib/utils'
+import toast from 'react-hot-toast'
 
 function progressColor(pct: number) {
   if (pct >= 100) return 'bg-green-500'
@@ -20,13 +22,279 @@ function hoursUntilDeadline(endDate: string | null): number | null {
   return Math.floor(diff / (1000 * 60 * 60 * 24))
 }
 
+function toLocalDatetimeValue(iso: string | null | undefined): string {
+  if (!iso) return ''
+  // Convert ISO to datetime-local input value (YYYY-MM-DDTHH:mm)
+  return new Date(iso).toISOString().slice(0, 16)
+}
+
+function toISOFromLocal(val: string): string {
+  // datetime-local value → full ISO string
+  return new Date(val).toISOString()
+}
+
+function sessionHrs(r: AttendanceRecord): number {
+  if (!r.clock_in || !r.clock_out) return 0
+  return Math.max(0, (new Date(r.clock_out as string).getTime() - new Date(r.clock_in as string).getTime()) / (1000 * 60 * 60))
+}
+
+// ─── Sessions Modal ────────────────────────────────────────────────────────────
+
+function SessionsModal({
+  enrollment,
+  onClose,
+}: {
+  enrollment: ProgramEnrollmentWithRelations
+  onClose: () => void
+}) {
+  const [records, setRecords] = useState<AttendanceRecord[]>([])
+  const [loading, setLoading] = useState(true)
+  const [editingRecord, setEditingRecord] = useState<AttendanceRecord | null>(null)
+  const [isAdding, setIsAdding] = useState(false)
+
+  // Form state (shared for add + edit)
+  const [formDate, setFormDate] = useState(localDateStr(new Date()))
+  const [formClockIn, setFormClockIn] = useState('')
+  const [formClockOut, setFormClockOut] = useState('')
+  const [saving, setSaving] = useState(false)
+
+  const fetchRecords = useCallback(async () => {
+    if (!enrollment.employee_id) return
+    setLoading(true)
+    try {
+      const res = await fetch(`/api/internship/attendance?employeeId=${enrollment.employee_id}`)
+      if (res.ok) setRecords(await res.json())
+    } finally {
+      setLoading(false)
+    }
+  }, [enrollment.employee_id])
+
+  useEffect(() => { fetchRecords() }, [fetchRecords])
+
+  function openEdit(r: AttendanceRecord) {
+    setEditingRecord(r)
+    setIsAdding(false)
+    setFormDate(r.date)
+    setFormClockIn(toLocalDatetimeValue(r.clock_in as string))
+    setFormClockOut(toLocalDatetimeValue(r.clock_out as string | null))
+  }
+
+  function openAdd() {
+    setEditingRecord(null)
+    setIsAdding(true)
+    const now = new Date()
+    setFormDate(localDateStr(now))
+    setFormClockIn('')
+    setFormClockOut('')
+  }
+
+  function cancelForm() {
+    setEditingRecord(null)
+    setIsAdding(false)
+  }
+
+  async function saveRecord() {
+    if (!formClockIn) { toast.error('Clock-in time is required'); return }
+    setSaving(true)
+    try {
+      if (editingRecord) {
+        // PATCH
+        const res = await fetch('/api/internship/attendance', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            id: editingRecord.id,
+            clock_in: toISOFromLocal(formClockIn),
+            clock_out: formClockOut ? toISOFromLocal(formClockOut) : null,
+            enrollmentId: enrollment.id,
+          }),
+        })
+        if (!res.ok) throw new Error((await res.json()).error ?? 'Update failed')
+        toast.success('Session updated')
+      } else {
+        // POST
+        const res = await fetch('/api/internship/attendance', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            employee_id: enrollment.employee_id,
+            date: formDate,
+            clock_in: toISOFromLocal(`${formDate}T${formClockIn.includes('T') ? formClockIn.split('T')[1] : formClockIn}`),
+            clock_out: formClockOut
+              ? toISOFromLocal(`${formDate}T${formClockOut.includes('T') ? formClockOut.split('T')[1] : formClockOut}`)
+              : null,
+            enrollmentId: enrollment.id,
+          }),
+        })
+        if (!res.ok) throw new Error((await res.json()).error ?? 'Create failed')
+        toast.success('Session added')
+      }
+      cancelForm()
+      await fetchRecords()
+    } catch (e: unknown) {
+      toast.error(e instanceof Error ? e.message : 'Error saving session')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  async function deleteRecord(r: AttendanceRecord) {
+    if (!confirm('Delete this session? Rendered hours will be recalculated.')) return
+    try {
+      const res = await fetch(`/api/internship/attendance?id=${r.id}&enrollmentId=${enrollment.id}`, { method: 'DELETE' })
+      if (!res.ok) throw new Error((await res.json()).error ?? 'Delete failed')
+      toast.success('Session deleted')
+      await fetchRecords()
+    } catch (e: unknown) {
+      toast.error(e instanceof Error ? e.message : 'Delete failed')
+    }
+  }
+
+  const name = enrollment.employee
+    ? `${enrollment.employee.first_name} ${enrollment.employee.last_name}`
+    : 'Participant'
+
+  return (
+    <Modal open onClose={onClose} size="lg">
+      <ModalHeader onClose={onClose}>
+        Attendance Sessions — {name}
+      </ModalHeader>
+      <ModalBody>
+        <div className="space-y-4">
+          {/* Add / Edit form */}
+          {(isAdding || editingRecord) && (
+            <div className="border border-cyan-200 bg-cyan-50 rounded-lg p-4 space-y-3">
+              <p className="text-sm font-semibold text-cyan-800">
+                {editingRecord ? 'Edit Session' : 'Add Manual Session'}
+              </p>
+              <div className="grid grid-cols-3 gap-3">
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">Date</label>
+                  <Input
+                    type="date"
+                    value={formDate}
+                    onChange={(e) => setFormDate(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">
+                    Clock In <span className="text-red-500">*</span>
+                  </label>
+                  <Input
+                    type="time"
+                    value={formClockIn.includes('T') ? formClockIn.split('T')[1].slice(0, 5) : formClockIn}
+                    onChange={(e) => setFormClockIn(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">
+                    Clock Out <span className="text-gray-400">(optional)</span>
+                  </label>
+                  <Input
+                    type="time"
+                    value={formClockOut.includes('T') ? formClockOut.split('T')[1].slice(0, 5) : formClockOut}
+                    onChange={(e) => setFormClockOut(e.target.value)}
+                  />
+                </div>
+              </div>
+              <div className="flex gap-2 justify-end">
+                <Button variant="secondary" onClick={cancelForm} disabled={saving}>Cancel</Button>
+                <Button variant="primary" onClick={saveRecord} disabled={saving}>
+                  {saving ? 'Saving…' : editingRecord ? 'Update Session' : 'Add Session'}
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {/* Records table */}
+          <div className="flex items-center justify-between">
+            <p className="text-sm text-gray-500">{records.length} session(s) found</p>
+            {!isAdding && !editingRecord && (
+              <Button variant="secondary" onClick={openAdd}>
+                <Plus className="w-4 h-4 mr-1" /> Add Manual Session
+              </Button>
+            )}
+          </div>
+
+          {loading ? (
+            <p className="text-sm text-gray-400 text-center py-6">Loading sessions…</p>
+          ) : records.length === 0 ? (
+            <p className="text-sm text-gray-400 text-center py-6">No attendance records found.</p>
+          ) : (
+            <div className="overflow-x-auto rounded-lg border">
+              <table className="w-full text-sm">
+                <thead className="bg-gray-50 text-xs text-gray-500 uppercase">
+                  <tr>
+                    {['Date', 'Clock In', 'Clock Out', 'Hours', ''].map((h) => (
+                      <th key={h} className="px-3 py-2 text-left font-medium">{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {records.map((r) => {
+                    const hrs = sessionHrs(r)
+                    const isOpen = r.clock_in && !r.clock_out
+                    return (
+                      <tr key={r.id} className="hover:bg-gray-50">
+                        <td className="px-3 py-2 font-medium text-gray-800">{formatDate(r.date)}</td>
+                        <td className="px-3 py-2 text-gray-700">
+                          {r.clock_in ? new Date(r.clock_in as string).toLocaleTimeString('en-PH', { hour: '2-digit', minute: '2-digit', hour12: true }) : '—'}
+                        </td>
+                        <td className="px-3 py-2">
+                          {isOpen ? (
+                            <span className="text-amber-600 font-medium text-xs">Not clocked out</span>
+                          ) : r.clock_out ? (
+                            new Date(r.clock_out as string).toLocaleTimeString('en-PH', { hour: '2-digit', minute: '2-digit', hour12: true })
+                          ) : '—'}
+                        </td>
+                        <td className="px-3 py-2 font-semibold text-cyan-700">
+                          {r.clock_out ? `${hrs.toFixed(2)}h` : <span className="text-gray-400">—</span>}
+                        </td>
+                        <td className="px-3 py-2">
+                          <div className="flex gap-1 justify-end">
+                            <button
+                              onClick={() => openEdit(r)}
+                              className="p-1 text-gray-400 hover:text-blue-600 rounded hover:bg-blue-50"
+                              title="Edit"
+                            >
+                              <Edit2 className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              onClick={() => deleteRecord(r)}
+                              className="p-1 text-gray-400 hover:text-red-600 rounded hover:bg-red-50"
+                              title="Delete"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      </ModalBody>
+      <ModalFooter>
+        <p className="text-xs text-gray-400 flex-1">
+          Rendered hours are recalculated automatically after each change.
+        </p>
+        <Button variant="secondary" onClick={onClose}>Close</Button>
+      </ModalFooter>
+    </Modal>
+  )
+}
+
 export default function HoursMonitoringPage() {
-  const { data: enrollments = [], isLoading } = useProgramEnrollments({ status: 'active' })
+  const { data: enrollments = [], isLoading, refetch } = useProgramEnrollments({ status: 'active' })
   const updateMutation = useUpdateProgramEnrollment()
 
   const [search, setSearch] = useState('')
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editHours, setEditHours] = useState<string>('')
+  const [sessionsTarget, setSessionsTarget] = useState<ProgramEnrollmentWithRelations | null>(null)
 
   const filtered = enrollments.filter(e => {
     const name = `${e.employee?.first_name ?? ''} ${e.employee?.last_name ?? ''}`.toLowerCase()
@@ -107,16 +375,16 @@ export default function HoursMonitoringPage() {
           <table className="w-full">
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
-                {['Participant', 'Institution', 'Program', 'Period', 'Hours Progress', 'Days Left', 'Rendered Hours'].map(h => (
+                {['Participant', 'Institution', 'Program', 'Period', 'Hours Progress', 'Days Left', 'Rendered Hours', 'Sessions'].map(h => (
                   <th key={h} className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
               {isLoading ? (
-                <tr><td colSpan={7} className="px-4 py-8 text-center text-gray-500">Loading…</td></tr>
+                <tr><td colSpan={8} className="px-4 py-8 text-center text-gray-500">Loading…</td></tr>
               ) : filtered.length === 0 ? (
-                <tr><td colSpan={7} className="px-4 py-8 text-center text-gray-500">No active participants found.</td></tr>
+                <tr><td colSpan={8} className="px-4 py-8 text-center text-gray-500">No active participants found.</td></tr>
               ) : filtered.map(enr => {
                 const rendered = Number(enr.rendered_hours) || 0
                 const required = enr.required_hours || 1
@@ -199,6 +467,15 @@ export default function HoursMonitoringPage() {
                         </button>
                       )}
                     </td>
+                    <td className="px-4 py-3">
+                      <button
+                        onClick={() => setSessionsTarget(enr)}
+                        className="inline-flex items-center gap-1 text-xs font-medium text-cyan-700 hover:text-cyan-900 hover:underline"
+                        title="View / edit attendance sessions"
+                      >
+                        <ListOrdered className="w-3.5 h-3.5" /> Sessions
+                      </button>
+                    </td>
                   </tr>
                 )
               })}
@@ -206,6 +483,14 @@ export default function HoursMonitoringPage() {
           </table>
         </div>
       </Card>
+
+      {/* Sessions modal */}
+      {sessionsTarget && (
+        <SessionsModal
+          enrollment={sessionsTarget}
+          onClose={() => { setSessionsTarget(null); refetch() }}
+        />
+      )}
     </div>
   )
 }
