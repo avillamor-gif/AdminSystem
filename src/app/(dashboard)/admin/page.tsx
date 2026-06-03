@@ -250,7 +250,7 @@ export default function AdminPage() {
       icon: GraduationCap,
       color: 'bg-teal-600',
       href: '/admin/internship-volunteer',
-      items: ['Partner Institutions', 'Enrollments', 'Hours Monitoring', 'Certificates'],
+      items: ['Partner Institutions', 'Enrollments', 'Hours Monitoring', 'Certificates', 'Time Log'],
       requiresPermission: 'admin.internship',
     },
     {
@@ -546,6 +546,7 @@ export default function AdminPage() {
                           'Enrollments': '/admin/internship-volunteer/enrollments',
                           'Hours Monitoring': '/admin/internship-volunteer/hours-monitoring',
                           'Certificates': '/admin/internship-volunteer/certificates',
+                          'Time Log': '/admin/internship-volunteer/time-log',
 
                           // Monitoring & Evaluation routes
                           'Dashboard': '/admin/monitoring-evaluation/dashboard',
