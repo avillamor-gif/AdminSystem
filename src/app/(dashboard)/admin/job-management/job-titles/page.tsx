@@ -190,8 +190,7 @@ export default function JobTitlesPage() {
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Code</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Job Title</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Category</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Experience Level</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Department</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Employment Type</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
@@ -207,8 +206,7 @@ export default function JobTitlesPage() {
                       <div className="text-sm text-gray-500">{title.description || 'No description'}</div>
                     </div>
                   </td>
-                  <td className="px-6 py-4 text-sm text-gray-900">{jobCategories.find(c => c.id === title.job_category_id)?.name || '-'}</td>
-                  <td className="px-6 py-4 text-sm text-gray-900">{title.experience_level || '-'}</td>
+                  <td className="px-6 py-4 text-sm text-gray-900">{departments.find(d => d.id === title.department_id)?.name || '-'}</td>
                   <td className="px-6 py-4 text-sm text-gray-900">{title.employment_type || '-'}</td>
                   <td className="px-6 py-4">
                     <Badge className={title.is_active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'}>
