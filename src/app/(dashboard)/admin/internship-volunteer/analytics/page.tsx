@@ -79,11 +79,11 @@ function SectionHeader({ title, subtitle }: { title: string; subtitle?: string }
 
 // ── status badge color ────────────────────────────────────────────────────────
 
-function statusVariant(status: string): 'default' | 'success' | 'warning' | 'error' {
+function statusVariant(status: string): 'default' | 'success' | 'warning' | 'danger' {
   switch (status) {
     case 'active':    return 'warning'
     case 'completed': return 'success'
-    case 'dropped':   return 'error'
+    case 'dropped':   return 'danger'
     case 'extended':  return 'warning'
     case 'pending':   return 'default'
     default:          return 'default'
@@ -244,7 +244,7 @@ export default function InternshipAnalyticsPage() {
             { label: 'Completed', count: metrics.completed, variant: 'success' as const },
             { label: 'Pending',   count: metrics.pending,   variant: 'default' as const },
             { label: 'Extended',  count: metrics.extended,  variant: 'warning' as const },
-            { label: 'Dropped',   count: metrics.dropped,   variant: 'error'   as const },
+          { label: 'Dropped',   count: metrics.dropped,   variant: 'danger'  as const },
           ].map(({ label, count, variant }) => (
             <div key={label} className="flex items-center gap-2 bg-gray-50 rounded-lg px-4 py-3">
               <Badge variant={variant}>{label}</Badge>
@@ -367,7 +367,7 @@ export default function InternshipAnalyticsPage() {
                         </td>
                         <td className="py-2 text-right">
                           {daysLeft !== null ? (
-                            <Badge variant={daysLeft <= 7 ? 'error' : 'warning'}>{daysLeft}d</Badge>
+                            <Badge variant={daysLeft <= 7 ? 'danger' : 'warning'}>{daysLeft}d</Badge>
                           ) : '—'}
                         </td>
                       </tr>
