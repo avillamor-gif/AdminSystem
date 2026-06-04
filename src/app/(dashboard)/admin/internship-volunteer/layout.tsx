@@ -5,6 +5,7 @@ const navItems = [
   { label: 'Enrollments',          href: '/admin/internship-volunteer/enrollments',          requiresPermission: 'admin.internship.enrollments' },
   { label: 'Hours Monitoring',     href: '/admin/internship-volunteer/hours-monitoring',     requiresPermission: 'admin.internship.hours_monitoring' },
   { label: 'Certificates',         href: '/admin/internship-volunteer/certificates',         requiresPermission: 'admin.internship.certificates' },
+  { label: 'Analytics',            href: '/admin/internship-volunteer/analytics',            requiresPermission: 'admin.internship.analytics' },
   { label: 'Time Log',             href: '/admin/internship-volunteer/time-log' },
 ]
 

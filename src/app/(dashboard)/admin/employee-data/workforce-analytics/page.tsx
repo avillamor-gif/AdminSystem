@@ -131,12 +131,21 @@ export default function WorkforceAnalyticsPage() {
   // ── filtered employee list (drives all metrics) ────────────────────────────
   const filteredEmployees = useMemo(() => {
     // Exclude Board of Trustees members — managed in Governance section
-    let list = (allEmployees as any[]).filter(e => e.department?.name?.toLowerCase() !== 'board of trustees')
+    // Exclude interns and volunteers — tracked separately in Internship & Volunteer analytics
+    const internCategoryIds = new Set(
+      (employmentTypes as any[])
+        .filter(et => et.category === 'intern' || et.category === 'volunteer')
+        .map(et => et.id)
+    )
+    let list = (allEmployees as any[]).filter(e =>
+      e.department?.name?.toLowerCase() !== 'board of trustees' &&
+      !internCategoryIds.has(e.employment_type_id)
+    )
     if (filterStatus !== 'all') list = list.filter(e => e.status === filterStatus)
     if (filterEtId !== 'all')   list = list.filter(e => e.employment_type_id === filterEtId)
     if (filterDeptId !== 'all') list = list.filter(e => e.department_id === filterDeptId)
     return list
-  }, [allEmployees, filterStatus, filterEtId, filterDeptId])
+  }, [allEmployees, employmentTypes, filterStatus, filterEtId, filterDeptId])
 
   // ── computed metrics ───────────────────────────────────────────────────────
   const metrics = useMemo(() => {

@@ -55,7 +55,7 @@ export async function POST(req: NextRequest) {
 
   const clockIn = new Date()
 
-  // Insert attendance record
+  // Insert attendance record, tagged with enrollment_id to isolate intern sessions
   const { data: newRecord, error: insErr } = await admin
     .from('attendance_records')
     .insert({
@@ -64,6 +64,7 @@ export async function POST(req: NextRequest) {
       clock_in: clockIn.toISOString(),
       clock_out: null,
       status: 'present',
+      enrollment_id: enrollmentId,
     } as never)
     .select('id, clock_in')
     .single()

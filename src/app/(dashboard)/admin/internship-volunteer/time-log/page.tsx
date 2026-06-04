@@ -5,7 +5,7 @@ import { Clock, LogIn, LogOut, CheckCircle, AlertCircle, Calendar, TrendingUp, T
 import { Button } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
 import { useCurrentEmployee } from '@/hooks/useEmployees'
-import { useClockIn, useAttendanceRecords } from '@/hooks/useAttendance'
+import { useAttendanceRecords } from '@/hooks/useAttendance'
 import { useProgramEnrollments } from '@/hooks/useInternship'
 import { localDateStr, formatDate } from '@/lib/utils'
 import type { ProgramEnrollmentWithRelations } from '@/services/internship.service'
@@ -92,16 +92,33 @@ export default function InternTimeLogPage() {
       : {}
   )
 
-  const clockInMutation = useClockIn()
+  const [punchingIn, setPunchingIn] = useState(false)
+  const [punchInError, setPunchInError] = useState<string | null>(null)
   const [punchingOut, setPunchingOut] = useState(false)
   const [punchOutError, setPunchOutError] = useState<string | null>(null)
 
   const isClockedIn = !!todayRecord?.clock_in && !todayRecord?.clock_out
 
   async function handleClockIn() {
-    if (!currentEmployee?.id) return
-    await clockInMutation.mutateAsync(currentEmployee.id)
-    refetch()
+    if (!currentEmployee?.id || !enrollment) return
+    setPunchingIn(true)
+    setPunchInError(null)
+    try {
+      const res = await fetch('/api/internship/punch-in', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ enrollmentId: enrollment.id }),
+      })
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}))
+        throw new Error(body.error ?? 'Punch in failed')
+      }
+      refetch()
+    } catch (e) {
+      setPunchInError((e as Error).message)
+    } finally {
+      setPunchingIn(false)
+    }
   }
 
   const handleClockOut = useCallback(async () => {
@@ -167,15 +184,20 @@ export default function InternTimeLogPage() {
         <div className="mt-8 flex flex-col items-center gap-4">
           {!todayRecord ? (
             // Not yet clocked in today
-            <Button
-              variant="primary"
-              className="h-16 w-48 text-lg rounded-2xl shadow-md"
-              onClick={handleClockIn}
-              disabled={clockInMutation.isPending}
-            >
-              <LogIn className="w-5 h-5 mr-2" />
-              {clockInMutation.isPending ? 'Punching In…' : 'Punch In'}
-            </Button>
+            <>
+              <Button
+                variant="primary"
+                className="h-16 w-48 text-lg rounded-2xl shadow-md"
+                onClick={handleClockIn}
+                disabled={punchingIn}
+              >
+                <LogIn className="w-5 h-5 mr-2" />
+                {punchingIn ? 'Punching In…' : 'Punch In'}
+              </Button>
+              {punchInError && (
+                <p className="text-sm text-red-600">{punchInError}</p>
+              )}
+            </>
           ) : isClockedIn ? (
             // Currently clocked in
             <div className="flex flex-col items-center gap-3">

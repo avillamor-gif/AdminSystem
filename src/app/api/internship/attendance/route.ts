@@ -60,7 +60,7 @@ export async function POST(req: NextRequest) {
   // Insert the attendance record
   const { data: record, error: insErr } = await admin
     .from('attendance_records')
-    .insert({ employee_id, date, clock_in, clock_out: clock_out ?? null, status: 'present' } as never)
+    .insert({ employee_id, date, clock_in, clock_out: clock_out ?? null, status: 'present', enrollment_id: enrollmentId } as never)
     .select('*')
     .single()
 
@@ -126,25 +126,14 @@ export async function DELETE(req: NextRequest) {
   return NextResponse.json({ success: true })
 }
 
-// ─── Recalculate rendered_hours from all attendance records for an enrollment ─
+// ─── Recalculate rendered_hours from attendance records tagged to this enrollment ─
 
 async function recalcEnrollmentHours(admin: ReturnType<typeof createAdminClient>, enrollmentId: string) {
-  // Get employee_id from enrollment
-  const { data: enr } = await admin
-    .from('program_enrollments' as never)
-    .select('employee_id')
-    .eq('id', enrollmentId)
-    .single()
-
-  if (!enr) return
-
-  const empId = (enr as { employee_id: string }).employee_id
-
-  // Fetch all completed attendance records for this employee
+  // Fetch only attendance records tagged to this specific enrollment
   const { data: records } = await admin
     .from('attendance_records')
     .select('clock_in, clock_out')
-    .eq('employee_id', empId)
+    .eq('enrollment_id' as never, enrollmentId)
     .not('clock_out', 'is', null)
 
   const totalHours = ((records ?? []) as { clock_in: string; clock_out: string }[]).reduce((sum, r) => {
