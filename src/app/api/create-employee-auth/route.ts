@@ -50,14 +50,34 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Check if employee exists
-    const { data: employee, error: employeeError } = await supabaseAdmin
+    // Look up employee by work_email, then personal_email, then primary email
+    let employee: any = null
+    const { data: byWorkEmail } = await supabaseAdmin
       .from('employees')
-      .select('id, first_name, last_name, employee_id, work_email')
+      .select('id, first_name, last_name, employee_id, work_email, personal_email, email')
       .eq('work_email', email)
-      .single()
+      .maybeSingle()
+    if (byWorkEmail) {
+      employee = byWorkEmail
+    } else {
+      const { data: byPersonalEmail } = await supabaseAdmin
+        .from('employees')
+        .select('id, first_name, last_name, employee_id, work_email, personal_email, email')
+        .eq('personal_email', email)
+        .maybeSingle()
+      if (byPersonalEmail) {
+        employee = byPersonalEmail
+      } else {
+        const { data: byEmail } = await supabaseAdmin
+          .from('employees')
+          .select('id, first_name, last_name, employee_id, work_email, personal_email, email')
+          .eq('email', email)
+          .maybeSingle()
+        employee = byEmail
+      }
+    }
 
-    if (employeeError || !employee) {
+    if (!employee) {
       return NextResponse.json(
         { error: `Employee with email ${email} not found in database` },
         { status: 404 }
