@@ -439,13 +439,13 @@ export default function InternshipAssessmentsPage() {
         isOpen={!!deleteTarget}
         title="Delete Assessment"
         message="This will permanently delete the assessment form and all responses. This cannot be undone."
-        confirmLabel="Delete"
+        confirmText="Delete"
         variant="danger"
         onConfirm={async () => {
           if (deleteTarget) await deleteMutation.mutateAsync(deleteTarget)
           setDeleteTarget(null)
         }}
-        onCancel={() => setDeleteTarget(null)}
+        onClose={() => setDeleteTarget(null)}
       />
     </div>
   )
