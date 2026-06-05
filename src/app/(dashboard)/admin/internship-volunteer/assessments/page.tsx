@@ -227,7 +227,7 @@ function AssessmentModal({
   const fullName = emp ? `${emp.first_name} ${emp.last_name}` : 'Unknown'
 
   return (
-    <Modal isOpen onClose={onClose} size="lg">
+    <Modal open onClose={onClose} size="lg">
       <ModalHeader>
         <div>
           <h2 className="text-lg font-bold text-gray-900">Assessment — {fullName}</h2>
@@ -383,7 +383,7 @@ export default function InternshipAssessmentsPage() {
 
       {/* Create modal */}
       {showCreateModal && (
-        <Modal isOpen onClose={() => setShowCreateModal(false)}>
+        <Modal open onClose={() => setShowCreateModal(false)}>
           <ModalHeader><h2 className="text-lg font-bold text-gray-900">New Assessment Form</h2></ModalHeader>
           <ModalBody className="space-y-4">
             <p className="text-sm text-gray-500">
