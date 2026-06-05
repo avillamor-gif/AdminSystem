@@ -67,7 +67,7 @@ CREATE POLICY "Interns can view their own assessments"
     )
     OR
     EXISTS (
-      SELECT 1 FROM user_roles ur WHERE ur.user_id = auth.uid() AND ur.role IN ('admin','hr_manager','hr_staff','manager')
+      SELECT 1 FROM user_roles ur WHERE ur.user_id = auth.uid() AND ur.role IN ('admin','hr','manager')
     )
   );
 
@@ -77,7 +77,7 @@ CREATE POLICY "Admins can manage assessments"
   TO authenticated
   USING (
     EXISTS (
-      SELECT 1 FROM user_roles ur WHERE ur.user_id = auth.uid() AND ur.role IN ('admin','hr_manager','hr_staff')
+      SELECT 1 FROM user_roles ur WHERE ur.user_id = auth.uid() AND ur.role IN ('admin','hr')
     )
   );
 

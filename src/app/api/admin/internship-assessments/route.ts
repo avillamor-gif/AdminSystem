@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
 
-const ALLOWED_ROLES = ['admin', 'hr_manager', 'hr_staff']
+const ALLOWED_ROLES = ['admin', 'hr', 'manager']
 
 const ALLOWED_FIELDS = [
   'enrollment_id', 'created_by',
