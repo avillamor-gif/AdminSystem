@@ -272,3 +272,127 @@ export const programEnrollmentService = {
     return path
   },
 }
+
+// ─── Internship Assessment ────────────────────────────────────────────────────
+
+export type AssessmentRating = 1 | 2 | 3 | 4 | 5 | 6 | null
+
+export interface InternshipAssessment {
+  id: string
+  enrollment_id: string
+  // Part I – General Workplace Performance
+  r_attendance:           AssessmentRating
+  r_punctuality:          AssessmentRating
+  r_appropriate_dress:    AssessmentRating
+  r_attitude:             AssessmentRating
+  r_acceptance_criticism: AssessmentRating
+  r_asks_questions:       AssessmentRating
+  r_self_motivated:       AssessmentRating
+  r_ethical_behaviour:    AssessmentRating
+  // Part I – Specific Job Assignment Performance
+  r_job_knowledge:        AssessmentRating
+  r_verbal_communication: AssessmentRating
+  r_written_communication:AssessmentRating
+  r_analytical_skills:    AssessmentRating
+  r_technical_skills:     AssessmentRating
+  r_meets_deadlines:      AssessmentRating
+  r_takes_initiative:     AssessmentRating
+  r_sets_priorities:      AssessmentRating
+  // Part I – Open-ended
+  strengths_weaknesses:     string | null
+  important_achievements:   string | null
+  most_difficult:           string | null
+  likes_dislikes:           string | null
+  overall_performance:      'outstanding' | 'above_average' | 'satisfactory' | 'below_average' | 'unsatisfactory' | null
+  intern_other_comments:    string | null
+  // Part II – Supervisor
+  supervisor_strengths_areas: string | null
+  supervisor_comments:        string | null
+  // Workflow
+  status: 'pending' | 'part1_complete' | 'complete'
+  part1_submitted_at: string | null
+  part2_submitted_at: string | null
+  created_by: string | null
+  created_at: string
+  updated_at: string
+}
+
+export interface InternshipAssessmentWithRelations extends InternshipAssessment {
+  enrollment?: ProgramEnrollmentWithRelations
+}
+
+export type InternshipAssessmentInsert = Pick<InternshipAssessment, 'enrollment_id' | 'created_by'>
+export type InternshipAssessmentPart1Update = Pick<
+  InternshipAssessment,
+  | 'r_attendance' | 'r_punctuality' | 'r_appropriate_dress' | 'r_attitude'
+  | 'r_acceptance_criticism' | 'r_asks_questions' | 'r_self_motivated' | 'r_ethical_behaviour'
+  | 'r_job_knowledge' | 'r_verbal_communication' | 'r_written_communication' | 'r_analytical_skills'
+  | 'r_technical_skills' | 'r_meets_deadlines' | 'r_takes_initiative' | 'r_sets_priorities'
+  | 'strengths_weaknesses' | 'important_achievements' | 'most_difficult' | 'likes_dislikes'
+  | 'overall_performance' | 'intern_other_comments'
+>
+export type InternshipAssessmentPart2Update = Pick<
+  InternshipAssessment, 'supervisor_strengths_areas' | 'supervisor_comments'
+>
+
+export const internshipAssessmentService = {
+  async getAll(filters?: { enrollment_id?: string }): Promise<InternshipAssessmentWithRelations[]> {
+    const supabase = createClient()
+    let query = (supabase as any)
+      .from('internship_assessments')
+      .select('*')
+      .order('created_at', { ascending: false })
+    if (filters?.enrollment_id) query = query.eq('enrollment_id', filters.enrollment_id)
+    const { data, error } = await query
+    if (error) throw error
+    const assessments: InternshipAssessment[] = data ?? []
+    if (assessments.length === 0) return []
+
+    // Attach enrollment with relations
+    const enrollmentIds = [...new Set(assessments.map(a => a.enrollment_id))]
+    const allEnrollments = await programEnrollmentService.getAll()
+    const enrollmentMap = Object.fromEntries(
+      allEnrollments.filter(e => enrollmentIds.includes(e.id)).map(e => [e.id, e])
+    )
+    return assessments.map(a => ({ ...a, enrollment: enrollmentMap[a.enrollment_id] }))
+  },
+
+  async getByEnrollment(enrollmentId: string): Promise<InternshipAssessmentWithRelations | null> {
+    const all = await internshipAssessmentService.getAll({ enrollment_id: enrollmentId })
+    return all[0] ?? null
+  },
+
+  async create(payload: InternshipAssessmentInsert): Promise<InternshipAssessment> {
+    const res = await fetch('/api/admin/internship-assessments', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    })
+    const json = await res.json()
+    if (!res.ok) throw new Error(json.error || 'Failed to create assessment')
+    return json as InternshipAssessment
+  },
+
+  async update(id: string, payload: Partial<InternshipAssessment>): Promise<InternshipAssessment> {
+    const res = await fetch('/api/admin/internship-assessments', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id, ...payload }),
+    })
+    const json = await res.json()
+    if (!res.ok) throw new Error(json.error || 'Failed to update assessment')
+    return json as InternshipAssessment
+  },
+
+  async delete(id: string): Promise<void> {
+    const res = await fetch('/api/admin/internship-assessments', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id }),
+    })
+    if (!res.ok) {
+      const json = await res.json()
+      throw new Error(json.error || 'Failed to delete assessment')
+    }
+  },
+}

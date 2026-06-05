@@ -3,12 +3,17 @@ import { toast } from 'sonner'
 import {
   partnerInstitutionService,
   programEnrollmentService,
+  internshipAssessmentService,
   type PartnerInstitution,
   type PartnerInstitutionInsert,
   type PartnerInstitutionUpdate,
   type ProgramEnrollmentInsert,
   type ProgramEnrollmentUpdate,
   type ProgramEnrollmentWithRelations,
+  type InternshipAssessment,
+  type InternshipAssessmentInsert,
+  type InternshipAssessmentPart1Update,
+  type InternshipAssessmentPart2Update,
 } from '@/services/internship.service'
 
 // ─── Query Key Factories ──────────────────────────────────────────────────────
@@ -149,5 +154,89 @@ export function useMarkCertificateIssued() {
       toast.success('Certificate marked as issued')
     },
     onError: () => toast.error('Failed to mark certificate'),
+  })
+}
+
+// ─── Assessment Query Keys ────────────────────────────────────────────────────
+
+export const assessmentKeys = {
+  all: ['internship_assessments'] as const,
+  lists: () => [...assessmentKeys.all, 'list'] as const,
+  list: (filters: object) => [...assessmentKeys.lists(), filters] as const,
+  byEnrollment: (enrollmentId: string) => [...assessmentKeys.all, 'enrollment', enrollmentId] as const,
+}
+
+// ─── Assessment Hooks ─────────────────────────────────────────────────────────
+
+export function useInternshipAssessments(filters?: { enrollment_id?: string }) {
+  return useQuery({
+    queryKey: assessmentKeys.list(filters ?? {}),
+    queryFn: () => internshipAssessmentService.getAll(filters),
+  })
+}
+
+export function useInternshipAssessmentByEnrollment(enrollmentId: string | undefined) {
+  return useQuery({
+    queryKey: assessmentKeys.byEnrollment(enrollmentId ?? ''),
+    queryFn: () => internshipAssessmentService.getByEnrollment(enrollmentId!),
+    enabled: !!enrollmentId,
+  })
+}
+
+export function useCreateInternshipAssessment() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (data: InternshipAssessmentInsert) => internshipAssessmentService.create(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: assessmentKeys.lists() })
+      toast.success('Assessment form created')
+    },
+    onError: () => toast.error('Failed to create assessment'),
+  })
+}
+
+export function useSubmitAssessmentPart1() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: InternshipAssessmentPart1Update }) =>
+      internshipAssessmentService.update(id, {
+        ...data,
+        status: 'part1_complete',
+        part1_submitted_at: new Date().toISOString(),
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: assessmentKeys.lists() })
+      toast.success('Part I submitted successfully')
+    },
+    onError: () => toast.error('Failed to submit Part I'),
+  })
+}
+
+export function useSubmitAssessmentPart2() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: InternshipAssessmentPart2Update }) =>
+      internshipAssessmentService.update(id, {
+        ...data,
+        status: 'complete',
+        part2_submitted_at: new Date().toISOString(),
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: assessmentKeys.lists() })
+      toast.success('Assessment completed')
+    },
+    onError: () => toast.error('Failed to submit Part II'),
+  })
+}
+
+export function useDeleteInternshipAssessment() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (id: string) => internshipAssessmentService.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: assessmentKeys.lists() })
+      toast.success('Assessment deleted')
+    },
+    onError: () => toast.error('Failed to delete assessment'),
   })
 }

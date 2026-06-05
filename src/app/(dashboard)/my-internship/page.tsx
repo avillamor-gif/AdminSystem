@@ -1,12 +1,12 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { GraduationCap, Clock, Award, CheckCircle, AlertCircle, Building2, User, Calendar } from 'lucide-react'
-import { Card } from '@/components/ui'
+import { GraduationCap, Clock, Award, CheckCircle, AlertCircle, Building2, User, Calendar, ClipboardList, ChevronDown, ChevronUp } from 'lucide-react'
+import { Card, Badge, Button } from '@/components/ui'
 import { useCurrentEmployee } from '@/hooks'
-import { useProgramEnrollments, useMarkCertificateIssued } from '@/hooks/useInternship'
+import { useProgramEnrollments, useMarkCertificateIssued, useInternshipAssessmentByEnrollment, useSubmitAssessmentPart1 } from '@/hooks/useInternship'
 import { formatDate } from '@/lib/utils'
-import type { ProgramEnrollmentWithRelations } from '@/services/internship.service'
+import type { ProgramEnrollmentWithRelations, InternshipAssessmentPart1Update } from '@/services/internship.service'
 
 function progressColor(pct: number) {
   if (pct >= 100) return 'bg-green-500'
@@ -214,6 +214,246 @@ function EnrollmentCard({ enrollment: e, isActive }: { enrollment: ProgramEnroll
           <p className="text-sm text-blue-800">{e.notes}</p>
         </div>
       )}
+
+      {/* Assessment */}
+      <AssessmentSection enrollmentId={e.id} />
     </Card>
+  )
+}
+
+// ─── Rating scale legend ──────────────────────────────────────────────────────
+
+const RATING_OPTIONS = [
+  { value: 1, label: '1 — Needs more training' },
+  { value: 2, label: '2 — Below expectations' },
+  { value: 3, label: '3 — Acceptable' },
+  { value: 4, label: '4 — Above average' },
+  { value: 5, label: '5 — Superior' },
+  { value: 6, label: '6 — Not observed' },
+]
+
+const GENERAL_ITEMS = [
+  { key: 'r_attendance',           label: 'Attendance' },
+  { key: 'r_punctuality',          label: 'Punctuality' },
+  { key: 'r_appropriate_dress',    label: 'Appropriate dress' },
+  { key: 'r_attitude',             label: 'Attitude' },
+  { key: 'r_acceptance_criticism', label: 'Acceptance of criticism' },
+  { key: 'r_asks_questions',       label: 'Asks appropriate questions' },
+  { key: 'r_self_motivated',       label: 'Self-motivated' },
+  { key: 'r_ethical_behaviour',    label: 'Practices ethical behaviour' },
+]
+
+const JOB_ITEMS = [
+  { key: 'r_job_knowledge',         label: 'Sufficient knowledge to perform tasks' },
+  { key: 'r_verbal_communication',  label: 'Verbal communication skills' },
+  { key: 'r_written_communication', label: 'Written communication skills' },
+  { key: 'r_analytical_skills',     label: 'Analytical skills – analyses problems and takes appropriate action' },
+  { key: 'r_technical_skills',      label: 'Uses technical skills required for the position' },
+  { key: 'r_meets_deadlines',       label: 'Meets deadlines' },
+  { key: 'r_takes_initiative',      label: 'Takes initiative to get the job done, including overcoming obstacles' },
+  { key: 'r_sets_priorities',       label: 'Sets priorities' },
+]
+
+const OVERALL_OPTIONS = [
+  { value: 'outstanding',    label: 'Outstanding' },
+  { value: 'above_average',  label: 'Above Average' },
+  { value: 'satisfactory',   label: 'Satisfactory' },
+  { value: 'below_average',  label: 'Below Average' },
+  { value: 'unsatisfactory', label: 'Unsatisfactory' },
+]
+
+// ─── Self-service Part I form ─────────────────────────────────────────────────
+
+function RatingGroup({ label, fieldKey, value, onChange, disabled }: {
+  label: string
+  fieldKey: string
+  value: number | null | undefined
+  onChange: (key: string, val: number) => void
+  disabled?: boolean
+}) {
+  return (
+    <div className="py-2 border-b last:border-0">
+      <p className="text-sm text-gray-700 mb-2">{label}</p>
+      <div className="flex flex-wrap gap-2">
+        {RATING_OPTIONS.map(opt => (
+          <button
+            key={opt.value}
+            type="button"
+            disabled={disabled}
+            onClick={() => onChange(fieldKey, opt.value)}
+            className={`px-2.5 py-1 rounded-full text-xs font-medium border transition-all ${
+              value === opt.value
+                ? 'bg-blue-600 text-white border-blue-600'
+                : 'bg-white text-gray-600 border-gray-300 hover:border-blue-400'
+            } ${disabled ? 'opacity-60 cursor-not-allowed' : ''}`}
+          >
+            {opt.value}
+          </button>
+        ))}
+        {value && (
+          <span className="text-xs text-gray-400 self-center ml-1">
+            {RATING_OPTIONS.find(o => o.value === value)?.label.split('— ')[1]}
+          </span>
+        )}
+      </div>
+    </div>
+  )
+}
+
+function AssessmentSection({ enrollmentId }: { enrollmentId: string }) {
+  const { data: assessment, isLoading } = useInternshipAssessmentByEnrollment(enrollmentId)
+  const submitPart1 = useSubmitAssessmentPart1()
+  const [open, setOpen] = useState(false)
+  const [form, setForm] = useState<Partial<InternshipAssessmentPart1Update>>({})
+  const [initialized, setInitialized] = useState(false)
+
+  // Pre-fill form from existing data
+  useEffect(() => {
+    if (assessment && !initialized) {
+      const keys = [
+        'r_attendance','r_punctuality','r_appropriate_dress','r_attitude',
+        'r_acceptance_criticism','r_asks_questions','r_self_motivated','r_ethical_behaviour',
+        'r_job_knowledge','r_verbal_communication','r_written_communication','r_analytical_skills',
+        'r_technical_skills','r_meets_deadlines','r_takes_initiative','r_sets_priorities',
+        'strengths_weaknesses','important_achievements','most_difficult','likes_dislikes',
+        'overall_performance','intern_other_comments',
+      ] as const
+      const prefilled: Record<string, unknown> = {}
+      keys.forEach(k => { prefilled[k] = (assessment as any)[k] ?? null })
+      setForm(prefilled as Partial<InternshipAssessmentPart1Update>)
+      setInitialized(true)
+    }
+  }, [assessment, initialized])
+
+  function handleRating(key: string, val: number) {
+    setForm(prev => ({ ...prev, [key]: val }))
+  }
+
+  function handleText(e: React.ChangeEvent<HTMLTextAreaElement | HTMLSelectElement>) {
+    setForm(prev => ({ ...prev, [e.target.name]: e.target.value }))
+  }
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    if (!assessment) return
+    await submitPart1.mutateAsync({ id: assessment.id, data: form as InternshipAssessmentPart1Update })
+    setOpen(false)
+  }
+
+  if (isLoading) return null
+  if (!assessment) return null // No form created by admin yet
+
+  const alreadySubmitted = assessment.status === 'part1_complete' || assessment.status === 'complete'
+  const disabled = alreadySubmitted
+
+  return (
+    <div className="border border-orange-200 rounded-xl overflow-hidden">
+      <button
+        className="w-full flex items-center justify-between px-4 py-3 bg-orange-50 hover:bg-orange-100 text-sm font-semibold text-orange-800"
+        onClick={() => setOpen(v => !v)}
+      >
+        <span className="flex items-center gap-2">
+          <ClipboardList className="w-4 h-4" />
+          Intern Assessment Form — Part I
+          {alreadySubmitted && (
+            <span className="ml-2 inline-flex items-center gap-1 bg-green-100 text-green-700 text-xs font-medium px-2 py-0.5 rounded-full">
+              <CheckCircle className="w-3 h-3" /> Submitted
+            </span>
+          )}
+        </span>
+        {open ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+      </button>
+
+      {open && (
+        <form onSubmit={handleSubmit} className="p-5 space-y-6 text-sm">
+          {alreadySubmitted && (
+            <div className="flex items-center gap-2 bg-green-50 border border-green-200 rounded-lg px-4 py-3 text-green-800 text-sm">
+              <CheckCircle className="w-4 h-4 shrink-0" />
+              You have already submitted Part I. Your supervisor will complete Part II.
+            </div>
+          )}
+
+          <div>
+            <p className="text-xs text-gray-500 mb-3">
+              Use the scale below: <strong>1</strong> Needs more training · <strong>2</strong> Below expectations ·{' '}
+              <strong>3</strong> Acceptable · <strong>4</strong> Above average · <strong>5</strong> Superior ·{' '}
+              <strong>6</strong> Not observed
+            </p>
+
+            <h4 className="font-semibold text-gray-800 mb-2">1. General Workplace Performance</h4>
+            {GENERAL_ITEMS.map(({ key, label }) => (
+              <RatingGroup key={key} label={label} fieldKey={key} value={(form as any)[key]} onChange={handleRating} disabled={disabled} />
+            ))}
+
+            <h4 className="font-semibold text-gray-800 mt-5 mb-2">2. Specific Job Assignment Performance</h4>
+            {JOB_ITEMS.map(({ key, label }) => (
+              <RatingGroup key={key} label={label} fieldKey={key} value={(form as any)[key]} onChange={handleRating} disabled={disabled} />
+            ))}
+          </div>
+
+          <div>
+            <h4 className="font-semibold text-gray-800 mb-4">Self-Assessment Questions</h4>
+            {[
+              { name: 'strengths_weaknesses',    label: 'Based on this assessment, what are your strengths and weaknesses?' },
+              { name: 'important_achievements',  label: 'What are your most important achievements during the internship?' },
+              { name: 'most_difficult',          label: 'What elements of your internship do you find most difficult?' },
+              { name: 'likes_dislikes',          label: 'What do you like and dislike about the organization?' },
+            ].map(({ name, label }) => (
+              <div key={name} className="mb-4">
+                <label className="block text-sm text-gray-700 mb-1">{label}</label>
+                <textarea
+                  name={name}
+                  rows={3}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-orange-400 focus:border-transparent resize-none disabled:bg-gray-50"
+                  value={(form as any)[name] ?? ''}
+                  onChange={handleText}
+                  disabled={disabled}
+                />
+              </div>
+            ))}
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Overall Performance Agreement</label>
+            <div className="flex flex-wrap gap-3">
+              {OVERALL_OPTIONS.map(opt => (
+                <label key={opt.value} className={`flex items-center gap-2 cursor-pointer ${disabled ? 'opacity-60 cursor-not-allowed' : ''}`}>
+                  <input
+                    type="radio"
+                    name="overall_performance"
+                    value={opt.value}
+                    checked={(form as any).overall_performance === opt.value}
+                    onChange={handleText}
+                    disabled={disabled}
+                    className="text-orange-500"
+                  />
+                  <span className="text-sm text-gray-700">{opt.label}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm text-gray-700 mb-1">Other comments & suggestions</label>
+            <textarea
+              name="intern_other_comments"
+              rows={3}
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-orange-400 focus:border-transparent resize-none disabled:bg-gray-50"
+              value={(form as any).intern_other_comments ?? ''}
+              onChange={handleText}
+              disabled={disabled}
+            />
+          </div>
+
+          {!disabled && (
+            <div className="flex justify-end pt-2">
+              <Button type="submit" variant="primary" disabled={submitPart1.isPending}>
+                {submitPart1.isPending ? 'Submitting…' : 'Submit Part I'}
+              </Button>
+            </div>
+          )}
+        </form>
+      )}
+    </div>
   )
 }
