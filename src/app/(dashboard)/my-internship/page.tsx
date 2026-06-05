@@ -329,7 +329,7 @@ function AssessmentSection({ enrollmentId }: { enrollmentId: string }) {
     setForm(prev => ({ ...prev, [key]: val }))
   }
 
-  function handleText(e: React.ChangeEvent<HTMLTextAreaElement | HTMLSelectElement>) {
+  function handleText(e: React.ChangeEvent<HTMLTextAreaElement | HTMLSelectElement | HTMLInputElement>) {
     setForm(prev => ({ ...prev, [e.target.name]: e.target.value }))
   }
 
