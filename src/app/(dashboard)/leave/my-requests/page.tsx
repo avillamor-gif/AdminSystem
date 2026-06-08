@@ -91,7 +91,7 @@ export default function MyLeavePage() {
   }, [leaveRequests, statusFilter])
 
   const statistics = useMemo(() => {
-    const pending = leaveRequests.filter(r => r.status === 'pending').length
+    const pending = leaveRequests.filter(r => r.status === 'pending' || r.status === 'escalated').length
     const approved = leaveRequests.filter(r => r.status === 'approved').length
     const rejected = leaveRequests.filter(r => r.status === 'rejected').length
     return { total: leaveRequests.length, pending, approved, rejected }
@@ -240,6 +240,7 @@ export default function MyLeavePage() {
         >
           <option value="">All Status</option>
           <option value="pending">Pending</option>
+          <option value="escalated">Escalated</option>
           <option value="approved">Approved</option>
           <option value="rejected">Rejected</option>
           <option value="cancelled">Cancelled</option>
@@ -300,7 +301,7 @@ export default function MyLeavePage() {
                       </div>
                     )}
                   </div>
-                  {request.status === 'pending' && (
+                  {(request.status === 'pending' || request.status === 'escalated') && (
                     <Button
                       variant="ghost"
                       size="sm"
