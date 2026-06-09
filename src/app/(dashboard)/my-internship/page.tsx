@@ -84,9 +84,39 @@ export default function MyInternshipPage() {
 }
 
 function EnrollmentCard({ enrollment: e, isActive }: { enrollment: ProgramEnrollmentWithRelations; isActive?: boolean }) {
-  const pct = e.required_hours > 0
-    ? Math.min(100, Math.round((Number(e.rendered_hours) / e.required_hours) * 100))
-    : 0
+  // Calculate expected hours based on elapsed time
+  const startDate = new Date(e.start_date)
+  const endDate = e.end_date ? new Date(e.end_date) : null
+  const now = new Date()
+  
+  let pct = 0
+  let expectedHours = e.required_hours
+  
+  if (endDate) {
+    // Total duration in days
+    const totalDays = Math.ceil((endDate.getTime() - startDate.getTime()) / 86_400_000)
+    
+    // Elapsed days since start
+    const elapsedDays = Math.ceil((now.getTime() - startDate.getTime()) / 86_400_000)
+    
+    if (totalDays > 0) {
+      // Expected hours to date: (required_hours / total_days) * elapsed_days
+      expectedHours = Math.min(
+        e.required_hours,
+        Math.round((e.required_hours / totalDays) * Math.max(0, elapsedDays) * 100) / 100
+      )
+      
+      // Progress: actual_hours vs expected_hours
+      pct = Math.min(100, Math.round((Number(e.rendered_hours) / expectedHours) * 100))
+    } else {
+      pct = 0
+    }
+  } else {
+    // No end date: use simple ratio
+    pct = e.required_hours > 0
+      ? Math.min(100, Math.round((Number(e.rendered_hours) / e.required_hours) * 100))
+      : 0
+  }
 
   const daysLeft = e.end_date
     ? Math.ceil((new Date(e.end_date).getTime() - Date.now()) / 86_400_000)
@@ -123,7 +153,7 @@ function EnrollmentCard({ enrollment: e, isActive }: { enrollment: ProgramEnroll
             Hours Progress
           </span>
           <span className="font-semibold">
-            {Number(e.rendered_hours).toFixed(1)}h / {e.required_hours}h
+            {Number(e.rendered_hours).toFixed(1)}h / {expectedHours.toFixed(1)}h
             <span className="text-gray-400 font-normal ml-1">({pct}%)</span>
           </span>
         </div>
@@ -135,7 +165,7 @@ function EnrollmentCard({ enrollment: e, isActive }: { enrollment: ProgramEnroll
         </div>
         {pct >= 100 && (
           <p className="text-green-600 text-xs mt-1.5 flex items-center gap-1">
-            <CheckCircle className="w-3.5 h-3.5" /> Required hours completed!
+            <CheckCircle className="w-3.5 h-3.5" /> On track or ahead of schedule!
           </p>
         )}
         {isActive && daysLeft !== null && daysLeft <= 14 && pct < 80 && (
