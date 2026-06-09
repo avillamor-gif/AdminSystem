@@ -18,6 +18,54 @@ export interface EmployeeFilters {
   jobTitle?: string
 }
 
+/**
+ * Generates a unique Employee ID based on hire date with sequential numbering
+ * Format: YYYYMMDD-NNN (e.g., 20191001-001, 20191001-002)
+ * This ensures no conflicts when multiple employees are hired on the same day
+ */
+export async function generateUniqueEmployeeId(hireDate: string | Date): Promise<string> {
+  const supabase = createClient()
+  
+  // Format date as YYYYMMDD
+  const date = new Date(hireDate)
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  const datePrefix = `${year}${month}${day}`
+  
+  // Query for all employee_ids that start with this date prefix
+  const { data: existingEmployees, error } = await supabase
+    .from('employees')
+    .select('employee_id')
+    .ilike('employee_id', `${datePrefix}%`)
+  
+  if (error) {
+    console.error('Error checking existing employee IDs:', error)
+    throw error
+  }
+  
+  // Find all sequence numbers and determine the next one
+  let maxSequence = 0
+  if (existingEmployees && existingEmployees.length > 0) {
+    for (const emp of existingEmployees) {
+      // Extract sequence number from ID (e.g., "20191001-001" -> 1)
+      const match = emp.employee_id.match(/-(\d+)$/)
+      if (match) {
+        const sequence = parseInt(match[1], 10)
+        if (sequence > maxSequence) {
+          maxSequence = sequence
+        }
+      }
+    }
+  }
+  
+  // Generate the next sequence number (padded to 3 digits)
+  const nextSequence = maxSequence + 1
+  const sequencePadded = String(nextSequence).padStart(3, '0')
+  
+  return `${datePrefix}-${sequencePadded}`
+}
+
 export const employeeService = {
   async getAll(filters?: EmployeeFilters): Promise<EmployeeWithRelations[]> {
     const supabase = createClient()

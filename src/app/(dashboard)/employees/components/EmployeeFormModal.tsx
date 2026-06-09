@@ -7,7 +7,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { Modal, ModalHeader, ModalBody, ModalFooter, Button, Input, Select } from '@/components/ui'
 import { useCreateEmployee, useUpdateEmployee, useDepartments, useJobTitles, useLocations, useEmploymentTypes } from '@/hooks'
-import { generateEmployeeId } from '@/lib/utils'
+import { generateUniqueEmployeeId } from '@/services/employee.service'
 import { logAction } from '@/services/auditLog.service'
 import type { Employee, Department, JobTitle, Location } from '@/services'
 
@@ -150,7 +150,7 @@ export function EmployeeFormModal({ open, onClose, employee }: EmployeeFormModal
         onClose()
       } else {
         // Create new employee and redirect to detail page
-        const employeeId = generateEmployeeId(cleanedData.hire_date)
+        const employeeId = await generateUniqueEmployeeId(cleanedData.hire_date)
         const newEmployee = await createEmployee.mutateAsync({
           ...cleanedData,
           employee_id: employeeId,
