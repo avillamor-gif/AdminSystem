@@ -328,7 +328,7 @@ export default function HoursMonitoringPage() {
           <p className="text-gray-600 mt-1">Track rendered vs required hours for active participants</p>
         </div>
         <Button
-          onClick={() => recalcMutation.mutate()}
+          onClick={() => recalcMutation.mutate(undefined)}
           disabled={recalcMutation.isPending}
           className="flex items-center gap-2"
           variant="secondary"
