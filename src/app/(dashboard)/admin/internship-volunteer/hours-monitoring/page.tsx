@@ -1,9 +1,9 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { Clock, TrendingUp, Users, AlertCircle, ListOrdered, Plus, Edit2, Trash2, X } from 'lucide-react'
+import { Clock, TrendingUp, Users, AlertCircle, ListOrdered, Plus, Edit2, Trash2, X, RefreshCw } from 'lucide-react'
 import { Card, Input, Button, Modal, ModalHeader, ModalBody, ModalFooter } from '@/components/ui'
-import { useProgramEnrollments, useUpdateProgramEnrollment } from '@/hooks/useInternship'
+import { useProgramEnrollments, useUpdateProgramEnrollment, useRecalcInternshipHours } from '@/hooks/useInternship'
 import type { ProgramEnrollmentWithRelations } from '@/services/internship.service'
 import type { AttendanceRecord } from '@/services/attendance.service'
 import { formatDate, localDateStr } from '@/lib/utils'
@@ -290,6 +290,7 @@ function SessionsModal({
 export default function HoursMonitoringPage() {
   const { data: enrollments = [], isLoading, refetch } = useProgramEnrollments({ status: 'active' })
   const updateMutation = useUpdateProgramEnrollment()
+  const recalcMutation = useRecalcInternshipHours()
 
   const [search, setSearch] = useState('')
   const [editingId, setEditingId] = useState<string | null>(null)
@@ -321,9 +322,20 @@ export default function HoursMonitoringPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">Hours Monitoring</h1>
-        <p className="text-gray-600 mt-1">Track rendered vs required hours for active participants</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Hours Monitoring</h1>
+          <p className="text-gray-600 mt-1">Track rendered vs required hours for active participants</p>
+        </div>
+        <Button
+          onClick={() => recalcMutation.mutate()}
+          disabled={recalcMutation.isPending}
+          className="flex items-center gap-2"
+          variant="secondary"
+        >
+          <RefreshCw className={`w-4 h-4 ${recalcMutation.isPending ? 'animate-spin' : ''}`} />
+          {recalcMutation.isPending ? 'Recalculating...' : 'Sync All Hours'}
+        </Button>
       </div>
 
       {/* Stats */}

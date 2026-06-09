@@ -240,3 +240,29 @@ export function useDeleteInternshipAssessment() {
     onError: () => toast.error('Failed to delete assessment'),
   })
 }
+
+// ─── Recalculate Internship Hours ─────────────────────────────────────────────
+
+export function useRecalcInternshipHours() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async (enrollmentId?: string) => {
+      const res = await fetch('/api/admin/recalc-internship-hours', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ enrollmentId }),
+      })
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}))
+        throw new Error(err.error ?? 'Failed to recalculate hours')
+      }
+      return res.json()
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: programEnrollmentKeys.lists() })
+      const successCount = (data.results ?? []).filter((r: any) => r.success).length
+      toast.success(`Recalculated ${successCount} enrollment(s)`)
+    },
+    onError: (err: any) => toast.error(err.message || 'Failed to recalculate hours'),
+  })
+}
