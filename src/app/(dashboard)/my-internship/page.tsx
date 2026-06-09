@@ -96,20 +96,25 @@ function EnrollmentCard({ enrollment: e, isActive }: { enrollment: ProgramEnroll
     // Total duration in days
     const totalDays = Math.ceil((endDate.getTime() - startDate.getTime()) / 86_400_000)
     
-    // Elapsed days since start
-    const elapsedDays = Math.ceil((now.getTime() - startDate.getTime()) / 86_400_000)
+    // Elapsed days since start (clamped to 0 at minimum, totalDays at maximum)
+    const elapsedDays = Math.max(
+      0,
+      Math.min(totalDays, Math.ceil((now.getTime() - startDate.getTime()) / 86_400_000))
+    )
     
     if (totalDays > 0) {
       // Expected hours to date: (required_hours / total_days) * elapsed_days
-      expectedHours = Math.min(
-        e.required_hours,
-        Math.round((e.required_hours / totalDays) * Math.max(0, elapsedDays) * 100) / 100
-      )
+      expectedHours = Math.round((e.required_hours / totalDays) * elapsedDays * 100) / 100
       
-      // Progress: actual_hours vs expected_hours
-      pct = Math.min(100, Math.round((Number(e.rendered_hours) / expectedHours) * 100))
+      // Progress: actual_hours vs expected_hours (with zero-division guard)
+      if (expectedHours > 0) {
+        pct = Math.min(100, Math.round((Number(e.rendered_hours) / expectedHours) * 100))
+      } else {
+        pct = 0
+      }
     } else {
       pct = 0
+      expectedHours = e.required_hours
     }
   } else {
     // No end date: use simple ratio
