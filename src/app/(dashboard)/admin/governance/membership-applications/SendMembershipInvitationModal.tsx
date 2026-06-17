@@ -32,6 +32,13 @@ export function SendMembershipInvitationModal({ isOpen, onClose }: SendMembershi
       return
     }
 
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(email.toLowerCase().trim())) {
+      setError('Please enter a valid email address')
+      return
+    }
+
     if (!targetName.trim()) {
       setError('Please enter the target person\'s name')
       return

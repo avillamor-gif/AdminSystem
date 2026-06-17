@@ -11,6 +11,7 @@ export async function POST(req: NextRequest) {
       targetName,
     } = await req.json()
 
+    // Validate required fields
     if (!email || !targetName) {
       return NextResponse.json(
         { error: 'Email and target name are required' },
@@ -18,8 +19,18 @@ export async function POST(req: NextRequest) {
       )
     }
 
+    // Clean and validate email
+    const cleanEmail = String(email).toLowerCase().trim()
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(cleanEmail)) {
+      return NextResponse.json(
+        { error: 'Invalid email address format' },
+        { status: 400 }
+      )
+    }
+
     console.log('[send-membership-invitation] Request received:', {
-      email,
+      email: cleanEmail,
       targetName,
       invitationType,
       referrerName,
@@ -35,7 +46,7 @@ export async function POST(req: NextRequest) {
       targetName,
       invitationType,
       referrerName: referrerName || 'An IBON International member',
-      invitationLink: `${process.env.NEXT_PUBLIC_PRODUCTION_URL || 'http://localhost:3000'}/membership/apply?invited=true&email=${encodeURIComponent(email)}`,
+      invitationLink: `${process.env.NEXT_PUBLIC_PRODUCTION_URL || 'http://localhost:3000'}/membership/apply?invited=true&email=${encodeURIComponent(cleanEmail)}`,
     })
 
     console.log('[send-membership-invitation] Email rendered. Subject:', emailContent.subject)
@@ -48,10 +59,10 @@ export async function POST(req: NextRequest) {
         const { Resend } = await import('resend')
         const resend = new Resend(process.env.RESEND_API_KEY)
 
-        console.log('[send-membership-invitation] Sending email via Resend...')
+        console.log('[send-membership-invitation] Sending email via Resend to:', cleanEmail)
         const response = await resend.emails.send({
           from: 'IBON International <noreply@iboninternational.org>',
-          to: email,
+          to: cleanEmail,
           subject: emailContent.subject,
           html: emailContent.html,
         })
