@@ -141,21 +141,6 @@ export async function renderMembershipInvitationEmail(opts: {
   referrerName: string
   invitationLink: string
 }): Promise<{ subject: string; html: string }> {
-  // Build variables for the template
-  const variables = {
-    targetName: opts.targetName,
-    referrerName: opts.referrerName,
-    invitationType: opts.invitationType === 'referred' ? 'referred' : 'directly invited',
-    invitationLink: opts.invitationLink,
-  }
-
-  // Try to use database template first
-  const template = await renderEmailTemplate('membership-invitation', variables)
-  if (template) {
-    return template
-  }
-
-  // Fallback to hardcoded template if database template doesn't exist
   const subject =
     opts.invitationType === 'referred'
       ? `You've been referred to join IBON International`

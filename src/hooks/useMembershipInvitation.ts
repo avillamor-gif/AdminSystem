@@ -29,9 +29,10 @@ export function useSendMembershipInvitation() {
 
   return useMutation({
     mutationFn: async (data: MembershipInvitationInsert) => {
+      // Create invitation record
       const invitation = await membershipInvitationService.create(data)
       
-      // Send email notification via API route
+      // Send email via API
       const response = await fetch('/api/notifications/send-membership-invitation', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -44,11 +45,9 @@ export function useSendMembershipInvitation() {
         }),
       })
 
-      const responseData = await response.json()
-
+      const result = await response.json()
       if (!response.ok) {
-        const errorMsg = responseData.error || 'Failed to send invitation email'
-        throw new Error(errorMsg)
+        throw new Error(result.error || 'Failed to send invitation')
       }
 
       // Mark as sent
@@ -60,9 +59,9 @@ export function useSendMembershipInvitation() {
       toast.success('Invitation sent successfully!')
     },
     onError: (error) => {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to send invitation'
-      console.error('Error sending invitation:', error)
-      toast.error(errorMessage)
+      const msg = error instanceof Error ? error.message : 'Failed to send invitation'
+      console.error('Invitation error:', error)
+      toast.error(msg)
     },
   })
 }
