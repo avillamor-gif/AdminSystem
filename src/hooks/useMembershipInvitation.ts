@@ -44,8 +44,11 @@ export function useSendMembershipInvitation() {
         }),
       })
 
+      const responseData = await response.json()
+
       if (!response.ok) {
-        throw new Error('Failed to send invitation email')
+        const errorMsg = responseData.error || 'Failed to send invitation email'
+        throw new Error(errorMsg)
       }
 
       // Mark as sent
@@ -57,8 +60,9 @@ export function useSendMembershipInvitation() {
       toast.success('Invitation sent successfully!')
     },
     onError: (error) => {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to send invitation'
       console.error('Error sending invitation:', error)
-      toast.error('Failed to send invitation')
+      toast.error(errorMessage)
     },
   })
 }
