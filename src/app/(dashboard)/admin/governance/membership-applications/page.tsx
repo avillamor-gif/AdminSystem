@@ -425,21 +425,21 @@ function ApplicationDetailPanel({
           <div className="flex gap-2">
             <Button
               variant="primary"
-              className="flex-1"
+              className="flex-1 flex items-center justify-center gap-2"
               onClick={() => onApprove(app.id)}
-              icon={<Check className="w-4 h-4" />}
             >
+              <Check className="w-4 h-4" />
               Approve
             </Button>
             <Button
               variant="secondary"
-              className="flex-1"
+              className="flex-1 flex items-center justify-center gap-2"
               onClick={() => {
                 const reason = prompt('Enter rejection reason:')
                 if (reason) onReject(app.id, reason)
               }}
-              icon={<X className="w-4 h-4" />}
             >
+              <X className="w-4 h-4" />
               Reject
             </Button>
           </div>
