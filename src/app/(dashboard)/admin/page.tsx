@@ -226,11 +226,11 @@ export default function AdminPage() {
     {
       id: 'governance',
       title: 'Governance',
-      description: 'Manage Board of Trustees, membership registry, and General Assemblies',
+      description: 'Manage Board of Trustees, membership applications, registry, and General Assemblies',
       icon: Users2,
       color: 'bg-amber-700',
       href: '/admin/governance',
-      items: ['Board of Trustees', 'Membership', 'General Assemblies'],
+      items: ['Board of Trustees', 'Membership Applications', 'Membership', 'General Assemblies'],
       requiresPermission: 'admin.manage',
     },
     {
@@ -530,6 +530,7 @@ export default function AdminPage() {
 
                           // Governance routes
                           'Board of Trustees': '/admin/governance/board',
+                          'Membership Applications': '/admin/governance/membership-applications',
                           'Membership': '/admin/governance/members',
                           'General Assemblies': '/admin/governance/general-assemblies',
 
