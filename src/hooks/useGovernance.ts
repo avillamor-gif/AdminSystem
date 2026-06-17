@@ -157,9 +157,15 @@ export function useUpdateMember() {
       toast.success('Member updated')
     },
     onError: (err: any) => {
-      const msg = err?.message || err?.error_description || 'Failed to update member'
+      let msg = 'Failed to update member'
+      if (err?.message) msg = err.message
+      else if (err?.error_description) msg = err.error_description
+      else if (err?.details) msg = err.details
+      else if (err?.hint) msg = err.hint
+      else if (typeof err === 'string') msg = err
       toast.error(msg)
-      console.error('Update member error:', err)
+      console.error('Update member error - Full object:', JSON.stringify(err, null, 2))
+      console.error('Update member error - Keys:', Object.keys(err || {}))
     },
   })
 }
