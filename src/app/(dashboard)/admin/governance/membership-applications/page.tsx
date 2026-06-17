@@ -32,7 +32,7 @@ export default function MembershipApplicationsPage() {
   // Queries
   const { data: applications = [], isLoading } = useMemberApplications({ status: statusFilter })
   const { data: selectedApp } = useMemberApplicationById(selectedAppId || '')
-  const currentEmployee = useCurrentEmployee()
+  const { data: currentEmployee } = useCurrentEmployee()
 
   // Mutations
   const approveMutation = useApproveMemberApplication()
