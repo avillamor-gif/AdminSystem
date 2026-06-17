@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import {
   Plus, Edit2, Trash2, Search, Users, X, Mail, Phone, MapPin,
   BellOff, BellRing, ChevronRight, Download,
@@ -51,7 +51,7 @@ const inp = 'w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ou
 
 const emptyForm = {
   first_name: '', last_name: '', email: '', phone: '',
-  address: '', city: '', country: 'Philippines',
+  address: '', city: '', country: 'Philippines', organization: '',
   member_number: '', membership_type: 'regular' as Member['membership_type'],
   status: 'active' as Member['status'], date_admitted: '', notes: '',
   avatar_url: '', opt_out_email: false,
@@ -61,18 +61,25 @@ function MemberFormModal({ open, onClose, member, createMutation, updateMutation
   open: boolean; onClose: () => void; member: Member | null
   createMutation: any; updateMutation: any
 }) {
-  const [form, setForm] = useState(() =>
-    member ? {
-      first_name: member.first_name, last_name: member.last_name,
-      email: member.email || '', phone: member.phone || '',
-      address: member.address || '', city: member.city || '',
-      country: member.country || 'Philippines',
-      member_number: member.member_number || '',
-      membership_type: member.membership_type, status: member.status,
-      date_admitted: member.date_admitted || '', notes: member.notes || '',
-      avatar_url: member.avatar_url || '', opt_out_email: member.opt_out_email,
-    } : emptyForm
-  )
+  const [form, setForm] = useState(emptyForm)
+
+  // Sync form when member prop changes
+  useEffect(() => {
+    if (member) {
+      setForm({
+        first_name: member.first_name, last_name: member.last_name,
+        email: member.email || '', phone: member.phone || '',
+        address: member.address || '', city: member.city || '',
+        country: member.country || 'Philippines', organization: member.organization || '',
+        member_number: member.member_number || '',
+        membership_type: member.membership_type, status: member.status,
+        date_admitted: member.date_admitted || '', notes: member.notes || '',
+        avatar_url: member.avatar_url || '', opt_out_email: member.opt_out_email,
+      })
+    } else {
+      setForm(emptyForm)
+    }
+  }, [member])
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -80,6 +87,7 @@ function MemberFormModal({ open, onClose, member, createMutation, updateMutation
       ...form,
       email: form.email || null, phone: form.phone || null,
       address: form.address || null, city: form.city || null,
+      organization: form.organization || null,
       member_number: form.member_number || null,
       date_admitted: form.date_admitted || null,
       notes: form.notes || null, avatar_url: form.avatar_url || null,
@@ -145,6 +153,10 @@ function MemberFormModal({ open, onClose, member, createMutation, updateMutation
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Country</label>
               <input value={form.country} onChange={e => setForm(p => ({ ...p, country: e.target.value }))} className={inp} />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Organization</label>
+              <input value={form.organization} onChange={e => setForm(p => ({ ...p, organization: e.target.value }))} placeholder="e.g. IBON International" className={inp} />
             </div>
             <div className="col-span-2">
               <label className="block text-sm font-medium text-gray-700 mb-1">Notes</label>
