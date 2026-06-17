@@ -41,7 +41,7 @@ CREATE POLICY membership_invitations_insert
 CREATE POLICY membership_invitations_update
   ON membership_invitations FOR UPDATE
   USING (
-    EXISTS (SELECT 1 FROM user_roles WHERE user_id = auth.uid() AND role_name = 'admin')
+    EXISTS (SELECT 1 FROM user_roles WHERE user_id = auth.uid())
     OR referrer_id = (SELECT employee_id FROM user_roles WHERE user_id = auth.uid())
   );
 
