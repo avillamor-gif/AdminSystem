@@ -61,7 +61,7 @@ export function SendMembershipInvitationModal({ isOpen, onClose }: SendMembershi
   if (!isOpen) return null
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose}>
+    <Modal open={isOpen} onClose={onClose}>
       <ModalHeader>Send Membership Invitation</ModalHeader>
       <ModalBody>
         <form onSubmit={handleSubmit} className="space-y-4">
