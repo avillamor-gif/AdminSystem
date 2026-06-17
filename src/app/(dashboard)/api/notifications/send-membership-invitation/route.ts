@@ -5,6 +5,8 @@ export async function POST(req: NextRequest) {
   try {
     const { invitationId, email, invitationType, referrerName, targetName } = await req.json()
 
+    console.log('[send-membership-invitation] Request received:', { email, targetName, invitationType })
+
     // Validate inputs
     if (!email || !targetName || !invitationId) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
@@ -12,7 +14,7 @@ export async function POST(req: NextRequest) {
 
     // Check API key
     if (!process.env.RESEND_API_KEY) {
-      console.error('RESEND_API_KEY not configured')
+      console.error('[send-membership-invitation] RESEND_API_KEY not configured')
       return NextResponse.json({ error: 'Email service not configured' }, { status: 500 })
     }
 
@@ -94,25 +96,31 @@ export async function POST(req: NextRequest) {
 </body>
 </html>`
 
+    console.log('[send-membership-invitation] Sending email via Resend to:', cleanEmail)
+    
     const response = await resend.emails.send({
-      from: 'IBON International <noreply@iboninternational.org>',
+      from: 'onboarding@resend.dev', // Use Resend's test domain during setup; change to verified domain later
       to: cleanEmail,
       subject,
       html: emailHtml,
     })
 
+    console.log('[send-membership-invitation] Resend response:', response)
+
     if (response.error) {
-      console.error('Resend error:', response.error)
-      return NextResponse.json({ error: response.error.message }, { status: 500 })
+      console.error('[send-membership-invitation] Resend error:', response.error)
+      return NextResponse.json({ error: `Email service error: ${response.error.message}` }, { status: 500 })
     }
 
     // Update invitation status in database
     const supabase = await createClient()
     await supabase.from('membership_invitations').update({ status: 'sent', sent_at: new Date().toISOString() }).eq('id', invitationId)
 
+    console.log('[send-membership-invitation] Email sent successfully. ID:', response.data?.id)
     return NextResponse.json({ success: true })
   } catch (error) {
-    console.error('Error:', error)
-    return NextResponse.json({ error: 'Failed to send invitation' }, { status: 500 })
+    console.error('[send-membership-invitation] Error:', error)
+    const errorMsg = error instanceof Error ? error.message : 'Failed to send invitation'
+    return NextResponse.json({ error: `Server error: ${errorMsg}` }, { status: 500 })
   }
 }
