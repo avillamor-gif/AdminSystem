@@ -153,10 +153,14 @@ export function useUpdateMember() {
     mutationFn: ({ id, data }: { id: string; data: Partial<Member> }) =>
       memberService.update(id, data),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['members'] })
+      qc.invalidateQueries({ queryKey: governanceKeys.members() })
       toast.success('Member updated')
     },
-    onError: () => toast.error('Failed to update member'),
+    onError: (err: any) => {
+      const msg = err?.message || err?.error_description || 'Failed to update member'
+      toast.error(msg)
+      console.error('Update member error:', err)
+    },
   })
 }
 
