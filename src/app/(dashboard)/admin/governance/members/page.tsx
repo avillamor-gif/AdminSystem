@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import {
   Plus, Edit2, Trash2, Search, Users, X, Mail, Phone, MapPin,
-  BellOff, BellRing, ChevronRight, Download,
+  BellOff, BellRing, ChevronRight, Download, ArrowUpDown, ArrowUp,
 } from 'lucide-react'
 import { Card, Button, Modal, ModalHeader, ModalBody, ModalFooter } from '@/components/ui'
 import {
@@ -454,6 +454,8 @@ export default function MembersPage() {
   const [modal, setModal]               = useState(false)
   const [selected, setSelected]         = useState<Member | null>(null)
   const [detailMember, setDetailMember] = useState<Member | null>(null)
+  const [sortBy, setSortBy]             = useState<'name' | 'number' | 'type' | 'date' | 'status' | 'country'>('name')
+  const [sortDir, setSortDir]           = useState<'asc' | 'desc'>('asc')
 
   const { data: members = [], isLoading } = useMembers(
     statusFilter || typeFilter
@@ -471,9 +473,61 @@ export default function MembersPage() {
       m.first_name.toLowerCase().includes(q) ||
       m.last_name.toLowerCase().includes(q) ||
       m.email?.toLowerCase().includes(q) ||
-      m.member_number?.toLowerCase().includes(q)
+      m.member_number?.toLowerCase().includes(q) ||
+      m.country?.toLowerCase().includes(q)
     )
   })
+
+  // Sorting logic
+  const sortedMembers = [...filtered].sort((a, b) => {
+    let aVal: any, bVal: any
+    switch (sortBy) {
+      case 'name':
+        aVal = `${a.first_name} ${a.last_name}`.toLowerCase()
+        bVal = `${b.first_name} ${b.last_name}`.toLowerCase()
+        break
+      case 'number':
+        aVal = a.member_number || ''
+        bVal = b.member_number || ''
+        break
+      case 'type':
+        aVal = a.membership_type
+        bVal = b.membership_type
+        break
+      case 'date':
+        aVal = a.date_admitted || ''
+        bVal = b.date_admitted || ''
+        break
+      case 'status':
+        aVal = a.status
+        bVal = b.status
+        break
+      case 'country':
+        aVal = (a.country || '').toLowerCase()
+        bVal = (b.country || '').toLowerCase()
+        break
+      default:
+        return 0
+    }
+    const comparison = aVal < bVal ? -1 : aVal > bVal ? 1 : 0
+    return sortDir === 'asc' ? comparison : -comparison
+  })
+
+  const toggleSort = (col: typeof sortBy) => {
+    if (sortBy === col) {
+      setSortDir(sortDir === 'asc' ? 'desc' : 'asc')
+    } else {
+      setSortBy(col)
+      setSortDir('asc')
+    }
+  }
+
+  const SortIcon = ({ col }: { col: typeof sortBy }) => {
+    if (sortBy !== col) return <ArrowUpDown className="w-3 h-3 text-gray-300" />
+    return sortDir === 'asc' ? 
+      <ArrowUp className="w-3 h-3 text-amber-500" /> : 
+      <ArrowUp className="w-3 h-3 text-amber-500 transform rotate-180" />
+  }
 
   const stats = {
     total:    members.length,
@@ -577,16 +631,47 @@ export default function MembersPage() {
             <table className="w-full text-sm">
               <thead className="bg-gray-50 border-b border-gray-100">
                 <tr>
-                  <th className="text-left px-5 py-3 text-xs font-medium text-gray-500 uppercase">Member</th>
-                  <th className="text-left px-5 py-3 text-xs font-medium text-gray-500 uppercase">Number</th>
-                  <th className="text-left px-5 py-3 text-xs font-medium text-gray-500 uppercase">Type</th>
-                  <th className="text-left px-5 py-3 text-xs font-medium text-gray-500 uppercase">Date Admitted</th>
-                  <th className="text-left px-5 py-3 text-xs font-medium text-gray-500 uppercase">Status</th>
+                  <th className="text-left px-5 py-3 text-xs font-medium text-gray-500 uppercase cursor-pointer hover:text-gray-700 select-none" onClick={() => toggleSort('name')}>
+                    <div className="flex items-center gap-2">
+                      Member
+                      <SortIcon col="name" />
+                    </div>
+                  </th>
+                  <th className="text-left px-5 py-3 text-xs font-medium text-gray-500 uppercase cursor-pointer hover:text-gray-700 select-none" onClick={() => toggleSort('number')}>
+                    <div className="flex items-center gap-2">
+                      Number
+                      <SortIcon col="number" />
+                    </div>
+                  </th>
+                  <th className="text-left px-5 py-3 text-xs font-medium text-gray-500 uppercase cursor-pointer hover:text-gray-700 select-none" onClick={() => toggleSort('type')}>
+                    <div className="flex items-center gap-2">
+                      Type
+                      <SortIcon col="type" />
+                    </div>
+                  </th>
+                  <th className="text-left px-5 py-3 text-xs font-medium text-gray-500 uppercase cursor-pointer hover:text-gray-700 select-none" onClick={() => toggleSort('country')}>
+                    <div className="flex items-center gap-2">
+                      Country
+                      <SortIcon col="country" />
+                    </div>
+                  </th>
+                  <th className="text-left px-5 py-3 text-xs font-medium text-gray-500 uppercase cursor-pointer hover:text-gray-700 select-none" onClick={() => toggleSort('date')}>
+                    <div className="flex items-center gap-2">
+                      Date Admitted
+                      <SortIcon col="date" />
+                    </div>
+                  </th>
+                  <th className="text-left px-5 py-3 text-xs font-medium text-gray-500 uppercase cursor-pointer hover:text-gray-700 select-none" onClick={() => toggleSort('status')}>
+                    <div className="flex items-center gap-2">
+                      Status
+                      <SortIcon col="status" />
+                    </div>
+                  </th>
                   <th className="text-right px-5 py-3 text-xs font-medium text-gray-500 uppercase">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
-                {filtered.map(m => (
+                {sortedMembers.map(m => (
                   <tr key={m.id} className="hover:bg-gray-50 cursor-pointer" onClick={() => setDetailMember(m)}>
                     <td className="px-5 py-3.5">
                       <p className="font-medium text-gray-900">{m.first_name} {m.last_name}</p>
@@ -605,6 +690,7 @@ export default function MembersPage() {
                         {m.membership_type.charAt(0).toUpperCase() + m.membership_type.slice(1)}
                       </span>
                     </td>
+                    <td className="px-5 py-3.5 text-gray-600 text-xs">{m.country || '—'}</td>
                     <td className="px-5 py-3.5 text-gray-600">{m.date_admitted ? formatDate(m.date_admitted) : '—'}</td>
                     <td className="px-5 py-3.5">
                       <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${STATUS_COLORS[m.status]}`}>
