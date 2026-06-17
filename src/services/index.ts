@@ -61,6 +61,8 @@ export type {
   MemberOrgAffiliation,
   MemberEngagementHistory,
 } from './memberApplication.service'
+export { membershipInvitationService } from './membershipInvitation.service'
+export type { MembershipInvitation, MembershipInvitationInsert } from './membershipInvitation.service'
 export { securityPolicyService } from './securityPolicy.service'
 export { sessionService } from './session.service'
 export { twoFactorService } from './twoFactor.service'

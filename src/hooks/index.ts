@@ -66,3 +66,4 @@ export * from './useGovernanceNodes'
 
 export * from './useMonitoring'
 export * from './useMemberApplication'
+export * from './useMembershipInvitation'

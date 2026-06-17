@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Search, ChevronRight, Mail, Phone, MapPin, Edit2, Check, X, MoreVertical } from 'lucide-react'
+import { Search, ChevronRight, Mail, Phone, MapPin, Edit2, Check, X, MoreVertical, Send } from 'lucide-react'
 import { Card, Button, Badge } from '@/components/ui'
 import {
   useMemberApplications,
@@ -13,6 +13,7 @@ import {
 import { useCurrentEmployee } from '@/hooks/useEmployees'
 import type { MemberApplicationWithRelations } from '@/services/memberApplication.service'
 import { formatDate } from '@/lib/utils'
+import { SendMembershipInvitationModal } from './SendMembershipInvitationModal'
 
 const STATUS_COLORS: Record<string, string> = {
   draft: 'bg-gray-100 text-gray-700',
@@ -28,6 +29,7 @@ export default function MembershipApplicationsPage() {
   const [statusFilter, setStatusFilter] = useState<string>('submitted')
   const [selectedAppId, setSelectedAppId] = useState<string | null>(null)
   const [detailPanel, setDetailPanel] = useState(false)
+  const [invitationModalOpen, setInvitationModalOpen] = useState(false)
 
   // Queries
   const { data: applications = [], isLoading } = useMemberApplications({ status: statusFilter })
@@ -99,9 +101,18 @@ export default function MembershipApplicationsPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">Membership Applications</h1>
-        <p className="text-gray-600 mt-1">Review and process new membership applications</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Membership Applications</h1>
+          <p className="text-gray-600 mt-1">Review and process new membership applications</p>
+        </div>
+        <Button
+          onClick={() => setInvitationModalOpen(true)}
+          className="bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-2"
+        >
+          <Send className="w-4 h-4" />
+          Send Invitation
+        </Button>
       </div>
 
       {/* Stats */}
@@ -194,6 +205,12 @@ export default function MembershipApplicationsPage() {
 
       {/* Detail Panel */}
       {detailPanel && selectedApp && <ApplicationDetailPanel app={selectedApp} onClose={() => setDetailPanel(false)} onApprove={handleApprove} onReject={handleReject} onRequestInfo={handleRequestInfo} />}
+
+      {/* Send Invitation Modal */}
+      <SendMembershipInvitationModal
+        isOpen={invitationModalOpen}
+        onClose={() => setInvitationModalOpen(false)}
+      />
     </div>
   )
 }

@@ -134,3 +134,97 @@ export async function renderWelcomeEmail(opts: {
 }): Promise<{ subject: string; html: string } | null> {
   return renderEmailTemplate('welcome', opts)
 }
+
+export async function renderMembershipInvitationEmail(opts: {
+  targetName: string
+  invitationType: 'referred' | 'direct'
+  referrerName: string
+  invitationLink: string
+}): Promise<{ subject: string; html: string }> {
+  // Build variables for the template
+  const variables = {
+    targetName: opts.targetName,
+    referrerName: opts.referrerName,
+    invitationType: opts.invitationType === 'referred' ? 'referred' : 'directly invited',
+    invitationLink: opts.invitationLink,
+  }
+
+  // Try to use database template first
+  const template = await renderEmailTemplate('membership-invitation', variables)
+  if (template) {
+    return template
+  }
+
+  // Fallback to hardcoded template if database template doesn't exist
+  const subject =
+    opts.invitationType === 'referred'
+      ? `You've been referred to join IBON International`
+      : `You're invited to join IBON International`
+
+  const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>IBON Membership Invitation</title>
+</head>
+<body style="margin:0;padding:0;background:#f4f4f5;font-family:Inter,Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f5;padding:32px 0;">
+    <tr>
+      <td align="center">
+        <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.08);">
+          <tr>
+            <td style="background:#1e40af;padding:24px 32px;">
+              <span style="color:#ffffff;font-size:20px;font-weight:700;letter-spacing:-0.3px;">IBON International</span>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:32px;">
+              <p style="margin:0 0 16px;font-size:16px;font-weight:600;color:#111827;">Dear ${opts.targetName},</p>
+              
+              ${
+                opts.invitationType === 'referred'
+                  ? `<p style="margin:0 0 16px;font-size:14px;color:#4b5563;">
+                      <strong>${opts.referrerName}</strong> believes you would be a great addition to IBON International and has referred you to become a member.
+                    </p>
+                    <p style="margin:0 0 16px;font-size:14px;color:#4b5563;">
+                      We're a network of people and organizations working on poverty, inequality, and social movements in the Global South and beyond.
+                    </p>`
+                  : `<p style="margin:0 0 16px;font-size:14px;color:#4b5563;">
+                      You've been invited to apply for membership at IBON International. We're a network of people and organizations working on poverty, inequality, and social movements in the Global South and beyond.
+                    </p>`
+              }
+
+              <p style="margin:0 0 24px;font-size:14px;color:#4b5563;">
+                Click the button below to start your membership application:
+              </p>
+
+              <a href="${opts.invitationLink}" style="display:inline-block;padding:12px 24px;background:#1e40af;color:#ffffff;text-decoration:none;border-radius:8px;font-weight:600;font-size:14px;">Start Application</a>
+
+              <p style="margin:24px 0 16px;font-size:14px;color:#4b5563;">
+                If you have any questions, feel free to contact us.
+              </p>
+
+              <p style="margin:0;font-size:14px;color:#4b5563;">
+                Best regards,<br/>
+                The IBON International Team
+              </p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:16px 32px 24px;border-top:1px solid #e5e7eb;">
+              <p style="margin:0;font-size:12px;color:#9ca3af;">
+                This is an automated message from IBON International. Please do not reply to this email.
+              </p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`
+
+  return { subject, html }
+}
+
