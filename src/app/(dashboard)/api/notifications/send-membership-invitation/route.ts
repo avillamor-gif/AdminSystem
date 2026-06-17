@@ -31,7 +31,8 @@ export async function POST(req: NextRequest) {
 
     // Send via Resend
     if (process.env.RESEND_API_KEY) {
-      const resend = (await import('resend')).default
+      const { Resend } = await import('resend')
+      const resend = new Resend(process.env.RESEND_API_KEY)
 
       const response = await resend.emails.send({
         from: 'IBON International <noreply@iboninternational.org>',
@@ -40,8 +41,8 @@ export async function POST(req: NextRequest) {
         html: emailContent.html,
       })
 
-      if (!response.id) {
-        throw new Error('Failed to send email via Resend')
+      if (response.error) {
+        throw new Error(`Failed to send email via Resend: ${response.error.message}`)
       }
     }
 
