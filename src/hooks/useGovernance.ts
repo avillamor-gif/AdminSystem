@@ -140,10 +140,20 @@ export function useCreateMember() {
     mutationFn: (data: Parameters<typeof memberService.create>[0]) =>
       memberService.create(data),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['members'] })
+      qc.invalidateQueries({ queryKey: governanceKeys.members() })
       toast.success('Member added')
     },
-    onError: () => toast.error('Failed to add member'),
+    onError: (err: any) => {
+      let msg = 'Failed to add member'
+      if (err?.message) msg = err.message
+      else if (err?.error_description) msg = err.error_description
+      else if (err?.details) msg = err.details
+      else if (err?.hint) msg = err.hint
+      else if (typeof err === 'string') msg = err
+      toast.error(msg)
+      console.error('Create member error - Full object:', JSON.stringify(err, null, 2))
+      console.error('Create member error - Keys:', Object.keys(err || {}))
+    },
   })
 }
 
@@ -175,10 +185,18 @@ export function useDeleteMember() {
   return useMutation({
     mutationFn: (id: string) => memberService.delete(id),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['members'] })
+      qc.invalidateQueries({ queryKey: governanceKeys.members() })
       toast.success('Member removed')
     },
-    onError: () => toast.error('Failed to remove member'),
+    onError: (err: any) => {
+      let msg = 'Failed to remove member'
+      if (err?.message) msg = err.message
+      else if (err?.error_description) msg = err.error_description
+      else if (err?.details) msg = err.details
+      else if (typeof err === 'string') msg = err
+      toast.error(msg)
+      console.error('Delete member error:', err)
+    },
   })
 }
 
@@ -313,7 +331,13 @@ export function useUpdateMemberDue() {
       qc.invalidateQueries({ queryKey: governanceKeys.dues(memberId) })
       toast.success('Dues record updated')
     },
-    onError: () => toast.error('Failed to update dues record'),
+    onError: (err: any) => {
+      let msg = 'Failed to update member due'
+      if (err?.message) msg = err.message
+      else if (err?.error_description) msg = err.error_description
+      else if (typeof err === 'string') msg = err
+      toast.error(msg)
+    },
   })
 }
 
@@ -326,7 +350,13 @@ export function useDeleteMemberDue() {
       qc.invalidateQueries({ queryKey: governanceKeys.dues(memberId) })
       toast.success('Dues record removed')
     },
-    onError: () => toast.error('Failed to remove dues record'),
+    onError: (err: any) => {
+      let msg = 'Failed to remove member due'
+      if (err?.message) msg = err.message
+      else if (err?.error_description) msg = err.error_description
+      else if (typeof err === 'string') msg = err
+      toast.error(msg)
+    },
   })
 }
 
