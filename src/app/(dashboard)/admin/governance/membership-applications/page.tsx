@@ -57,7 +57,7 @@ export default function MembershipApplicationsPage() {
       await approveMutation.mutateAsync({
         id: appId,
         createdMemberId: tempMemberId,
-        reviewedBy: currentEmployee.id,
+        reviewedBy: currentEmployee.employee_id,
       })
       setSelectedAppId(null)
       setDetailPanel(false)
@@ -72,7 +72,7 @@ export default function MembershipApplicationsPage() {
       await rejectMutation.mutateAsync({
         id: appId,
         reason,
-        reviewedBy: currentEmployee.id,
+        reviewedBy: currentEmployee.employee_id,
       })
       setSelectedAppId(null)
       setDetailPanel(false)
@@ -87,7 +87,7 @@ export default function MembershipApplicationsPage() {
       await requestInfoMutation.mutateAsync({
         id: appId,
         reason,
-        reviewedBy: currentEmployee.id,
+        reviewedBy: currentEmployee.employee_id,
       })
       setSelectedAppId(null)
       setDetailPanel(false)
