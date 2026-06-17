@@ -346,8 +346,8 @@ function CampaignsTab({ member }: { member: Member }) {
 
 // ── Member Detail Panel ────────────────────────────────────────────────────────
 
-function MemberDetailPanel({ member, onClose, onEdit, updateMutation, canManage }: {
-  member: Member; onClose: () => void; onEdit: () => void; updateMutation: any; canManage: boolean
+function MemberDetailPanel({ member, onClose, onEdit, updateMutation, canManage, canDueManage, canCampaigns }: {
+  member: Member; onClose: () => void; onEdit: () => void; updateMutation: any; canManage: boolean; canDueManage?: boolean; canCampaigns?: boolean
 }) {
   const [tab, setTab] = useState<'profile' | 'dues' | 'campaigns'>('profile')
 
@@ -741,6 +741,8 @@ export default function MembersPage() {
             onEdit={() => { setSelected(syncedDetail); setModal(true); setDetailMember(null) }}
             updateMutation={updateMutation}
             canManage={canManage}
+            canDueManage={canDueManage}
+            canCampaigns={canCampaigns}
           />
         </>
       )}
