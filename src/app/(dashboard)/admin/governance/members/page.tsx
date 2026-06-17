@@ -11,6 +11,7 @@ import {
   useMemberDues, useCreateMemberDue, useUpdateMemberDue, useDeleteMemberDue,
   useMemberCampaignHistory,
 } from '@/hooks/useGovernance'
+import { useHasPermission } from '@/hooks/usePermissions'
 import type { Member, MemberDue } from '@/services/governance.service'
 import { formatDate } from '@/lib/utils'
 
@@ -192,7 +193,7 @@ const emptyDue = {
   payment_method: '', reference_number: '', notes: '',
 }
 
-function DuesTab({ member }: { member: Member }) {
+function DuesTab({ member, canManage }: { member: Member; canManage?: boolean }) {
   const [showForm, setShowForm] = useState(false)
   const [editing, setEditing]   = useState<MemberDue | null>(null)
   const [form, setForm]         = useState(emptyDue)
@@ -229,7 +230,7 @@ function DuesTab({ member }: { member: Member }) {
     <div className="space-y-3">
       <div className="flex items-center justify-between">
         <p className="text-sm font-medium text-gray-700">Dues Records</p>
-        <Button variant="secondary" onClick={openAdd}><Plus className="w-3.5 h-3.5 mr-1" /> Add</Button>
+        <Button variant="secondary" onClick={openAdd} disabled={!canManage}><Plus className="w-3.5 h-3.5 mr-1" /> Add</Button>
       </div>
       {showForm && (
         <form onSubmit={handleSubmit} className="bg-gray-50 border border-gray-200 rounded-xl p-4 space-y-3">
@@ -345,8 +346,8 @@ function CampaignsTab({ member }: { member: Member }) {
 
 // ── Member Detail Panel ────────────────────────────────────────────────────────
 
-function MemberDetailPanel({ member, onClose, onEdit, updateMutation }: {
-  member: Member; onClose: () => void; onEdit: () => void; updateMutation: any
+function MemberDetailPanel({ member, onClose, onEdit, updateMutation, canManage }: {
+  member: Member; onClose: () => void; onEdit: () => void; updateMutation: any; canManage: boolean
 }) {
   const [tab, setTab] = useState<'profile' | 'dues' | 'campaigns'>('profile')
 
@@ -433,12 +434,12 @@ function MemberDetailPanel({ member, onClose, onEdit, updateMutation }: {
                 {member.opt_out_email ? 'Re-subscribe' : 'Unsubscribe'}
               </button>
             </div>
-            <Button variant="secondary" onClick={onEdit} className="w-full">
+            <Button variant="secondary" onClick={onEdit} disabled={!canManage} className="w-full">
               <Edit2 className="w-3.5 h-3.5 mr-2" /> Edit Profile
             </Button>
           </div>
         )}
-        {tab === 'dues' && <DuesTab member={member} />}
+        {tab === 'dues' && <DuesTab member={member} canManage={canDueManage} />}
         {tab === 'campaigns' && <CampaignsTab member={member} />}
       </div>
     </div>
@@ -448,6 +449,11 @@ function MemberDetailPanel({ member, onClose, onEdit, updateMutation }: {
 // ── Main Page ──────────────────────────────────────────────────────────────────
 
 export default function MembersPage() {
+  const canManage = useHasPermission('membership.manage')
+  const canDueManage = useHasPermission('membership.dues.manage')
+  const canCampaigns = useHasPermission('membership.campaigns.manage')
+  const canExport = useHasPermission('membership.export')
+  
   const [statusFilter, setStatusFilter] = useState('')
   const [typeFilter, setTypeFilter]     = useState('')
   const [search, setSearch]             = useState('')
@@ -565,10 +571,10 @@ export default function MembersPage() {
           <p className="text-gray-600 mt-1">Registry of organizational members eligible to vote at General Assemblies</p>
         </div>
         <div className="flex gap-2">
-          <Button variant="secondary" onClick={exportCsv} disabled={filtered.length === 0}>
+          <Button variant="secondary" onClick={exportCsv} disabled={filtered.length === 0 || !canExport}>
             <Download className="w-4 h-4 mr-2" /> Export CSV
           </Button>
-          <Button onClick={() => { setSelected(null); setModal(true) }}>
+          <Button onClick={() => { setSelected(null); setModal(true) }} disabled={!canManage}>
             <Plus className="w-4 h-4 mr-2" /> Add Member
           </Button>
         </div>
@@ -734,6 +740,7 @@ export default function MembersPage() {
             onClose={() => setDetailMember(null)}
             onEdit={() => { setSelected(syncedDetail); setModal(true); setDetailMember(null) }}
             updateMutation={updateMutation}
+            canManage={canManage}
           />
         </>
       )}
