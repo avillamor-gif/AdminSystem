@@ -4,7 +4,8 @@ import { useState } from 'react'
 import { Modal, ModalHeader, ModalBody, ModalFooter, Button, Input } from '@/components/ui'
 import { useSendMembershipInvitation } from '@/hooks/useMembershipInvitation'
 import { useCurrentEmployee } from '@/hooks/useEmployees'
-import { Mail, CheckCircle } from 'lucide-react'
+import { Mail, CheckCircle, AlertCircle } from 'lucide-react'
+import toast from 'react-hot-toast'
 
 interface SendMembershipInvitationModalProps {
   isOpen: boolean
@@ -15,34 +16,38 @@ export function SendMembershipInvitationModal({ isOpen, onClose }: SendMembershi
   const [email, setEmail] = useState('')
   const [targetName, setTargetName] = useState('')
   const [invitationType, setInvitationType] = useState<'direct' | 'referred'>('direct')
+  const [referrerName, setReferrerName] = useState('')
   const [showSuccess, setShowSuccess] = useState(false)
+  const [error, setError] = useState('')
 
   const sendMutation = useSendMembershipInvitation()
   const { data: currentEmployee } = useCurrentEmployee()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    setError('')
 
     if (!email.trim()) {
-      alert('Please enter an email address')
+      setError('Please enter an email address')
       return
     }
 
     if (!targetName.trim()) {
-      alert('Please enter the target person\'s name')
+      setError('Please enter the target person\'s name')
       return
     }
 
-    const referrerName = currentEmployee
-      ? `${currentEmployee.first_name} ${currentEmployee.last_name}`
-      : 'An IBON International member'
+    if (invitationType === 'referred' && !referrerName.trim()) {
+      setError('Please enter the referrer\'s name')
+      return
+    }
 
     try {
       await sendMutation.mutateAsync({
         email: email.toLowerCase().trim(),
         target_name: targetName.trim(),
         invitation_type: invitationType,
-        referrer_name: referrerName,
+        referrer_name: invitationType === 'referred' ? referrerName.trim() : undefined,
       })
 
       setShowSuccess(true)
@@ -50,10 +55,13 @@ export function SendMembershipInvitationModal({ isOpen, onClose }: SendMembershi
         setShowSuccess(false)
         setEmail('')
         setTargetName('')
+        setReferrerName('')
         setInvitationType('direct')
         onClose()
       }, 2000)
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to send invitation'
+      setError(errorMessage)
       console.error('Error:', error)
     }
   }
@@ -77,6 +85,13 @@ export function SendMembershipInvitationModal({ isOpen, onClose }: SendMembershi
             </div>
           ) : (
             <>
+              {error && (
+                <div className="p-3 bg-red-50 border border-red-200 rounded-lg flex items-start gap-2">
+                  <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+                  <p className="text-sm text-red-700">{error}</p>
+                </div>
+              )}
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Target Person's Name *
@@ -116,8 +131,11 @@ export function SendMembershipInvitationModal({ isOpen, onClose }: SendMembershi
                     name="invitationType"
                     value="direct"
                     checked={invitationType === 'direct'}
-                    onChange={() => setInvitationType('direct')}
-                    className="w-4 h-4 text-blue-600"
+                    onChange={() => {
+                      setInvitationType('direct')
+                      setReferrerName('')
+                    }}
+                    className="w-4 h-4 text-orange-500"
                   />
                   <div className="ml-3">
                     <p className="font-medium text-gray-900">Direct Invitation</p>
@@ -126,27 +144,37 @@ export function SendMembershipInvitationModal({ isOpen, onClose }: SendMembershi
                 </label>
 
                 {/* Referral */}
-                <label className="flex items-center p-3 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 transition">
-                  <input
-                    type="radio"
-                    name="invitationType"
-                    value="referred"
-                    checked={invitationType === 'referred'}
-                    onChange={() => setInvitationType('referred')}
-                    className="w-4 h-4 text-blue-600"
-                  />
-                  <div className="ml-3">
-                    <p className="font-medium text-gray-900">Refer a Member</p>
-                    <p className="text-sm text-gray-500">
-                      They'll know they were referred by{' '}
-                      <span className="font-medium">
-                        {currentEmployee
-                          ? `${currentEmployee.first_name} ${currentEmployee.last_name}`
-                          : 'you'}
-                      </span>
-                    </p>
-                  </div>
-                </label>
+                <div className="space-y-2">
+                  <label className="flex items-center p-3 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 transition">
+                    <input
+                      type="radio"
+                      name="invitationType"
+                      value="referred"
+                      checked={invitationType === 'referred'}
+                      onChange={() => setInvitationType('referred')}
+                      className="w-4 h-4 text-orange-500"
+                    />
+                    <div className="ml-3">
+                      <p className="font-medium text-gray-900">Refer a Member</p>
+                      <p className="text-sm text-gray-500">They'll know who referred them to IBON</p>
+                    </div>
+                  </label>
+
+                  {invitationType === 'referred' && (
+                    <div className="ml-7 p-3 bg-orange-50 border border-orange-200 rounded-lg">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Referrer's Name *
+                      </label>
+                      <Input
+                        type="text"
+                        value={referrerName}
+                        onChange={(e) => setReferrerName(e.target.value)}
+                        placeholder="e.g., Maria Santos"
+                        className="w-full"
+                      />
+                    </div>
+                  )}
+                </div>
               </div>
             </>
           )}
@@ -159,8 +187,8 @@ export function SendMembershipInvitationModal({ isOpen, onClose }: SendMembershi
           </Button>
           <Button
             onClick={handleSubmit}
-            disabled={sendMutation.isPending || !email.trim() || !targetName.trim()}
-            className="bg-blue-600 hover:bg-blue-700 text-white"
+            disabled={sendMutation.isPending || !email.trim() || !targetName.trim() || (invitationType === 'referred' && !referrerName.trim())}
+            className="bg-orange-500 hover:bg-orange-600 text-white disabled:opacity-50"
           >
             {sendMutation.isPending ? 'Sending...' : 'Send Invitation'}
           </Button>

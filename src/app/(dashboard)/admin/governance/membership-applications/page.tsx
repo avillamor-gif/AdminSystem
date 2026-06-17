@@ -108,7 +108,7 @@ export default function MembershipApplicationsPage() {
         </div>
         <Button
           onClick={() => setInvitationModalOpen(true)}
-          className="bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-2"
+          className="bg-orange-500 hover:bg-orange-600 text-white flex items-center gap-2"
         >
           <Send className="w-4 h-4" />
           Send Invitation
