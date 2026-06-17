@@ -61,7 +61,13 @@ export function useSendMembershipInvitation() {
     onError: (error) => {
       const msg = error instanceof Error ? error.message : 'Failed to send invitation'
       console.error('Invitation error:', error)
-      toast.error(msg)
+      // Provide user-friendly message for duplicate emails
+      const displayMsg = msg.includes('already been sent')
+        ? msg
+        : msg.includes('duplicate key')
+          ? 'An invitation has already been sent to this email address'
+          : msg
+      toast.error(displayMsg)
     },
   })
 }

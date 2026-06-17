@@ -42,16 +42,39 @@ export const membershipInvitationService = {
 
   async create(payload: MembershipInvitationInsert) {
     const supabase = createClient()
+    const cleanEmail = payload.email?.toLowerCase()
+
+    // Check if an invitation already exists for this email
+    const { data: existing } = await supabase
+      .from('membership_invitations')
+      .select('*')
+      .eq('email', cleanEmail)
+      .order('created_at', { ascending: false })
+      .limit(1)
+
+    if (existing && existing.length > 0) {
+      const lastInvite = existing[0]
+      throw new Error(
+        `An invitation has already been sent to this email address (${lastInvite.status})`,
+      )
+    }
+
     const { data, error } = await supabase
       .from('membership_invitations')
       .insert({
         ...payload,
-        email: payload.email?.toLowerCase(),
+        email: cleanEmail,
       })
       .select('*')
       .single()
 
-    if (error) throw error
+    if (error) {
+      // Handle duplicate key error gracefully
+      if (error.code === '23505') {
+        throw new Error('An invitation has already been sent to this email address')
+      }
+      throw error
+    }
     return data
   },
 
