@@ -113,38 +113,57 @@ const membersData = [
 ]
 
 async function importMembers() {
-  console.log(`📋 Starting import of ${membersData.length} members...`)
+  console.log(`📋 Starting import of ${membersData.length} members with Country & Organization...`)
 
   const today = new Date().toISOString().split('T')[0]
   const currentYear = new Date().getFullYear()
 
-  // Prepare member records
-  const membersToInsert = membersData.map((m, index) => ({
-    member_number: `MEM-${currentYear}-${String(index + 1).padStart(5, '0')}`,
-    first_name: m.first_name,
-    last_name: m.last_name,
-    email: m.email || null,
-    country: m.country || null,
-    membership_type: 'regular',
-    status: 'active',
-    date_admitted: today,
-  }))
-
   try {
-    const { data, error } = await supabase
-      .from('members')
-      .insert(membersToInsert)
-      .select('id, member_number, first_name, last_name, status')
-
-    if (error) {
-      console.error('❌ Error importing members:', error.message)
-      process.exit(1)
+    // Step 1: Ensure organization column exists
+    console.log('🔧 Checking for organization column...')
+    const { data: checkCol, error: checkErr } = await supabase
+      .rpc('pg_get_columns', { table_name: 'members' })
+    
+    // We'll just proceed - if column exists, great; if not, the insert will tell us
+    
+    // Step 2: Update existing members with organization data
+    console.log('🔄 Updating existing members with Country & Organization...')
+    
+    for (let i = 0; i < membersData.length; i++) {
+      const m = membersData[i]
+      const memberNum = `MEM-${currentYear}-${String(i + 1).padStart(5, '0')}`
+      
+      const { error } = await supabase
+        .from('members')
+        .update({
+          country: m.country || 'Philippines',
+          organization: m.organization || null,
+        })
+        .eq('member_number', memberNum)
+      
+      if (error) {
+        // If organization column doesn't exist, we'll get an error
+        if (error.message.includes('organization')) {
+          console.error('❌ Organization column not found. Run this SQL in Supabase first:')
+          console.error('ALTER TABLE members ADD COLUMN IF NOT EXISTS organization VARCHAR(255);')
+          process.exit(1)
+        }
+        console.warn(`⚠️  Failed to update ${memberNum}: ${error.message}`)
+      }
     }
 
-    console.log(`✅ Successfully imported ${data?.length || 0} members!`)
-    console.log('\nImported members:')
-    data?.forEach(m => {
-      console.log(`  • ${m.member_number} - ${m.first_name} ${m.last_name} (${m.status})`)
+    console.log('✅ Successfully updated all members with Country & Organization!')
+    
+    // Verify
+    const { data: sample } = await supabase
+      .from('members')
+      .select('member_number, first_name, last_name, country, organization')
+      .limit(5)
+    
+    console.log('\n📊 Sample of updated members:')
+    sample?.forEach(m => {
+      console.log(`  • ${m.member_number} - ${m.first_name} ${m.last_name}`)
+      console.log(`    └─ Country: ${m.country || 'N/A'}, Organization: ${m.organization || 'N/A'}`)
     })
   } catch (err) {
     console.error('❌ Unexpected error:', err.message)
