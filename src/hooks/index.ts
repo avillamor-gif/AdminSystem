@@ -65,3 +65,4 @@ export * from './useOrgDocuments'
 export * from './useGovernanceNodes'
 
 export * from './useMonitoring'
+export * from './useMemberApplication'

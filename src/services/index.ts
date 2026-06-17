@@ -48,6 +48,19 @@ export { emailTemplateService } from './emailTemplate.service'
 export { orgRelationshipService } from './orgRelationship.service'
 export { passwordPolicyService } from './passwordPolicy.service'
 export { rbacService } from './rbac.service'
+export {
+  memberApplicationService,
+  memberEducationService,
+  memberOrgAffiliationService,
+  memberEngagementHistoryService,
+} from './memberApplication.service'
+export type {
+  MemberApplication,
+  MemberApplicationWithRelations,
+  MemberEducation,
+  MemberOrgAffiliation,
+  MemberEngagementHistory,
+} from './memberApplication.service'
 export { securityPolicyService } from './securityPolicy.service'
 export { sessionService } from './session.service'
 export { twoFactorService } from './twoFactor.service'
