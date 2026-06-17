@@ -37,7 +37,7 @@ ORDER BY category;
 SELECT 
   category,
   COUNT(*) as count,
-  STRING_AGG(DISTINCT code, ' | ' ORDER BY code LIMIT 3) as sample_codes
+  STRING_AGG(DISTINCT code, ' | ' ORDER BY code) as all_codes
 FROM permissions
 WHERE category IN ('Navigation', 'Internship', 'Governance', 'Membership', 'Supplies', 'Equipment', 'User Management')
 GROUP BY category
