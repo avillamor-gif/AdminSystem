@@ -45,7 +45,7 @@ export async function POST(req: NextRequest) {
       <td align="center">
         <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.08);">
           <tr>
-            <td style="background:#1e40af;padding:24px 32px;">
+            <td style="background:#f97316;padding:24px 32px;">
               <span style="color:#ffffff;font-size:20px;font-weight:700;letter-spacing:-0.3px;">IBON International</span>
             </td>
           </tr>
@@ -70,7 +70,7 @@ export async function POST(req: NextRequest) {
                 Click the button below to start your membership application:
               </p>
 
-              <a href="${invitationLink}" style="display:inline-block;padding:12px 24px;background:#1e40af;color:#ffffff;text-decoration:none;border-radius:8px;font-weight:600;font-size:14px;">Start Application</a>
+              <a href="${invitationLink}" style="display:inline-block;padding:12px 24px;background:#f97316;color:#ffffff;text-decoration:none;border-radius:8px;font-weight:600;font-size:14px;">Start Application →</a>
 
               <p style="margin:24px 0 16px;font-size:14px;color:#4b5563;">
                 If you have any questions, feel free to contact us.

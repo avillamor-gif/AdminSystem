@@ -116,4 +116,14 @@ export const membershipInvitationService = {
 
     if (error) throw error
   },
+
+  async validateNotExpired(id: string): Promise<boolean> {
+    const invitation = await this.getById(id)
+    if (!invitation) return false
+    
+    if (invitation.expires_at) {
+      return new Date(invitation.expires_at) > new Date()
+    }
+    return true // No expiration set, valid
+  },
 }
