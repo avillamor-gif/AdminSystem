@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { resend, FROM_ADDRESS } from '@/lib/resend'
 
+const BASE_URL = 'https://adminsystem.iboninternational.org'
+
 export async function POST(req: NextRequest) {
   try {
     const { invitationId, email, invitationType, referrerName, targetName } = await req.json()
@@ -27,8 +29,14 @@ export async function POST(req: NextRequest) {
         ? `You've been referred to join IBON International`
         : `You're invited to join IBON International`
 
-    const invitationLink = `${process.env.NEXT_PUBLIC_PRODUCTION_URL || 'http://localhost:3000'}/membership/apply?invited=true&email=${encodeURIComponent(cleanEmail)}`
+    const invitationLink = `${BASE_URL}/membership/apply?invited=true&email=${encodeURIComponent(cleanEmail)}`
 
+    const invitationMessage =
+      invitationType === 'referred'
+        ? `<strong>${referrerName || 'A member'}</strong> believes you would be a great addition to IBON International and has referred you to become a member.`
+        : `You've been invited to apply for membership at IBON International.`
+
+    // Build email with customizable template
     const emailHtml = `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -48,20 +56,16 @@ export async function POST(req: NextRequest) {
           </tr>
           <tr>
             <td style="padding:32px;">
+              <h2 style="margin:0 0 16px;font-size:22px;color:#111827;">Join IBON International</h2>
               <p style="margin:0 0 16px;font-size:16px;font-weight:600;color:#111827;">Dear ${targetName},</p>
               
-              ${
-                invitationType === 'referred'
-                  ? `<p style="margin:0 0 16px;font-size:14px;color:#4b5563;">
-                      <strong>${referrerName || 'A member'}</strong> believes you would be a great addition to IBON International and has referred you to become a member.
-                    </p>
-                    <p style="margin:0 0 16px;font-size:14px;color:#4b5563;">
-                      We're a network of people and organizations working on poverty, inequality, and social movements in the Global South and beyond.
-                    </p>`
-                  : `<p style="margin:0 0 16px;font-size:14px;color:#4b5563;">
-                      You've been invited to apply for membership at IBON International. We're a network of people and organizations working on poverty, inequality, and social movements in the Global South and beyond.
-                    </p>`
-              }
+              <p style="margin:0 0 16px;font-size:14px;color:#4b5563;">
+                ${invitationMessage}
+              </p>
+
+              <p style="margin:0 0 16px;font-size:14px;color:#4b5563;">
+                We're a network of people and organizations working on poverty, inequality, and social movements in the Global South and beyond.
+              </p>
 
               <p style="margin:0 0 24px;font-size:14px;color:#4b5563;">
                 Click the button below to start your membership application:
