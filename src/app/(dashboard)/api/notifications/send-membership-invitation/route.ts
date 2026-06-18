@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { resend, FROM_ADDRESS } from '@/lib/resend'
 
 export async function POST(req: NextRequest) {
   try {
@@ -13,17 +14,13 @@ export async function POST(req: NextRequest) {
     }
 
     // Check API key
-    if (!process.env.RESEND_MEMBERSHIP_API_KEY) {
-      console.error('[send-membership-invitation] RESEND_MEMBERSHIP_API_KEY not configured')
+    if (!process.env.RESEND_API_KEY) {
+      console.error('[send-membership-invitation] RESEND_API_KEY not configured')
       return NextResponse.json({ error: 'Email service not configured' }, { status: 500 })
     }
 
     // Clean email
     const cleanEmail = String(email).toLowerCase().trim()
-
-    // Send email via Resend
-    const { Resend } = await import('resend')
-    const resend = new Resend(process.env.RESEND_MEMBERSHIP_API_KEY)
 
     const subject =
       invitationType === 'referred'
@@ -99,7 +96,7 @@ export async function POST(req: NextRequest) {
     console.log('[send-membership-invitation] Attempting to send via Resend to:', cleanEmail)
     
     const response = await resend.emails.send({
-      from: 'IBON International <admin@adminsystem.iboninternational.org>',
+      from: FROM_ADDRESS,
       to: cleanEmail,
       subject,
       html: emailHtml,
