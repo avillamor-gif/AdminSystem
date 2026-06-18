@@ -29,6 +29,9 @@ export function useSendMembershipInvitation() {
 
   return useMutation({
     mutationFn: async (data: MembershipInvitationInsert) => {
+      // Clear any cached membership invitation queries to prevent stale data
+      queryClient.removeQueries({ queryKey: membershipInvitationKeys.all })
+      
       // Create invitation record
       const invitation = await membershipInvitationService.create(data)
       
