@@ -13,8 +13,8 @@ export async function POST(req: NextRequest) {
     }
 
     // Check API key
-    if (!process.env.RESEND_API_KEY) {
-      console.error('[send-membership-invitation] RESEND_API_KEY not configured')
+    if (!process.env.RESEND_MEMBERSHIP_API_KEY) {
+      console.error('[send-membership-invitation] RESEND_MEMBERSHIP_API_KEY not configured')
       return NextResponse.json({ error: 'Email service not configured' }, { status: 500 })
     }
 
@@ -23,7 +23,7 @@ export async function POST(req: NextRequest) {
 
     // Send email via Resend
     const { Resend } = await import('resend')
-    const resend = new Resend(process.env.RESEND_API_KEY)
+    const resend = new Resend(process.env.RESEND_MEMBERSHIP_API_KEY)
 
     const subject =
       invitationType === 'referred'
@@ -99,7 +99,7 @@ export async function POST(req: NextRequest) {
     console.log('[send-membership-invitation] Attempting to send via Resend to:', cleanEmail)
     
     const response = await resend.emails.send({
-      from: 'admin@iboninternational.org',
+      from: 'admin@adminsystem.iboninternational.org',
       to: cleanEmail,
       subject,
       html: emailHtml,
