@@ -44,21 +44,6 @@ export const membershipInvitationService = {
     const supabase = createClient()
     const cleanEmail = payload.email?.toLowerCase()
 
-    // Check if an invitation already exists for this email
-    const { data: existing } = await supabase
-      .from('membership_invitations')
-      .select('*')
-      .eq('email', cleanEmail)
-      .order('created_at', { ascending: false })
-      .limit(1)
-
-    if (existing && existing.length > 0) {
-      const lastInvite = existing[0]
-      throw new Error(
-        `An invitation has already been sent to this email address (${lastInvite.status})`,
-      )
-    }
-
     const { data, error } = await supabase
       .from('membership_invitations')
       .insert({
