@@ -96,31 +96,42 @@ export async function POST(req: NextRequest) {
 </body>
 </html>`
 
-    console.log('[send-membership-invitation] Sending email via Resend to:', cleanEmail)
+    console.log('[send-membership-invitation] Attempting to send via Resend to:', cleanEmail)
     
     const response = await resend.emails.send({
-      from: 'onboarding@resend.dev', // Use Resend's test domain during setup; change to verified domain later
+      from: 'onboarding@resend.dev',
       to: cleanEmail,
       subject,
       html: emailHtml,
     })
 
-    console.log('[send-membership-invitation] Resend response:', response)
+    console.log('[send-membership-invitation] Full Resend response:', JSON.stringify(response, null, 2))
 
     if (response.error) {
-      console.error('[send-membership-invitation] Resend error:', response.error)
-      return NextResponse.json({ error: `Email service error: ${response.error.message}` }, { status: 500 })
+      console.error('[send-membership-invitation] Resend error details:', response.error)
+      throw new Error(`Resend error: ${response.error.message}`)
     }
+
+    if (!response.data?.id) {
+      console.error('[send-membership-invitation] No email ID in response, response was:', response)
+      throw new Error('Email API did not return confirmation ID')
+    }
+
+    console.log('[send-membership-invitation] Email queued successfully. ID:', response.data.id)
 
     // Update invitation status in database
     const supabase = await createClient()
-    await supabase.from('membership_invitations').update({ status: 'sent', sent_at: new Date().toISOString() }).eq('id', invitationId)
+    const updateResult = await supabase
+      .from('membership_invitations')
+      .update({ status: 'sent', sent_at: new Date().toISOString() })
+      .eq('id', invitationId)
 
-    console.log('[send-membership-invitation] Email sent successfully. ID:', response.data?.id)
-    return NextResponse.json({ success: true })
+    console.log('[send-membership-invitation] Invitation updated in DB')
+
+    return NextResponse.json({ success: true, emailId: response.data.id })
   } catch (error) {
-    console.error('[send-membership-invitation] Error:', error)
+    console.error('[send-membership-invitation] Complete error:', error)
     const errorMsg = error instanceof Error ? error.message : 'Failed to send invitation'
-    return NextResponse.json({ error: `Server error: ${errorMsg}` }, { status: 500 })
+    return NextResponse.json({ error: errorMsg }, { status: 500 })
   }
 }

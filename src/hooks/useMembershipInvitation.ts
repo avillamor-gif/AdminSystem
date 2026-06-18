@@ -32,27 +32,33 @@ export function useSendMembershipInvitation() {
       // Create invitation record
       const invitation = await membershipInvitationService.create(data)
       
-      // Send email via API
-      const response = await fetch('/api/notifications/send-membership-invitation', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          invitationId: invitation.id,
-          email: invitation.email,
-          invitationType: invitation.invitation_type,
-          referrerName: invitation.referrer_name,
-          targetName: invitation.target_name,
-        }),
-      })
+      try {
+        // Send email via API (this should throw if it fails)
+        const response = await fetch('/api/notifications/send-membership-invitation', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            invitationId: invitation.id,
+            email: invitation.email,
+            invitationType: invitation.invitation_type,
+            referrerName: invitation.referrer_name,
+            targetName: invitation.target_name,
+          }),
+        })
 
-      const result = await response.json()
-      if (!response.ok) {
-        throw new Error(result.error || 'Failed to send invitation')
+        const result = await response.json()
+        if (!response.ok) {
+          throw new Error(result.error || 'Failed to send invitation')
+        }
+
+        // Mark as sent only if email send succeeded
+        await membershipInvitationService.markAsSent(invitation.id)
+        return invitation
+      } catch (error) {
+        // If email fails, delete the pending invitation
+        await membershipInvitationService.delete(invitation.id)
+        throw error
       }
-
-      // Mark as sent
-      await membershipInvitationService.markAsSent(invitation.id)
-      return invitation
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: membershipInvitationKeys.lists() })
