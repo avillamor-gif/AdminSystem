@@ -99,7 +99,7 @@ export async function POST(req: NextRequest) {
     console.log('[send-membership-invitation] Attempting to send via Resend to:', cleanEmail)
     
     const response = await resend.emails.send({
-      from: 'onboarding@resend.dev',
+      from: 'admin@iboninternational.org',
       to: cleanEmail,
       subject,
       html: emailHtml,
