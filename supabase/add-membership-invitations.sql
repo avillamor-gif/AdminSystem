@@ -45,6 +45,11 @@ CREATE POLICY membership_invitations_update
     OR referrer_id = (SELECT employee_id FROM user_roles WHERE user_id = auth.uid())
   );
 
+-- RLS Policy: Only authenticated users can delete
+CREATE POLICY membership_invitations_delete
+  ON membership_invitations FOR DELETE
+  USING (EXISTS (SELECT 1 FROM user_roles WHERE user_id = auth.uid()));
+
 -- Auto-generate invitation code
 CREATE OR REPLACE FUNCTION generate_invitation_code()
 RETURNS VARCHAR(100) AS $$
