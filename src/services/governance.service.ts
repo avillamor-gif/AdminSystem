@@ -51,6 +51,7 @@ export interface Member {
   membership_type: 'regular' | 'associate' | 'honorary' | 'institutional'
   status: 'active' | 'inactive' | 'suspended' | 'lapsed' | 'deceased'
   date_admitted: string | null
+  sex: string | null
   notes: string | null
   avatar_url: string | null
   opt_out_email: boolean

@@ -12,6 +12,7 @@ export interface MemberApplication {
   email: string
   age: number | null
   citizenship: string | null
+  sex: string | null
   home_address: string | null
   office_address: string | null
   phone_home: string | null
