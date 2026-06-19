@@ -21,6 +21,7 @@ export default function MembershipApplicationPage() {
     email: '',
     age: undefined,
     citizenship: '',
+    sex: '',
     home_address: '',
     office_address: '',
     phone_home: '',
@@ -88,6 +89,7 @@ export default function MembershipApplicationPage() {
         email: '',
         age: undefined,
         citizenship: '',
+        sex: '',
         home_address: '',
         office_address: '',
         phone_home: '',
@@ -156,6 +158,20 @@ export default function MembershipApplicationPage() {
             className={inp}
             placeholder="Filipino"
           />
+        </div>
+        <div>
+          <label className={label_cls}>Gender/Sex</label>
+          <select
+            value={form.sex || ''}
+            onChange={(e) => setForm((p) => ({ ...p, sex: e.target.value }))}
+            className={inp}
+          >
+            <option value="">Select...</option>
+            <option value="Male">Male</option>
+            <option value="Female">Female</option>
+            <option value="Other">Other</option>
+            <option value="Prefer not to say">Prefer not to say</option>
+          </select>
         </div>
       </div>
 

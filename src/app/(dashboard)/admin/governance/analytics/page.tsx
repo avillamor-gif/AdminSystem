@@ -74,6 +74,13 @@ const STATUS_COLORS_MAP: Record<string, string> = {
   deceased:  '#ef4444',
 }
 
+const GENDER_COLORS_MAP: Record<string, string> = {
+  Male:               '#3b82f6',
+  Female:             '#ec4899',
+  Other:              '#8b5cf6',
+  'Prefer not to say': '#9ca3af',
+}
+
 export default function MembershipAnalyticsPage() {
   const { data: members = [], isLoading: membersLoading } = useMembers()
   const { data: campaigns = [], isLoading: campaignsLoading } = useMemberCampaigns()
@@ -154,9 +161,43 @@ export default function MembershipAnalyticsPage() {
       return seg
     })
 
+    // By gender
+    const genderMap: Record<string, number> = {}
+    for (const m of members) {
+      const g = m.sex || 'Unknown'
+      genderMap[g] = (genderMap[g] || 0) + 1
+    }
+    const byGender = (['Male', 'Female', 'Other', 'Prefer not to say'] as const).map(g => ({
+      label: g,
+      value: genderMap[g] || 0,
+      color: GENDER_COLORS_MAP[g],
+    })).filter(g => g.value > 0)
+
+    // By tenure (years since admission)
+    const now = new Date()
+    const tenureMap: Record<string, number> = {
+      '0-1 years': 0,
+      '1-3 years': 0,
+      '3-5 years': 0,
+      '5+ years': 0,
+    }
+    for (const m of members) {
+      if (!m.date_admitted) continue
+      const admitted = new Date(m.date_admitted)
+      const yearsDiff = (now.getTime() - admitted.getTime()) / (1000 * 60 * 60 * 24 * 365.25)
+      
+      if (yearsDiff < 1) tenureMap['0-1 years']++
+      else if (yearsDiff < 3) tenureMap['1-3 years']++
+      else if (yearsDiff < 5) tenureMap['3-5 years']++
+      else tenureMap['5+ years']++
+    }
+    const byTenure = Object.entries(tenureMap)
+      .filter(([, v]) => v > 0)
+      .map(([label, value]) => ({ label, value }))
+
     return {
       total, active, inactive, lapsed, deceased, optedOut, withEmail,
-      activeRate, byType, byStatus, byCountry, byYear,
+      activeRate, byType, byStatus, byCountry, byYear, byGender, byTenure,
       admittedThisYear, admittedLastYear,
       newest,
       sentCampaigns: sentCampaigns.length, totalSent, totalFailed, deliveryRate,
@@ -360,6 +401,38 @@ export default function MembershipAnalyticsPage() {
                 </div>
               </div>
             </div>
+          )}
+        </Card>
+      </div>
+
+      {/* Charts row 3 — Gender & Tenure */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+
+        {/* Gender distribution */}
+        <Card className="p-5">
+          <p className="text-sm font-semibold text-gray-700 mb-4 flex items-center gap-2">
+            <Users className="w-4 h-4 text-pink-500" /> Gender Distribution
+          </p>
+          {stats.byGender.length > 0 ? (
+            <div className="space-y-2.5">
+              {stats.byGender.map(g => (
+                <HorizBar key={g.label} label={g.label} value={g.value} max={stats.total} color={g.color} />
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm text-gray-400 text-center py-8">No gender data recorded</p>
+          )}
+        </Card>
+
+        {/* Membership tenure */}
+        <Card className="p-5">
+          <p className="text-sm font-semibold text-gray-700 mb-4 flex items-center gap-2">
+            <Calendar className="w-4 h-4 text-green-500" /> Member Since (Tenure)
+          </p>
+          {stats.byTenure.length > 0 ? (
+            <BarChart data={stats.byTenure} color="#16a34a" />
+          ) : (
+            <p className="text-sm text-gray-400 text-center py-8">No tenure data</p>
           )}
         </Card>
       </div>

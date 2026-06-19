@@ -54,7 +54,7 @@ const emptyForm = {
   first_name: '', last_name: '', email: '', phone: '',
   address: '', city: '', country: 'Philippines', organization: '',
   member_number: '', membership_type: 'regular' as Member['membership_type'],
-  status: 'active' as Member['status'], date_admitted: '', notes: '',
+  status: 'active' as Member['status'], date_admitted: '', sex: '', notes: '',
   avatar_url: '', opt_out_email: false,
 }
 
@@ -74,7 +74,7 @@ function MemberFormModal({ open, onClose, member, createMutation, updateMutation
         country: member.country || 'Philippines', organization: member.organization || '',
         member_number: member.member_number || '',
         membership_type: member.membership_type, status: member.status,
-        date_admitted: member.date_admitted || '', notes: member.notes || '',
+        date_admitted: member.date_admitted || '', sex: member.sex || '', notes: member.notes || '',
         avatar_url: member.avatar_url || '', opt_out_email: member.opt_out_email,
       })
     } else {
@@ -119,6 +119,16 @@ function MemberFormModal({ open, onClose, member, createMutation, updateMutation
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Date Admitted</label>
               <input type="date" value={form.date_admitted} onChange={e => setForm(p => ({ ...p, date_admitted: e.target.value }))} className={inp} />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Gender/Sex</label>
+              <select value={form.sex} onChange={e => setForm(p => ({ ...p, sex: e.target.value }))} className={inp}>
+                <option value="">Select...</option>
+                <option value="Male">Male</option>
+                <option value="Female">Female</option>
+                <option value="Other">Other</option>
+                <option value="Prefer not to say">Prefer not to say</option>
+              </select>
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Membership Type</label>
