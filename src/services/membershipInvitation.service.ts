@@ -1,35 +1,69 @@
 import { createClient } from '@/lib/supabase/client'
-import type { Tables, InsertTables } from '@/lib/supabase'
+import type { Tables, InsertTables, UpdateTables } from '@/lib/supabase'
+
+const supabase = createClient()
+
+// ── Types ──────────────────────────────────────────────────────────────────────
 
 export type MembershipInvitation = Tables<'membership_invitations'>
 export type MembershipInvitationInsert = InsertTables<'membership_invitations'>
+export type MembershipInvitationUpdate = UpdateTables<'membership_invitations'>
+
+// ── Membership Invitations Service ─────────────────────────────────────────────
 
 export const membershipInvitationService = {
-  async getAll() {
-    const supabase = createClient()
-    const { data, error } = await supabase
+  // Get all invitations (with optional filtering)
+  async getAll(filters?: {
+    status?: string
+    email?: string
+    invitationType?: string
+  }) {
+    let query = supabase
       .from('membership_invitations')
       .select('*')
       .order('created_at', { ascending: false })
 
+    if (filters?.status) {
+      query = query.eq('status', filters.status)
+    }
+    if (filters?.email) {
+      query = query.ilike('email', `%${filters.email}%`)
+    }
+    if (filters?.invitationType) {
+      query = query.eq('invitation_type', filters.invitationType)
+    }
+
+    const { data, error } = await query
     if (error) throw error
-    return data || []
+    return (data || []) as MembershipInvitation[]
   },
 
+  // Get single invitation by ID
   async getById(id: string) {
-    const supabase = createClient()
     const { data, error } = await supabase
       .from('membership_invitations')
       .select('*')
       .eq('id', id)
       .single()
 
-    if (error) throw error
-    return data
+    if (error && error.code !== 'PGRST116') throw error
+    return (data || null) as MembershipInvitation | null
   },
 
+  // Get invitation by code
+  async getByCode(code: string) {
+    const { data, error } = await supabase
+      .from('membership_invitations')
+      .select('*')
+      .eq('invitation_code', code)
+      .single()
+
+    if (error && error.code !== 'PGRST116') throw error
+    return (data || null) as MembershipInvitation | null
+  },
+
+  // Get invitation by email
   async getByEmail(email: string) {
-    const supabase = createClient()
     const { data, error } = await supabase
       .from('membership_invitations')
       .select('*')
@@ -37,18 +71,30 @@ export const membershipInvitationService = {
       .order('created_at', { ascending: false })
 
     if (error) throw error
-    return data || []
+    return (data || []) as MembershipInvitation[]
   },
 
-  async create(payload: MembershipInvitationInsert) {
-    const supabase = createClient()
+  // Create a new invitation
+  async create(payload: {
+    email: string
+    target_name: string
+    invitation_type?: 'direct' | 'referred'
+    referrer_id?: string
+    referrer_name?: string
+    notes?: string
+  }) {
     const cleanEmail = payload.email?.toLowerCase()
 
     const { data, error } = await supabase
       .from('membership_invitations')
       .insert({
-        ...payload,
         email: cleanEmail,
+        target_name: payload.target_name,
+        invitation_type: payload.invitation_type || 'direct',
+        referrer_id: payload.referrer_id || null,
+        referrer_name: payload.referrer_name || null,
+        notes: payload.notes || null,
+        status: 'pending',
       })
       .select('*')
       .single()
@@ -60,11 +106,11 @@ export const membershipInvitationService = {
       }
       throw error
     }
-    return data
+    return data as MembershipInvitation
   },
 
+  // Update invitation (generic)
   async update(id: string, updates: Partial<MembershipInvitation>) {
-    const supabase = createClient()
     const { data, error } = await supabase
       .from('membership_invitations')
       .update(updates)
@@ -73,27 +119,111 @@ export const membershipInvitationService = {
       .single()
 
     if (error) throw error
-    return data
+    return data as MembershipInvitation
   },
 
+  // Mark invitation as sent
   async markAsSent(id: string) {
-    const supabase = createClient()
     const { data, error } = await supabase
       .from('membership_invitations')
       .update({
         status: 'sent',
         sent_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
       })
       .eq('id', id)
       .select('*')
       .single()
 
     if (error) throw error
-    return data
+    return data as MembershipInvitation
   },
 
+  // Mark invitation as accepted (when user applies/signs up)
+  async markAsAccepted(id: string) {
+    const { data, error } = await supabase
+      .from('membership_invitations')
+      .update({
+        status: 'accepted',
+        accepted_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', id)
+      .select('*')
+      .single()
+
+    if (error) throw error
+    return data as MembershipInvitation
+  },
+
+  // Mark invitation as rejected
+  async markAsRejected(id: string, notes?: string) {
+    const { data, error } = await supabase
+      .from('membership_invitations')
+      .update({
+        status: 'rejected',
+        updated_at: new Date().toISOString(),
+        notes: notes || null,
+      })
+      .eq('id', id)
+      .select('*')
+      .single()
+
+    if (error) throw error
+    return data as MembershipInvitation
+  },
+
+  // Mark invitation as expired
+  async markAsExpired(id: string) {
+    const { data, error } = await supabase
+      .from('membership_invitations')
+      .update({
+        status: 'expired',
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', id)
+      .select('*')
+      .single()
+
+    if (error) throw error
+    return data as MembershipInvitation
+  },
+
+  // Resend invitation (mark as sent again with updated sent_at timestamp)
+  async resend(id: string) {
+    const { data, error } = await supabase
+      .from('membership_invitations')
+      .update({
+        status: 'sent',
+        sent_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', id)
+      .select('*')
+      .single()
+
+    if (error) throw error
+    return data as MembershipInvitation
+  },
+
+  // Update invitation notes
+  async updateNotes(id: string, notes: string) {
+    const { data, error } = await supabase
+      .from('membership_invitations')
+      .update({
+        notes,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', id)
+      .select('*')
+      .single()
+
+    if (error) throw error
+    return data as MembershipInvitation
+  },
+
+  // Delete invitation
   async delete(id: string) {
-    const supabase = createClient()
     const { error } = await supabase
       .from('membership_invitations')
       .delete()
@@ -102,10 +232,11 @@ export const membershipInvitationService = {
     if (error) throw error
   },
 
+  // Validate invitation is not expired
   async validateNotExpired(id: string): Promise<boolean> {
     const invitation = await this.getById(id)
     if (!invitation) return false
-    
+
     if (invitation.expires_at) {
       return new Date(invitation.expires_at) > new Date()
     }

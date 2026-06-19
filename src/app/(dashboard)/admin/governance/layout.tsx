@@ -2,6 +2,7 @@ import SecondaryNav from '@/components/layout/SecondaryNav'
 
 const navItems = [
   { label: 'Board of Trustees',        href: '/admin/governance/board' },
+  { label: 'Membership Invitations',   href: '/admin/governance/membership-invitations' },
   { label: 'Membership Applications',  href: '/admin/governance/membership-applications' },
   { label: 'Membership',               href: '/admin/governance/members' },
   { label: 'General Assemblies',       href: '/admin/governance/general-assemblies' },
