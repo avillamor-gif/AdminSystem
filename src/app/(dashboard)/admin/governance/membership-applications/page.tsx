@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Search, ChevronRight, Mail, Phone, MapPin, Edit2, Check, X, MoreVertical, Send } from 'lucide-react'
+import { Search, ChevronRight, Mail, Phone, MapPin, Edit2, Check, X, MoreVertical, Send, FileText, Eye, AlertCircle } from 'lucide-react'
 import { Card, Button, Badge } from '@/components/ui'
 import {
   useMemberApplications,
@@ -118,52 +118,51 @@ export default function MembershipApplicationsPage() {
       {/* Stats */}
       <div className="grid grid-cols-4 gap-4">
         {[
-          { label: 'New Applications', value: applications.filter((a) => a.status === 'submitted').length, color: 'blue' },
-          { label: 'Under Review', value: applications.filter((a) => a.status === 'under_review').length, color: 'yellow' },
-          { label: 'Approved', value: applications.filter((a) => a.status === 'approved').length, color: 'green' },
-          { label: 'Rejected', value: applications.filter((a) => a.status === 'rejected').length, color: 'red' },
-        ].map((stat) => (
-          <Card key={stat.label}>
-            <div className="p-4">
-              <p className="text-sm text-gray-600">{stat.label}</p>
-              <p className={`text-2xl font-bold mt-1 text-${stat.color}-600`}>{stat.value}</p>
-            </div>
-          </Card>
-        ))}
+          { label: 'New Applications', value: applications.filter((a) => a.status === 'submitted').length, color: 'text-blue-600', bg: 'bg-blue-100', icon: FileText },
+          { label: 'Under Review', value: applications.filter((a) => a.status === 'under_review').length, color: 'text-yellow-600', bg: 'bg-yellow-100', icon: Eye },
+          { label: 'Approved', value: applications.filter((a) => a.status === 'approved').length, color: 'text-green-600', bg: 'bg-green-100', icon: Check },
+          { label: 'Rejected', value: applications.filter((a) => a.status === 'rejected').length, color: 'text-red-600', bg: 'bg-red-100', icon: AlertCircle },
+        ].map((stat) => {
+          const IconComponent = stat.icon
+          return (
+            <Card key={stat.label} className="p-5 flex items-center gap-4">
+              <div className={`w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 ${stat.bg}`}>
+                <IconComponent className={`w-5 h-5 ${stat.color}`} />
+              </div>
+              <div>
+                <p className={`text-2xl font-bold ${stat.color}`}>{stat.value}</p>
+                <p className="text-xs text-gray-500">{stat.label}</p>
+              </div>
+            </Card>
+          )
+        })}
       </div>
 
       {/* Filters */}
-      <Card>
-        <div className="p-4 border-b flex gap-4">
-          <div className="flex-1 relative">
-            <Search className="w-5 h-5 absolute left-3 top-2.5 text-gray-400" />
-            <input
-              type="text"
-              placeholder="Search by name, email, or reference..."
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-400"
-            />
-          </div>
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-400"
-          >
-            <option value="submitted">New (Submitted)</option>
-            <option value="under_review">Under Review</option>
-            <option value="approved">Approved</option>
-            <option value="rejected">Rejected</option>
-          </select>
+      <div className="flex flex-wrap gap-3">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+          <input value={query} onChange={e => setQuery(e.target.value)} placeholder="Search name, email, or reference…"
+            className="pl-9 pr-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-400 w-60" />
         </div>
+        <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)}
+          className="px-3 py-2 text-sm border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-amber-400">
+          <option value="">All Statuses</option>
+          <option value="submitted">New (Submitted)</option>
+          <option value="under_review">Under Review</option>
+          <option value="approved">Approved</option>
+          <option value="rejected">Rejected</option>
+        </select>
+      </div>
 
-        {/* List */}
+      {/* List */}
+      <Card className="overflow-hidden">
         {isLoading ? (
-          <div className="p-6 text-center text-gray-400">Loading applications...</div>
+          <div className="p-12 text-center text-gray-400 text-sm">Loading applications…</div>
         ) : filtered.length === 0 ? (
-          <div className="p-6 text-center text-gray-400">No applications found</div>
+          <div className="p-12 text-center text-gray-400 text-sm">No applications found.</div>
         ) : (
-          <div className="divide-y">
+          <div className="divide-y divide-gray-100">
             {filtered.map((app) => (
               <div
                 key={app.id}
@@ -171,7 +170,7 @@ export default function MembershipApplicationsPage() {
                   setSelectedAppId(app.id)
                   setDetailPanel(true)
                 }}
-                className="p-4 hover:bg-gray-50 cursor-pointer transition flex items-center justify-between"
+                className="p-4.5 hover:bg-gray-50 cursor-pointer transition flex items-center justify-between border-b-0"
               >
                 <div className="flex-1">
                   <div className="flex items-center gap-3">

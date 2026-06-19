@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Search, ChevronRight, Mail, Send, RefreshCw, Trash2, Clock, CheckCircle, AlertCircle, Eye, EyeOff } from 'lucide-react'
+import { Search, ChevronRight, Mail, Send, RefreshCw, Trash2, Clock, CheckCircle, AlertCircle, Eye, EyeOff, MailOpen, XCircle } from 'lucide-react'
 import { Card, Button, Badge } from '@/components/ui'
 import {
   useMembershipInvitations,
@@ -84,62 +84,60 @@ export default function MembershipInvitationsPage() {
       {/* Stats */}
       <div className="grid grid-cols-5 gap-4">
         {[
-          { label: 'Pending', value: invitations.filter((i) => i.status === 'pending').length, color: 'gray' },
-          { label: 'Sent', value: invitations.filter((i) => i.status === 'sent').length, color: 'blue' },
-          { label: 'Accepted', value: invitations.filter((i) => i.status === 'accepted').length, color: 'green' },
-          { label: 'Rejected', value: invitations.filter((i) => i.status === 'rejected').length, color: 'red' },
-          { label: 'Expired', value: invitations.filter((i) => i.status === 'expired').length, color: 'yellow' },
-        ].map((stat) => (
-          <Card key={stat.label}>
-            <div className="p-4">
-              <p className="text-sm text-gray-600">{stat.label}</p>
-              <p className={`text-2xl font-bold mt-1 text-${stat.color}-600`}>{stat.value}</p>
-            </div>
-          </Card>
-        ))}
+          { label: 'Pending', value: invitations.filter((i) => i.status === 'pending').length, color: 'text-gray-600', bg: 'bg-gray-100', icon: Clock },
+          { label: 'Sent', value: invitations.filter((i) => i.status === 'sent').length, color: 'text-blue-600', bg: 'bg-blue-100', icon: MailOpen },
+          { label: 'Accepted', value: invitations.filter((i) => i.status === 'accepted').length, color: 'text-green-600', bg: 'bg-green-100', icon: CheckCircle },
+          { label: 'Rejected', value: invitations.filter((i) => i.status === 'rejected').length, color: 'text-red-600', bg: 'bg-red-100', icon: XCircle },
+          { label: 'Expired', value: invitations.filter((i) => i.status === 'expired').length, color: 'text-yellow-600', bg: 'bg-yellow-100', icon: AlertCircle },
+        ].map((stat) => {
+          const IconComponent = stat.icon
+          return (
+            <Card key={stat.label} className="p-5 flex items-center gap-4">
+              <div className={`w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 ${stat.bg}`}>
+                <IconComponent className={`w-5 h-5 ${stat.color}`} />
+              </div>
+              <div>
+                <p className={`text-2xl font-bold ${stat.color}`}>{stat.value}</p>
+                <p className="text-xs text-gray-500">{stat.label}</p>
+              </div>
+            </Card>
+          )
+        })}
       </div>
 
       {/* Filters */}
-      <Card>
-        <div className="p-4 border-b flex gap-4">
-          <div className="flex-1 relative">
-            <Search className="w-5 h-5 absolute left-3 top-2.5 text-gray-400" />
-            <input
-              type="text"
-              placeholder="Search by name, email, or code..."
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-400"
-            />
-          </div>
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-400"
-          >
-            <option value="pending">Pending</option>
-            <option value="sent">Sent</option>
-            <option value="accepted">Accepted</option>
-            <option value="rejected">Rejected</option>
-            <option value="expired">Expired</option>
-            <option value="">All Statuses</option>
-          </select>
+      <div className="flex flex-wrap gap-3">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+          <input value={query} onChange={e => setQuery(e.target.value)} placeholder="Search name, email, or code…"
+            className="pl-9 pr-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-400 w-60" />
         </div>
+        <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)}
+          className="px-3 py-2 text-sm border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-amber-400">
+          <option value="">All Statuses</option>
+          <option value="pending">Pending</option>
+          <option value="sent">Sent</option>
+          <option value="accepted">Accepted</option>
+          <option value="rejected">Rejected</option>
+          <option value="expired">Expired</option>
+        </select>
+      </div>
 
-        {/* List */}
+      {/* List */}
+      <Card className="overflow-hidden">
         {isLoading ? (
-          <div className="p-6 text-center text-gray-400">Loading invitations...</div>
+          <div className="p-12 text-center text-gray-400 text-sm">Loading invitations…</div>
         ) : filtered.length === 0 ? (
-          <div className="p-6 text-center text-gray-400">No invitations found</div>
+          <div className="p-12 text-center text-gray-400 text-sm">No invitations found.</div>
         ) : (
-          <div className="divide-y">
+          <div className="divide-y divide-gray-100">
             {filtered.map((invitation) => {
               const Icon = STATUS_ICONS[invitation.status] || Mail
               return (
                 <div
                   key={invitation.id}
                   onClick={() => setSelectedInvitation(invitation)}
-                  className="p-4 hover:bg-gray-50 cursor-pointer transition"
+                  className="p-4.5 hover:bg-gray-50 cursor-pointer transition border-b-0"
                 >
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
