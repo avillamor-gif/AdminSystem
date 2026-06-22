@@ -200,6 +200,21 @@ export function useDeleteMember() {
   })
 }
 
+export function useResignMember() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, reason }: { id: string; reason?: string }) =>
+      memberService.resign(id, reason),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: governanceKeys.members() })
+      toast.success('Member has been marked as resigned')
+    },
+    onError: (err: any) => {
+      toast.error(err?.message || 'Failed to process resignation')
+    },
+  })
+}
+
 // ── General Assemblies ─────────────────────────────────────────────────────────
 
 export function useGeneralAssemblies() {

@@ -85,6 +85,21 @@ export const membershipInvitationService = {
   }) {
     const cleanEmail = payload.email?.toLowerCase()
 
+    // Check if the email already belongs to an active member
+    const { data: existingMember } = await supabase
+      .from('members')
+      .select('id, first_name, last_name, status')
+      .ilike('email', cleanEmail)
+      .limit(1)
+      .maybeSingle()
+
+    if (existingMember) {
+      const statusLabel = existingMember.status === 'active' ? 'an active member' : `already in the system (status: ${existingMember.status})`
+      throw new Error(
+        `${existingMember.first_name} ${existingMember.last_name} (${cleanEmail}) is ${statusLabel}. No invitation needed.`
+      )
+    }
+
     const { data, error } = await supabase
       .from('membership_invitations')
       .insert({

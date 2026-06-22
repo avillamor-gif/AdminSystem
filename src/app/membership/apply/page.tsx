@@ -74,15 +74,10 @@ export default function MembershipApplicationPage() {
     }
 
     try {
-      // Create main application
-      const app = await createApp.mutateAsync(form as any)
+      // Create main application — toast.success is shown by the hook's onSuccess
+      await createApp.mutateAsync(form as any)
 
-      // Create sub-records if any
-      if (education.length > 0 || affiliations.length > 0 || engagements.length > 0) {
-        alert(`Application submitted! Reference: ${app.reference_number}\n\nYou'll receive an email confirmation shortly.`)
-      }
-
-      // Reset form
+      // Reset form and return to start
       setForm({
         first_name: '',
         last_name: '',
@@ -105,8 +100,12 @@ export default function MembershipApplicationPage() {
       setAffiliations([])
       setEngagements([])
       setStep('personal')
-    } catch (error) {
-      console.error(error)
+    } catch (error: any) {
+      console.error('Submission error:', error)
+      // The hook's onError already shows a toast, but catch any unhandled case
+      if (!error?.message?.includes('toast')) {
+        alert(error?.message || 'Failed to submit application. Please try again.')
+      }
     }
   }
 
@@ -566,12 +565,12 @@ export default function MembershipApplicationPage() {
         {/* Form Content */}
         <Card className="mb-6">
           <div className="p-6">
-            {step === 'personal' && <PersonalStep />}
-            {step === 'education' && <EducationStep />}
-            {step === 'organization' && <OrganizationStep />}
-            {step === 'engagement' && <EngagementStep />}
-            {step === 'endorsement' && <EndorsementStep />}
-            {step === 'review' && <ReviewStep />}
+            {step === 'personal' && PersonalStep()}
+            {step === 'education' && EducationStep()}
+            {step === 'organization' && OrganizationStep()}
+            {step === 'engagement' && EngagementStep()}
+            {step === 'endorsement' && EndorsementStep()}
+            {step === 'review' && ReviewStep()}
           </div>
         </Card>
 

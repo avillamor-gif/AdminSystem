@@ -269,6 +269,38 @@ export const memberService = {
     const { error } = await supabase.from('members').delete().eq('id', id)
     if (error) throw error
   },
+
+  // Mark a member as resigned (sets status to inactive, appends resignation note)
+  async resign(id: string, reason?: string): Promise<Member> {
+    const timestamp = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
+    const resignationNote = reason
+      ? `[Resigned ${timestamp}] ${reason}`
+      : `[Resigned ${timestamp}]`
+
+    // Append to existing notes if any
+    const { data: existing } = await supabase
+      .from('members')
+      .select('notes')
+      .eq('id', id)
+      .single()
+
+    const updatedNotes = existing?.notes
+      ? `${existing.notes}\n${resignationNote}`
+      : resignationNote
+
+    const { data, error } = await supabase
+      .from('members')
+      .update({
+        status: 'inactive',
+        notes: updatedNotes,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', id)
+      .select('*')
+      .single()
+    if (error) throw error
+    return data as Member
+  },
 }
 
 // ── General Assemblies ─────────────────────────────────────────────────────────
