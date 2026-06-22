@@ -559,14 +559,6 @@ export default function MembershipApplicationPage() {
           <p className="text-sm text-gray-500 mt-2">
             Join our global network of progressive organizations and practitioners
           </p>
-          {process.env.NODE_ENV === 'development' && (
-            <button
-              onClick={() => { setSubmitted(true); setReferenceNumber('APP-PREVIEW-001') }}
-              className="mt-3 text-xs text-amber-500 underline hover:text-amber-700"
-            >
-              [Dev] Preview thank-you page
-            </button>
-          )}
         </div>
 
         {/* Progress Indicator */}
