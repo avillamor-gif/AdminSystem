@@ -536,13 +536,13 @@ export default function MembershipApplicationPage() {
               className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-amber-500 hover:bg-amber-600 text-white font-semibold rounded-lg transition-colors shadow-sm"
             >
               <Globe className="w-4 h-4" />
-              Visit IBON International
+              Visit IBON International's Website
             </a>
           </div>
 
           {/* Footer note */}
           <p className="text-xs text-gray-400 mt-10">
-            A confirmation email will be sent to <strong>{form.email}</strong>
+            Our team will review your application and notify you at <strong>{form.email}</strong> once a decision has been made.
           </p>
         </div>
       </div>
