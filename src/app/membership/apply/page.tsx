@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Plus, X, AlertCircle } from 'lucide-react'
+import { Plus, X, AlertCircle, CheckCircle2, Globe, Mail } from 'lucide-react'
 import { Button, Card, Input, Modal, ModalBody, ModalHeader, Badge } from '@/components/ui'
 import { useCreateMemberApplication, useCreateMemberEducation, useCreateMemberOrgAffiliation, useCreateMemberEngagementHistory } from '@/hooks/useMemberApplication'
 import type { MemberApplication, MemberEducation, MemberOrgAffiliation, MemberEngagementHistory } from '@/services/memberApplication.service'
@@ -13,6 +13,8 @@ export default function MembershipApplicationPage() {
   const [step, setStep] = useState<'personal' | 'education' | 'organization' | 'engagement' | 'endorsement' | 'review'>(
     'personal'
   )
+  const [submitted, setSubmitted] = useState(false)
+  const [referenceNumber, setReferenceNumber] = useState<string | null>(null)
 
   // Main form
   const [form, setForm] = useState<Partial<MemberApplication>>({
@@ -75,34 +77,11 @@ export default function MembershipApplicationPage() {
 
     try {
       // Create main application — toast.success is shown by the hook's onSuccess
-      await createApp.mutateAsync(form as any)
-
-      // Reset form and return to start
-      setForm({
-        first_name: '',
-        last_name: '',
-        email: '',
-        age: undefined,
-        citizenship: '',
-        sex: '',
-        home_address: '',
-        office_address: '',
-        phone_home: '',
-        phone_office: '',
-        how_learned_about_ibon: '',
-        why_join: '',
-        publications_read: '',
-        endorser_name: '',
-        endorser_relationship: '',
-        endorser_email: '',
-      })
-      setEducation([])
-      setAffiliations([])
-      setEngagements([])
-      setStep('personal')
+      const app = await createApp.mutateAsync(form as any)
+      setReferenceNumber((app as any)?.reference_number ?? null)
+      setSubmitted(true)
     } catch (error: any) {
       console.error('Submission error:', error)
-      // The hook's onError already shows a toast, but catch any unhandled case
       if (!error?.message?.includes('toast')) {
         alert(error?.message || 'Failed to submit application. Please try again.')
       }
@@ -508,6 +487,67 @@ export default function MembershipApplicationPage() {
       </div>
     </div>
   )
+
+  // ── Thank-you screen ────────────────────────────────────────────────────────
+  if (submitted) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-amber-50 via-white to-amber-50 flex items-center justify-center py-16 px-4">
+        <div className="max-w-lg mx-auto text-center">
+          {/* Icon */}
+          <div className="flex justify-center mb-6">
+            <div className="w-20 h-20 rounded-full bg-amber-100 flex items-center justify-center shadow-md">
+              <CheckCircle2 className="w-10 h-10 text-amber-500" />
+            </div>
+          </div>
+
+          {/* Heading */}
+          <h1 className="text-3xl font-bold text-gray-900 mb-3">Thank You for Applying!</h1>
+          <p className="text-lg text-amber-700 font-medium mb-6">
+            Welcome to the IBON International community.
+          </p>
+
+          {/* Message */}
+          <p className="text-gray-600 leading-relaxed mb-4">
+            Your application has been received. We believe that every voice matters in the
+            pursuit of a just, equitable, and sustainable world — and we are glad you want
+            to be part of that mission.
+          </p>
+          <p className="text-gray-600 leading-relaxed mb-8">
+            Our team will review your application and reach out to you soon. In the meantime,
+            feel free to explore our work and stay connected with the movement.
+          </p>
+
+          {/* Reference number */}
+          {referenceNumber && (
+            <div className="inline-flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-lg px-4 py-2 mb-8">
+              <Mail className="w-4 h-4 text-amber-600" />
+              <span className="text-sm text-amber-800">
+                Your reference number: <strong>{referenceNumber}</strong>
+              </span>
+            </div>
+          )}
+
+          {/* CTA */}
+          <div className="flex flex-col sm:flex-row gap-3 justify-center">
+            <a
+              href="https://iboninternational.org"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-amber-500 hover:bg-amber-600 text-white font-semibold rounded-lg transition-colors shadow-sm"
+            >
+              <Globe className="w-4 h-4" />
+              Visit IBON International
+            </a>
+          </div>
+
+          {/* Footer note */}
+          <p className="text-xs text-gray-400 mt-10">
+            A confirmation email will be sent to <strong>{form.email}</strong>
+          </p>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-amber-50 to-white py-12 px-4">
