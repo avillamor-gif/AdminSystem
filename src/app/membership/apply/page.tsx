@@ -584,7 +584,9 @@ export default function MembershipApplicationPage() {
       <div className="max-w-2xl mx-auto">
         {/* Header */}
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">IBON International</h1>
+          <div className="flex justify-center mb-4">
+            <img src="/ibon-logo.png" alt="IBON International" className="h-16 w-auto" />
+          </div>
           <p className="text-lg text-gray-700">Membership Application</p>
           <p className="text-sm text-gray-500 mt-2">
             Join our global network of progressive organizations and practitioners
