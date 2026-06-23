@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { Plus, X, AlertCircle, CheckCircle2, Globe, Mail, ScrollText } from 'lucide-react'
-import { Button, Card, Input, Modal, ModalBody, ModalHeader, ModalFooter, Badge } from '@/components/ui'
+import { Button, Card, Modal, ModalBody, ModalHeader, ModalFooter, PhoneInput, CountrySelect } from '@/components/ui'
 import { useCreateMemberApplication, useCreateMemberEducation, useCreateMemberOrgAffiliation, useCreateMemberEngagementHistory } from '@/hooks/useMemberApplication'
 import type { MemberApplication, MemberEducation, MemberOrgAffiliation, MemberEngagementHistory } from '@/services/memberApplication.service'
 
@@ -28,6 +28,7 @@ export default function MembershipApplicationPage() {
     office_address: '',
     phone_home: '',
     phone_office: '',
+    country: '',
     how_learned_about_ibon: '',
     why_join: '',
     publications_read: '',
@@ -41,15 +42,15 @@ export default function MembershipApplicationPage() {
   const [affiliations, setAffiliations] = useState<Partial<MemberOrgAffiliation>[]>([])
   const [engagements, setEngagements] = useState<Partial<MemberEngagementHistory>[]>([])
 
-  // Modal states
-  const [educationModal, setEducationModal] = useState(false)
-  const [affiliationModal, setAffiliationModal] = useState(false)
-  const [engagementModal, setEngagementModal] = useState(false)
-  const [termsModal, setTermsModal] = useState(false)
+  // Inline add-form states
+  const [showEduForm, setShowEduForm]   = useState(false)
+  const [showAffForm, setShowAffForm]   = useState(false)
+  const [showEngForm, setShowEngForm]   = useState(false)
+  const [termsModal, setTermsModal]     = useState(false)
   const [agreedToTerms, setAgreedToTerms] = useState(false)
-  const [currentEducation, setCurrentEducation] = useState<Partial<MemberEducation> | null>(null)
-  const [currentAffiliation, setCurrentAffiliation] = useState<Partial<MemberOrgAffiliation> | null>(null)
-  const [currentEngagement, setCurrentEngagement] = useState<Partial<MemberEngagementHistory> | null>(null)
+  const [currentEducation, setCurrentEducation] = useState<Partial<MemberEducation>>({})
+  const [currentAffiliation, setCurrentAffiliation] = useState<Partial<MemberOrgAffiliation>>({})
+  const [currentEngagement, setCurrentEngagement] = useState<Partial<MemberEngagementHistory>>({})
 
   // Mutations
   const createApp = useCreateMemberApplication()
@@ -169,21 +170,17 @@ export default function MembershipApplicationPage() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-          <label className={label_cls}>Phone (Home)</label>
-          <input
+          <label className={label_cls}>Mobile Number</label>
+          <PhoneInput
             value={form.phone_home || ''}
-            onChange={(e) => setForm((p) => ({ ...p, phone_home: e.target.value }))}
-            className={inp}
-            placeholder="+63 2 123 4567"
+            onChange={v => setForm(p => ({ ...p, phone_home: v }))}
           />
         </div>
         <div>
-          <label className={label_cls}>Phone (Office)</label>
-          <input
-            value={form.phone_office || ''}
-            onChange={(e) => setForm((p) => ({ ...p, phone_office: e.target.value }))}
-            className={inp}
-            placeholder="+63 2 765 4321"
+          <label className={label_cls}>Country</label>
+          <CountrySelect
+            value={(form as any).country || ''}
+            onChange={v => setForm(p => ({ ...p, country: v } as any))}
           />
         </div>
       </div>
@@ -217,42 +214,56 @@ export default function MembershipApplicationPage() {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-semibold text-gray-900">Educational Background</h3>
-        <Button
-          variant="secondary"
-          onClick={() => {
-            setCurrentEducation({})
-            setEducationModal(true)
-          }}
-        >
-          <Plus className="w-4 h-4 mr-2" /> Add Education
-        </Button>
+        {!showEduForm && (
+          <Button variant="secondary" onClick={() => { setCurrentEducation({}); setShowEduForm(true) }}>
+            <Plus className="w-4 h-4 mr-2" /> Add Education
+          </Button>
+        )}
       </div>
 
-      {education.length === 0 ? (
+      {education.length === 0 && !showEduForm && (
         <p className="text-sm text-gray-500 text-center py-4">No education records added yet</p>
-      ) : (
+      )}
+
+      {education.length > 0 && (
         <div className="space-y-2">
           {education.map((edu, idx) => (
-            <div
-              key={idx}
-              className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200"
-            >
+            <div key={idx} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200">
               <div>
                 <p className="font-medium text-gray-900">{edu.institution_name}</p>
-                <p className="text-sm text-gray-600">
-                  {edu.highest_attainment} • {edu.years_inclusive}
-                </p>
+                <p className="text-sm text-gray-600">{edu.highest_attainment} • {edu.years_inclusive}</p>
               </div>
-              <button
-                onClick={() => {
-                  setEducation((p) => p.filter((_, i) => i !== idx))
-                }}
-                className="p-1 hover:bg-red-50 rounded text-red-500"
-              >
+              <button onClick={() => setEducation(p => p.filter((_, i) => i !== idx))} className="p-1 hover:bg-red-50 rounded text-red-500">
                 <X className="w-4 h-4" />
               </button>
             </div>
           ))}
+        </div>
+      )}
+
+      {showEduForm && (
+        <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 space-y-3">
+          <p className="text-sm font-semibold text-gray-700">New Education Record</p>
+          <div>
+            <label className={label_cls}>Highest Educational Attainment</label>
+            <input value={currentEducation.highest_attainment || ''} onChange={e => setCurrentEducation(p => ({ ...p, highest_attainment: e.target.value }))} className={inp} placeholder="e.g., Bachelor's Degree" />
+          </div>
+          <div>
+            <label className={label_cls}>Institution Name</label>
+            <input value={currentEducation.institution_name || ''} onChange={e => setCurrentEducation(p => ({ ...p, institution_name: e.target.value }))} className={inp} placeholder="e.g., University of the Philippines" />
+          </div>
+          <div>
+            <label className={label_cls}>Institution Address</label>
+            <input value={currentEducation.institution_address || ''} onChange={e => setCurrentEducation(p => ({ ...p, institution_address: e.target.value }))} className={inp} />
+          </div>
+          <div>
+            <label className={label_cls}>Years (e.g., 2010–2014)</label>
+            <input value={currentEducation.years_inclusive || ''} onChange={e => setCurrentEducation(p => ({ ...p, years_inclusive: e.target.value }))} className={inp} />
+          </div>
+          <div className="flex gap-2 justify-end pt-1">
+            <Button variant="secondary" onClick={() => { setShowEduForm(false); setCurrentEducation({}) }}>Cancel</Button>
+            <Button onClick={() => { if (currentEducation.institution_name) { setEducation(p => [...p, currentEducation]); setShowEduForm(false); setCurrentEducation({}) } }}>Add</Button>
+          </div>
         </div>
       )}
     </div>
@@ -263,42 +274,68 @@ export default function MembershipApplicationPage() {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-semibold text-gray-900">Current Organizational Affiliation</h3>
-        <Button
-          variant="secondary"
-          onClick={() => {
-            setCurrentAffiliation({})
-            setAffiliationModal(true)
-          }}
-        >
-          <Plus className="w-4 h-4 mr-2" /> Add Organization
-        </Button>
+        {!showAffForm && (
+          <Button variant="secondary" onClick={() => { setCurrentAffiliation({}); setShowAffForm(true) }}>
+            <Plus className="w-4 h-4 mr-2" /> Add Organization
+          </Button>
+        )}
       </div>
 
-      {affiliations.length === 0 ? (
+      {affiliations.length === 0 && !showAffForm && (
         <p className="text-sm text-gray-500 text-center py-4">No organization records added yet</p>
-      ) : (
+      )}
+
+      {affiliations.length > 0 && (
         <div className="space-y-2">
           {affiliations.map((aff, idx) => (
-            <div
-              key={idx}
-              className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200"
-            >
+            <div key={idx} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200">
               <div>
                 <p className="font-medium text-gray-900">{aff.organization_name}</p>
-                <p className="text-sm text-gray-600">
-                  {aff.position} • {aff.organization_type} • {aff.years_involved} years
-                </p>
+                <p className="text-sm text-gray-600">{aff.position} • {aff.organization_type} • {aff.years_involved} years</p>
               </div>
-              <button
-                onClick={() => {
-                  setAffiliations((p) => p.filter((_, i) => i !== idx))
-                }}
-                className="p-1 hover:bg-red-50 rounded text-red-500"
-              >
+              <button onClick={() => setAffiliations(p => p.filter((_, i) => i !== idx))} className="p-1 hover:bg-red-50 rounded text-red-500">
                 <X className="w-4 h-4" />
               </button>
             </div>
           ))}
+        </div>
+      )}
+
+      {showAffForm && (
+        <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 space-y-3">
+          <p className="text-sm font-semibold text-gray-700">New Organization</p>
+          <div>
+            <label className={label_cls}>Organization Name</label>
+            <input value={currentAffiliation.organization_name || ''} onChange={e => setCurrentAffiliation(p => ({ ...p, organization_name: e.target.value }))} className={inp} />
+          </div>
+          <div>
+            <label className={label_cls}>Position / Role</label>
+            <input value={currentAffiliation.position || ''} onChange={e => setCurrentAffiliation(p => ({ ...p, position: e.target.value }))} className={inp} placeholder="e.g., Executive Director" />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className={label_cls}>Years Involved</label>
+              <input type="number" value={currentAffiliation.years_involved || ''} onChange={e => setCurrentAffiliation(p => ({ ...p, years_involved: e.target.value ? Number(e.target.value) : undefined }))} className={inp} />
+            </div>
+            <div>
+              <label className={label_cls}>Organization Type</label>
+              <select value={currentAffiliation.organization_type || ''} onChange={e => setCurrentAffiliation(p => ({ ...p, organization_type: e.target.value }))} className={inp}>
+                <option value="">-- Select --</option>
+                <option>People&apos;s Organization</option>
+                <option>Non-Government Organization</option>
+                <option>Network</option><option>Platform</option><option>Coalition</option>
+                <option>Think Tank</option><option>Academic Institution</option><option>Other</option>
+              </select>
+            </div>
+          </div>
+          <div>
+            <label className={label_cls}>Organization Address</label>
+            <input value={currentAffiliation.organization_address || ''} onChange={e => setCurrentAffiliation(p => ({ ...p, organization_address: e.target.value }))} className={inp} />
+          </div>
+          <div className="flex gap-2 justify-end pt-1">
+            <Button variant="secondary" onClick={() => { setShowAffForm(false); setCurrentAffiliation({}) }}>Cancel</Button>
+            <Button onClick={() => { if (currentAffiliation.organization_name) { setAffiliations(p => [...p, currentAffiliation]); setShowAffForm(false); setCurrentAffiliation({}) } }}>Add</Button>
+          </div>
         </div>
       )}
     </div>
@@ -344,42 +381,69 @@ export default function MembershipApplicationPage() {
 
       <div className="flex items-center justify-between pt-4">
         <h4 className="font-medium text-gray-900">Participation History (Optional)</h4>
-        <Button
-          variant="secondary"
-          onClick={() => {
-            setCurrentEngagement({})
-            setEngagementModal(true)
-          }}
-        >
-          <Plus className="w-4 h-4 mr-2" /> Add Event
-        </Button>
+        {!showEngForm && (
+          <Button variant="secondary" onClick={() => { setCurrentEngagement({}); setShowEngForm(true) }}>
+            <Plus className="w-4 h-4 mr-2" /> Add Event
+          </Button>
+        )}
       </div>
 
-      {engagements.length === 0 ? (
+      {engagements.length === 0 && !showEngForm && (
         <p className="text-sm text-gray-500">No IBON engagement records yet</p>
-      ) : (
+      )}
+
+      {engagements.length > 0 && (
         <div className="space-y-2">
           {engagements.map((eng, idx) => (
-            <div
-              key={idx}
-              className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200"
-            >
+            <div key={idx} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200">
               <div>
                 <p className="font-medium text-gray-900">{eng.title}</p>
-                <p className="text-sm text-gray-600">
-                  {eng.participation_type} • {eng.date_participated} • {eng.location}
-                </p>
+                <p className="text-sm text-gray-600">{eng.participation_type} • {eng.date_participated} • {eng.location}</p>
               </div>
-              <button
-                onClick={() => {
-                  setEngagements((p) => p.filter((_, i) => i !== idx))
-                }}
-                className="p-1 hover:bg-red-50 rounded text-red-500"
-              >
+              <button onClick={() => setEngagements(p => p.filter((_, i) => i !== idx))} className="p-1 hover:bg-red-50 rounded text-red-500">
                 <X className="w-4 h-4" />
               </button>
             </div>
           ))}
+        </div>
+      )}
+
+      {showEngForm && (
+        <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 space-y-3">
+          <p className="text-sm font-semibold text-gray-700">New Event</p>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="col-span-2">
+              <label className={label_cls}>Event Title</label>
+              <input value={currentEngagement.title || ''} onChange={e => setCurrentEngagement(p => ({ ...p, title: e.target.value }))} className={inp} placeholder="e.g., Global Assembly 2024" />
+            </div>
+            <div>
+              <label className={label_cls}>Event Type</label>
+              <select value={currentEngagement.engagement_type || ''} onChange={e => setCurrentEngagement(p => ({ ...p, engagement_type: e.target.value }))} className={inp}>
+                <option value="">-- Select --</option>
+                <option>Conference</option><option>Workshop</option><option>Seminar</option>
+                <option>Training</option><option>Webinar</option><option>Campaign</option><option>Other</option>
+              </select>
+            </div>
+            <div>
+              <label className={label_cls}>Type of Participation</label>
+              <select value={currentEngagement.participation_type || ''} onChange={e => setCurrentEngagement(p => ({ ...p, participation_type: e.target.value }))} className={inp}>
+                <option value="">-- Select --</option>
+                <option>Participant</option><option>Speaker</option><option>Facilitator</option><option>Moderator</option>
+              </select>
+            </div>
+            <div>
+              <label className={label_cls}>Date Participated</label>
+              <input value={currentEngagement.date_participated || ''} onChange={e => setCurrentEngagement(p => ({ ...p, date_participated: e.target.value }))} className={inp} placeholder="e.g., May 15–18, 2024" />
+            </div>
+            <div>
+              <label className={label_cls}>Location</label>
+              <input value={currentEngagement.location || ''} onChange={e => setCurrentEngagement(p => ({ ...p, location: e.target.value }))} className={inp} placeholder="e.g., Bangkok, Thailand" />
+            </div>
+          </div>
+          <div className="flex gap-2 justify-end pt-1">
+            <Button variant="secondary" onClick={() => { setShowEngForm(false); setCurrentEngagement({}) }}>Cancel</Button>
+            <Button onClick={() => { if (currentEngagement.title) { setEngagements(p => [...p, currentEngagement]); setShowEngForm(false); setCurrentEngagement({}) } }}>Add</Button>
+          </div>
         </div>
       )}
     </div>
@@ -684,143 +748,6 @@ export default function MembershipApplicationPage() {
         </div>
       </div>
 
-      {/* Education Modal */}
-      <Modal open={educationModal} onClose={() => setEducationModal(false)}>
-        <ModalHeader onClose={() => setEducationModal(false)}>Add Education</ModalHeader>
-        <ModalBody>
-          <div className="space-y-3">
-            <div>
-              <label className={label_cls}>Highest Educational Attainment</label>
-              <input
-                value={currentEducation?.highest_attainment || ''}
-                onChange={(e) => setCurrentEducation((p) => ({ ...p, highest_attainment: e.target.value }))}
-                className={inp}
-                placeholder="e.g., Bachelor's Degree, Master's Degree"
-              />
-            </div>
-            <div>
-              <label className={label_cls}>Institution Name</label>
-              <input
-                value={currentEducation?.institution_name || ''}
-                onChange={(e) => setCurrentEducation((p) => ({ ...p, institution_name: e.target.value }))}
-                className={inp}
-                placeholder="e.g., University of the Philippines"
-              />
-            </div>
-            <div>
-              <label className={label_cls}>Institution Address</label>
-              <input
-                value={currentEducation?.institution_address || ''}
-                onChange={(e) => setCurrentEducation((p) => ({ ...p, institution_address: e.target.value }))}
-                className={inp}
-              />
-            </div>
-            <div>
-              <label className={label_cls}>Years (e.g., 2010-2014)</label>
-              <input
-                value={currentEducation?.years_inclusive || ''}
-                onChange={(e) => setCurrentEducation((p) => ({ ...p, years_inclusive: e.target.value }))}
-                className={inp}
-              />
-            </div>
-          </div>
-        </ModalBody>
-        <div className="p-4 border-t flex gap-2">
-          <Button variant="secondary" onClick={() => setEducationModal(false)}>
-            Cancel
-          </Button>
-          <Button
-            variant="primary"
-            onClick={() => {
-              if (currentEducation?.institution_name) {
-                setEducation((p) => [...p, currentEducation])
-                setEducationModal(false)
-                setCurrentEducation(null)
-              }
-            }}
-          >
-            Add
-          </Button>
-        </div>
-      </Modal>
-
-      {/* Affiliation Modal */}
-      <Modal open={affiliationModal} onClose={() => setAffiliationModal(false)}>
-        <ModalHeader onClose={() => setAffiliationModal(false)}>Add Organization</ModalHeader>
-        <ModalBody>
-          <div className="space-y-3">
-            <div>
-              <label className={label_cls}>Organization Name</label>
-              <input
-                required
-                value={currentAffiliation?.organization_name || ''}
-                onChange={(e) => setCurrentAffiliation((p) => ({ ...p, organization_name: e.target.value }))}
-                className={inp}
-              />
-            </div>
-            <div>
-              <label className={label_cls}>Position/Role</label>
-              <input
-                value={currentAffiliation?.position || ''}
-                onChange={(e) => setCurrentAffiliation((p) => ({ ...p, position: e.target.value }))}
-                className={inp}
-                placeholder="e.g., Executive Director, Board Member"
-              />
-            </div>
-            <div>
-              <label className={label_cls}>Years Involved</label>
-              <input
-                type="number"
-                value={currentAffiliation?.years_involved || ''}
-                onChange={(e) =>
-                  setCurrentAffiliation((p) => ({ ...p, years_involved: e.target.value ? Number(e.target.value) : undefined }))
-                }
-                className={inp}
-              />
-            </div>
-            <div>
-              <label className={label_cls}>Organization Address</label>
-              <input value={currentAffiliation?.organization_address || ''} onChange={(e) => setCurrentAffiliation((p) => ({ ...p, organization_address: e.target.value }))} className={inp} />
-            </div>
-            <div>
-              <label className={label_cls}>Organization Type</label>
-              <select
-                value={currentAffiliation?.organization_type || ''}
-                onChange={(e) => setCurrentAffiliation((p) => ({ ...p, organization_type: e.target.value }))}
-                className={inp}
-              >
-                <option value="">-- Select --</option>
-                <option value="People's Organization">People's Organization</option>
-                <option value="Non-Government Organization">Non-Government Organization</option>
-                <option value="Network">Network</option>
-                <option value="Platform">Platform</option>
-                <option value="Coalition">Coalition</option>
-                <option value="Think Tank">Think Tank</option>
-                <option value="Academic Institution">Academic Institution</option>
-                <option value="Other">Other</option>
-              </select>
-            </div>
-          </div>
-        </ModalBody>
-        <div className="p-4 border-t flex gap-2">
-          <Button variant="secondary" onClick={() => setAffiliationModal(false)}>
-            Cancel
-          </Button>
-          <Button
-            variant="primary"
-            onClick={() => {
-              if (currentAffiliation?.organization_name) {
-                setAffiliations((p) => [...p, currentAffiliation])
-                setAffiliationModal(false)
-                setCurrentAffiliation(null)
-              }
-            }}
-          >
-            Add
-          </Button>
-        </div>
-      </Modal>
-
       {/* Terms & Conditions Modal */}
       <Modal open={termsModal} onClose={() => setTermsModal(false)} size="lg">
         <ModalHeader onClose={() => setTermsModal(false)}>
@@ -902,89 +829,6 @@ export default function MembershipApplicationPage() {
         </ModalFooter>
       </Modal>
 
-      {/* Engagement Modal */}
-      <Modal open={engagementModal} onClose={() => setEngagementModal(false)}>
-        <ModalHeader onClose={() => setEngagementModal(false)}>Add IBON Engagement</ModalHeader>
-        <ModalBody>
-          <div className="space-y-3">
-            <div>
-              <label className={label_cls}>Event Title</label>
-              <input
-                value={currentEngagement?.title || ''}
-                onChange={(e) => setCurrentEngagement((p) => ({ ...p, title: e.target.value }))}
-                className={inp}
-                placeholder="e.g., Global Assembly 2024"
-              />
-            </div>
-            <div>
-              <label className={label_cls}>Event Type</label>
-              <select
-                value={currentEngagement?.engagement_type || ''}
-                onChange={(e) => setCurrentEngagement((p) => ({ ...p, engagement_type: e.target.value }))}
-                className={inp}
-              >
-                <option value="">-- Select --</option>
-                <option value="Conference">Conference</option>
-                <option value="Workshop">Workshop</option>
-                <option value="Seminar">Seminar</option>
-                <option value="Training">Training</option>
-                <option value="Webinar">Webinar</option>
-                <option value="Campaign">Campaign</option>
-                <option value="Other">Other</option>
-              </select>
-            </div>
-            <div>
-              <label className={label_cls}>Date Participated</label>
-              <input
-                value={currentEngagement?.date_participated || ''}
-                onChange={(e) => setCurrentEngagement((p) => ({ ...p, date_participated: e.target.value }))}
-                className={inp}
-                placeholder="e.g., May 15-18, 2024"
-              />
-            </div>
-            <div>
-              <label className={label_cls}>Location</label>
-              <input
-                value={currentEngagement?.location || ''}
-                onChange={(e) => setCurrentEngagement((p) => ({ ...p, location: e.target.value }))}
-                className={inp}
-                placeholder="e.g., Bangkok, Thailand"
-              />
-            </div>
-            <div>
-              <label className={label_cls}>Type of Participation</label>
-              <select
-                value={currentEngagement?.participation_type || ''}
-                onChange={(e) => setCurrentEngagement((p) => ({ ...p, participation_type: e.target.value }))}
-                className={inp}
-              >
-                <option value="">-- Select --</option>
-                <option value="Participant">Participant</option>
-                <option value="Speaker">Speaker</option>
-                <option value="Facilitator">Facilitator</option>
-                <option value="Moderator">Moderator</option>
-              </select>
-            </div>
-          </div>
-        </ModalBody>
-        <div className="p-4 border-t flex gap-2">
-          <Button variant="secondary" onClick={() => setEngagementModal(false)}>
-            Cancel
-          </Button>
-          <Button
-            variant="primary"
-            onClick={() => {
-              if (currentEngagement?.title) {
-                setEngagements((p) => [...p, currentEngagement])
-                setEngagementModal(false)
-                setCurrentEngagement(null)
-              }
-            }}
-          >
-            Add
-          </Button>
-        </div>
-      </Modal>
     </div>
   )
 }

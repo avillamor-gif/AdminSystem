@@ -17,6 +17,7 @@ export interface MemberApplication {
   office_address: string | null
   phone_home: string | null
   phone_office: string | null
+  country: string | null
   photo_url: string | null
   how_learned_about_ibon: string | null
   why_join: string | null
