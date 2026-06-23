@@ -476,7 +476,6 @@ export default function MembershipApplicationPage() {
           <p className="font-medium mb-1">Before you submit:</p>
           <ul className="list-disc list-inside space-y-0.5">
             <li>Make sure all information is accurate</li>
-            <li>Your application will be reviewed by our team</li>
             <li>You will be contacted once a decision has been made</li>
           </ul>
         </div>
