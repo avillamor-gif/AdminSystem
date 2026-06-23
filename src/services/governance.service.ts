@@ -113,6 +113,10 @@ export interface MemberCampaignRecipient {
   status: 'pending' | 'sent' | 'failed' | 'bounced'
   sent_at: string | null
   error_message: string | null
+  resend_email_id: string | null
+  opened_at: string | null
+  clicked_at: string | null
+  clicked_url: string | null
   created_at: string | null
   // Joined
   member?: Member | null

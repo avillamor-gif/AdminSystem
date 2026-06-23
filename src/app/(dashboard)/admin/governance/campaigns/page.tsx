@@ -4,7 +4,7 @@ import { useState, useMemo, useCallback } from 'react'
 import {
   Plus, Send, Edit2, Trash2, Eye, FileText, CheckCircle, Clock,
   Users, Mail, BarChart2, X, ChevronRight, ChevronLeft, AlertCircle,
-  Download, RefreshCw,
+  Download, RefreshCw, MousePointerClick,
 } from 'lucide-react'
 import { Card, Button, Modal, ModalHeader, ModalBody, ModalFooter } from '@/components/ui'
 import {
@@ -493,110 +493,218 @@ function CampaignDetailPanel({
   onClose: () => void
   onEdit: () => void
 }) {
+  const [tab, setTab] = useState<'report' | 'recipients'>(
+    campaign.status === 'sent' ? 'report' : 'recipients'
+  )
   const { data: recipients = [], isLoading } = useCampaignRecipients(campaign.id)
   const { Icon, cls, label } = STATUS_META[campaign.status]
 
-  const sent    = recipients.filter(r => r.status === 'sent').length
-  const failed  = recipients.filter(r => r.status === 'failed' || r.status === 'bounced').length
-  const pending = recipients.filter(r => r.status === 'pending').length
+  // ── Derived report stats ─────────────────────────────────────────────────────
+  const report = useMemo(() => {
+    const total    = recipients.length
+    const sent     = recipients.filter(r => r.status === 'sent' || r.status === 'bounced').length
+    const failed   = recipients.filter(r => r.status === 'failed').length
+    const bounced  = recipients.filter(r => r.status === 'bounced').length
+    const opened   = recipients.filter(r => r.opened_at).length
+    const clicked  = recipients.filter(r => r.clicked_at).length
+    const deliveryRate = (sent + failed) > 0 ? Math.round((sent / (sent + failed)) * 100) : 0
+    const openRate     = sent > 0 ? Math.round((opened / sent) * 100) : 0
+    const clickRate    = sent > 0 ? Math.round((clicked / sent) * 100) : 0
+
+    // Top clicked URLs
+    const urlMap: Record<string, number> = {}
+    for (const r of recipients) {
+      if (r.clicked_url) urlMap[r.clicked_url] = (urlMap[r.clicked_url] || 0) + 1
+    }
+    const topUrls = Object.entries(urlMap).sort((a, b) => b[1] - a[1]).slice(0, 5)
+
+    return { total, sent, failed, bounced, opened, clicked, deliveryRate, openRate, clickRate, topUrls }
+  }, [recipients])
 
   function exportCsv() {
-    const header = 'Name,Email,Status,Sent At\n'
+    const header = 'Name,Email,Status,Sent At,Opened,Clicked,Clicked URL\n'
     const rows = recipients.map(r =>
-      `"${r.member?.first_name ?? ''} ${r.member?.last_name ?? ''}","${r.email}","${r.status}","${r.sent_at ?? ''}"`
+      [
+        `"${r.member?.first_name ?? ''} ${r.member?.last_name ?? ''}"`,
+        `"${r.email}"`,
+        `"${r.status}"`,
+        `"${r.sent_at ?? ''}"`,
+        r.opened_at ? 'Yes' : 'No',
+        r.clicked_at ? 'Yes' : 'No',
+        `"${r.clicked_url ?? ''}"`,
+      ].join(',')
     ).join('\n')
     const blob = new Blob([header + rows], { type: 'text/csv' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `campaign-${campaign.title.replace(/\s+/g, '-')}.csv`
-    a.click()
+    const url  = URL.createObjectURL(blob)
+    const a    = document.createElement('a')
+    a.href = url; a.download = `report-${campaign.title.replace(/\s+/g, '-')}.csv`; a.click()
     URL.revokeObjectURL(url)
   }
 
+  // ── Rate ring helper ─────────────────────────────────────────────────────────
+  function RateRing({ rate, color, label: ringLabel }: { rate: number; color: string; label: string }) {
+    const r = 28, circ = 2 * Math.PI * r
+    return (
+      <div className="flex flex-col items-center gap-1">
+        <svg viewBox="0 0 70 70" className="w-16 h-16">
+          <circle cx="35" cy="35" r={r} fill="none" stroke="#f3f4f6" strokeWidth="10" />
+          <circle cx="35" cy="35" r={r} fill="none" stroke={color} strokeWidth="10"
+            strokeDasharray={`${(rate / 100) * circ} ${circ}`}
+            strokeDashoffset={circ * 0.25} transform="rotate(-90 35 35)" />
+          <text x="35" y="39" textAnchor="middle" fontSize="12" fontWeight="700" fill="#1f2937">{rate}%</text>
+        </svg>
+        <span className="text-xs text-gray-500 text-center">{ringLabel}</span>
+      </div>
+    )
+  }
+
   return (
-    <div className="fixed inset-y-0 right-0 z-40 w-[480px] bg-white shadow-2xl flex flex-col border-l border-gray-200">
+    <div className="fixed inset-y-0 right-0 z-40 w-[520px] bg-white shadow-2xl flex flex-col border-l border-gray-200">
+      {/* Header */}
       <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
-        <div className="flex items-center gap-2">
-          <Icon className="w-4 h-4 text-gray-500" />
-          <h3 className="font-semibold text-gray-900 truncate max-w-[280px]">{campaign.title}</h3>
-          <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${cls}`}>{label}</span>
+        <div className="flex items-center gap-2 min-w-0">
+          <Icon className="w-4 h-4 text-gray-500 flex-shrink-0" />
+          <h3 className="font-semibold text-gray-900 truncate">{campaign.title}</h3>
+          <span className={`text-xs px-2 py-0.5 rounded-full font-medium flex-shrink-0 ${cls}`}>{label}</span>
         </div>
-        <button onClick={onClose} className="p-1.5 text-gray-400 hover:text-gray-600 rounded">
+        <button onClick={onClose} className="p-1.5 text-gray-400 hover:text-gray-600 rounded flex-shrink-0">
           <X className="w-4 h-4" />
         </button>
       </div>
 
-      <div className="flex-1 overflow-y-auto">
-        {/* Campaign info */}
-        <div className="p-5 border-b border-gray-100 space-y-2">
-          <p className="text-sm text-gray-500">Subject: <span className="text-gray-900 font-medium">{campaign.subject}</span></p>
-          {campaign.preview_text && (
-            <p className="text-sm text-gray-500">Preview: <span className="text-gray-700 italic">{campaign.preview_text}</span></p>
-          )}
-          <p className="text-sm text-gray-500">Audience: <span className="text-gray-900">{audienceLabel(campaign.recipient_filter)}</span></p>
-          {campaign.sent_at && (
-            <p className="text-sm text-gray-500">Sent: <span className="text-gray-900">{formatDate(campaign.sent_at)}</span></p>
-          )}
+      {/* Meta */}
+      <div className="px-5 py-3 border-b border-gray-100 space-y-1 bg-gray-50">
+        <p className="text-xs text-gray-500">Subject: <span className="text-gray-800 font-medium">{campaign.subject}</span></p>
+        {campaign.preview_text && <p className="text-xs text-gray-400 italic">{campaign.preview_text}</p>}
+        <div className="flex items-center gap-4 text-xs text-gray-500">
+          <span>Audience: {audienceLabel(campaign.recipient_filter)}</span>
+          {campaign.sent_at && <span>Sent: {formatDate(campaign.sent_at)}</span>}
         </div>
+      </div>
 
-        {/* Stats */}
-        {campaign.status === 'sent' && (
-          <div className="grid grid-cols-3 gap-0 border-b border-gray-100">
-            {[
-              { label: 'Sent', value: sent,    color: 'text-green-600' },
-              { label: 'Failed', value: failed, color: 'text-red-600' },
-              { label: 'Pending', value: pending, color: 'text-gray-500' },
-            ].map(s => (
-              <div key={s.label} className="p-4 text-center border-r border-gray-100 last:border-r-0">
-                <p className={`text-2xl font-bold ${s.color}`}>{s.value}</p>
-                <p className="text-xs text-gray-500">{s.label}</p>
-              </div>
-            ))}
-          </div>
+      {/* Tabs — only show Report tab for sent campaigns */}
+      {campaign.status === 'sent' && (
+        <div className="flex border-b border-gray-100 px-5">
+          {(['report', 'recipients'] as const).map(t => (
+            <button key={t} onClick={() => setTab(t)}
+              className={`px-3 py-2.5 text-sm font-medium border-b-2 capitalize transition-colors ${tab === t ? 'border-amber-500 text-amber-700' : 'border-transparent text-gray-500 hover:text-gray-700'}`}>
+              {t === 'report' ? 'Report' : `Recipients (${recipients.length})`}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* Actions bar */}
+      <div className="px-4 py-2.5 border-b border-gray-100 flex gap-2">
+        {campaign.status === 'draft' && (
+          <Button variant="secondary" onClick={onEdit}>
+            <Edit2 className="w-3.5 h-3.5 mr-1.5" /> Edit &amp; Send
+          </Button>
         )}
+        {recipients.length > 0 && (
+          <Button variant="secondary" onClick={exportCsv}>
+            <Download className="w-3.5 h-3.5 mr-1.5" /> Export CSV
+          </Button>
+        )}
+      </div>
 
-        {/* Actions */}
-        <div className="p-4 flex gap-2 border-b border-gray-100">
-          {campaign.status === 'draft' && (
-            <Button variant="secondary" onClick={onEdit}>
-              <Edit2 className="w-3.5 h-3.5 mr-1.5" /> Edit & Send
-            </Button>
-          )}
-          {recipients.length > 0 && (
-            <Button variant="secondary" onClick={exportCsv}>
-              <Download className="w-3.5 h-3.5 mr-1.5" /> Export CSV
-            </Button>
-          )}
-        </div>
+      <div className="flex-1 overflow-y-auto">
+        {/* ── REPORT TAB ── */}
+        {tab === 'report' && campaign.status === 'sent' && (
+          <div className="p-5 space-y-5">
+            {/* Rate rings */}
+            <div className="flex justify-around py-2">
+              <RateRing rate={report.deliveryRate} color="#22c55e" label="Delivery Rate" />
+              <RateRing rate={report.openRate}     color="#f59e0b" label="Open Rate" />
+              <RateRing rate={report.clickRate}    color="#8b5cf6" label="Click Rate" />
+            </div>
 
-        {/* Recipients */}
-        <div className="p-4">
-          <p className="text-xs font-semibold text-gray-500 uppercase mb-3">
-            Recipients ({recipients.length})
-          </p>
-          {isLoading ? (
-            <p className="text-sm text-gray-400 text-center py-8">Loading…</p>
-          ) : recipients.length === 0 ? (
-            <p className="text-sm text-gray-400 text-center py-8">No recipients recorded yet.</p>
-          ) : (
-            <div className="space-y-2">
-              {recipients.map(r => (
-                <div key={r.id} className="flex items-center justify-between py-2 border-b border-gray-50 last:border-0">
-                  <div>
-                    <p className="text-sm font-medium text-gray-800">
-                      {r.member ? `${r.member.first_name} ${r.member.last_name}` : '—'}
-                    </p>
-                    <p className="text-xs text-gray-500">{r.email}</p>
-                  </div>
-                  <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${RECIPIENT_STATUS_CLS[r.status]}`}>
-                    {r.status}
-                  </span>
+            {/* Stat grid */}
+            <div className="grid grid-cols-3 gap-3">
+              {[
+                { label: 'Delivered',  value: report.sent,    color: 'text-green-600',  bg: 'bg-green-50'  },
+                { label: 'Failed',     value: report.failed,  color: 'text-red-600',    bg: 'bg-red-50'    },
+                { label: 'Bounced',    value: report.bounced, color: 'text-orange-600', bg: 'bg-orange-50' },
+                { label: 'Opened',     value: report.opened,  color: 'text-amber-600',  bg: 'bg-amber-50'  },
+                { label: 'Clicked',    value: report.clicked, color: 'text-purple-600', bg: 'bg-purple-50' },
+                { label: 'Total Sent', value: report.total,   color: 'text-gray-600',   bg: 'bg-gray-50'   },
+              ].map(s => (
+                <div key={s.label} className={`${s.bg} rounded-xl p-3 text-center`}>
+                  <p className={`text-xl font-bold ${s.color}`}>{s.value}</p>
+                  <p className="text-xs text-gray-500 mt-0.5">{s.label}</p>
                 </div>
               ))}
             </div>
-          )}
-        </div>
+
+            {/* Open tracking notice */}
+            {report.opened === 0 && report.sent > 0 && (
+              <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-xs text-amber-800">
+                <strong>Open tracking:</strong> 0 opens recorded. This may mean opens haven&apos;t occurred yet, or recipients are using email clients that block tracking pixels (e.g. Apple Mail).
+              </div>
+            )}
+
+            {/* Top clicked links */}
+            {report.topUrls.length > 0 && (
+              <div>
+                <p className="text-xs font-semibold text-gray-500 uppercase mb-2 flex items-center gap-1.5">
+                  <MousePointerClick className="w-3.5 h-3.5" /> Top Clicked Links
+                </p>
+                <div className="space-y-2">
+                  {report.topUrls.map(([url, count]) => (
+                    <div key={url} className="flex items-center justify-between gap-3 p-2 bg-gray-50 rounded-lg">
+                      <a href={url} target="_blank" rel="noopener noreferrer"
+                        className="text-xs text-blue-600 hover:underline truncate flex-1">{url}</a>
+                      <span className="text-xs font-semibold text-purple-600 flex-shrink-0">{count}×</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ── RECIPIENTS TAB ── */}
+        {(tab === 'recipients' || campaign.status !== 'sent') && (
+          <div className="p-4">
+            <p className="text-xs font-semibold text-gray-500 uppercase mb-3">
+              Recipients ({recipients.length})
+            </p>
+            {isLoading ? (
+              <p className="text-sm text-gray-400 text-center py-8">Loading…</p>
+            ) : recipients.length === 0 ? (
+              <p className="text-sm text-gray-400 text-center py-8">No recipients recorded yet.</p>
+            ) : (
+              <div className="space-y-1">
+                {/* Column header */}
+                <div className="grid grid-cols-[1fr_auto_auto_auto] gap-2 px-2 pb-1 border-b border-gray-100">
+                  <span className="text-xs font-medium text-gray-400">Member</span>
+                  <span className="text-xs font-medium text-gray-400 text-center w-14">Status</span>
+                  <span className="text-xs font-medium text-gray-400 text-center w-8" title="Opened">👁</span>
+                  <span className="text-xs font-medium text-gray-400 text-center w-8" title="Clicked">🖱</span>
+                </div>
+                {recipients.map(r => (
+                  <div key={r.id} className="grid grid-cols-[1fr_auto_auto_auto] gap-2 items-center px-2 py-2 hover:bg-gray-50 rounded-lg">
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium text-gray-800 truncate">
+                        {r.member ? `${r.member.first_name} ${r.member.last_name}` : '—'}
+                      </p>
+                      <p className="text-xs text-gray-400 truncate">{r.email}</p>
+                    </div>
+                    <span className={`text-xs px-2 py-0.5 rounded-full font-medium w-14 text-center ${RECIPIENT_STATUS_CLS[r.status]}`}>
+                      {r.status}
+                    </span>
+                    <span className={`text-sm text-center w-8 ${r.opened_at ? 'text-amber-500' : 'text-gray-200'}`} title={r.opened_at ? `Opened ${formatDate(r.opened_at)}` : 'Not opened'}>
+                      {r.opened_at ? '✓' : '—'}
+                    </span>
+                    <span className={`text-sm text-center w-8 ${r.clicked_at ? 'text-purple-500' : 'text-gray-200'}`} title={r.clicked_at ? `Clicked ${formatDate(r.clicked_at)}` : 'No clicks'}>
+                      {r.clicked_at ? '✓' : '—'}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   )
@@ -722,13 +830,23 @@ export default function CampaignsPage() {
                       </td>
                       <td className="px-5 py-3.5 text-sm">
                         {c.status === 'sent' ? (
-                          <span className="text-gray-700">
-                            <span className="text-green-600 font-medium">{c.sent_count}</span>
-                            {c.failed_count > 0 && (
-                              <span className="text-red-500 ml-1">· {c.failed_count} failed</span>
+                          <div className="space-y-0.5">
+                            <div className="flex items-center gap-1.5">
+                              <span className="text-green-600 font-medium">{c.sent_count}</span>
+                              <span className="text-gray-400 text-xs">delivered</span>
+                              {c.failed_count > 0 && <span className="text-red-500 text-xs">· {c.failed_count} failed</span>}
+                            </div>
+                            {((c.open_count ?? 0) > 0 || (c.click_count ?? 0) > 0) && (
+                              <div className="flex items-center gap-2 text-xs">
+                                {(c.open_count ?? 0) > 0 && (
+                                  <span className="text-amber-600">👁 {c.open_count} opens</span>
+                                )}
+                                {(c.click_count ?? 0) > 0 && (
+                                  <span className="text-purple-600">🖱 {c.click_count} clicks</span>
+                                )}
+                              </div>
                             )}
-                            <span className="text-gray-400"> / {c.recipient_count}</span>
-                          </span>
+                          </div>
                         ) : (
                           <span className="text-gray-400">—</span>
                         )}

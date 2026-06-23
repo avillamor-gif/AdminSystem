@@ -5,6 +5,7 @@ const navItems = [
   { label: 'Membership Invitations',   href: '/admin/governance/membership-invitations' },
   { label: 'Membership Applications',  href: '/admin/governance/membership-applications' },
   { label: 'Membership',               href: '/admin/governance/members' },
+  { label: 'Fix Member Countries',     href: '/admin/governance/members/fix-countries' },
   { label: 'General Assemblies',       href: '/admin/governance/general-assemblies' },
   { label: 'Email Campaigns',          href: '/admin/governance/campaigns' },
   { label: 'Reports',                  href: '/admin/governance/reports' },
