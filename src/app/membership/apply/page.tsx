@@ -585,7 +585,7 @@ export default function MembershipApplicationPage() {
         {/* Header */}
         <div className="text-center mb-8">
           <div className="flex justify-center mb-4">
-            <img src="/ibon-logo.png" alt="IBON International" className="h-16 w-auto" />
+            <img src="/ibon-logo.png" alt="IBON International" className="h-16 w-auto" style={{ marginRight: '5px' }} />
           </div>
           <p className="text-lg text-gray-700">Membership Application</p>
           <p className="text-sm text-gray-500 mt-2">
