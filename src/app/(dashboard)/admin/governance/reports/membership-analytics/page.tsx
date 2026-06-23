@@ -383,49 +383,47 @@ export default function MembershipAnalyticsPage() {
         </Card>
       </div>
 
-      {/* Row 2: Regional Distribution + Admissions Trend */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-        <Card className="p-5">
-          <p className="text-sm font-semibold text-gray-700 mb-4 flex items-center gap-2">
-            <MapPin className="w-4 h-4 text-indigo-500" /> Regional Distribution
-          </p>
-          {stats.regionDonut.length > 0
-            ? <DonutChart segments={stats.regionDonut} total={stats.total} label="members" />
-            : <p className="text-sm text-gray-400 text-center py-8">No country data recorded</p>}
-        </Card>
-
-        <Card className="p-5">
-          <p className="text-sm font-semibold text-gray-700 mb-4 flex items-center gap-2">
-            <TrendingUp className="w-4 h-4 text-green-500" /> Admissions by Year
-          </p>
-          {stats.byYear.length > 0
-            ? <BarChart data={stats.byYear} color="#22c55e" />
-            : <p className="text-sm text-gray-400 text-center py-8">No admission dates recorded</p>}
-        </Card>
-      </div>
-
-      {/* Row 3: Top Countries + Country×Gender */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-        <Card className="p-5">
-          <p className="text-sm font-semibold text-gray-700 mb-4 flex items-center gap-2">
-            <MapPin className="w-4 h-4 text-purple-500" /> Members by Country (Top 12)
-          </p>
-          {stats.byCountry.length > 0 ? (
-            <div className="space-y-2">
-              {stats.byCountry.map(c => (
-                <HorizBar key={c.label} label={c.label} value={c.value} max={stats.byCountry[0].value} color={c.color} />
+      {/* Regional Distribution — full width */}
+      <Card className="p-5">
+        <p className="text-sm font-semibold text-gray-700 mb-4 flex items-center gap-2">
+          <MapPin className="w-4 h-4 text-indigo-500" /> Regional Distribution
+        </p>
+        {stats.regionDonut.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
+            <DonutChart segments={stats.regionDonut} total={stats.total} label="members" />
+            <div className="grid grid-cols-2 gap-2">
+              {stats.regionData.filter(r => r.value > 0).map(r => (
+                <HorizBar key={r.label} label={r.label} value={r.value} max={stats.total} color={r.color} />
               ))}
             </div>
-          ) : (
-            <p className="text-sm text-gray-400 text-center py-8">No country data recorded</p>
-          )}
-        </Card>
+          </div>
+        ) : (
+          <p className="text-sm text-gray-400 text-center py-8">No country data recorded</p>
+        )}
+      </Card>
 
+      {/* Members by Country — full width */}
+      <Card className="p-5">
+        <p className="text-sm font-semibold text-gray-700 mb-4 flex items-center gap-2">
+          <MapPin className="w-4 h-4 text-purple-500" /> Members by Country (Top 12)
+        </p>
+        {stats.byCountry.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2">
+            {stats.byCountry.map(c => (
+              <HorizBar key={c.label} label={c.label} value={c.value} max={stats.byCountry[0].value} color={c.color} />
+            ))}
+          </div>
+        ) : (
+          <p className="text-sm text-gray-400 text-center py-8">No country data recorded</p>
+        )}
+      </Card>
+
+      {/* Country by Gender + Admissions Trend */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
         <Card className="p-5">
           <p className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
             <Users className="w-4 h-4 text-blue-400" /> Country by Gender (Top 10)
           </p>
-          {/* Legend */}
           <div className="flex gap-4 mb-4">
             {[['Male','#3b82f6'],['Female','#ec4899'],['Other','#8b5cf6']].map(([l, c]) => (
               <div key={l} className="flex items-center gap-1.5">
@@ -443,6 +441,15 @@ export default function MembershipAnalyticsPage() {
           ) : (
             <p className="text-sm text-gray-400 text-center py-8">No data recorded</p>
           )}
+        </Card>
+
+        <Card className="p-5">
+          <p className="text-sm font-semibold text-gray-700 mb-4 flex items-center gap-2">
+            <TrendingUp className="w-4 h-4 text-green-500" /> Admissions by Year
+          </p>
+          {stats.byYear.length > 0
+            ? <BarChart data={stats.byYear} color="#22c55e" />
+            : <p className="text-sm text-gray-400 text-center py-8">No admission dates recorded</p>}
         </Card>
       </div>
 

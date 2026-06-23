@@ -1,7 +1,7 @@
 'use client'
 
 import { useMemo } from 'react'
-import { Send, Mail, BellOff, TrendingUp, BarChart2 } from 'lucide-react'
+import { Send, Mail, BellOff, TrendingUp, BarChart2, MousePointerClick, Eye } from 'lucide-react'
 import { Card } from '@/components/ui'
 import { useMembers, useMemberCampaigns } from '@/hooks/useGovernance'
 import { formatDate } from '@/lib/utils'
@@ -41,8 +41,12 @@ export default function EmailReportPage() {
     const sentCampaigns    = campaigns.filter(c => c.status === 'sent')
     const totalSent        = sentCampaigns.reduce((s, c) => s + c.sent_count, 0)
     const totalFailed      = sentCampaigns.reduce((s, c) => s + c.failed_count, 0)
+    const totalOpened      = sentCampaigns.reduce((s, c) => s + (c.open_count ?? 0), 0)
+    const totalClicked     = sentCampaigns.reduce((s, c) => s + (c.click_count ?? 0), 0)
     const totalAttempted   = totalSent + totalFailed
     const deliveryRate     = totalAttempted > 0 ? Math.round((totalSent / totalAttempted) * 100) : 0
+    const openRate         = totalSent > 0 ? Math.round((totalOpened / totalSent) * 100) : 0
+    const clickRate        = totalSent > 0 ? Math.round((totalClicked / totalSent) * 100) : 0
     const avgPerCampaign   = sentCampaigns.length > 0 ? Math.round(totalSent / sentCampaigns.length) : 0
 
     // Monthly sends (last 8 months)
@@ -61,7 +65,8 @@ export default function EmailReportPage() {
 
     return {
       withEmail, optedOut, reachable, totalCampaigns: campaigns.length,
-      sentCampaigns: sentCampaigns.length, totalSent, totalFailed, deliveryRate,
+      sentCampaigns: sentCampaigns.length, totalSent, totalFailed,
+      totalOpened, totalClicked, deliveryRate, openRate, clickRate,
       avgPerCampaign, bySentMonth, topCampaigns,
     }
   }, [members, campaigns])
@@ -77,19 +82,22 @@ export default function EmailReportPage() {
       </div>
 
       {/* KPIs */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
         {[
-          { label: 'Campaigns Sent',    value: stats.sentCampaigns, icon: Send,     color: 'text-teal-600',   bg: 'bg-teal-50',   border: 'border-teal-100'   },
-          { label: 'Emails Delivered',  value: stats.totalSent.toLocaleString(), icon: Mail, color: 'text-green-600', bg: 'bg-green-50', border: 'border-green-100' },
-          { label: 'Delivery Rate',     value: `${stats.deliveryRate}%`, icon: TrendingUp, color: 'text-blue-600', bg: 'bg-blue-50', border: 'border-blue-100' },
-          { label: 'Reachable Members', value: stats.reachable, icon: BellOff, color: 'text-purple-600', bg: 'bg-purple-50', border: 'border-purple-100' },
+          { label: 'Campaigns Sent',    value: stats.sentCampaigns,                     icon: Send,               color: 'text-teal-600',   bg: 'bg-teal-50',   border: 'border-teal-100'   },
+          { label: 'Emails Delivered',  value: stats.totalSent.toLocaleString(),         icon: Mail,               color: 'text-green-600',  bg: 'bg-green-50',  border: 'border-green-100'  },
+          { label: 'Delivery Rate',     value: `${stats.deliveryRate}%`,                 icon: TrendingUp,         color: 'text-blue-600',   bg: 'bg-blue-50',   border: 'border-blue-100'   },
+          { label: 'Unique Opens',      value: stats.totalOpened.toLocaleString(),       icon: Eye,                color: 'text-amber-600',  bg: 'bg-amber-50',  border: 'border-amber-100',  sub: `${stats.openRate}% open rate`   },
+          { label: 'Unique Clicks',     value: stats.totalClicked.toLocaleString(),      icon: MousePointerClick,  color: 'text-purple-600', bg: 'bg-purple-50', border: 'border-purple-100', sub: `${stats.clickRate}% click rate`  },
+          { label: 'Reachable Members', value: stats.reachable,                          icon: BellOff,            color: 'text-indigo-600', bg: 'bg-indigo-50', border: 'border-indigo-100'  },
         ].map(s => (
-          <Card key={s.label} className={`p-5 border ${s.border}`}>
-            <div className={`w-10 h-10 rounded-xl ${s.bg} flex items-center justify-center mb-3`}>
-              <s.icon className={`w-5 h-5 ${s.color}`} />
+          <Card key={s.label} className={`p-4 border ${s.border}`}>
+            <div className={`w-9 h-9 rounded-xl ${s.bg} flex items-center justify-center mb-2`}>
+              <s.icon className={`w-4 h-4 ${s.color}`} />
             </div>
-            <p className={`text-2xl font-bold ${s.color}`}>{s.value}</p>
+            <p className={`text-xl font-bold ${s.color}`}>{s.value}</p>
             <p className="text-xs text-gray-500 mt-0.5">{s.label}</p>
+            {(s as any).sub && <p className="text-xs text-gray-400 mt-0.5">{(s as any).sub}</p>}
           </Card>
         ))}
       </div>
@@ -206,7 +214,7 @@ export default function EmailReportPage() {
             <table className="w-full text-sm">
               <thead className="border-b border-gray-100">
                 <tr>
-                  {['Title', 'Subject', 'Status', 'Sent', 'Failed', 'Delivery %', 'Date'].map(h => (
+                  {['Title', 'Subject', 'Status', 'Sent', 'Failed', 'Delivery %', 'Opens', 'Open %', 'Clicks', 'Click %', 'Date'].map(h => (
                     <th key={h} className="text-left py-2 pr-4 text-xs font-medium text-gray-400 uppercase whitespace-nowrap">{h}</th>
                   ))}
                 </tr>
@@ -215,10 +223,14 @@ export default function EmailReportPage() {
                 {campaigns.map(c => {
                   const attempted = c.sent_count + c.failed_count
                   const rate = attempted > 0 ? Math.round((c.sent_count / attempted) * 100) : null
+                  const opens = c.open_count ?? 0
+                  const clicks = c.click_count ?? 0
+                  const openPct = c.sent_count > 0 ? Math.round((opens / c.sent_count) * 100) : null
+                  const clickPct = c.sent_count > 0 ? Math.round((clicks / c.sent_count) * 100) : null
                   return (
                     <tr key={c.id} className="hover:bg-gray-50">
-                      <td className="py-2.5 pr-4 font-medium text-gray-800 max-w-[200px] truncate">{c.title}</td>
-                      <td className="py-2.5 pr-4 text-gray-500 max-w-[160px] truncate">{c.subject}</td>
+                      <td className="py-2.5 pr-4 font-medium text-gray-800 max-w-[180px] truncate">{c.title}</td>
+                      <td className="py-2.5 pr-4 text-gray-500 max-w-[140px] truncate">{c.subject}</td>
                       <td className="py-2.5 pr-4">
                         <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${STATUS_BADGE[c.status] ?? 'bg-gray-100 text-gray-500'}`}>
                           {c.status}
@@ -227,6 +239,10 @@ export default function EmailReportPage() {
                       <td className="py-2.5 pr-4 text-green-600 font-semibold">{c.sent_count.toLocaleString()}</td>
                       <td className="py-2.5 pr-4 text-red-500">{c.failed_count.toLocaleString()}</td>
                       <td className="py-2.5 pr-4 text-gray-600">{rate !== null ? `${rate}%` : '—'}</td>
+                      <td className="py-2.5 pr-4 text-amber-600 font-semibold">{opens > 0 ? opens : '—'}</td>
+                      <td className="py-2.5 pr-4 text-amber-500 text-xs">{openPct !== null && opens > 0 ? `${openPct}%` : '—'}</td>
+                      <td className="py-2.5 pr-4 text-purple-600 font-semibold">{clicks > 0 ? clicks : '—'}</td>
+                      <td className="py-2.5 pr-4 text-purple-500 text-xs">{clickPct !== null && clicks > 0 ? `${clickPct}%` : '—'}</td>
                       <td className="py-2.5 text-gray-500 whitespace-nowrap">{c.sent_at ? formatDate(c.sent_at) : (c.created_at ? formatDate(c.created_at) : '—')}</td>
                     </tr>
                   )

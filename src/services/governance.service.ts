@@ -98,6 +98,8 @@ export interface MemberCampaign {
   recipient_count: number
   sent_count: number
   failed_count: number
+  open_count?: number
+  click_count?: number
   created_by: string | null
   created_at: string | null
   updated_at: string | null

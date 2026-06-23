@@ -121,7 +121,7 @@ export async function POST(req: NextRequest) {
           .replace(/\{\{member_number\}\}/g, member.member_number ?? '')
 
         try {
-          const { error: sendErr } = await resend.emails.send({
+          const { data: sendData, error: sendErr } = await resend.emails.send({
             from: FROM_ADDRESS,
             to: member.email,
             subject,
@@ -138,7 +138,7 @@ export async function POST(req: NextRequest) {
           } else {
             await admin
               .from('member_campaign_recipients')
-              .update({ status: 'sent', sent_at: new Date().toISOString() })
+              .update({ status: 'sent', sent_at: new Date().toISOString(), resend_email_id: sendData?.id ?? null })
               .eq('campaign_id', campaignId)
               .eq('member_id', member.id)
             sentCount++
