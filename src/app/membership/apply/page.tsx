@@ -1,8 +1,8 @@
 'use client'
 
 import { useState } from 'react'
-import { Plus, X, AlertCircle, CheckCircle2, Globe, Mail } from 'lucide-react'
-import { Button, Card, Input, Modal, ModalBody, ModalHeader, Badge } from '@/components/ui'
+import { Plus, X, AlertCircle, CheckCircle2, Globe, Mail, ScrollText } from 'lucide-react'
+import { Button, Card, Input, Modal, ModalBody, ModalHeader, ModalFooter, Badge } from '@/components/ui'
 import { useCreateMemberApplication, useCreateMemberEducation, useCreateMemberOrgAffiliation, useCreateMemberEngagementHistory } from '@/hooks/useMemberApplication'
 import type { MemberApplication, MemberEducation, MemberOrgAffiliation, MemberEngagementHistory } from '@/services/memberApplication.service'
 
@@ -45,6 +45,8 @@ export default function MembershipApplicationPage() {
   const [educationModal, setEducationModal] = useState(false)
   const [affiliationModal, setAffiliationModal] = useState(false)
   const [engagementModal, setEngagementModal] = useState(false)
+  const [termsModal, setTermsModal] = useState(false)
+  const [agreedToTerms, setAgreedToTerms] = useState(false)
   const [currentEducation, setCurrentEducation] = useState<Partial<MemberEducation> | null>(null)
   const [currentAffiliation, setCurrentAffiliation] = useState<Partial<MemberOrgAffiliation> | null>(null)
   const [currentEngagement, setCurrentEngagement] = useState<Partial<MemberEngagementHistory> | null>(null)
@@ -485,6 +487,35 @@ export default function MembershipApplicationPage() {
           By submitting this form, I certify that the information provided is true and correct.
         </p>
       </div>
+
+      {/* Terms agreement */}
+      <div className={`border rounded-lg p-4 ${
+        agreedToTerms ? 'bg-green-50 border-green-200' : 'bg-white border-gray-200'
+      }`}>
+        <div className="flex items-start gap-3">
+          <input
+            id="terms-checkbox"
+            type="checkbox"
+            checked={agreedToTerms}
+            onChange={e => setAgreedToTerms(e.target.checked)}
+            className="mt-0.5 w-4 h-4 accent-amber-500 cursor-pointer flex-shrink-0"
+          />
+          <label htmlFor="terms-checkbox" className="text-sm text-gray-700 cursor-pointer leading-relaxed">
+            I have read and agree to the{' '}
+            <button
+              type="button"
+              onClick={() => setTermsModal(true)}
+              className="text-amber-600 hover:text-amber-800 font-medium underline underline-offset-2"
+            >
+              Membership Terms &amp; Conditions
+            </button>
+            {' '}of IBON International Foundation.
+          </label>
+        </div>
+        {!agreedToTerms && (
+          <p className="text-xs text-gray-400 mt-2 ml-7">You must agree to the terms before submitting.</p>
+        )}
+      </div>
     </div>
   )
 
@@ -632,7 +663,7 @@ export default function MembershipApplicationPage() {
             <Button
               variant="primary"
               onClick={submitApplication}
-              disabled={createApp.isPending || !canContinue()}
+              disabled={createApp.isPending || !canContinue() || !agreedToTerms}
             >
               {createApp.isPending ? 'Submitting...' : 'Submit Application'}
             </Button>
@@ -787,6 +818,87 @@ export default function MembershipApplicationPage() {
             Add
           </Button>
         </div>
+      </Modal>
+
+      {/* Terms & Conditions Modal */}
+      <Modal open={termsModal} onClose={() => setTermsModal(false)} size="lg">
+        <ModalHeader onClose={() => setTermsModal(false)}>
+          <div className="flex items-center gap-2">
+            <ScrollText className="w-5 h-5 text-amber-600" />
+            Membership Terms &amp; Conditions
+          </div>
+        </ModalHeader>
+        <ModalBody>
+          <div className="space-y-5 text-sm text-gray-700 leading-relaxed">
+            <p>
+              Membership in the Foundation means that you fully support IBON International as an institution
+              and that you would like to be part of its family, whether or not you&apos;re employed by it.
+              The Board of Trustees (BOT) will process the membership applications.
+            </p>
+
+            <div>
+              <p className="font-semibold text-gray-900 mb-2">The purposes of II Foundation are:</p>
+              <ol className="list-decimal list-outside ml-5 space-y-2">
+                <li>
+                  To provide capacity development interventions, promoting alternative systems, social
+                  structures, economic programs and development paradigms to peoples&apos; movements and civil
+                  society organizations;
+                </li>
+                <li>
+                  To develop centers of capacity development in the global North (Northern countries) and the
+                  global South (Southern countries) to build solidarity for issues of the South and provide
+                  development education to the people of the North; and
+                </li>
+                <li>
+                  To build strategic working relationships among civil society, government and donor actors on
+                  the basis of principled partnership.
+                </li>
+              </ol>
+            </div>
+
+            <div>
+              <p className="font-semibold text-gray-900 mb-2">Rights of members are to:</p>
+              <ol className="list-[lower-alpha] list-outside ml-5 space-y-2">
+                <li>
+                  Attend the triennial general and special membership meetings, and to participate in the
+                  deliberations thereof; and
+                </li>
+                <li>Elect and be elected as an officer of the Foundation.</li>
+              </ol>
+            </div>
+
+            <div>
+              <p className="font-semibold text-gray-900 mb-2">Duties and responsibilities are to:</p>
+              <ol className="list-[lower-alpha] list-outside ml-5 space-y-2">
+                <li>
+                  Comply with the rules of the Foundation as set forth in the by-laws, pay the annual
+                  membership dues and comply with the decisions and resolutions of the general membership
+                  meeting and the BOT; and
+                </li>
+                <li>
+                  Do his/her utmost to promote the aims and purposes of the Foundation, the success of its
+                  operations and projects, and the attainment of its objectives.
+                </li>
+              </ol>
+            </div>
+
+            <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
+              <p>
+                The BOT set the annual membership fee at <strong>USD 20.00</strong> as a solidarity
+                contribution from all Foundation members.
+              </p>
+            </div>
+          </div>
+        </ModalBody>
+        <ModalFooter>
+          <Button variant="secondary" onClick={() => setTermsModal(false)}>Close</Button>
+          <Button
+            onClick={() => { setAgreedToTerms(true); setTermsModal(false) }}
+            disabled={agreedToTerms}
+          >
+            {agreedToTerms ? '✓ Already Agreed' : 'I Agree'}
+          </Button>
+        </ModalFooter>
       </Modal>
 
       {/* Engagement Modal */}
