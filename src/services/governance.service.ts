@@ -47,6 +47,7 @@ export interface Member {
   address: string | null
   city: string | null
   country: string | null
+  citizenship: string | null
   organization: string | null
   membership_type: 'regular' | 'associate' | 'honorary' | 'institutional'
   status: 'active' | 'inactive' | 'suspended' | 'lapsed' | 'deceased'

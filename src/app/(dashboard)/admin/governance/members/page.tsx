@@ -52,7 +52,7 @@ const inp = 'w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ou
 
 const emptyForm = {
   first_name: '', last_name: '', email: '', phone: '',
-  address: '', city: '', country: 'Philippines', organization: '',
+  address: '', city: '', country: 'Philippines', citizenship: '', organization: '',
   member_number: '', membership_type: 'regular' as Member['membership_type'],
   status: 'active' as Member['status'], date_admitted: '', sex: '', notes: '',
   avatar_url: '', opt_out_email: false,
@@ -71,7 +71,7 @@ function MemberFormModal({ open, onClose, member, createMutation, updateMutation
         first_name: member.first_name, last_name: member.last_name,
         email: member.email || '', phone: member.phone || '',
         address: member.address || '', city: member.city || '',
-        country: member.country || 'Philippines', organization: member.organization || '',
+        country: member.country || 'Philippines', citizenship: member.citizenship || '', organization: member.organization || '',
         member_number: member.member_number || '',
         membership_type: member.membership_type, status: member.status,
         date_admitted: member.date_admitted || '', sex: member.sex || '', notes: member.notes || '',
@@ -92,6 +92,7 @@ function MemberFormModal({ open, onClose, member, createMutation, updateMutation
       member_number: form.member_number || null,
       date_admitted: form.date_admitted || null,
       notes: form.notes || null, avatar_url: form.avatar_url || null,
+      citizenship: form.citizenship || null,
     }
     if (member) { await updateMutation.mutateAsync({ id: member.id, data: payload }) }
     else { await createMutation.mutateAsync(payload as any) }
@@ -164,6 +165,10 @@ function MemberFormModal({ open, onClose, member, createMutation, updateMutation
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Country</label>
               <CountrySelect value={form.country} onChange={v => setForm(p => ({ ...p, country: v }))} />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Citizenship</label>
+              <CountrySelect value={(form as any).citizenship || ''} onChange={v => setForm(p => ({ ...p, citizenship: v } as any))} />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Organization</label>

@@ -132,12 +132,9 @@ export default function MembershipApplicationPage() {
         </div>
         <div>
           <label className={label_cls}>Citizenship <span className="text-red-500">*</span></label>
-          <input
-            required
+          <CountrySelect
             value={form.citizenship || ''}
-            onChange={(e) => setForm((p) => ({ ...p, citizenship: e.target.value }))}
-            className={inp}
-            placeholder="Filipino"
+            onChange={v => setForm(p => ({ ...p, citizenship: v }))}
           />
         </div>
         <div>
