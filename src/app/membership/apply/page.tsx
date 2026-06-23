@@ -262,7 +262,10 @@ export default function MembershipApplicationPage() {
           </div>
           <div className="flex gap-2 justify-end pt-1">
             <Button variant="secondary" onClick={() => { setShowEduForm(false); setCurrentEducation({}) }}>Cancel</Button>
-            <Button onClick={() => { if (currentEducation.institution_name) { setEducation(p => [...p, currentEducation]); setShowEduForm(false); setCurrentEducation({}) } }}>Add</Button>
+            <Button variant="secondary" onClick={() => { if (currentEducation.institution_name) { setEducation(p => [...p, currentEducation]); setCurrentEducation({}) } }}>
+              <Plus className="w-3.5 h-3.5 mr-1" /> Add Another
+            </Button>
+            <Button onClick={() => { if (currentEducation.institution_name) { setEducation(p => [...p, currentEducation]); setShowEduForm(false); setCurrentEducation({}) } }}>Save &amp; Close</Button>
           </div>
         </div>
       )}
@@ -334,7 +337,10 @@ export default function MembershipApplicationPage() {
           </div>
           <div className="flex gap-2 justify-end pt-1">
             <Button variant="secondary" onClick={() => { setShowAffForm(false); setCurrentAffiliation({}) }}>Cancel</Button>
-            <Button onClick={() => { if (currentAffiliation.organization_name) { setAffiliations(p => [...p, currentAffiliation]); setShowAffForm(false); setCurrentAffiliation({}) } }}>Add</Button>
+            <Button variant="secondary" onClick={() => { if (currentAffiliation.organization_name) { setAffiliations(p => [...p, currentAffiliation]); setCurrentAffiliation({}) } }}>
+              <Plus className="w-3.5 h-3.5 mr-1" /> Add Another
+            </Button>
+            <Button onClick={() => { if (currentAffiliation.organization_name) { setAffiliations(p => [...p, currentAffiliation]); setShowAffForm(false); setCurrentAffiliation({}) } }}>Save &amp; Close</Button>
           </div>
         </div>
       )}
@@ -442,7 +448,10 @@ export default function MembershipApplicationPage() {
           </div>
           <div className="flex gap-2 justify-end pt-1">
             <Button variant="secondary" onClick={() => { setShowEngForm(false); setCurrentEngagement({}) }}>Cancel</Button>
-            <Button onClick={() => { if (currentEngagement.title) { setEngagements(p => [...p, currentEngagement]); setShowEngForm(false); setCurrentEngagement({}) } }}>Add</Button>
+            <Button variant="secondary" onClick={() => { if (currentEngagement.title) { setEngagements(p => [...p, currentEngagement]); setCurrentEngagement({}) } }}>
+              <Plus className="w-3.5 h-3.5 mr-1" /> Add Another
+            </Button>
+            <Button onClick={() => { if (currentEngagement.title) { setEngagements(p => [...p, currentEngagement]); setShowEngForm(false); setCurrentEngagement({}) } }}>Save &amp; Close</Button>
           </div>
         </div>
       )}
