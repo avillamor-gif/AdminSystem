@@ -262,8 +262,21 @@ export default function MembershipAnalyticsPage() {
     // By country (top 12)
     const countryMap: Record<string, number> = {}
     for (const m of members) { const c = m.country || 'Unknown'; countryMap[c] = (countryMap[c] || 0) + 1 }
+
+    // Distinct palette for up to 12 countries
+    const COUNTRY_PALETTE = [
+      '#f59e0b','#3b82f6','#22c55e','#ec4899','#8b5cf6','#14b8a6',
+      '#f97316','#06b6d4','#a855f7','#84cc16','#ef4444','#64748b',
+    ]
     const byCountry = Object.entries(countryMap).sort((a, b) => b[1] - a[1]).slice(0, 12)
-      .map(([label, value]) => ({ label, value, color: REGION_COLORS[REGION_MAP[label]] ?? '#9ca3af' }))
+      .map(([label, value], i) => ({ label, value, color: COUNTRY_PALETTE[i % COUNTRY_PALETTE.length] }))
+
+    // Country donut segments
+    let coff = 0
+    const countryDonut = byCountry.map(c => {
+      const pct = total > 0 ? (c.value / total) * 100 : 0
+      const seg = { ...c, pct, offset: coff }; coff += pct; return seg
+    })
 
     // Country × Gender (top 10 countries)
     const topCountries = Object.entries(countryMap).sort((a, b) => b[1] - a[1]).slice(0, 10).map(([c]) => c)
@@ -309,7 +322,7 @@ export default function MembershipAnalyticsPage() {
 
     return {
       total, active, activeRate, admittedThisYear, admittedLastYear,
-      typeDonut, byStatus, genderDonut, regionDonut, regionData, byCountry,
+      typeDonut, byStatus, genderDonut, regionDonut, regionData, byCountry, countryDonut,
       countryGender, maxCountryTotal, byYear, byTenure, newest,
     }
   }, [members])
@@ -402,16 +415,28 @@ export default function MembershipAnalyticsPage() {
         )}
       </Card>
 
-      {/* Members by Country — full width */}
+      {/* Members by Country — full width with pie chart */}
       <Card className="p-5">
         <p className="text-sm font-semibold text-gray-700 mb-4 flex items-center gap-2">
           <MapPin className="w-4 h-4 text-purple-500" /> Members by Country (Top 12)
         </p>
         {stats.byCountry.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2">
-            {stats.byCountry.map(c => (
-              <HorizBar key={c.label} label={c.label} value={c.value} max={stats.byCountry[0].value} color={c.color} />
-            ))}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
+            {/* Pie / Donut */}
+            <div>
+              <p className="text-xs font-medium text-gray-400 uppercase mb-3">Distribution</p>
+              <DonutChart segments={stats.countryDonut} total={stats.total} label="members" />
+            </div>
+            {/* Horizontal bars */}
+            <div>
+              <p className="text-xs font-medium text-gray-400 uppercase mb-3">Count</p>
+              <div className="space-y-2">
+                {stats.byCountry.map(c => (
+                  <HorizBar key={c.label} label={c.label} value={c.value} max={stats.byCountry[0].value} color={c.color}
+                    sub={`${stats.total > 0 ? Math.round((c.value / stats.total) * 100) : 0}%`} />
+                ))}
+              </div>
+            </div>
           </div>
         ) : (
           <p className="text-sm text-gray-400 text-center py-8">No country data recorded</p>
