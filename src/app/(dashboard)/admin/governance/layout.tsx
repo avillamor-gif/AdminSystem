@@ -1,10 +1,23 @@
-'use client'
+import SecondaryNav from '@/components/layout/SecondaryNav'
 
-import Link from 'next/link'
-import { usePathname } from 'next/navigation'
-import { ChevronDown } from 'lucide-react'
-import { cn } from '@/lib/utils'
-import { useState, useRef, useEffect } from 'react'
+const navItems = [
+  { label: 'Board of Trustees',        href: '/admin/governance/board' },
+  { label: 'Membership Invitations',   href: '/admin/governance/membership-invitations' },
+  { label: 'Membership Applications',  href: '/admin/governance/membership-applications' },
+  { label: 'Membership',               href: '/admin/governance/members' },
+  { label: 'General Assemblies',       href: '/admin/governance/general-assemblies' },
+  { label: 'Email Campaigns',          href: '/admin/governance/campaigns' },
+  { label: 'Reports',                  href: '/admin/governance/reports' },
+]
+
+export default function GovernanceLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="-m-6">
+      <SecondaryNav items={navItems} />
+      <div className="p-6">{children}</div>
+    </div>
+  )
+}
 
 const flatItems = [
   { label: 'Board of Trustees',       href: '/admin/governance/board' },
