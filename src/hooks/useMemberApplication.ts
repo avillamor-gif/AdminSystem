@@ -84,7 +84,7 @@ export function useUpdateMemberApplication() {
 export function useApproveMemberApplication() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: ({ id, createdMemberId, reviewedBy }: { id: string; createdMemberId: string; reviewedBy: string }) =>
+    mutationFn: ({ id, createdMemberId, reviewedBy }: { id: string; createdMemberId: string | null; reviewedBy: string }) =>
       memberApplicationService.approve(id, createdMemberId, reviewedBy),
     onSuccess: (_, { id }) => {
       qc.invalidateQueries({ queryKey: memberApplicationKeys.detail(id) })

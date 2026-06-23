@@ -52,13 +52,10 @@ export default function MembershipApplicationsPage() {
 
   async function handleApprove(appId: string) {
     if (!currentEmployee) return
-    // For now, create a temporary member. In production, this should open a modal
-    // to map the application to a new member record
-    const tempMemberId = 'temp-' + Math.random().toString(36).substring(7)
     try {
       await approveMutation.mutateAsync({
         id: appId,
-        createdMemberId: tempMemberId,
+        createdMemberId: null,
         reviewedBy: currentEmployee.employee_id,
       })
       setSelectedAppId(null)

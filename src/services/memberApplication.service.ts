@@ -183,17 +183,19 @@ export const memberApplicationService = {
   },
 
   // Approve application
-  async approve(id: string, createdMemberId: string, reviewedBy: string): Promise<MemberApplication> {
+  async approve(id: string, createdMemberId: string | null, reviewedBy: string): Promise<MemberApplication> {
+    const updatePayload: Record<string, any> = {
+      status: 'approved',
+      approved_at: new Date().toISOString(),
+      reviewed_by: reviewedBy,
+      reviewed_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    }
+    if (createdMemberId) updatePayload.created_member_id = createdMemberId
+
     const { data, error } = await supabase
       .from('member_applications')
-      .update({
-        status: 'approved',
-        approved_at: new Date().toISOString(),
-        reviewed_by: reviewedBy,
-        reviewed_at: new Date().toISOString(),
-        created_member_id: createdMemberId,
-        updated_at: new Date().toISOString(),
-      })
+      .update(updatePayload)
       .eq('id', id)
       .select('*')
       .single()

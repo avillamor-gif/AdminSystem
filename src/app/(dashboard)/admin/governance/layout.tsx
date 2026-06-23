@@ -7,7 +7,7 @@ const navItems = [
   { label: 'Membership',               href: '/admin/governance/members' },
   { label: 'General Assemblies',       href: '/admin/governance/general-assemblies' },
   { label: 'Email Campaigns',          href: '/admin/governance/campaigns' },
-  { label: 'Analytics',                href: '/admin/governance/analytics' },
+  { label: 'Reports',                  href: '/admin/governance/reports' },
 ]
 
 export default function GovernanceLayout({ children }: { children: React.ReactNode }) {
