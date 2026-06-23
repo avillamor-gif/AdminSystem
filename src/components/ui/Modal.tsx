@@ -31,7 +31,7 @@ export function Modal({ open, onClose, children, className, size = 'md', centere
     >
       <div
         className={cn(
-          'bg-white shadow-2xl w-full rounded-xl flex flex-col max-h-[90vh] overflow-hidden animate-[fadeIn_0.2s_ease]',
+          'bg-white shadow-2xl w-full rounded-xl flex flex-col max-h-[90vh] animate-[fadeIn_0.2s_ease]',
           sizeClasses[size],
           className
         )}
@@ -77,7 +77,12 @@ export function ModalHeader({ children, onClose }: { children: React.ReactNode; 
 }
 
 export function ModalBody({ children, className }: { children: React.ReactNode; className?: string }) {
-  return <div className={cn('flex-1 min-h-0 overflow-y-auto px-6 py-5', className)}>{children}</div>
+  return (
+    <div className={cn('flex-1 min-h-0 overflow-y-auto px-6 py-5', className)}
+      style={{ maxHeight: 'calc(90vh - 8.5rem)' }}>
+      {children}
+    </div>
+  )
 }
 
 export function ModalFooter({ children, className }: { children: React.ReactNode; className?: string }) {

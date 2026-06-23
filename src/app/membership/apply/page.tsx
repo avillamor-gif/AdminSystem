@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { Plus, X, AlertCircle, CheckCircle2, Globe, Mail, ScrollText } from 'lucide-react'
-import { Button, Card, Modal, ModalBody, ModalHeader, ModalFooter, PhoneInput, CountrySelect } from '@/components/ui'
+import { Button, Card, Modal, ModalBody, ModalHeader, ModalFooter, PhoneInput, CountrySelect, CitizenshipSelect } from '@/components/ui'
 import { useCreateMemberApplication, useCreateMemberEducation, useCreateMemberOrgAffiliation, useCreateMemberEngagementHistory } from '@/hooks/useMemberApplication'
 import type { MemberApplication, MemberEducation, MemberOrgAffiliation, MemberEngagementHistory } from '@/services/memberApplication.service'
 
@@ -132,7 +132,7 @@ export default function MembershipApplicationPage() {
         </div>
         <div>
           <label className={label_cls}>Citizenship <span className="text-red-500">*</span></label>
-          <CountrySelect
+          <CitizenshipSelect
             value={form.citizenship || ''}
             onChange={v => setForm(p => ({ ...p, citizenship: v }))}
           />

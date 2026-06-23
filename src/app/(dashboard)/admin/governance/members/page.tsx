@@ -5,7 +5,7 @@ import {
   Plus, Edit2, Trash2, Search, Users, X, Mail, Phone, MapPin,
   BellOff, BellRing, ChevronRight, Download, ArrowUpDown, ArrowUp,
 } from 'lucide-react'
-import { Card, Button, Modal, ModalHeader, ModalBody, ModalFooter, CountrySelect, PhoneInput } from '@/components/ui'
+import { Card, Button, Modal, ModalHeader, ModalBody, ModalFooter, CountrySelect, PhoneInput, CitizenshipSelect } from '@/components/ui'
 import {
   useMembers, useCreateMember, useUpdateMember, useDeleteMember,
   useMemberDues, useCreateMemberDue, useUpdateMemberDue, useDeleteMemberDue,
@@ -168,7 +168,7 @@ function MemberFormModal({ open, onClose, member, createMutation, updateMutation
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Citizenship</label>
-              <CountrySelect value={(form as any).citizenship || ''} onChange={v => setForm(p => ({ ...p, citizenship: v } as any))} />
+              <CitizenshipSelect value={(form as any).citizenship || ''} onChange={v => setForm(p => ({ ...p, citizenship: v } as any))} />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Organization</label>
