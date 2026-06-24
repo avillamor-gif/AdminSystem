@@ -345,7 +345,7 @@ export default function MembershipAnalyticsPage() {
     const allNationalitiesSorted = Object.entries(nationalityMap).sort((a, b) => b[1] - a[1])
     const byNationality = allNationalitiesSorted
       .map(([label, value], i) => ({ label, value, color: NATIONALITY_PALETTE[i % NATIONALITY_PALETTE.length] }))
-    const natDonutBase = allNationalitiesSorted.map(([label, value], i) => ({ label, value, color: NATIONALITY_PALETTE[i % NATIONALITY_PALETTE.length] }))
+    const natDonutBase = allNationalitiesSorted.slice(0, 12).map(([label, value], i) => ({ label, value, color: NATIONALITY_PALETTE[i] }))
     let noff = 0
     const nationalityDonut = natDonutBase.map(n => {
       const pct = total > 0 ? (n.value / total) * 100 : 0
@@ -510,7 +510,7 @@ export default function MembershipAnalyticsPage() {
       {/* Nationality Breakdown */}
       <Card className="p-5">
         <p className="text-sm font-semibold text-gray-700 mb-4 flex items-center gap-2">
-          <Users className="w-4 h-4 text-rose-500" /> Nationality Breakdown
+          <Users className="w-4 h-4 text-rose-500" /> Nationality Breakdown (Top 12)
           {stats.byNationality.length > 0 && (
             <span className="ml-auto text-xs font-normal text-gray-400">{stats.byNationality.length} {stats.byNationality.length === 1 ? 'nationality' : 'nationalities'}</span>
           )}
