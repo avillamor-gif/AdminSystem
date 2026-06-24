@@ -461,19 +461,11 @@ export default function MembershipAnalyticsPage() {
           )}
         </p>
         {stats.byCountry.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-start">
-            {/* Pie / Donut — top 12 + others */}
-            <div>
-              <p className="text-xs font-medium text-gray-400 uppercase mb-3">
-                Distribution{stats.byCountry.length > 12 ? ' (Top 12 + Others)' : ''}
-              </p>
-              <DonutChart segments={stats.countryDonut} total={stats.total} label="members" />
-            </div>
-            {/* Horizontal bars — all countries */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-center">
+            <DonutChart segments={stats.countryDonut} total={stats.total} label="members" />
             <div className="md:col-span-2">
-              <p className="text-xs font-medium text-gray-400 uppercase mb-3">Count</p>
               <div
-                className="space-y-2 overflow-hidden transition-[max-height] duration-300"
+                className="grid grid-cols-2 md:grid-cols-3 gap-2 overflow-hidden transition-[max-height] duration-300"
                 style={{ maxHeight: countryExpanded ? 'none' : '500px' }}
               >
                 {stats.byCountry.map(c => (
