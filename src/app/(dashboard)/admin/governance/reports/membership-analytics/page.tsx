@@ -303,11 +303,8 @@ export default function MembershipAnalyticsPage() {
     const byCountry = allCountriesSorted
       .map(([label, value], i) => ({ label, value, color: COUNTRY_PALETTE[i % COUNTRY_PALETTE.length] }))
 
-    // Donut uses top 12 + grouped "Others"
-    const top12 = allCountriesSorted.slice(0, 12)
-    const othersCount = allCountriesSorted.slice(12).reduce((s, [, v]) => s + v, 0)
-    const donutBase = top12.map(([label, value], i) => ({ label, value, color: COUNTRY_PALETTE[i] }))
-    if (othersCount > 0) donutBase.push({ label: 'Others', value: othersCount, color: '#9ca3af' })
+    // Donut uses all countries
+    const donutBase = allCountriesSorted.map(([label, value], i) => ({ label, value, color: COUNTRY_PALETTE[i % COUNTRY_PALETTE.length] }))
     let coff = 0
     const countryDonut = donutBase.map(c => {
       const pct = total > 0 ? (c.value / total) * 100 : 0
@@ -348,10 +345,7 @@ export default function MembershipAnalyticsPage() {
     const allNationalitiesSorted = Object.entries(nationalityMap).sort((a, b) => b[1] - a[1])
     const byNationality = allNationalitiesSorted
       .map(([label, value], i) => ({ label, value, color: NATIONALITY_PALETTE[i % NATIONALITY_PALETTE.length] }))
-    const natTop12 = allNationalitiesSorted.slice(0, 12)
-    const natOthers = allNationalitiesSorted.slice(12).reduce((s, [, v]) => s + v, 0)
-    const natDonutBase = natTop12.map(([label, value], i) => ({ label, value, color: NATIONALITY_PALETTE[i] }))
-    if (natOthers > 0) natDonutBase.push({ label: 'Others', value: natOthers, color: '#9ca3af' })
+    const natDonutBase = allNationalitiesSorted.map(([label, value], i) => ({ label, value, color: NATIONALITY_PALETTE[i % NATIONALITY_PALETTE.length] }))
     let noff = 0
     const nationalityDonut = natDonutBase.map(n => {
       const pct = total > 0 ? (n.value / total) * 100 : 0
