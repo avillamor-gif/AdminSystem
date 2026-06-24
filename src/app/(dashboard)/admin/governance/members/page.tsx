@@ -469,9 +469,10 @@ export default function MembersPage() {
   const canCampaigns = useHasPermission('membership.campaigns.manage')
   const canExport = useHasPermission('membership.export')
   
-  const [statusFilter, setStatusFilter] = useState('')
-  const [typeFilter, setTypeFilter]     = useState('')
-  const [search, setSearch]             = useState('')
+  const [statusFilter, setStatusFilter]   = useState('')
+  const [typeFilter, setTypeFilter]       = useState('')
+  const [countryFilter, setCountryFilter] = useState('')
+  const [search, setSearch]               = useState('')
   const [modal, setModal]               = useState(false)
   const [selected, setSelected]         = useState<Member | null>(null)
   const [detailMember, setDetailMember] = useState<Member | null>(null)
@@ -487,7 +488,12 @@ export default function MembersPage() {
   const updateMutation = useUpdateMember()
   const deleteMutation = useDeleteMember()
 
+  const countryOptions = Array.from(
+    new Set(members.map(m => m.country).filter(Boolean) as string[])
+  ).sort()
+
   const filtered = members.filter(m => {
+    if (countryFilter && m.country !== countryFilter) return false
     if (!search) return true
     const q = search.toLowerCase()
     return (
@@ -638,6 +644,13 @@ export default function MembersPage() {
           <option value="associate">Associate</option>
           <option value="honorary">Honorary</option>
           <option value="institutional">Institutional</option>
+        </select>
+        <select value={countryFilter} onChange={e => setCountryFilter(e.target.value)}
+          className="px-3 py-2 text-sm border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-amber-400">
+          <option value="">All Countries</option>
+          {countryOptions.map(c => (
+            <option key={c} value={c}>{c}</option>
+          ))}
         </select>
       </div>
 
