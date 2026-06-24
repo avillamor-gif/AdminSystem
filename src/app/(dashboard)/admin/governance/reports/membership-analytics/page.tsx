@@ -305,6 +305,8 @@ export default function MembershipAnalyticsPage() {
 
     // Donut uses top 12 countries only
     const donutBase = allCountriesSorted.slice(0, 12).map(([label, value], i) => ({ label, value, color: COUNTRY_PALETTE[i] }))
+    const otherCountriesCount = allCountriesSorted.slice(12).reduce((s, [, v]) => s + v, 0)
+    if (otherCountriesCount > 0) donutBase.push({ label: 'Other Countries', value: otherCountriesCount, color: '#9ca3af' })
     let coff = 0
     const countryDonut = donutBase.map(c => {
       const pct = total > 0 ? (c.value / total) * 100 : 0
@@ -346,6 +348,8 @@ export default function MembershipAnalyticsPage() {
     const byNationality = allNationalitiesSorted
       .map(([label, value], i) => ({ label, value, color: NATIONALITY_PALETTE[i % NATIONALITY_PALETTE.length] }))
     const natDonutBase = allNationalitiesSorted.slice(0, 12).map(([label, value], i) => ({ label, value, color: NATIONALITY_PALETTE[i] }))
+    const otherNationalitiesCount = allNationalitiesSorted.slice(12).reduce((s, [, v]) => s + v, 0)
+    if (otherNationalitiesCount > 0) natDonutBase.push({ label: 'Other Nationalities', value: otherNationalitiesCount, color: '#9ca3af' })
     let noff = 0
     const nationalityDonut = natDonutBase.map(n => {
       const pct = total > 0 ? (n.value / total) * 100 : 0
