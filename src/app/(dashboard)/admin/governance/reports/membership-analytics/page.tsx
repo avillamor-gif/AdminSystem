@@ -150,7 +150,7 @@ function DonutChart({ segments, total, label }: {
   const r = 40, circ = 2 * Math.PI * r
   return (
     <div className="flex items-center gap-5">
-      <svg viewBox="0 0 100 100" className="w-28 h-28 flex-shrink-0">
+      <svg viewBox="0 0 100 100" className="w-44 h-44 flex-shrink-0">
         {segments.map(s => (
           <circle key={s.label} cx="50" cy="50" r={r} fill="none"
             stroke={s.color} strokeWidth="18"
@@ -439,9 +439,9 @@ export default function MembershipAnalyticsPage() {
           <MapPin className="w-4 h-4 text-indigo-500" /> Regional Distribution
         </p>
         {stats.regionDonut.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-center">
             <DonutChart segments={stats.regionDonut} total={stats.total} label="members" />
-            <div className="grid grid-cols-2 gap-2">
+            <div className="md:col-span-2 grid grid-cols-2 md:grid-cols-3 gap-2">
               {stats.regionData.filter(r => r.value > 0).map(r => (
                 <HorizBar key={r.label} label={r.label} value={r.value} max={stats.total} color={r.color} />
               ))}
@@ -474,7 +474,7 @@ export default function MembershipAnalyticsPage() {
               <p className="text-xs font-medium text-gray-400 uppercase mb-3">Count</p>
               <div
                 className="space-y-2 overflow-hidden transition-[max-height] duration-300"
-                style={{ maxHeight: countryExpanded ? 'none' : '600px' }}
+                style={{ maxHeight: countryExpanded ? 'none' : '500px' }}
               >
                 {stats.byCountry.map(c => (
                   <HorizBar key={c.label} label={c.label} value={c.value} max={stats.byCountry[0].value} color={c.color}
