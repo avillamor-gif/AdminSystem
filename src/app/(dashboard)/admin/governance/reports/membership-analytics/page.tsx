@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { Users, TrendingUp, UserCheck, Calendar, MapPin, Award, BarChart2 } from 'lucide-react'
 import { Card } from '@/components/ui'
 import { useMembers } from '@/hooks/useGovernance'
@@ -180,6 +180,36 @@ function DonutChart({ segments, total, label }: {
   )
 }
 
+function LineChart({ data, color = '#22c55e' }: { data: { label: string; value: number }[]; color?: string }) {
+  if (data.length === 0) return null
+  const max = Math.max(...data.map(d => d.value), 1)
+  const W = 400, H = 100, padX = 24, padY = 16
+  const innerW = W - padX * 2, innerH = H - padY * 2
+  const pts = data.map((d, i) => ({
+    x: padX + (data.length > 1 ? (i / (data.length - 1)) * innerW : innerW / 2),
+    y: padY + innerH - (d.value / max) * innerH,
+    ...d,
+  }))
+  const pathD = pts.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ')
+  const areaD = `${pathD} L ${pts[pts.length - 1].x} ${padY + innerH} L ${pts[0].x} ${padY + innerH} Z`
+  return (
+    <svg viewBox={`0 0 ${W} ${H + 18}`} className="w-full" style={{ height: 110 }}>
+      {/* area fill */}
+      <path d={areaD} fill={color} fillOpacity="0.08" />
+      {/* line */}
+      <path d={pathD} fill="none" stroke={color} strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />
+      {/* points + labels */}
+      {pts.map((p, i) => (
+        <g key={i}>
+          <circle cx={p.x} cy={p.y} r="3.5" fill={color} />
+          <text x={p.x} y={p.y - 7} textAnchor="middle" fontSize="9" fontWeight="600" fill="#374151">{p.value}</text>
+          <text x={p.x} y={H + 14} textAnchor="middle" fontSize="9" fill="#9ca3af">{p.label}</text>
+        </g>
+      ))}
+    </svg>
+  )
+}
+
 function GroupedBar({ label, male, female, other, maxVal }: {
   label: string; male: number; female: number; other: number; maxVal: number
 }) {
@@ -259,21 +289,26 @@ export default function MembershipAnalyticsPage() {
       const seg = { ...r, pct, offset: roff }; roff += pct; return seg
     })
 
-    // By country (top 12)
+    // By country — all
     const countryMap: Record<string, number> = {}
     for (const m of members) { const c = m.country || 'Unknown'; countryMap[c] = (countryMap[c] || 0) + 1 }
 
-    // Distinct palette for up to 12 countries
+    // Cycling palette (12 distinct hues, repeats for >12 countries)
     const COUNTRY_PALETTE = [
       '#f59e0b','#3b82f6','#22c55e','#ec4899','#8b5cf6','#14b8a6',
       '#f97316','#06b6d4','#a855f7','#84cc16','#ef4444','#64748b',
     ]
-    const byCountry = Object.entries(countryMap).sort((a, b) => b[1] - a[1]).slice(0, 12)
+    const allCountriesSorted = Object.entries(countryMap).sort((a, b) => b[1] - a[1])
+    const byCountry = allCountriesSorted
       .map(([label, value], i) => ({ label, value, color: COUNTRY_PALETTE[i % COUNTRY_PALETTE.length] }))
 
-    // Country donut segments
+    // Donut uses top 12 + grouped "Others"
+    const top12 = allCountriesSorted.slice(0, 12)
+    const othersCount = allCountriesSorted.slice(12).reduce((s, [, v]) => s + v, 0)
+    const donutBase = top12.map(([label, value], i) => ({ label, value, color: COUNTRY_PALETTE[i] }))
+    if (othersCount > 0) donutBase.push({ label: 'Others', value: othersCount, color: '#9ca3af' })
     let coff = 0
-    const countryDonut = byCountry.map(c => {
+    const countryDonut = donutBase.map(c => {
       const pct = total > 0 ? (c.value / total) * 100 : 0
       const seg = { ...c, pct, offset: coff }; coff += pct; return seg
     })
@@ -326,6 +361,8 @@ export default function MembershipAnalyticsPage() {
       countryGender, maxCountryTotal, byYear, byTenure, newest,
     }
   }, [members])
+
+  const [countryExpanded, setCountryExpanded] = useState(false)
 
   if (isLoading) return <div className="p-16 text-center text-gray-400">Loading…</div>
 
@@ -418,24 +455,42 @@ export default function MembershipAnalyticsPage() {
       {/* Members by Country — full width with pie chart */}
       <Card className="p-5">
         <p className="text-sm font-semibold text-gray-700 mb-4 flex items-center gap-2">
-          <MapPin className="w-4 h-4 text-purple-500" /> Members by Country (Top 12)
+          <MapPin className="w-4 h-4 text-purple-500" /> Members by Country
+          {stats.byCountry.length > 0 && (
+            <span className="ml-auto text-xs font-normal text-gray-400">{stats.byCountry.length} {stats.byCountry.length === 1 ? 'country' : 'countries'}</span>
+          )}
         </p>
         {stats.byCountry.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
-            {/* Pie / Donut */}
+            {/* Pie / Donut — top 12 + others */}
             <div>
-              <p className="text-xs font-medium text-gray-400 uppercase mb-3">Distribution</p>
+              <p className="text-xs font-medium text-gray-400 uppercase mb-3">
+                Distribution{stats.byCountry.length > 12 ? ' (Top 12 + Others)' : ''}
+              </p>
               <DonutChart segments={stats.countryDonut} total={stats.total} label="members" />
             </div>
-            {/* Horizontal bars */}
+            {/* Horizontal bars — all countries */}
             <div>
               <p className="text-xs font-medium text-gray-400 uppercase mb-3">Count</p>
-              <div className="space-y-2">
+              <div
+                className="space-y-2 overflow-hidden transition-[max-height] duration-300"
+                style={{ maxHeight: countryExpanded ? 'none' : '600px' }}
+              >
                 {stats.byCountry.map(c => (
                   <HorizBar key={c.label} label={c.label} value={c.value} max={stats.byCountry[0].value} color={c.color}
                     sub={`${stats.total > 0 ? Math.round((c.value / stats.total) * 100) : 0}%`} />
                 ))}
               </div>
+              {stats.byCountry.length > 15 && (
+                <button
+                  onClick={() => setCountryExpanded(e => !e)}
+                  className="mt-3 text-xs text-purple-600 hover:text-purple-800 font-semibold flex items-center gap-1"
+                >
+                  {countryExpanded
+                    ? '↑ Show less'
+                    : `↓ Show all ${stats.byCountry.length} countries`}
+                </button>
+              )}
             </div>
           </div>
         ) : (
@@ -470,10 +525,10 @@ export default function MembershipAnalyticsPage() {
 
         <Card className="p-5">
           <p className="text-sm font-semibold text-gray-700 mb-4 flex items-center gap-2">
-            <TrendingUp className="w-4 h-4 text-green-500" /> Admissions by Year
+            <TrendingUp className="w-4 h-4 text-green-500" /> Membership Trajectory
           </p>
           {stats.byYear.length > 0
-            ? <BarChart data={stats.byYear} color="#22c55e" />
+            ? <LineChart data={stats.byYear} color="#22c55e" />
             : <p className="text-sm text-gray-400 text-center py-8">No admission dates recorded</p>}
         </Card>
       </div>
