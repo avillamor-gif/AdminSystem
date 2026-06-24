@@ -337,6 +337,26 @@ export default function MembershipAnalyticsPage() {
     const admittedThisYear = yearMap[thisYear] || 0
     const admittedLastYear = yearMap[lastYear] || 0
 
+    // Nationality breakdown (citizenship field)
+    const NATIONALITY_PALETTE = [
+      '#f59e0b','#3b82f6','#22c55e','#ec4899','#8b5cf6','#14b8a6',
+      '#f97316','#06b6d4','#a855f7','#84cc16','#ef4444','#64748b',
+    ]
+    const nationalityMap: Record<string, number> = {}
+    for (const m of members) { const n = (m as any).citizenship || 'Unknown'; nationalityMap[n] = (nationalityMap[n] || 0) + 1 }
+    const allNationalitiesSorted = Object.entries(nationalityMap).sort((a, b) => b[1] - a[1])
+    const byNationality = allNationalitiesSorted
+      .map(([label, value], i) => ({ label, value, color: NATIONALITY_PALETTE[i % NATIONALITY_PALETTE.length] }))
+    const natTop12 = allNationalitiesSorted.slice(0, 12)
+    const natOthers = allNationalitiesSorted.slice(12).reduce((s, [, v]) => s + v, 0)
+    const natDonutBase = natTop12.map(([label, value], i) => ({ label, value, color: NATIONALITY_PALETTE[i] }))
+    if (natOthers > 0) natDonutBase.push({ label: 'Others', value: natOthers, color: '#9ca3af' })
+    let noff = 0
+    const nationalityDonut = natDonutBase.map(n => {
+      const pct = total > 0 ? (n.value / total) * 100 : 0
+      const seg = { ...n, pct, offset: noff }; noff += pct; return seg
+    })
+
     // Tenure
     const now = new Date()
     const tenureMap: Record<string, number> = { '< 1 yr': 0, '1–3 yrs': 0, '3–5 yrs': 0, '5–10 yrs': 0, '10+ yrs': 0 }
@@ -359,10 +379,12 @@ export default function MembershipAnalyticsPage() {
       total, active, activeRate, admittedThisYear, admittedLastYear,
       typeDonut, byStatus, genderDonut, regionDonut, regionData, byCountry, countryDonut,
       countryGender, maxCountryTotal, byYear, byTenure, newest,
+      byNationality, nationalityDonut,
     }
   }, [members])
 
   const [countryExpanded, setCountryExpanded] = useState(false)
+  const [nationalityExpanded, setNationalityExpanded] = useState(false)
 
   if (isLoading) return <div className="p-16 text-center text-gray-400">Loading…</div>
 
@@ -487,6 +509,42 @@ export default function MembershipAnalyticsPage() {
           </div>
         ) : (
           <p className="text-sm text-gray-400 text-center py-8">No country data recorded</p>
+        )}
+      </Card>
+
+      {/* Nationality Breakdown */}
+      <Card className="p-5">
+        <p className="text-sm font-semibold text-gray-700 mb-4 flex items-center gap-2">
+          <Users className="w-4 h-4 text-rose-500" /> Nationality Breakdown
+          {stats.byNationality.length > 0 && (
+            <span className="ml-auto text-xs font-normal text-gray-400">{stats.byNationality.length} {stats.byNationality.length === 1 ? 'nationality' : 'nationalities'}</span>
+          )}
+        </p>
+        {stats.byNationality.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-center">
+            <DonutChart segments={stats.nationalityDonut} total={stats.total} label="members" />
+            <div className="md:col-span-2">
+              <div
+                className="grid grid-cols-2 md:grid-cols-3 gap-2 overflow-hidden transition-[max-height] duration-300"
+                style={{ maxHeight: nationalityExpanded ? 'none' : '500px' }}
+              >
+                {stats.byNationality.map(n => (
+                  <HorizBar key={n.label} label={n.label} value={n.value} max={stats.byNationality[0].value} color={n.color}
+                    sub={`${stats.total > 0 ? Math.round((n.value / stats.total) * 100) : 0}%`} />
+                ))}
+              </div>
+              {stats.byNationality.length > 15 && (
+                <button
+                  onClick={() => setNationalityExpanded(e => !e)}
+                  className="mt-3 text-xs text-rose-600 hover:text-rose-800 font-semibold flex items-center gap-1"
+                >
+                  {nationalityExpanded ? '↑ Show less' : `↓ Show all ${stats.byNationality.length} nationalities`}
+                </button>
+              )}
+            </div>
+          </div>
+        ) : (
+          <p className="text-sm text-gray-400 text-center py-8">No nationality data recorded</p>
         )}
       </Card>
 
