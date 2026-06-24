@@ -78,6 +78,7 @@ const REGION_MAP: Record<string, string> = {
   'Equatorial Guinea': 'Africa', 'Sao Tome and Principe': 'Africa',
   Eritrea: 'Africa', Djibouti: 'Africa', Comoros: 'Africa', Seychelles: 'Africa',
   Mauritius: 'Africa', 'Central African Republic': 'Africa',
+  'South Africa': 'Africa', Togo: 'Africa',
   // Oceania
   Australia: 'Oceania', 'New Zealand': 'Oceania', 'Papua New Guinea': 'Oceania',
   Fiji: 'Oceania', 'Solomon Islands': 'Oceania', Vanuatu: 'Oceania',
