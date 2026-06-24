@@ -303,8 +303,8 @@ export default function MembershipAnalyticsPage() {
     const byCountry = allCountriesSorted
       .map(([label, value], i) => ({ label, value, color: COUNTRY_PALETTE[i % COUNTRY_PALETTE.length] }))
 
-    // Donut uses all countries
-    const donutBase = allCountriesSorted.map(([label, value], i) => ({ label, value, color: COUNTRY_PALETTE[i % COUNTRY_PALETTE.length] }))
+    // Donut uses top 12 countries only
+    const donutBase = allCountriesSorted.slice(0, 12).map(([label, value], i) => ({ label, value, color: COUNTRY_PALETTE[i] }))
     let coff = 0
     const countryDonut = donutBase.map(c => {
       const pct = total > 0 ? (c.value / total) * 100 : 0
@@ -472,7 +472,7 @@ export default function MembershipAnalyticsPage() {
       {/* Members by Country — full width with pie chart */}
       <Card className="p-5">
         <p className="text-sm font-semibold text-gray-700 mb-4 flex items-center gap-2">
-          <MapPin className="w-4 h-4 text-purple-500" /> Members by Country
+          <MapPin className="w-4 h-4 text-purple-500" /> Members by Country (Top 12)
           {stats.byCountry.length > 0 && (
             <span className="ml-auto text-xs font-normal text-gray-400">{stats.byCountry.length} {stats.byCountry.length === 1 ? 'country' : 'countries'}</span>
           )}
