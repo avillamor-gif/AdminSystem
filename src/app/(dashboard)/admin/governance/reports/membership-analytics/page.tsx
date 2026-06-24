@@ -183,7 +183,7 @@ function DonutChart({ segments, total, label }: {
 function LineChart({ data, color = '#22c55e' }: { data: { label: string; value: number }[]; color?: string }) {
   if (data.length === 0) return null
   const max = Math.max(...data.map(d => d.value), 1)
-  const W = 400, H = 100, padX = 24, padY = 16
+  const W = 600, H = 180, padX = 32, padY = 24
   const innerW = W - padX * 2, innerH = H - padY * 2
   const pts = data.map((d, i) => ({
     x: padX + (data.length > 1 ? (i / (data.length - 1)) * innerW : innerW / 2),
@@ -193,17 +193,17 @@ function LineChart({ data, color = '#22c55e' }: { data: { label: string; value: 
   const pathD = pts.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ')
   const areaD = `${pathD} L ${pts[pts.length - 1].x} ${padY + innerH} L ${pts[0].x} ${padY + innerH} Z`
   return (
-    <svg viewBox={`0 0 ${W} ${H + 18}`} className="w-full" style={{ height: 110 }}>
+    <svg viewBox={`0 0 ${W} ${H + 24}`} className="w-full" style={{ height: 220 }}>
       {/* area fill */}
       <path d={areaD} fill={color} fillOpacity="0.08" />
       {/* line */}
-      <path d={pathD} fill="none" stroke={color} strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />
+      <path d={pathD} fill="none" stroke={color} strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round" />
       {/* points + labels */}
       {pts.map((p, i) => (
         <g key={i}>
-          <circle cx={p.x} cy={p.y} r="3.5" fill={color} />
-          <text x={p.x} y={p.y - 7} textAnchor="middle" fontSize="9" fontWeight="600" fill="#374151">{p.value}</text>
-          <text x={p.x} y={H + 14} textAnchor="middle" fontSize="9" fill="#9ca3af">{p.label}</text>
+          <circle cx={p.x} cy={p.y} r="4.5" fill={color} />
+          <text x={p.x} y={p.y - 9} textAnchor="middle" fontSize="11" fontWeight="600" fill="#374151">{p.value}</text>
+          <text x={p.x} y={H + 18} textAnchor="middle" fontSize="11" fill="#9ca3af">{p.label}</text>
         </g>
       ))}
     </svg>
