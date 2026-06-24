@@ -461,7 +461,7 @@ export default function MembershipAnalyticsPage() {
           )}
         </p>
         {stats.byCountry.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-start">
             {/* Pie / Donut — top 12 + others */}
             <div>
               <p className="text-xs font-medium text-gray-400 uppercase mb-3">
@@ -470,7 +470,7 @@ export default function MembershipAnalyticsPage() {
               <DonutChart segments={stats.countryDonut} total={stats.total} label="members" />
             </div>
             {/* Horizontal bars — all countries */}
-            <div>
+            <div className="md:col-span-2">
               <p className="text-xs font-medium text-gray-400 uppercase mb-3">Count</p>
               <div
                 className="space-y-2 overflow-hidden transition-[max-height] duration-300"
