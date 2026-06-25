@@ -97,10 +97,14 @@ export default function MembershipAnalyticsPage() {
     const withEmail = members.filter(m => m.email).length
     const activeRate = total > 0 ? Math.round((active / total) * 100) : 0
 
+    // Exclude deceased from demographic/geographic distributions
+    const liveMembers = members.filter(m => m.status !== 'deceased')
+    const liveTotal = liveMembers.length
+
     // By type
     const byType = (['regular','associate','honorary','institutional'] as const).map(t => ({
       label: t.charAt(0).toUpperCase() + t.slice(1),
-      value: members.filter(m => m.membership_type === t).length,
+      value: liveMembers.filter(m => m.membership_type === t).length,
       color: TYPE_COLORS_MAP[t],
     }))
 
@@ -113,7 +117,7 @@ export default function MembershipAnalyticsPage() {
 
     // By country (top 8)
     const countryMap: Record<string, number> = {}
-    for (const m of members) {
+    for (const m of liveMembers) {
       const c = m.country || 'Unknown'
       countryMap[c] = (countryMap[c] || 0) + 1
     }
@@ -140,7 +144,7 @@ export default function MembershipAnalyticsPage() {
     const admittedLastYear = yearMap[lastYear] || 0
 
     // Newest members (last 5)
-    const newest = [...members]
+    const newest = [...liveMembers]
       .filter(m => m.date_admitted)
       .sort((a, b) => (b.date_admitted ?? '').localeCompare(a.date_admitted ?? ''))
       .slice(0, 5)
@@ -155,7 +159,7 @@ export default function MembershipAnalyticsPage() {
     // Donut pct offsets
     let offset = 0
     const typeDonut = byType.map(t => {
-      const pct = total > 0 ? (t.value / total) * 100 : 0
+      const pct = liveTotal > 0 ? (t.value / liveTotal) * 100 : 0
       const seg = { ...t, pct, offset }
       offset += pct
       return seg
@@ -163,7 +167,7 @@ export default function MembershipAnalyticsPage() {
 
     // By gender
     const genderMap: Record<string, number> = {}
-    for (const m of members) {
+    for (const m of liveMembers) {
       const g = m.sex || 'Unknown'
       genderMap[g] = (genderMap[g] || 0) + 1
     }
@@ -181,7 +185,7 @@ export default function MembershipAnalyticsPage() {
       '3-5 years': 0,
       '5+ years': 0,
     }
-    for (const m of members) {
+    for (const m of liveMembers) {
       if (!m.date_admitted) continue
       const admitted = new Date(m.date_admitted)
       const yearsDiff = (now.getTime() - admitted.getTime()) / (1000 * 60 * 60 * 24 * 365.25)
@@ -197,7 +201,7 @@ export default function MembershipAnalyticsPage() {
 
     return {
       total, active, inactive, lapsed, deceased, optedOut, withEmail,
-      activeRate, byType, byStatus, byCountry, byYear, byGender, byTenure,
+      activeRate, liveTotal, byType, byStatus, byCountry, byYear, byGender, byTenure,
       admittedThisYear, admittedLastYear,
       newest,
       sentCampaigns: sentCampaigns.length, totalSent, totalFailed, deliveryRate,
@@ -265,13 +269,13 @@ export default function MembershipAnalyticsPage() {
           <p className="text-sm font-semibold text-gray-700 mb-4 flex items-center gap-2">
             <Award className="w-4 h-4 text-amber-500" /> By Membership Type
           </p>
-          {stats.total > 0 ? (
+          {stats.liveTotal > 0 ? (
             <div className="flex items-center gap-5">
               <svg viewBox="0 0 100 100" className="w-24 h-24 flex-shrink-0">
                 {stats.typeDonut.map(seg => (
                   <DonutSegment key={seg.label} pct={seg.pct} offset={seg.offset} color={seg.color} />
                 ))}
-                <text x="50" y="54" textAnchor="middle" fontSize="14" fontWeight="700" fill="#1f2937">{stats.total}</text>
+                <text x="50" y="54" textAnchor="middle" fontSize="14" fontWeight="700" fill="#1f2937">{stats.liveTotal}</text>
               </svg>
               <div className="space-y-2 flex-1">
                 {stats.byType.map(t => (
@@ -283,7 +287,7 @@ export default function MembershipAnalyticsPage() {
                     <div className="flex items-center gap-1.5">
                       <span className="text-xs font-semibold text-gray-800">{t.value}</span>
                       <span className="text-[10px] text-gray-400">
-                        {stats.total > 0 ? Math.round((t.value / stats.total) * 100) : 0}%
+                        {stats.liveTotal > 0 ? Math.round((t.value / stats.liveTotal) * 100) : 0}%
                       </span>
                     </div>
                   </div>
@@ -416,7 +420,7 @@ export default function MembershipAnalyticsPage() {
           {stats.byGender.length > 0 ? (
             <div className="space-y-2.5">
               {stats.byGender.map(g => (
-                <HorizBar key={g.label} label={g.label} value={g.value} max={stats.total} color={g.color} />
+                <HorizBar key={g.label} label={g.label} value={g.value} max={stats.liveTotal} color={g.color} />
               ))}
             </div>
           ) : (

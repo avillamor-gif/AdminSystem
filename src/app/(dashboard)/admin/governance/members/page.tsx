@@ -492,8 +492,12 @@ export default function MembersPage() {
     new Set(members.map(m => m.country).filter(Boolean) as string[])
   ).sort()
 
-  const filtered = members.filter(m => {
-    if (countryFilter && m.country !== countryFilter) return false
+  // Apply country filter first (so count cards reflect it), then search on top
+  const countryFiltered = countryFilter
+    ? members.filter(m => m.country === countryFilter)
+    : members
+
+  const filtered = countryFiltered.filter(m => {
     if (!search) return true
     const q = search.toLowerCase()
     return (
@@ -557,10 +561,10 @@ export default function MembersPage() {
   }
 
   const stats = {
-    total:    members.length,
-    active:   members.filter(m => m.status === 'active').length,
-    regular:  members.filter(m => m.membership_type === 'regular').length,
-    optedOut: members.filter(m => m.opt_out_email).length,
+    total:    countryFiltered.length,
+    active:   countryFiltered.filter(m => m.status === 'active').length,
+    regular:  countryFiltered.filter(m => m.membership_type === 'regular').length,
+    optedOut: countryFiltered.filter(m => m.opt_out_email).length,
   }
 
   function exportCsv() {

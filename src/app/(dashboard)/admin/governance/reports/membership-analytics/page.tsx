@@ -243,15 +243,19 @@ export default function MembershipAnalyticsPage() {
     const thisYear  = new Date().getFullYear().toString()
     const lastYear  = (new Date().getFullYear() - 1).toString()
 
+    // Exclude deceased from demographic/geographic distributions
+    const liveMembers = members.filter(m => m.status !== 'deceased')
+    const liveTotal = liveMembers.length
+
     // By type donut
     const typeData = (['regular','associate','honorary','institutional'] as const).map(t => ({
       label: t.charAt(0).toUpperCase() + t.slice(1),
-      value: members.filter(m => m.membership_type === t).length,
+      value: liveMembers.filter(m => m.membership_type === t).length,
       color: TYPE_COLORS[t],
     }))
     let off = 0
     const typeDonut = typeData.map(t => {
-      const pct = total > 0 ? (t.value / total) * 100 : 0
+      const pct = liveTotal > 0 ? (t.value / liveTotal) * 100 : 0
       const seg = { ...t, pct, offset: off }
       off += pct; return seg
     })
@@ -265,19 +269,19 @@ export default function MembershipAnalyticsPage() {
 
     // By gender donut
     const genderMap: Record<string, number> = {}
-    for (const m of members) { const g = m.sex || 'Unknown'; genderMap[g] = (genderMap[g] || 0) + 1 }
+    for (const m of liveMembers) { const g = m.sex || 'Unknown'; genderMap[g] = (genderMap[g] || 0) + 1 }
     const genderData = ['Male','Female','Other','Prefer not to say','Unknown'].map(g => ({
       label: g, value: genderMap[g] || 0, color: GENDER_COLORS[g] ?? '#9ca3af',
     })).filter(g => g.value > 0)
     let goff = 0
     const genderDonut = genderData.map(g => {
-      const pct = total > 0 ? (g.value / total) * 100 : 0
+      const pct = liveTotal > 0 ? (g.value / liveTotal) * 100 : 0
       const seg = { ...g, pct, offset: goff }; goff += pct; return seg
     })
 
     // By region donut
     const regionMap: Record<string, number> = {}
-    for (const m of members) {
+    for (const m of liveMembers) {
       const r = (m.country && REGION_MAP[m.country]) ? REGION_MAP[m.country] : 'Other'
       regionMap[r] = (regionMap[r] || 0) + 1
     }
@@ -286,13 +290,13 @@ export default function MembershipAnalyticsPage() {
       .map(([label, value]) => ({ label, value, color: REGION_COLORS[label] ?? '#9ca3af' }))
     let roff = 0
     const regionDonut = regionData.map(r => {
-      const pct = total > 0 ? (r.value / total) * 100 : 0
+      const pct = liveTotal > 0 ? (r.value / liveTotal) * 100 : 0
       const seg = { ...r, pct, offset: roff }; roff += pct; return seg
     })
 
     // By country — all
     const countryMap: Record<string, number> = {}
-    for (const m of members) { const c = m.country || 'Unknown'; countryMap[c] = (countryMap[c] || 0) + 1 }
+    for (const m of liveMembers) { const c = m.country || 'Unknown'; countryMap[c] = (countryMap[c] || 0) + 1 }
 
     // Cycling palette (12 distinct hues, repeats for >12 countries)
     const COUNTRY_PALETTE = [
@@ -309,14 +313,14 @@ export default function MembershipAnalyticsPage() {
     if (otherCountriesCount > 0) donutBase.push({ label: 'Other Countries', value: otherCountriesCount, color: '#9ca3af' })
     let coff = 0
     const countryDonut = donutBase.map(c => {
-      const pct = total > 0 ? (c.value / total) * 100 : 0
+      const pct = liveTotal > 0 ? (c.value / liveTotal) * 100 : 0
       const seg = { ...c, pct, offset: coff }; coff += pct; return seg
     })
 
     // Country × Gender (top 10 countries)
     const topCountries = Object.entries(countryMap).sort((a, b) => b[1] - a[1]).slice(0, 10).map(([c]) => c)
     const countryGender = topCountries.map(country => {
-      const mems = members.filter(m => (m.country || 'Unknown') === country)
+      const mems = liveMembers.filter(m => (m.country || 'Unknown') === country)
       return {
         country,
         male:   mems.filter(m => m.sex === 'Male').length,
@@ -343,7 +347,7 @@ export default function MembershipAnalyticsPage() {
       '#f97316','#06b6d4','#a855f7','#84cc16','#ef4444','#64748b',
     ]
     const nationalityMap: Record<string, number> = {}
-    for (const m of members) { const n = (m as any).citizenship || 'Unknown'; nationalityMap[n] = (nationalityMap[n] || 0) + 1 }
+    for (const m of liveMembers) { const n = (m as any).citizenship || 'Unknown'; nationalityMap[n] = (nationalityMap[n] || 0) + 1 }
     const allNationalitiesSorted = Object.entries(nationalityMap).sort((a, b) => b[1] - a[1])
     const byNationality = allNationalitiesSorted
       .map(([label, value], i) => ({ label, value, color: NATIONALITY_PALETTE[i % NATIONALITY_PALETTE.length] }))
@@ -352,14 +356,14 @@ export default function MembershipAnalyticsPage() {
     if (otherNationalitiesCount > 0) natDonutBase.push({ label: 'Other Nationalities', value: otherNationalitiesCount, color: '#9ca3af' })
     let noff = 0
     const nationalityDonut = natDonutBase.map(n => {
-      const pct = total > 0 ? (n.value / total) * 100 : 0
+      const pct = liveTotal > 0 ? (n.value / liveTotal) * 100 : 0
       const seg = { ...n, pct, offset: noff }; noff += pct; return seg
     })
 
     // Tenure
     const now = new Date()
     const tenureMap: Record<string, number> = { '< 1 yr': 0, '1–3 yrs': 0, '3–5 yrs': 0, '5–10 yrs': 0, '10+ yrs': 0 }
-    for (const m of members) {
+    for (const m of liveMembers) {
       if (!m.date_admitted) continue
       const yrs = (now.getTime() - new Date(m.date_admitted).getTime()) / (1000 * 60 * 60 * 24 * 365.25)
       if (yrs < 1) tenureMap['< 1 yr']++
@@ -371,12 +375,12 @@ export default function MembershipAnalyticsPage() {
     const byTenure = Object.entries(tenureMap).map(([label, value]) => ({ label, value }))
 
     // Newest
-    const newest = [...members].filter(m => m.date_admitted)
+    const newest = [...liveMembers].filter(m => m.date_admitted)
       .sort((a, b) => (b.date_admitted ?? '').localeCompare(a.date_admitted ?? '')).slice(0, 8)
 
     return {
       total, active, activeRate, admittedThisYear, admittedLastYear,
-      typeDonut, byStatus, genderDonut, regionDonut, regionData, byCountry, countryDonut,
+      liveTotal, typeDonut, byStatus, genderDonut, regionDonut, regionData, byCountry, countryDonut,
       countryGender, maxCountryTotal, byYear, byTenure, newest,
       byNationality, nationalityDonut,
     }
@@ -426,8 +430,8 @@ export default function MembershipAnalyticsPage() {
           <p className="text-sm font-semibold text-gray-700 mb-4 flex items-center gap-2">
             <Award className="w-4 h-4 text-amber-500" /> By Membership Type
           </p>
-          {stats.total > 0
-            ? <DonutChart segments={stats.typeDonut} total={stats.total} label="members" />
+          {stats.liveTotal > 0
+            ? <DonutChart segments={stats.typeDonut} total={stats.liveTotal} label="members" />
             : <p className="text-sm text-gray-400 text-center py-8">No data yet</p>}
         </Card>
 
@@ -449,7 +453,7 @@ export default function MembershipAnalyticsPage() {
             <Users className="w-4 h-4 text-pink-500" /> Gender Distribution
           </p>
           {stats.genderDonut.length > 0
-            ? <DonutChart segments={stats.genderDonut} total={stats.total} label="members" />
+            ? <DonutChart segments={stats.genderDonut} total={stats.liveTotal} label="members" />
             : <p className="text-sm text-gray-400 text-center py-8">No gender data recorded</p>}
         </Card>
       </div>
@@ -461,10 +465,10 @@ export default function MembershipAnalyticsPage() {
         </p>
         {stats.regionDonut.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-center">
-            <DonutChart segments={stats.regionDonut} total={stats.total} label="members" />
+            <DonutChart segments={stats.regionDonut} total={stats.liveTotal} label="members" />
             <div className="md:col-span-2 grid grid-cols-2 md:grid-cols-3 gap-2">
               {stats.regionData.filter(r => r.value > 0).map(r => (
-                <HorizBar key={r.label} label={r.label} value={r.value} max={stats.total} color={r.color} />
+                <HorizBar key={r.label} label={r.label} value={r.value} max={stats.liveTotal} color={r.color} />
               ))}
             </div>
           </div>
@@ -483,7 +487,7 @@ export default function MembershipAnalyticsPage() {
         </p>
         {stats.byCountry.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-center">
-            <DonutChart segments={stats.countryDonut} total={stats.total} label="members" />
+            <DonutChart segments={stats.countryDonut} total={stats.liveTotal} label="members" />
             <div className="md:col-span-2">
               <div
                 className="grid grid-cols-2 md:grid-cols-3 gap-2 overflow-hidden transition-[max-height] duration-300"
@@ -491,7 +495,7 @@ export default function MembershipAnalyticsPage() {
               >
                 {stats.byCountry.map(c => (
                   <HorizBar key={c.label} label={c.label} value={c.value} max={stats.byCountry[0].value} color={c.color}
-                    sub={`${stats.total > 0 ? Math.round((c.value / stats.total) * 100) : 0}%`} />
+                    sub={`${stats.liveTotal > 0 ? Math.round((c.value / stats.liveTotal) * 100) : 0}%`} />
                 ))}
               </div>
               {stats.byCountry.length > 15 && (
@@ -521,7 +525,7 @@ export default function MembershipAnalyticsPage() {
         </p>
         {stats.byNationality.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-center">
-            <DonutChart segments={stats.nationalityDonut} total={stats.total} label="members" />
+            <DonutChart segments={stats.nationalityDonut} total={stats.liveTotal} label="members" />
             <div className="md:col-span-2">
               <div
                 className="grid grid-cols-2 md:grid-cols-3 gap-2 overflow-hidden transition-[max-height] duration-300"
@@ -529,7 +533,7 @@ export default function MembershipAnalyticsPage() {
               >
                 {stats.byNationality.map(n => (
                   <HorizBar key={n.label} label={n.label} value={n.value} max={stats.byNationality[0].value} color={n.color}
-                    sub={`${stats.total > 0 ? Math.round((n.value / stats.total) * 100) : 0}%`} />
+                    sub={`${stats.liveTotal > 0 ? Math.round((n.value / stats.liveTotal) * 100) : 0}%`} />
                 ))}
               </div>
               {stats.byNationality.length > 15 && (
