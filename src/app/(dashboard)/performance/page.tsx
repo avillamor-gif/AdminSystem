@@ -17,6 +17,35 @@ export default function PerformancePage() {
   const typedReviews = (reviews || []) as PerformanceReviewWithRelations[]
   const typedGoals = (goals || []) as GoalWithRelations[]
 
+  const formatServiceDuration = (hireDate?: string | null) => {
+    if (!hireDate) return ''
+
+    const start = new Date(hireDate)
+    const now = new Date()
+
+    if (Number.isNaN(start.getTime()) || start > now) return ''
+
+    let years = now.getFullYear() - start.getFullYear()
+    let months = now.getMonth() - start.getMonth()
+
+    if (now.getDate() < start.getDate()) {
+      months -= 1
+    }
+
+    if (months < 0) {
+      years -= 1
+      months += 12
+    }
+
+    const parts: string[] = []
+    if (years > 0) parts.push(`${years} year${years === 1 ? '' : 's'}`)
+    if (months > 0) parts.push(`${months} month${months === 1 ? '' : 's'}`)
+
+    return parts.length ? parts.join(' ') : 'Less than 1 month'
+  }
+
+  const serviceDuration = formatServiceDuration(currentEmployee?.hire_date)
+
   const getStatusBadge = (status: string) => {
     const variants: Record<string, 'default' | 'success' | 'warning' | 'danger' | 'info'> = {
       completed: 'success',
@@ -144,6 +173,11 @@ export default function PerformancePage() {
         <PerformanceAppraisalWorkspace
           initialAppraiseeName={`${currentEmployee?.first_name || ''} ${currentEmployee?.last_name || ''}`.trim()}
           initialAppraiserName={`${currentEmployee?.manager?.first_name || ''} ${currentEmployee?.manager?.last_name || ''}`.trim()}
+          initialDepartment={currentEmployee?.department?.name || ''}
+          initialPosition={currentEmployee?.job_title?.title || ''}
+          initialTimeInPresentPosition={serviceDuration}
+          initialLengthOfService={serviceDuration}
+          storageScopeKey={String(currentEmployee?.id || currentEmployee?.employee_id || 'anonymous')}
         />
       )}
 

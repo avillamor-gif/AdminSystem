@@ -98,13 +98,20 @@ const WORK_RATING_AREAS = [
 const emptyObjective = (): ObjectiveRow => ({ objective: '', status: 'on_track', comments: '' })
 const emptyPlan = (): PlanRow => ({ objective: '', criteria: '' })
 
-const defaultFormState = (initialAppraiseeName: string, initialAppraiserName = ''): AppraisalFormState => ({
+const defaultFormState = (
+  initialAppraiseeName: string,
+  initialAppraiserName = '',
+  initialDepartment = '',
+  initialPosition = '',
+  initialTimeInPresentPosition = '',
+  initialLengthOfService = '',
+): AppraisalFormState => ({
   appraiseeName: initialAppraiseeName,
   appraiserName: initialAppraiserName,
-  department: '',
-  position: '',
-  timeInPresentPosition: '',
-  lengthOfService: '',
+  department: initialDepartment,
+  position: initialPosition,
+  timeInPresentPosition: initialTimeInPresentPosition,
+  lengthOfService: initialLengthOfService,
   periodCovered: 'midyear',
   appraisalDate: new Date().toISOString().slice(0, 10),
   discussionPoints: Array(DISCUSSION_PROMPTS.length).fill(''),
@@ -155,40 +162,87 @@ const textAreaClassName = 'block w-full rounded-lg border border-gray-300 px-3 p
 interface PerformanceAppraisalWorkspaceProps {
   initialAppraiseeName?: string
   initialAppraiserName?: string
+  initialDepartment?: string
+  initialPosition?: string
+  initialTimeInPresentPosition?: string
+  initialLengthOfService?: string
+  storageScopeKey?: string
 }
 
-export default function PerformanceAppraisalWorkspace({ initialAppraiseeName = '', initialAppraiserName = '' }: PerformanceAppraisalWorkspaceProps) {
-  const [form, setForm] = useState<AppraisalFormState>(() => defaultFormState(initialAppraiseeName, initialAppraiserName))
+export default function PerformanceAppraisalWorkspace({
+  initialAppraiseeName = '',
+  initialAppraiserName = '',
+  initialDepartment = '',
+  initialPosition = '',
+  initialTimeInPresentPosition = '',
+  initialLengthOfService = '',
+  storageScopeKey = 'anonymous',
+}: PerformanceAppraisalWorkspaceProps) {
+  const [form, setForm] = useState<AppraisalFormState>(() => defaultFormState(
+    initialAppraiseeName,
+    initialAppraiserName,
+    initialDepartment,
+    initialPosition,
+    initialTimeInPresentPosition,
+    initialLengthOfService,
+  ))
   const [activeFormId, setActiveFormId] = useState<string | null>(null)
   const [lastSavedAt, setLastSavedAt] = useState<string | null>(null)
   const { data: savedRecords = [] } = useMyPerformanceAppraisals()
   const saveDraftMutation = useSavePerformanceAppraisalDraft()
   const submitMutation = useSubmitPerformanceAppraisal()
+  const draftStorageKey = `${DRAFT_STORAGE_KEY}:${storageScopeKey}`
 
   useEffect(() => {
-    const storedDraft = safeJsonParse<AppraisalFormState | null>(localStorage.getItem(DRAFT_STORAGE_KEY), null)
+    const storedDraft = safeJsonParse<AppraisalFormState | null>(localStorage.getItem(draftStorageKey), null)
 
     if (storedDraft) {
-      const base = defaultFormState(initialAppraiseeName, initialAppraiserName)
+      const base = defaultFormState(
+        initialAppraiseeName,
+        initialAppraiserName,
+        initialDepartment,
+        initialPosition,
+        initialTimeInPresentPosition,
+        initialLengthOfService,
+      )
       setForm({
         ...base,
         ...storedDraft,
         appraiseeName: storedDraft.appraiseeName || initialAppraiseeName,
         appraiserName: storedDraft.appraiserName || initialAppraiserName,
+        department: storedDraft.department || initialDepartment,
+        position: storedDraft.position || initialPosition,
+        timeInPresentPosition: storedDraft.timeInPresentPosition || initialTimeInPresentPosition,
+        lengthOfService: storedDraft.lengthOfService || initialLengthOfService,
       })
     } else {
-      setForm(defaultFormState(initialAppraiseeName, initialAppraiserName))
+      setForm(defaultFormState(
+        initialAppraiseeName,
+        initialAppraiserName,
+        initialDepartment,
+        initialPosition,
+        initialTimeInPresentPosition,
+        initialLengthOfService,
+      ))
     }
-  }, [initialAppraiseeName, initialAppraiserName])
+  }, [
+    initialAppraiseeName,
+    initialAppraiserName,
+    initialDepartment,
+    initialPosition,
+    initialTimeInPresentPosition,
+    initialLengthOfService,
+    draftStorageKey,
+  ])
 
   useEffect(() => {
     const timeout = window.setTimeout(() => {
-      localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(form))
+      localStorage.setItem(draftStorageKey, JSON.stringify(form))
       setLastSavedAt(new Date().toISOString())
     }, 1000)
 
     return () => window.clearTimeout(timeout)
-  }, [form])
+  }, [form, draftStorageKey])
 
   const mapRecordToSaved = (record: PerformanceAppraisalRecord): SavedAppraisal => {
     const parsedForm = (record.form_data ?? {}) as Partial<AppraisalFormState>
@@ -196,7 +250,14 @@ export default function PerformanceAppraisalWorkspace({ initialAppraiseeName = '
       ? `${record.appraiser.first_name || ''} ${record.appraiser.last_name || ''}`.trim()
       : ''
     const mergedForm: AppraisalFormState = {
-      ...defaultFormState(initialAppraiseeName, initialAppraiserName),
+      ...defaultFormState(
+        initialAppraiseeName,
+        initialAppraiserName,
+        initialDepartment,
+        initialPosition,
+        initialTimeInPresentPosition,
+        initialLengthOfService,
+      ),
       ...parsedForm,
       appraiserName: parsedForm.appraiserName || resolvedAppraiserName || initialAppraiserName,
     }
@@ -220,7 +281,15 @@ export default function PerformanceAppraisalWorkspace({ initialAppraiseeName = '
       periodLabel: entry.periodCovered === 'midyear' ? 'Midyear (January to June)' : 'Yearend (January to December)',
       displayDate: new Date(entry.updatedAt).toLocaleDateString(),
     }))
-  }, [savedRecords, initialAppraiseeName, initialAppraiserName])
+  }, [
+    savedRecords,
+    initialAppraiseeName,
+    initialAppraiserName,
+    initialDepartment,
+    initialPosition,
+    initialTimeInPresentPosition,
+    initialLengthOfService,
+  ])
 
   const saveAsDraft = async () => {
     try {
@@ -258,17 +327,24 @@ export default function PerformanceAppraisalWorkspace({ initialAppraiseeName = '
   }
 
   const clearForNew = () => {
-    const fresh = defaultFormState(initialAppraiseeName, initialAppraiserName)
+    const fresh = defaultFormState(
+      initialAppraiseeName,
+      initialAppraiserName,
+      initialDepartment,
+      initialPosition,
+      initialTimeInPresentPosition,
+      initialLengthOfService,
+    )
     setForm(fresh)
     setActiveFormId(null)
-    localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(fresh))
+    localStorage.setItem(draftStorageKey, JSON.stringify(fresh))
     toast.success('Started a new appraisal form')
   }
 
   const loadEntry = (entry: SavedAppraisal) => {
     setForm(entry.form)
     setActiveFormId(entry.id)
-    localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(entry.form))
+    localStorage.setItem(draftStorageKey, JSON.stringify(entry.form))
     if (entry.returnComment) {
       toast(`Admin note: ${entry.returnComment}`)
     }
