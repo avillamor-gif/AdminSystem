@@ -117,7 +117,7 @@ export default function AdminPage() {
       icon: TrendingUp,
       color: 'bg-cyan-500',
       href: '/admin/performance',
-      items: ['Review Cycles', 'Rating Scales', 'Goal Templates', 'Competency Models', 'KPI Frameworks', '360 Feedback'],
+      items: ['Appraisal Management', 'Probationary Reviews'],
       requiresPermission: 'admin.performance',
     },
     {
@@ -445,12 +445,8 @@ export default function AdminPage() {
                           'Reimbursements': '/admin/payroll-benefits/reimbursements',
                           
                           // Performance Management routes
-                          'Review Cycles': '/admin/performance/review-cycles',
-                          'Rating Scales': '/admin/performance/rating-scales',
-                          'Goal Templates': '/admin/performance/goal-templates',
-                          'Competency Models': '/admin/performance/competency-models',
-                          'KPI Frameworks': '/admin/performance/kpi-frameworks',
-                          '360 Feedback': '/admin/performance/360-feedback',
+                          'Appraisal Management': '/admin/performance/appraisals',
+                          'Probationary Reviews': '/admin/performance/probationary-reviews',
                           
                           // Learning & Development routes
                           'Training Programs': '/admin/learning-development/training-programs',
