@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react'
 import { Card, Button, Badge, Select, Modal } from '@/components/ui'
 import { ModalBody, ModalFooter, ModalHeader } from '@/components/ui/Modal'
 import { useAdminPerformanceAppraisals, useUpdateAdminPerformanceAppraisal, useEmployees } from '@/hooks'
+import type { PerformanceAppraisalStatus } from '@/services'
 
 const statusOptions = [
   { value: 'all', label: 'All Statuses' },
@@ -54,7 +55,7 @@ export default function AdminPerformanceAppraisalsPage() {
     completed: appraisals.filter((a) => a.status === 'completed').length,
   }), [appraisals])
 
-  const setStatusFor = async (id: string, nextStatus: string) => {
+  const setStatusFor = async (id: string, nextStatus: PerformanceAppraisalStatus) => {
     await updateMutation.mutateAsync({ id, updates: { status: nextStatus } })
   }
 
