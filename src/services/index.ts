@@ -5,6 +5,7 @@ export { attendanceService } from './attendance.service'
 export * from './timeAttendance.service'
 export { departmentService } from './department.service'
 export { performanceService } from './performance.service'
+export { performanceAppraisalService } from './performanceAppraisal.service'
 export { contractDocumentService } from './contractDocument.service'
 export { employeeAssetService } from './employeeAsset.service'
 export { exitInterviewService } from './exitInterview.service'
@@ -167,6 +168,13 @@ export type {
   ReviewFilters,
   GoalFilters
 } from './performance.service'
+export type {
+  PerformanceAppraisalRecord,
+  PerformanceAppraisalStatus,
+  PerformanceAppraisalPeriod,
+  SavePerformanceAppraisalInput,
+  AdminAppraisalFilters,
+} from './performanceAppraisal.service'
 export type {
   SystemUser,
   SystemUserWithRelations,

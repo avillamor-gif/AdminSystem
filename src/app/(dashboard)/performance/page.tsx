@@ -1,17 +1,18 @@
 'use client'
 
 import { useState } from 'react'
-import { Plus, Search, Target, Star, TrendingUp, FileText } from 'lucide-react'
-import { usePerformanceReviews, useGoals } from '@/hooks'
+import { Plus, Target, Star, TrendingUp, FileText, ClipboardList } from 'lucide-react'
+import { usePerformanceReviews, useGoals, useCurrentEmployee } from '@/hooks'
 import { Card, Button, Badge, Avatar } from '@/components/ui'
+import PerformanceAppraisalWorkspace from '@/components/performance/PerformanceAppraisalWorkspace'
 import type { PerformanceReviewWithRelations, GoalWithRelations } from '@/services'
 
 export default function PerformancePage() {
-  const [activeTab, setActiveTab] = useState<'reviews' | 'goals' | 'trackers'>('reviews')
-  const [searchQuery, setSearchQuery] = useState('')
+  const [activeTab, setActiveTab] = useState<'appraisals' | 'reviews' | 'goals' | 'trackers'>('appraisals')
 
   const { data: reviews, isLoading: reviewsLoading } = usePerformanceReviews()
   const { data: goals, isLoading: goalsLoading } = useGoals()
+  const { data: currentEmployee } = useCurrentEmployee()
 
   const typedReviews = (reviews || []) as PerformanceReviewWithRelations[]
   const typedGoals = (goals || []) as GoalWithRelations[]
@@ -57,8 +58,17 @@ export default function PerformancePage() {
           <p className="text-gray-500 mt-1">Manage performance reviews and goals</p>
         </div>
         <Button>
-          <Plus className="w-4 h-4" />
-          {activeTab === 'reviews' ? 'Add Review' : 'Add Goal'}
+          {activeTab === 'appraisals' ? (
+            <>
+              <ClipboardList className="w-4 h-4" />
+              New Appraisal
+            </>
+          ) : (
+            <>
+              <Plus className="w-4 h-4" />
+              {activeTab === 'reviews' ? 'Add Review' : 'Add Goal'}
+            </>
+          )}
         </Button>
       </div>
 
@@ -82,6 +92,17 @@ export default function PerformancePage() {
       {/* Tabs */}
       <div className="border-b border-gray-200">
         <nav className="flex gap-8">
+          <button
+            onClick={() => setActiveTab('appraisals')}
+            className={`pb-4 text-sm font-medium border-b-2 transition-colors ${
+              activeTab === 'appraisals'
+                ? 'border-orange text-orange'
+                : 'border-transparent text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            <ClipboardList className="w-4 h-4 inline mr-2" />
+            Appraisal Form
+          </button>
           <button
             onClick={() => setActiveTab('reviews')}
             className={`pb-4 text-sm font-medium border-b-2 transition-colors ${
@@ -117,6 +138,13 @@ export default function PerformancePage() {
           </button>
         </nav>
       </div>
+
+      {/* Appraisals Tab */}
+      {activeTab === 'appraisals' && (
+        <PerformanceAppraisalWorkspace
+          initialAppraiseeName={`${currentEmployee?.first_name || ''} ${currentEmployee?.last_name || ''}`.trim()}
+        />
+      )}
 
       {/* Reviews Tab */}
       {activeTab === 'reviews' && (
