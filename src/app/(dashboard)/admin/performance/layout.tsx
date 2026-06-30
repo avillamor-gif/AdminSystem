@@ -1,7 +1,7 @@
 import SecondaryNav from '@/components/layout/SecondaryNav'
 
 const navItems = [
-  { label: 'Appraisal Management', href: '/admin/performance/appraisals', requiresPermission: 'admin.performance.view' },
+  { label: 'Appraisal Management', href: '/admin/performance/appraisals', requiresPermission: 'admin.performance.appraisals' },
   { label: 'Probationary Reviews', href: '/admin/performance/probationary-reviews', requiresPermission: 'admin.performance.probationary_reviews' },
 ]
 

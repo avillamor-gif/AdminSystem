@@ -94,9 +94,10 @@ VALUES
 -- Performance
 ('Performance: View', 'admin.performance.view', 'Admin Modules', 'View performance management'),
 ('Performance: Manage', 'admin.performance.manage', 'Admin Modules', 'Manage performance management'),
-('Review Cycles: Create', 'admin.performance.review_cycles.create', 'Admin Modules', 'Create review cycles'),
-('Review Cycles: Edit', 'admin.performance.review_cycles.edit', 'Admin Modules', 'Edit review cycles'),
-('Goal Templates: Manage', 'admin.performance.goal_templates.manage', 'Admin Modules', 'Manage goal templates'),
+('Appraisal Management', 'admin.performance.appraisals', 'Admin Modules', 'Access Appraisal Management submenu'),
+('Probationary Reviews', 'admin.performance.probationary_reviews', 'Admin Modules', 'Access Probationary Reviews submenu'),
+('Appraisal Management: Manage', 'admin.performance.appraisals.manage', 'Admin Modules', 'Manage appraisal workflows'),
+('Probationary Reviews: Manage', 'admin.performance.probationary_reviews.manage', 'Admin Modules', 'Manage probationary reviews'),
 
 -- Learning & Development
 ('Learning & Development: View', 'admin.learning_development.view', 'Admin Modules', 'View learning and development'),
@@ -190,7 +191,7 @@ VALUES
 ('Monitoring & Evaluation: Manage', 'admin.monitoring_evaluation.manage', 'Admin Modules', 'Manage monitoring and evaluation'),
 ('Programs: Create', 'admin.monitoring_evaluation.programs.create', 'Admin Modules', 'Create M&E programs'),
 ('Programs: Edit', 'admin.monitoring_evaluation.programs.edit', 'Admin Modules', 'Edit programs'),
-('Data Entry: Submit', 'admin.monitoring_evaluation.data_entry.submit', 'Admin Modules', 'Submit M&E data'),
+('Data Entry: Submit', 'admin.monitoring_evaluation.data_entry.submit', 'Admin Modules', 'Submit M&E data')
 
 ON CONFLICT (code) DO UPDATE SET
   name = EXCLUDED.name,

@@ -60,6 +60,18 @@ const ADMIN_CARD_PREFIXES: { code: string; label: string }[] = [
   { code: 'admin.internship',      label: 'Internship & Volunteer' },
 ]
 
+const DEPRECATED_PERMISSION_CODES = new Set([
+  'admin.performance.review_cycles',
+  'admin.performance.rating_scales',
+  'admin.performance.goal_templates',
+  'admin.performance.competency_models',
+  'admin.performance.kpi_frameworks',
+  'admin.performance.360_feedback',
+  'admin.performance.review_cycles.create',
+  'admin.performance.review_cycles.edit',
+  'admin.performance.goal_templates.manage',
+])
+
 // ── PermissionPanel (module-level to prevent remount on parent re-render) ────
 
 function PermissionPanel({
@@ -261,11 +273,13 @@ export default function RBACPage() {
   // Delete state
   const [deletingRole, setDeletingRole] = useState<RoleWithPermissions | null>(null)
 
-  const groupedPermissions = permissions.reduce((acc, permission) => {
+  const visiblePermissions = permissions.filter((permission) => !DEPRECATED_PERMISSION_CODES.has(permission.code))
+
+  const groupedPermissions = visiblePermissions.reduce((acc, permission) => {
     if (!acc[permission.category]) acc[permission.category] = []
     acc[permission.category].push(permission)
     return acc
-  }, {} as Record<string, typeof permissions>)
+  }, {} as Record<string, typeof visiblePermissions>)
 
   const getRoleColor = (roleName: string) => {
     switch (roleName.toLowerCase()) {

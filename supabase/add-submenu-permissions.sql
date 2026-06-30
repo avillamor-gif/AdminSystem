@@ -69,12 +69,8 @@ INSERT INTO permissions (name, code, category, description) VALUES
 ('Reimbursements',                 'admin.payroll_benefits.reimbursements',    'Admin Modules', 'Access Reimbursements submenu'),
 
 -- ── Performance Management ────────────────────────────────────────────────
-('Review Cycles',                  'admin.performance.review_cycles',      'Admin Modules', 'Access Review Cycles submenu'),
-('Rating Scales',                  'admin.performance.rating_scales',      'Admin Modules', 'Access Rating Scales submenu'),
-('Goal Templates',                 'admin.performance.goal_templates',     'Admin Modules', 'Access Goal Templates submenu'),
-('Competency Models',              'admin.performance.competency_models',  'Admin Modules', 'Access Competency Models submenu'),
-('KPI Frameworks',                 'admin.performance.kpi_frameworks',     'Admin Modules', 'Access KPI Frameworks submenu'),
-('360 Feedback',                   'admin.performance.360_feedback',       'Admin Modules', 'Access 360 Feedback submenu'),
+('Appraisal Management',           'admin.performance.appraisals',         'Admin Modules', 'Access Appraisal Management submenu'),
+('Probationary Reviews',           'admin.performance.probationary_reviews','Admin Modules', 'Access Probationary Reviews submenu'),
 
 -- ── Learning & Development ────────────────────────────────────────────────
 ('Training Programs',              'admin.learning.training_programs',   'Admin Modules', 'Access Training Programs submenu'),
