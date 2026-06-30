@@ -1,7 +1,11 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
 import { performanceAppraisalService } from '@/services/performanceAppraisal.service'
-import type { AdminAppraisalFilters, SavePerformanceAppraisalInput } from '@/services/performanceAppraisal.service'
+import type {
+  AdminAppraisalFilters,
+  SavePerformanceAppraisalInput,
+  PerformanceAppraisalStatus,
+} from '@/services/performanceAppraisal.service'
 
 export const appraisalKeys = {
   all: ['performance-appraisals'] as const,
@@ -68,7 +72,14 @@ export function useUpdateAdminPerformanceAppraisal() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: ({ id, updates }: { id: string; updates: { status?: string; appraiser_employee_id?: string | null; form_data?: any } }) =>
+    mutationFn: ({ id, updates }: {
+      id: string
+      updates: {
+        status?: PerformanceAppraisalStatus
+        appraiser_employee_id?: string | null
+        form_data?: any
+      }
+    }) =>
       performanceAppraisalService.updateAdminAppraisal(id, updates),
     onSuccess: (_, vars) => {
       queryClient.invalidateQueries({ queryKey: appraisalKeys.all })
