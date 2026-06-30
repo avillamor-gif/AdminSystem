@@ -143,6 +143,7 @@ export default function PerformancePage() {
       {activeTab === 'appraisals' && (
         <PerformanceAppraisalWorkspace
           initialAppraiseeName={`${currentEmployee?.first_name || ''} ${currentEmployee?.last_name || ''}`.trim()}
+          initialAppraiserName={`${currentEmployee?.manager?.first_name || ''} ${currentEmployee?.manager?.last_name || ''}`.trim()}
         />
       )}
 
