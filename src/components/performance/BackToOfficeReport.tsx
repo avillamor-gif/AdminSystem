@@ -16,6 +16,7 @@ interface Activity {
   intersection: string[]
   roles: string[]
   highlights: string
+  actorResponses: KeyActor[]
 }
 
 interface Contact {
@@ -46,7 +47,6 @@ interface BTORFormState {
   policyTrends: string
   keyActors: string
   allianceQuestion: string
-  actorResponses: KeyActor[]
   challenges: string
   newContacts: Contact[]
   recommendations: string
@@ -69,20 +69,31 @@ export default function BackToOfficeReport({
     location: '',
     funder: '',
     fundingSupport: 'Fully Supported',
-    activities: [{ id: '1', title: '', type: '', organiser: '', level: '', engagement: '', thematicWork: [], intersection: [], roles: [], highlights: '' }],
+    activities: [{
+      id: '1',
+      title: '',
+      type: '',
+      organiser: '',
+      level: '',
+      engagement: '',
+      thematicWork: [],
+      intersection: [],
+      roles: [],
+      highlights: '',
+      actorResponses: [
+        { actor: '', response: 'Not Applicable', notes: '' },
+        { actor: '', response: 'Not Applicable', notes: '' },
+        { actor: '', response: 'Not Applicable', notes: '' },
+        { actor: '', response: 'Not Applicable', notes: '' },
+        { actor: '', response: 'Not Applicable', notes: '' },
+        { actor: '', response: 'Not Applicable', notes: '' },
+        { actor: '', response: 'Not Applicable', notes: '' },
+      ]
+    }],
     mainPositions: '',
     policyTrends: '',
     keyActors: '',
     allianceQuestion: '',
-    actorResponses: [
-      { actor: '', response: 'Not Applicable', notes: '' },
-      { actor: '', response: 'Not Applicable', notes: '' },
-      { actor: '', response: 'Not Applicable', notes: '' },
-      { actor: '', response: 'Not Applicable', notes: '' },
-      { actor: '', response: 'Not Applicable', notes: '' },
-      { actor: '', response: 'Not Applicable', notes: '' },
-      { actor: '', response: 'Not Applicable', notes: '' },
-    ],
     challenges: '',
     newContacts: [],
     recommendations: '',
@@ -116,7 +127,27 @@ export default function BackToOfficeReport({
     const newId = String(form.activities.length + 1)
     setForm((prev) => ({
       ...prev,
-      activities: [...prev.activities, { id: newId, title: '', type: '', organiser: '', level: '', engagement: '', thematicWork: [], intersection: [], roles: [], highlights: '' }],
+      activities: [...prev.activities, {
+        id: newId,
+        title: '',
+        type: '',
+        organiser: '',
+        level: '',
+        engagement: '',
+        thematicWork: [],
+        intersection: [],
+        roles: [],
+        highlights: '',
+        actorResponses: [
+          { actor: '', response: 'Not Applicable', notes: '' },
+          { actor: '', response: 'Not Applicable', notes: '' },
+          { actor: '', response: 'Not Applicable', notes: '' },
+          { actor: '', response: 'Not Applicable', notes: '' },
+          { actor: '', response: 'Not Applicable', notes: '' },
+          { actor: '', response: 'Not Applicable', notes: '' },
+          { actor: '', response: 'Not Applicable', notes: '' },
+        ]
+      }],
     }))
   }
 
@@ -433,20 +464,26 @@ export default function BackToOfficeReport({
 
           {/* Rows */}
           <div className="space-y-0">
-            {form.actorResponses.map((actor, idx) => {
+            {activity.actorResponses.map((actor, idx) => {
               const allActors = ['State Actors', 'CSOs', 'POs and Social Movements', 'Multilateral Institutions', 'Private Sector', 'Media', 'Donors']
-              const selectedActors = form.actorResponses.map(a => a.actor)
+              const selectedActors = activity.actorResponses.map(a => a.actor)
               const availableActors = allActors.filter(a => a === actor.actor || !selectedActors.includes(a))
               
               return (
-                <div key={idx} className={`grid grid-cols-12 gap-3 px-4 py-2 ${idx < form.actorResponses.length - 1 ? 'border-b border-gray-200' : ''}`}>
+                <div key={idx} className={`grid grid-cols-12 gap-3 px-4 py-2 ${idx < activity.actorResponses.length - 1 ? 'border-b border-gray-200' : ''}`}>
                   <div className="col-span-4">
                     <Select
                       value={actor.actor}
                       onChange={(e) => {
-                        const newResponses = [...form.actorResponses]
-                        newResponses[idx].actor = e.target.value
-                        updateForm({ actorResponses: newResponses })
+                        const newActivities = form.activities.map(a => {
+                          if (a.id === activity.id) {
+                            const newResponses = [...a.actorResponses]
+                            newResponses[idx].actor = e.target.value
+                            return { ...a, actorResponses: newResponses }
+                          }
+                          return a
+                        })
+                        updateForm({ activities: newActivities })
                       }}
                       options={[
                         { value: '', label: '- Select Actor -' },
@@ -458,9 +495,15 @@ export default function BackToOfficeReport({
                     <Select
                       value={actor.response}
                       onChange={(e) => {
-                        const newResponses = [...form.actorResponses]
-                        newResponses[idx].response = e.target.value
-                        updateForm({ actorResponses: newResponses })
+                        const newActivities = form.activities.map(a => {
+                          if (a.id === activity.id) {
+                            const newResponses = [...a.actorResponses]
+                            newResponses[idx].response = e.target.value
+                            return { ...a, actorResponses: newResponses }
+                          }
+                          return a
+                        })
+                        updateForm({ activities: newActivities })
                       }}
                       options={[
                         { value: 'Not Applicable', label: 'Not Applicable' },
@@ -475,20 +518,32 @@ export default function BackToOfficeReport({
                     <Input
                       value={actor.notes}
                       onChange={(e) => {
-                        const newResponses = [...form.actorResponses]
-                        newResponses[idx].notes = e.target.value
-                        updateForm({ actorResponses: newResponses })
+                        const newActivities = form.activities.map(a => {
+                          if (a.id === activity.id) {
+                            const newResponses = [...a.actorResponses]
+                            newResponses[idx].notes = e.target.value
+                            return { ...a, actorResponses: newResponses }
+                          }
+                          return a
+                        })
+                        updateForm({ activities: newActivities })
                       }}
                       placeholder="Notes"
                       className="text-xs h-8"
                     />
                   </div>
                   <div className="col-span-1 flex items-center justify-end">
-                    {form.actorResponses.length > 1 && (
+                    {activity.actorResponses.length > 1 && (
                       <button
                         onClick={() => {
-                          const newResponses = form.actorResponses.filter((_, i) => i !== idx)
-                          updateForm({ actorResponses: newResponses })
+                          const newActivities = form.activities.map(a => {
+                            if (a.id === activity.id) {
+                              const newResponses = a.actorResponses.filter((_, i) => i !== idx)
+                              return { ...a, actorResponses: newResponses }
+                            }
+                            return a
+                          })
+                          updateForm({ activities: newActivities })
                         }}
                         className="text-red-500 hover:text-red-700 transition-colors"
                       >
