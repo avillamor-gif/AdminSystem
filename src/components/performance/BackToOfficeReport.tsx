@@ -353,21 +353,21 @@ export default function BackToOfficeReport({
                 />
               </div>
               <div className="col-span-2">
-                <Select
-                  value={activity.intersection.join(',')}
+                <select 
+                  multiple 
+                  value={activity.intersection} 
                   onChange={(e) => {
-                    const values = e.target.value ? e.target.value.split(',') : []
-                    updateActivity(activity.id, { intersection: values })
+                    const selected = Array.from(e.target.selectedOptions, (option) => option.value)
+                    updateActivity(activity.id, { intersection: selected })
                   }}
-                  options={[
-                    { value: '', label: '- Select -' },
-                    { value: 'Gender', label: 'Gender' },
-                    { value: 'Trade', label: 'Trade' },
-                    { value: 'Climate', label: 'Climate' },
-                    { value: 'Militarism', label: 'Militarism' },
-                    { value: 'DevCoop', label: 'DevCoop' },
-                  ]}
-                />
+                  className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-orange"
+                >
+                  <option value="Gender">Gender</option>
+                  <option value="Trade">Trade</option>
+                  <option value="Climate">Climate</option>
+                  <option value="Militarism">Militarism</option>
+                  <option value="DevCoop">DevCoop</option>
+                </select>
               </div>
               <div className="col-span-1 flex items-center justify-end">
                 {form.activities.length > 1 && (
