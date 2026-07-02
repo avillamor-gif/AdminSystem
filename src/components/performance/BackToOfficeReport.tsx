@@ -46,6 +46,7 @@ interface BTORFormState {
   policyTrends: string
   keyActors: string
   allianceQuestion: string
+  selectedActivityId: string
   actorResponses: KeyActor[]
   challenges: string
   newContacts: Contact[]
@@ -74,6 +75,7 @@ export default function BackToOfficeReport({
     policyTrends: '',
     keyActors: '',
     allianceQuestion: '',
+    selectedActivityId: '',
     actorResponses: [
       { actor: '', response: 'Not Applicable', notes: '' },
       { actor: '', response: 'Not Applicable', notes: '' },
@@ -425,14 +427,34 @@ export default function BackToOfficeReport({
       {/* Key Actors Response Table */}
       <Card className="p-5 space-y-0">
         <div className="mb-4">
-          <label className="block text-sm font-medium text-gray-700 mb-2">Title of Activity</label>
-          <Input
-            value={form.keyActors}
-            onChange={(e) => updateForm({ keyActors: e.target.value })}
-            placeholder="Enter activity title"
-            className="text-xs h-8"
+          <label className="block text-sm font-medium text-gray-700 mb-2">Select Activity Card</label>
+          <Select
+            value={form.selectedActivityId}
+            onChange={(e) => {
+              const selectedId = e.target.value
+              const selectedActivity = form.activities.find(a => a.id === selectedId)
+              updateForm({ 
+                selectedActivityId: selectedId,
+                keyActors: selectedActivity?.title || ''
+              })
+            }}
+            options={[
+              { value: '', label: '- Select Activity -' },
+              ...form.activities
+                .filter(a => a.title.trim() !== '')
+                .map(a => ({ value: a.id, label: a.title }))
+            ]}
           />
         </div>
+
+        {/* Activity Title Display */}
+        {form.selectedActivityId && (
+          <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded">
+            <p className="text-sm text-gray-700">
+              <span className="font-semibold">Activity Card:</span> {form.keyActors}
+            </p>
+          </div>
+        )}
         
         {/* Header */}
         <div className="grid grid-cols-12 gap-3 px-4 py-3 bg-green-100 text-xs font-bold text-gray-900">
