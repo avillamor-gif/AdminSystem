@@ -809,6 +809,7 @@ export default function PerformanceAppraisalWorkspace({
 
       <Card className="p-5 space-y-4">
         <h3 className="text-base font-semibold text-gray-900">Signatures</h3>
+        {/* Two-column signature layout: employee on left, manager on right */}
         <div className="grid grid-cols-2 gap-8">
           {/* First Column - Employee/Appraisee */}
           <div className="space-y-3 text-center">
