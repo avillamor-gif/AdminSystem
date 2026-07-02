@@ -153,7 +153,7 @@ const defaultFormState = (
   confidentialityNotes: '',
   appraiserSignature: '',
   appraiserSignedDate: '',
-  appraiseeSignature: initialAppraiseeName,
+  appraiseeSignature: '',
   appraiseeSignedDate: '',
 })
 
@@ -292,7 +292,7 @@ export default function PerformanceAppraisalWorkspace({
           
           if (!error && signedUrl?.signedUrl) {
             setForm(prev => {
-              if (prev.appraiseeSignature) return prev
+              if (prev.appraiseeSignature?.startsWith('http')) return prev
               return { ...prev, appraiseeSignature: signedUrl.signedUrl }
             })
           }
@@ -326,7 +326,7 @@ export default function PerformanceAppraisalWorkspace({
               
               if (!signError && managerSignedUrl?.signedUrl) {
                 setForm(prev => {
-                  if (prev.appraiserSignature) return prev
+                  if (prev.appraiserSignature?.startsWith('http')) return prev
                   return { ...prev, appraiserSignature: managerSignedUrl.signedUrl }
                 })
               }
