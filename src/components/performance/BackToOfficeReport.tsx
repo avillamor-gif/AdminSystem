@@ -441,6 +441,9 @@ export default function BackToOfficeReport({
               rows={3}
             />
           </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Who are the key actors in the activities and what are their response/s?</label>
+          </div>
         </div>
       </Card>
 
