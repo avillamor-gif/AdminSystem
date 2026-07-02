@@ -213,25 +213,30 @@ export default function BackToOfficeReport({
   }
 
   return (
-    <div className="space-y-8 max-w-4xl">
+    <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold text-gray-900">Back to the Office Report</h2>
-        <div className="flex gap-2">
-          <Button variant="secondary" onClick={() => localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(form))}>
-            <Save className="w-4 h-4" />
-            Save Draft
-          </Button>
-          <Button onClick={exportPDF}>
-            <Download className="w-4 h-4" />
-            Export PDF
-          </Button>
+      <Card className="p-5">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h2 className="text-lg font-semibold text-gray-900">Back to the Office Report</h2>
+            <p className="text-sm text-gray-500 mt-1">Complete this form following your field visit or travel engagement.</p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Button variant="secondary" size="sm" onClick={() => localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(form))}>
+              <Save className="w-4 h-4" />
+              Save Draft
+            </Button>
+            <Button size="sm" onClick={exportPDF}>
+              <Download className="w-4 h-4" />
+              Export PDF
+            </Button>
+          </div>
         </div>
-      </div>
+      </Card>
 
       {/* Travel Information Section */}
-      <Card className="p-6 space-y-4">
-        <h3 className="text-lg font-semibold text-gray-900">Travel Information</h3>
+      <Card className="p-5 space-y-5">
+        <h3 className="text-base font-semibold text-gray-900">Travel Information</h3>
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Staff Name</label>
@@ -417,8 +422,8 @@ export default function BackToOfficeReport({
       </Card>
 
       {/* Reflections Section */}
-      <Card className="p-6 space-y-4">
-        <h3 className="text-lg font-semibold text-gray-900">Reflections</h3>
+      <Card className="p-5 space-y-5">
+        <h3 className="text-base font-semibold text-gray-900">Reflections</h3>
         <div className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Main positions forwarded?</label>
@@ -451,8 +456,8 @@ export default function BackToOfficeReport({
       </Card>
 
       {/* Key Actors Response Table */}
-      <Card className="p-6 space-y-4 overflow-x-auto">
-        <h3 className="text-lg font-semibold text-gray-900">Key Actors Response</h3>
+      <Card className="p-5 overflow-x-auto">
+        <h3 className="text-base font-semibold text-gray-900 mb-5">Key Actors Response</h3>
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-gray-200">
@@ -500,8 +505,8 @@ export default function BackToOfficeReport({
       </Card>
 
       {/* Challenges Section */}
-      <Card className="p-6 space-y-4">
-        <h3 className="text-lg font-semibold text-gray-900">Challenges & Lessons Learned</h3>
+      <Card className="p-5 space-y-5">
+        <h3 className="text-base font-semibold text-gray-900">Challenges & Lessons Learned</h3>
         <textarea
           value={form.challenges}
           onChange={(e) => updateForm({ challenges: e.target.value })}
@@ -512,9 +517,9 @@ export default function BackToOfficeReport({
       </Card>
 
       {/* New Contacts Section */}
-      <Card className="p-6 space-y-4">
-        <div className="flex items-center justify-between">
-          <h3 className="text-lg font-semibold text-gray-900">Outreach (New Contacts Made)</h3>
+      <Card className="p-5">
+        <div className="flex items-center justify-between mb-5">
+          <h3 className="text-base font-semibold text-gray-900">Outreach (New Contacts Made)</h3>
           <Button variant="secondary" onClick={addContact}>
             + Add Contact
           </Button>
@@ -581,8 +586,8 @@ export default function BackToOfficeReport({
       </Card>
 
       {/* Recommendations Section */}
-      <Card className="p-6 space-y-4">
-        <h3 className="text-lg font-semibold text-gray-900">Recommendations</h3>
+      <Card className="p-5 space-y-5">
+        <h3 className="text-base font-semibold text-gray-900">Recommendations</h3>
         <textarea
           value={form.recommendations}
           onChange={(e) => updateForm({ recommendations: e.target.value })}
