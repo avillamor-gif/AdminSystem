@@ -472,7 +472,7 @@ export default function BackToOfficeReport({
           )}
           
           {/* Header */}
-          <div className="grid grid-cols-12 gap-3 px-4 py-3 bg-green-100 text-xs font-bold text-gray-900">
+          <div className="grid grid-cols-12 gap-3 px-4 py-3 bg-green-50 text-xs font-bold text-gray-900">
             <div className="col-span-3">Key Actors</div>
             <div className="col-span-2">Response</div>
             <div className="col-span-7">Notes</div>
