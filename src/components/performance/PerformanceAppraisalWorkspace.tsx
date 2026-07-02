@@ -272,28 +272,28 @@ export default function PerformanceAppraisalWorkspace({
   // ── Auto-populate e-signatures from employee profiles ──
   const { data: currentEmployee } = useCurrentEmployee()
   const { data: attachments = [] } = useEmployeeAttachments(currentEmployee?.id || '')
+  const [signaturesLoaded, setSignaturesLoaded] = useState(false)
 
   useEffect(() => {
-    if (!currentEmployee?.id) return
+    if (!currentEmployee?.id || signaturesLoaded) return
 
     const fetchSignatures = async () => {
       const supabase = createClient()
       
       // Fetch current employee's e-signature
-      const employeeAttachments = attachments
-      const employeeSignatureAttachment = employeeAttachments.find(a => a.document_type === 'e-signature')
+      const employeeSignatureAttachment = attachments.find(a => a.document_type === 'e-signature')
       
-      if (employeeSignatureAttachment?.file_path && !form.appraiseeSignature) {
+      if (employeeSignatureAttachment?.file_path) {
         try {
           const { data: signedUrl, error } = await supabase.storage
             .from('attachments')
             .createSignedUrl(employeeSignatureAttachment.file_path, 3600)
           
           if (!error && signedUrl?.signedUrl) {
-            setForm(prev => ({
-              ...prev,
-              appraiseeSignature: signedUrl.signedUrl
-            }))
+            setForm(prev => {
+              if (prev.appraiseeSignature) return prev
+              return { ...prev, appraiseeSignature: signedUrl.signedUrl }
+            })
           }
         } catch (err) {
           console.error('Failed to fetch employee e-signature:', err)
@@ -301,7 +301,7 @@ export default function PerformanceAppraisalWorkspace({
       }
 
       // Fetch manager's e-signature if manager_id exists
-      if (currentEmployee.manager_id && !form.appraiserSignature) {
+      if (currentEmployee.manager_id) {
         try {
           // Fetch manager employee record
           const { data: manager, error: managerError } = await supabase
@@ -324,10 +324,10 @@ export default function PerformanceAppraisalWorkspace({
                 .createSignedUrl(managerAttachments[0].file_path, 3600)
               
               if (!signError && managerSignedUrl?.signedUrl) {
-                setForm(prev => ({
-                  ...prev,
-                  appraiserSignature: managerSignedUrl.signedUrl
-                }))
+                setForm(prev => {
+                  if (prev.appraiserSignature) return prev
+                  return { ...prev, appraiserSignature: managerSignedUrl.signedUrl }
+                })
               }
             }
           }
@@ -335,10 +335,14 @@ export default function PerformanceAppraisalWorkspace({
           console.error('Failed to fetch manager e-signature:', err)
         }
       }
+
+      setSignaturesLoaded(true)
     }
 
-    fetchSignatures()
-  }, [currentEmployee?.id, currentEmployee?.manager_id, attachments])
+    if (attachments.length > 0) {
+      fetchSignatures()
+    }
+  }, [currentEmployee?.id, currentEmployee?.manager_id, signaturesLoaded, attachments])
 
   const mapRecordToSaved = (record: PerformanceAppraisalRecord): SavedAppraisal => {
     const parsedForm = (record.form_data ?? {}) as Partial<AppraisalFormState>
