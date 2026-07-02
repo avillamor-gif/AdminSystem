@@ -1,15 +1,16 @@
 'use client'
 
 import { useState } from 'react'
-import { Plus, Target, Star, TrendingUp, FileText, ClipboardList, Briefcase } from 'lucide-react'
+import { Plus, Briefcase, Star, TrendingUp, FileText, ClipboardList } from 'lucide-react'
 import { usePerformanceReviews, useGoals, useCurrentEmployee } from '@/hooks'
 import { Card, Button, Badge, Avatar } from '@/components/ui'
 import PerformanceAppraisalWorkspace from '@/components/performance/PerformanceAppraisalWorkspace'
 import BackToOfficeReport from '@/components/performance/BackToOfficeReport'
+import UnitReportingForm from '@/components/performance/UnitReportingForm'
 import type { PerformanceReviewWithRelations, GoalWithRelations } from '@/services'
 
 export default function PerformancePage() {
-  const [activeTab, setActiveTab] = useState<'appraisals' | 'btor' | 'goals' | 'trackers'>('appraisals')
+  const [activeTab, setActiveTab] = useState<'appraisals' | 'btor' | 'urf' | 'trackers'>('appraisals')
 
   const { data: reviews, isLoading: reviewsLoading } = usePerformanceReviews()
   const { data: goals, isLoading: goalsLoading } = useGoals()
@@ -76,8 +77,7 @@ export default function PerformancePage() {
   const stats = [
     { label: 'Total Reviews', value: typedReviews.length, icon: FileText, color: 'text-blue-600', bg: 'bg-blue-50' },
     { label: 'Pending Reviews', value: typedReviews.filter(r => r.status === 'pending').length, icon: TrendingUp, color: 'text-orange', bg: 'bg-orange/10' },
-    { label: 'Active Goals', value: typedGoals.filter(g => g.status === 'in_progress').length, icon: Target, color: 'text-green-600', bg: 'bg-green-50' },
-    { label: 'Completed Goals', value: typedGoals.filter(g => g.status === 'achieved').length, icon: Star, color: 'text-purple-600', bg: 'bg-purple-50' },
+    { label: 'Overdue Reviews', value: typedReviews.filter(r => r.status === 'pending' && new Date(r.due_date || '') < new Date()).length, icon: ClipboardList, color: 'text-red-600', bg: 'bg-red-50' },
   ]
 
   return (
@@ -98,10 +98,15 @@ export default function PerformancePage() {
               <Briefcase className="w-4 h-4" />
               New Report
             </>
+          ) : activeTab === 'urf' ? (
+            <>
+              <FileText className="w-4 h-4" />
+              New Unit Report
+            </>
           ) : (
             <>
               <Plus className="w-4 h-4" />
-              {activeTab === 'goals' ? 'Add Goal' : 'Add Tracker'}
+              Add Tracker
             </>
           )}
         </Button>
@@ -150,15 +155,15 @@ export default function PerformancePage() {
             Back to Office Report
           </button>
           <button
-            onClick={() => setActiveTab('goals')}
+            onClick={() => setActiveTab('urf')}
             className={`pb-4 text-sm font-medium border-b-2 transition-colors ${
-              activeTab === 'goals'
+              activeTab === 'urf'
                 ? 'border-orange text-orange'
                 : 'border-transparent text-gray-500 hover:text-gray-700'
             }`}
           >
-            <Target className="w-4 h-4 inline mr-2" />
-            My Goals
+            <FileText className="w-4 h-4 inline mr-2" />
+            Unit Reporting Form
           </button>
           <button
             onClick={() => setActiveTab('trackers')}
@@ -195,48 +200,12 @@ export default function PerformancePage() {
         />
       )}
 
-      {/* Goals Tab */}
-      {activeTab === 'goals' && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {goalsLoading ? (
-            <div className="col-span-full flex justify-center py-12">
-              <div className="h-8 w-8 animate-spin rounded-full border-4 border-orange border-t-transparent" />
-            </div>
-          ) : typedGoals.length === 0 ? (
-            <Card className="col-span-full p-12 text-center text-gray-500">
-              No goals found. Click "Add Goal" to create one.
-            </Card>
-          ) : (
-            typedGoals.map((goal) => (
-              <Card key={goal.id} className="p-5">
-                <div className="flex items-start justify-between mb-3">
-                  <div className="p-2 bg-orange/10 rounded-lg">
-                    <Target className="w-5 h-5 text-orange" />
-                  </div>
-                  {getStatusBadge(goal.status || 'not_started')}
-                </div>
-                <h3 className="font-semibold text-gray-900 mb-2">{goal.title}</h3>
-                <p className="text-sm text-gray-500 mb-4 line-clamp-2">{goal.description || 'No description'}</p>
-                <div className="space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-500">Progress</span>
-                    <span className="font-medium text-gray-900">{goal.progress || 0}%</span>
-                  </div>
-                  <div className="w-full bg-gray-100 rounded-full h-2">
-                    <div
-                      className="bg-orange h-2 rounded-full transition-all"
-                      style={{ width: `${goal.progress || 0}%` }}
-                    />
-                  </div>
-                </div>
-                <div className="mt-4 pt-4 border-t border-gray-100 flex justify-between text-xs text-gray-500">
-                  <span>Due: {goal.due_date ? new Date(goal.due_date).toLocaleDateString() : 'Not set'}</span>
-                  <button className="text-orange hover:underline">Edit</button>
-                </div>
-              </Card>
-            ))
-          )}
-        </div>
+      {/* Unit Reporting Form Tab */}
+      {activeTab === 'urf' && (
+        <UnitReportingForm
+          initialUnitName={currentEmployee?.department?.name || ''}
+          initialUnitType="Functional Unit"
+        />
       )}
 
       {/* Trackers Tab */}
