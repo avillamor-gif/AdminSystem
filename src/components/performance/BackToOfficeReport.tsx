@@ -464,6 +464,13 @@ export default function BackToOfficeReport({
       {/* Key Actors Response Table - One per Activity */}
       {form.activities.map((activity) => (
         <Card key={activity.id} className="p-5 space-y-0">
+          {/* Activity Title Display */}
+          {activity.title && (
+            <div className="px-4 py-2 text-sm font-medium text-gray-900 bg-gray-50 border-b border-gray-200">
+              {activity.title}
+            </div>
+          )}
+          
           {/* Header */}
           <div className="grid grid-cols-12 gap-3 px-4 py-3 bg-green-100 text-xs font-bold text-gray-900">
             <div className="col-span-3">Key Actors</div>
