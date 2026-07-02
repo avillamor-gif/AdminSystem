@@ -164,7 +164,7 @@ export default function BackToOfficeReport({
         yPos = 10
       }
       pdf.setFontSize(size)
-      pdf.setFont(undefined, bold ? 'bold' : 'normal')
+      pdf.setFont('helvetica', bold ? 'bold' : 'normal')
       pdf.text(text, 10, yPos)
       yPos += size / 2.5
     }
@@ -261,7 +261,11 @@ export default function BackToOfficeReport({
             <Select
               value={form.fundingSupport}
               onChange={(e) => updateForm({ fundingSupport: e.target.value })}
-              options={['Fully Supported', 'Partially Supported', 'Self-funded']}
+              options={[
+                { value: 'Fully Supported', label: 'Fully Supported' },
+                { value: 'Partially Supported', label: 'Partially Supported' },
+                { value: 'Self-funded', label: 'Self-funded' },
+              ]}
             />
           </div>
         </div>
@@ -288,7 +292,13 @@ export default function BackToOfficeReport({
                 <Select
                   value={activity.type}
                   onChange={(e) => updateActivity(activity.id, { type: e.target.value })}
-                  options={['Forum/Conference', 'Training', 'Meeting', 'Workshop', 'Other']}
+                  options={[
+                    { value: 'Forum/Conference', label: 'Forum/Conference' },
+                    { value: 'Training', label: 'Training' },
+                    { value: 'Meeting', label: 'Meeting' },
+                    { value: 'Workshop', label: 'Workshop' },
+                    { value: 'Other', label: 'Other' },
+                  ]}
                 />
               </div>
               <div>
@@ -300,7 +310,11 @@ export default function BackToOfficeReport({
                 <Select
                   value={activity.engagement}
                   onChange={(e) => updateActivity(activity.id, { engagement: e.target.value })}
-                  options={['Representative', 'Participant', 'Observer', 'Observer']}
+                  options={[
+                    { value: 'Representative', label: 'Representative' },
+                    { value: 'Participant', label: 'Participant' },
+                    { value: 'Observer', label: 'Observer' },
+                  ]}
                 />
               </div>
             </div>
@@ -380,7 +394,13 @@ export default function BackToOfficeReport({
                       newResponses[idx].response = e.target.value
                       updateForm({ actorResponses: newResponses })
                     }}
-                    options={['Not Applicable', 'Supportive', 'Opposed', 'Neutral', 'Acquiescence']}
+                    options={[
+                      { value: 'Not Applicable', label: 'Not Applicable' },
+                      { value: 'Supportive', label: 'Supportive' },
+                      { value: 'Opposed', label: 'Opposed' },
+                      { value: 'Neutral', label: 'Neutral' },
+                      { value: 'Acquiescence', label: 'Acquiescence' },
+                    ]}
                   />
                 </td>
                 <td className="py-2">
@@ -450,14 +470,22 @@ export default function BackToOfficeReport({
                       <Select
                         value={contact.influence}
                         onChange={(e) => updateContact(contact.id, { influence: e.target.value })}
-                        options={['Slightly Influential', 'Very Influential']}
+                        options={[
+                          { value: 'Slightly Influential', label: 'Slightly Influential' },
+                          { value: 'Very Influential', label: 'Very Influential' },
+                        ]}
                       />
                     </td>
                     <td className="py-2">
                       <Select
                         value={contact.outreachType}
                         onChange={(e) => updateContact(contact.id, { outreachType: e.target.value })}
-                        options={['Introduction', 'Collaboration', 'Membership', 'Fundraising']}
+                        options={[
+                          { value: 'Introduction', label: 'Introduction' },
+                          { value: 'Collaboration', label: 'Collaboration' },
+                          { value: 'Membership', label: 'Membership' },
+                          { value: 'Fundraising', label: 'Fundraising' },
+                        ]}
                       />
                     </td>
                     <td className="py-2">
