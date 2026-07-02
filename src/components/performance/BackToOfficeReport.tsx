@@ -465,7 +465,7 @@ export default function BackToOfficeReport({
       {form.activities.map((activity) => (
         <Card key={activity.id} className="p-5 space-y-0">
           {/* Activity Card Header */}
-          <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded">
+          <div className="p-3 bg-blue-50 border border-blue-200 rounded">
             <p className="text-sm text-gray-700">
               <span className="font-semibold">Activity Card:</span> {activity.title || 'Untitled'}
             </p>
