@@ -81,6 +81,7 @@ export function Header({ user }: HeaderProps) {
     if (pathname.startsWith('/admin/pim-configuration')) return 'PIM Configuration'
     if (pathname.startsWith('/admin/security-policies')) return 'Security Policies'
     if (pathname.startsWith('/admin/publications')) return 'Publications'
+    if (pathname.startsWith('/admin/performance')) return 'MEAL (Monitoring, Evaluation, And Learning)'
     if (pathname.startsWith('/admin/recruitment')) return 'Recruitment'
     if (pathname.startsWith('/admin/travel')) return 'Travel Management'
     if (pathname.startsWith('/admin/resources-assets/office-supplies')) return 'Office Supplies'
