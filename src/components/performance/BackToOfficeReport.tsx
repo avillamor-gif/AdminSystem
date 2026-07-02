@@ -458,102 +458,103 @@ export default function BackToOfficeReport({
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Who are the key actors in the activities and what are their response/s?</label>
           </div>
+          {/* Key Actors Response Table - One per Activity */}
+          <div className="space-y-4 mt-4">
+            {form.activities.map((activity) => (
+              <div key={activity.id} className="border border-gray-200 rounded-lg overflow-hidden">
+                {/* Activity Title Display */}
+                {activity.title && (
+                  <div className="px-4 py-2 text-sm font-medium text-gray-900 bg-blue-50 border-b border-gray-200">
+                    {activity.title}
+                  </div>
+                )}
+                
+                {/* Header */}
+                <div className="grid grid-cols-12 gap-3 px-4 py-3 bg-green-50 text-xs font-bold text-gray-900">
+                  <div className="col-span-3">Key Actors</div>
+                  <div className="col-span-2">Response</div>
+                  <div className="col-span-7">Notes</div>
+                </div>
+
+                {/* Rows */}
+                <div className="space-y-0">
+                  {activity.actorResponses.map((actor, idx) => {
+                    const allActors = ['State Actors', 'CSOs', 'POs and Social Movements', 'Multilateral Institutions', 'Private Sector', 'Media', 'Donors']
+                    const selectedActors = activity.actorResponses.map(a => a.actor)
+                    const availableActors = allActors.filter(a => a === actor.actor || !selectedActors.includes(a))
+                    
+                    return (
+                      <div key={idx} className={`grid grid-cols-12 gap-3 px-4 py-2 ${idx < activity.actorResponses.length - 1 ? 'border-b border-gray-200' : ''}`}>
+                        <div className="col-span-3">
+                          <Select
+                            value={actor.actor}
+                            onChange={(e) => {
+                              const newActivities = form.activities.map(a => {
+                                if (a.id === activity.id) {
+                                  const newResponses = [...a.actorResponses]
+                                  newResponses[idx].actor = e.target.value
+                                  return { ...a, actorResponses: newResponses }
+                                }
+                                return a
+                              })
+                              updateForm({ activities: newActivities })
+                            }}
+                            options={[
+                              { value: '', label: '- Select Actor -' },
+                              ...availableActors.map(a => ({ value: a, label: a }))
+                            ]}
+                          />
+                        </div>
+                        <div className="col-span-2">
+                          <Select
+                            value={actor.response}
+                            onChange={(e) => {
+                              const newActivities = form.activities.map(a => {
+                                if (a.id === activity.id) {
+                                  const newResponses = [...a.actorResponses]
+                                  newResponses[idx].response = e.target.value
+                                  return { ...a, actorResponses: newResponses }
+                                }
+                                return a
+                              })
+                              updateForm({ activities: newActivities })
+                            }}
+                            options={[
+                              { value: 'Not Applicable', label: 'Not Applicable' },
+                              { value: 'Supportive', label: 'Supportive' },
+                              { value: 'Opposed', label: 'Opposed' },
+                              { value: 'Neutral', label: 'Neutral' },
+                              { value: 'Acquiescence', label: 'Acquiescence' },
+                            ]}
+                          />
+                        </div>
+                        <div className="col-span-7">
+                          <Input
+                            value={actor.notes}
+                            onChange={(e) => {
+                              const newActivities = form.activities.map(a => {
+                                if (a.id === activity.id) {
+                                  const newResponses = [...a.actorResponses]
+                                  newResponses[idx].notes = e.target.value
+                                  return { ...a, actorResponses: newResponses }
+                                }
+                                return a
+                              })
+                              updateForm({ activities: newActivities })
+                            }}
+                            placeholder="Notes"
+                            className="text-xs h-8"
+                          />
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       </Card>
-
-      {/* Key Actors Response Table - One per Activity */}
-      {form.activities.map((activity) => (
-        <Card key={activity.id} className="p-5 space-y-0">
-          {/* Activity Title Display */}
-          {activity.title && (
-            <div className="px-4 py-2 text-sm font-medium text-gray-900 bg-blue-50 border-b border-gray-200">
-              {activity.title}
-            </div>
-          )}
-          
-          {/* Header */}
-          <div className="grid grid-cols-12 gap-3 px-4 py-3 bg-green-50 text-xs font-bold text-gray-900">
-            <div className="col-span-3">Key Actors</div>
-            <div className="col-span-2">Response</div>
-            <div className="col-span-7">Notes</div>
-          </div>
-
-          {/* Rows */}
-          <div className="space-y-0">
-            {activity.actorResponses.map((actor, idx) => {
-              const allActors = ['State Actors', 'CSOs', 'POs and Social Movements', 'Multilateral Institutions', 'Private Sector', 'Media', 'Donors']
-              const selectedActors = activity.actorResponses.map(a => a.actor)
-              const availableActors = allActors.filter(a => a === actor.actor || !selectedActors.includes(a))
-              
-              return (
-                <div key={idx} className={`grid grid-cols-12 gap-3 px-4 py-2 ${idx < activity.actorResponses.length - 1 ? 'border-b border-gray-200' : ''}`}>
-                  <div className="col-span-3">
-                    <Select
-                      value={actor.actor}
-                      onChange={(e) => {
-                        const newActivities = form.activities.map(a => {
-                          if (a.id === activity.id) {
-                            const newResponses = [...a.actorResponses]
-                            newResponses[idx].actor = e.target.value
-                            return { ...a, actorResponses: newResponses }
-                          }
-                          return a
-                        })
-                        updateForm({ activities: newActivities })
-                      }}
-                      options={[
-                        { value: '', label: '- Select Actor -' },
-                        ...availableActors.map(a => ({ value: a, label: a }))
-                      ]}
-                    />
-                  </div>
-                  <div className="col-span-2">
-                    <Select
-                      value={actor.response}
-                      onChange={(e) => {
-                        const newActivities = form.activities.map(a => {
-                          if (a.id === activity.id) {
-                            const newResponses = [...a.actorResponses]
-                            newResponses[idx].response = e.target.value
-                            return { ...a, actorResponses: newResponses }
-                          }
-                          return a
-                        })
-                        updateForm({ activities: newActivities })
-                      }}
-                      options={[
-                        { value: 'Not Applicable', label: 'Not Applicable' },
-                        { value: 'Supportive', label: 'Supportive' },
-                        { value: 'Opposed', label: 'Opposed' },
-                        { value: 'Neutral', label: 'Neutral' },
-                        { value: 'Acquiescence', label: 'Acquiescence' },
-                      ]}
-                    />
-                  </div>
-                  <div className="col-span-7">
-                    <Input
-                      value={actor.notes}
-                      onChange={(e) => {
-                        const newActivities = form.activities.map(a => {
-                          if (a.id === activity.id) {
-                            const newResponses = [...a.actorResponses]
-                            newResponses[idx].notes = e.target.value
-                            return { ...a, actorResponses: newResponses }
-                          }
-                          return a
-                        })
-                        updateForm({ activities: newActivities })
-                      }}
-                      placeholder="Notes"
-                      className="text-xs h-8"
-                    />
-                  </div>
-                </div>
-              )
-            })}
-          </div>
-        </Card>
-      ))}
 
       {/* Challenges Section */}
       <Card className="p-5 space-y-5">
