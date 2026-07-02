@@ -104,7 +104,45 @@ export default function BackToOfficeReport({
     const saved = localStorage.getItem(DRAFT_STORAGE_KEY)
     if (saved) {
       try {
-        setForm(JSON.parse(saved))
+        const parsed = JSON.parse(saved)
+        // Ensure activities array exists and has proper structure
+        if (!parsed.activities || !Array.isArray(parsed.activities)) {
+          parsed.activities = [{
+            id: '1',
+            title: '',
+            type: '',
+            organiser: '',
+            level: '',
+            engagement: '',
+            thematicWork: [],
+            intersection: [],
+            roles: [],
+            highlights: '',
+            actorResponses: [
+              { actor: '', response: 'Not Applicable', notes: '' },
+              { actor: '', response: 'Not Applicable', notes: '' },
+              { actor: '', response: 'Not Applicable', notes: '' },
+              { actor: '', response: 'Not Applicable', notes: '' },
+              { actor: '', response: 'Not Applicable', notes: '' },
+              { actor: '', response: 'Not Applicable', notes: '' },
+              { actor: '', response: 'Not Applicable', notes: '' },
+            ]
+          }]
+        }
+        // Ensure each activity has actorResponses
+        parsed.activities = parsed.activities.map((activity: Activity) => ({
+          ...activity,
+          actorResponses: activity.actorResponses || [
+            { actor: '', response: 'Not Applicable', notes: '' },
+            { actor: '', response: 'Not Applicable', notes: '' },
+            { actor: '', response: 'Not Applicable', notes: '' },
+            { actor: '', response: 'Not Applicable', notes: '' },
+            { actor: '', response: 'Not Applicable', notes: '' },
+            { actor: '', response: 'Not Applicable', notes: '' },
+            { actor: '', response: 'Not Applicable', notes: '' },
+          ]
+        }))
+        setForm(parsed)
       } catch {
         // Ignore parse errors
       }
