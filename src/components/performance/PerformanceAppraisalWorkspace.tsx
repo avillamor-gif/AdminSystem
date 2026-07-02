@@ -897,17 +897,15 @@ export default function PerformanceAppraisalWorkspace({
         <div className="grid grid-cols-2 gap-8">
           {/* First Column - Employee/Appraisee */}
           <div className="space-y-3 text-center">
-            {/* Signature Image Placeholder */}
-            <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 bg-gray-50 min-h-32 flex items-center justify-center overflow-hidden">
-              <div className="text-center w-full">
-                {form.appraiseeSignature && form.appraiseeSignature.startsWith('http') ? (
-                  <img src={form.appraiseeSignature} alt="Employee signature" className="max-h-32 max-w-full mx-auto" />
-                ) : form.appraiseeSignature ? (
-                  <div className="text-sm font-semibold text-gray-700">{form.appraiseeSignature}</div>
+            {/* Signature Display */}
+            <div className="py-4 min-h-12">
+              {form.appraiseeSignature && (
+                form.appraiseeSignature.startsWith('http') ? (
+                  <img src={form.appraiseeSignature} alt="Employee signature" className="max-h-20 max-w-full mx-auto" />
                 ) : (
-                  <div className="text-sm text-gray-500">Signature image of the employee</div>
-                )}
-              </div>
+                  <div className="text-sm font-semibold text-gray-700">{form.appraiseeSignature}</div>
+                )
+              )}
             </div>
             {/* Label and signature input */}
             <div>
@@ -929,17 +927,15 @@ export default function PerformanceAppraisalWorkspace({
 
           {/* Second Column - Manager/Appraiser */}
           <div className="space-y-3 text-center">
-            {/* Signature Image Placeholder */}
-            <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 bg-gray-50 min-h-32 flex items-center justify-center overflow-hidden">
-              <div className="text-center w-full">
-                {form.appraiserSignature && form.appraiserSignature.startsWith('http') ? (
-                  <img src={form.appraiserSignature} alt="Manager signature" className="max-h-32 max-w-full mx-auto" />
-                ) : form.appraiserSignature ? (
-                  <div className="text-sm font-semibold text-gray-700">{form.appraiserSignature}</div>
+            {/* Signature Display */}
+            <div className="py-4 min-h-12">
+              {form.appraiserSignature && (
+                form.appraiserSignature.startsWith('http') ? (
+                  <img src={form.appraiserSignature} alt="Manager signature" className="max-h-20 max-w-full mx-auto" />
                 ) : (
-                  <div className="text-sm text-gray-500">Signature image of the manager</div>
-                )}
-              </div>
+                  <div className="text-sm font-semibold text-gray-700">{form.appraiserSignature}</div>
+                )
+              )}
             </div>
             {/* Label and signature input */}
             <div>
