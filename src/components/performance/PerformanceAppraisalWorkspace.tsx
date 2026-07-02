@@ -210,33 +210,10 @@ export default function PerformanceAppraisalWorkspace({
   ))
   const [activeFormId, setActiveFormId] = useState<string | null>(null)
   const [lastSavedAt, setLastSavedAt] = useState<string | null>(null)
-  const [showAllObjectives, setShowAllObjectives] = useState(false)
   const { data: savedRecords = [] } = useMyPerformanceAppraisals()
   const saveDraftMutation = useSavePerformanceAppraisalDraft()
   const submitMutation = useSubmitPerformanceAppraisal()
   const draftStorageKey = `${DRAFT_STORAGE_KEY}:${storageScopeKey}`
-
-  const getStatusColor = (status: string) => {
-    const colors: Record<string, string> = {
-      on_track: 'bg-green-500',
-      delayed: 'bg-red-500',
-      achieved: 'bg-green-500',
-      partly_achieved: 'bg-yellow-500',
-      not_achieved: 'bg-red-500',
-    }
-    return colors[status] || 'bg-gray-500'
-  }
-
-  const getStatusLabel = (status: string) => {
-    const labels: Record<string, string> = {
-      on_track: 'On Track',
-      delayed: 'Delayed',
-      achieved: 'Achieved',
-      partly_achieved: 'Partly Achieved',
-      not_achieved: 'Not Achieved',
-    }
-    return labels[status] || status
-  }
 
   useEffect(() => {
     const storedDraft = safeJsonParse<AppraisalFormState | null>(localStorage.getItem(draftStorageKey), null)
@@ -574,7 +551,7 @@ export default function PerformanceAppraisalWorkspace({
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
-              {form.objectives.slice(0, showAllObjectives ? undefined : 1).map((item, index) => (
+              {form.objectives.map((item, index) => (
                 <tr key={`objective-${index}`}>
                   <td className="px-4 py-3 text-gray-700">
                     <Input
@@ -590,28 +567,23 @@ export default function PerformanceAppraisalWorkspace({
                     />
                   </td>
                   <td className="px-4 py-3 w-40">
-                    <div className="flex items-center gap-2">
-                      <Select
-                        value={item.status}
-                        onChange={(e) =>
-                          setForm((prev) => {
-                            const objectives = [...prev.objectives]
-                            objectives[index] = { ...objectives[index], status: e.target.value }
-                            return { ...prev, objectives }
-                          })
-                        }
-                        options={[
-                          { value: 'on_track', label: 'On Track' },
-                          { value: 'delayed', label: 'Delayed' },
-                          { value: 'achieved', label: 'Achieved' },
-                          { value: 'partly_achieved', label: 'Partly Achieved' },
-                          { value: 'not_achieved', label: 'Not Achieved' },
-                        ]}
-                      />
-                      <span className={`${getStatusColor(item.status)} text-white text-xs font-semibold px-2 py-1 rounded whitespace-nowrap`}>
-                        {getStatusLabel(item.status)}
-                      </span>
-                    </div>
+                    <Select
+                      value={item.status}
+                      onChange={(e) =>
+                        setForm((prev) => {
+                          const objectives = [...prev.objectives]
+                          objectives[index] = { ...objectives[index], status: e.target.value }
+                          return { ...prev, objectives }
+                        })
+                      }
+                      options={[
+                        { value: 'on_track', label: 'On Track' },
+                        { value: 'delayed', label: 'Delayed' },
+                        { value: 'achieved', label: 'Achieved' },
+                        { value: 'partly_achieved', label: 'Partly Achieved' },
+                        { value: 'not_achieved', label: 'Not Achieved' },
+                      ]}
+                    />
                   </td>
                   <td className="px-4 py-3">
                     <Input
@@ -631,22 +603,17 @@ export default function PerformanceAppraisalWorkspace({
             </tbody>
           </table>
         </div>
-        {!showAllObjectives && form.objectives.length > 1 && (
-          <button
-            onClick={() => setShowAllObjectives(true)}
-            className="text-sm text-blue-600 hover:text-blue-800 font-medium"
-          >
-            + Add More Objective
-          </button>
-        )}
-        {showAllObjectives && form.objectives.length > 1 && (
-          <button
-            onClick={() => setShowAllObjectives(false)}
-            className="text-sm text-blue-600 hover:text-blue-800 font-medium"
-          >
-            - Show Less
-          </button>
-        )}
+        <button
+          onClick={() => {
+            setForm((prev) => ({
+              ...prev,
+              objectives: [...prev.objectives, emptyObjective()],
+            }))
+          }}
+          className="text-sm text-blue-600 hover:text-blue-800 font-medium"
+        >
+          + Add More Objective
+        </button>
       </Card>
 
       <Card className="p-5 space-y-4">
