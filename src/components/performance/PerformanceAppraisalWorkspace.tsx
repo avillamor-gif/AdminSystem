@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
-import { Download, FilePlus2, Save, HelpCircle } from 'lucide-react'
+import { Download, FilePlus2, Save, HelpCircle, Trash2 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { jsPDF } from 'jspdf'
 import { Button, Card, Input, Select, Badge } from '@/components/ui'
@@ -137,7 +137,7 @@ const defaultFormState = (
   periodCovered: 'midyear',
   appraisalDate: new Date().toISOString().slice(0, 10),
   discussionPoints: Array(DISCUSSION_PROMPTS.length).fill(''),
-  objectives: [emptyObjective(), emptyObjective(), emptyObjective()],
+  objectives: [emptyObjective()],
   workRatings: {},
   problemsFaced: '',
   supervisorFeedback: '',
@@ -524,7 +524,7 @@ export default function PerformanceAppraisalWorkspace({
 
       <Card className="p-5 space-y-4">
         <div className="flex items-start gap-2">
-          <h3 className="text-base font-semibold text-gray-900">Part II: Performance Assessment</h3>
+          <h3 className="text-base font-semibold text-gray-900">Part II: Performance Assessment & Work Areas Rating</h3>
           <div className="relative group">
             <HelpCircle className="w-4 h-4 text-gray-400 hover:text-gray-600 cursor-help flex-shrink-0" />
             <div className="absolute left-0 top-full mt-2 hidden group-hover:block bg-gray-900 text-white text-xs rounded-lg shadow-lg z-10 w-72 p-3 pointer-events-none whitespace-normal">
@@ -548,6 +548,7 @@ export default function PerformanceAppraisalWorkspace({
                 <th className="px-4 py-3 text-left font-semibold text-gray-900 bg-green-100 border-b border-gray-200">Objective/s</th>
                 <th className="px-4 py-3 text-left font-semibold text-gray-900 bg-green-100 border-b border-gray-200">Status</th>
                 <th className="px-4 py-3 text-left font-semibold text-gray-900 bg-green-100 border-b border-gray-200">Comments</th>
+                <th className="px-4 py-3 text-center font-semibold text-gray-900 bg-green-100 border-b border-gray-200 w-12"></th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
@@ -598,6 +599,22 @@ export default function PerformanceAppraisalWorkspace({
                       }
                     />
                   </td>
+                  <td className="px-4 py-3 text-center">
+                    {form.objectives.length > 1 && (
+                      <button
+                        onClick={() => {
+                          setForm((prev) => ({
+                            ...prev,
+                            objectives: prev.objectives.filter((_, i) => i !== index),
+                          }))
+                        }}
+                        className="text-red-500 hover:text-red-700 transition-colors"
+                        title="Delete objective"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    )}
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -614,63 +631,63 @@ export default function PerformanceAppraisalWorkspace({
         >
           + Add More Objective
         </button>
-      </Card>
 
-      <Card className="p-5 space-y-4">
-        <div className="flex items-start gap-2">
-          <h3 className="text-base font-semibold text-gray-900">Part II (continued): Work Areas Rating</h3>
-          <div className="relative group">
-            <HelpCircle className="w-5 h-5 text-gray-400 hover:text-gray-600 cursor-help mt-0.5 flex-shrink-0" />
-            <div className="absolute left-0 top-full mt-2 hidden group-hover:block bg-gray-900 text-white text-sm rounded-lg shadow-lg z-10 w-80 p-3 pointer-events-none whitespace-normal">
-              <p>Based on the performance assessment above, rate your knowledge, skills and attitude on the following work areas (poor, satisfactory, good, excellent). Discuss and finalise the rating with the appraiser.</p>
+        <div className="border-t border-gray-200 pt-6 mt-6">
+          <div className="flex items-start gap-2 mb-4">
+            <h3 className="text-base font-semibold text-gray-900">Work Areas Rating</h3>
+            <div className="relative group">
+              <HelpCircle className="w-5 h-5 text-gray-400 hover:text-gray-600 cursor-help mt-0.5 flex-shrink-0" />
+              <div className="absolute left-0 top-full mt-2 hidden group-hover:block bg-gray-900 text-white text-sm rounded-lg shadow-lg z-10 w-80 p-3 pointer-events-none whitespace-normal">
+                <p>Based on the performance assessment above, rate your knowledge, skills and attitude on the following work areas (poor, satisfactory, good, excellent). Discuss and finalise the rating with the appraiser.</p>
+              </div>
             </div>
           </div>
-        </div>
-        <p className="text-sm text-gray-500">Rate each area: Poor, Satisfactory, Good, or Excellent.</p>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm border border-gray-200 rounded-lg overflow-hidden">
-            <thead>
-              <tr>
-                <th className="px-4 py-3 text-left font-semibold text-gray-900 bg-blue-100 border-b border-gray-200">Work Areas</th>
-                <th className="px-4 py-3 text-left font-semibold text-gray-900 bg-blue-100 border-b border-gray-200">Rating</th>
-              </tr>
-            </thead>
-            <tbody>
-              {Object.entries(WORK_RATING_CATEGORIES).map(([category, areas]) => (
-                <>
-                  <tr key={category}>
-                    <td colSpan={2} className="px-4 py-2 bg-blue-200 font-semibold text-gray-900 border-b border-gray-200">
-                      {category}
-                    </td>
-                  </tr>
-                  {areas.map((area) => (
-                    <tr key={area} className="border-b border-gray-200">
-                      <td className="px-4 py-3 text-gray-700">{area}</td>
-                      <td className="px-4 py-3 w-40">
-                        <Select
-                          value={form.workRatings[area] || 'good'}
-                          onChange={(e) =>
-                            setForm((prev) => ({
-                              ...prev,
-                              workRatings: { ...prev.workRatings, [area]: e.target.value },
-                            }))
-                          }
-                          options={[
-                            { value: 'poor', label: 'Poor' },
-                            { value: 'satisfactory', label: 'Satisfactory' },
-                            { value: 'good', label: 'Good' },
-                            { value: 'excellent', label: 'Excellent' },
-                          ]}
-                        />
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm border border-gray-200 rounded-lg overflow-hidden">
+              <thead>
+                <tr>
+                  <th className="px-4 py-3 text-left font-semibold text-gray-900 bg-blue-100 border-b border-gray-200">Work Areas</th>
+                  <th className="px-4 py-3 text-left font-semibold text-gray-900 bg-blue-100 border-b border-gray-200">Rating</th>
+                </tr>
+              </thead>
+              <tbody>
+                {Object.entries(WORK_RATING_CATEGORIES).map(([category, areas]) => (
+                  <>
+                    <tr key={category}>
+                      <td colSpan={2} className="px-4 py-2 bg-blue-200 font-semibold text-gray-900 border-b border-gray-200">
+                        {category}
                       </td>
                     </tr>
-                  ))}
-                </>
-              ))}
-            </tbody>
-          </table>
+                    {areas.map((area) => (
+                      <tr key={area} className="border-b border-gray-200">
+                        <td className="px-4 py-3 text-gray-700">{area}</td>
+                        <td className="px-4 py-3 w-40">
+                          <Select
+                            value={form.workRatings[area] || 'good'}
+                            onChange={(e) =>
+                              setForm((prev) => ({
+                                ...prev,
+                                workRatings: { ...prev.workRatings, [area]: e.target.value },
+                              }))
+                            }
+                            options={[
+                              { value: 'poor', label: 'Poor' },
+                              { value: 'satisfactory', label: 'Satisfactory' },
+                              { value: 'good', label: 'Good' },
+                              { value: 'excellent', label: 'Excellent' },
+                            ]}
+                          />
+                        </td>
+                      </tr>
+                    ))}
+                  </>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
-        <div className="space-y-3">
+
+        <div className="space-y-3 border-t border-gray-200 pt-6 mt-6">
           <div>
             <p className="text-sm font-medium text-gray-700 mb-1">Problems faced and how they were resolved</p>
             <textarea
