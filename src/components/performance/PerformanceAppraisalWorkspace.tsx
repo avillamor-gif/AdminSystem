@@ -116,7 +116,6 @@ const WORK_RATING_CATEGORIES = {
     'Compliance with institutional policies and procedures',
   ],
 }
-]
 
 const emptyObjective = (): ObjectiveRow => ({ objective: '', status: 'on_track', comments: '' })
 const emptyPlan = (): PlanRow => ({ objective: '', criteria: '' })
