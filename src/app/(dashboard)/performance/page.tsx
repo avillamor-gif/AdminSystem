@@ -1,14 +1,15 @@
 'use client'
 
 import { useState } from 'react'
-import { Plus, Target, Star, TrendingUp, FileText, ClipboardList } from 'lucide-react'
+import { Plus, Target, Star, TrendingUp, FileText, ClipboardList, Briefcase } from 'lucide-react'
 import { usePerformanceReviews, useGoals, useCurrentEmployee } from '@/hooks'
 import { Card, Button, Badge, Avatar } from '@/components/ui'
 import PerformanceAppraisalWorkspace from '@/components/performance/PerformanceAppraisalWorkspace'
+import BackToOfficeReport from '@/components/performance/BackToOfficeReport'
 import type { PerformanceReviewWithRelations, GoalWithRelations } from '@/services'
 
 export default function PerformancePage() {
-  const [activeTab, setActiveTab] = useState<'appraisals' | 'reviews' | 'goals' | 'trackers'>('appraisals')
+  const [activeTab, setActiveTab] = useState<'appraisals' | 'btor' | 'goals' | 'trackers'>('appraisals')
 
   const { data: reviews, isLoading: reviewsLoading } = usePerformanceReviews()
   const { data: goals, isLoading: goalsLoading } = useGoals()
@@ -92,10 +93,15 @@ export default function PerformancePage() {
               <ClipboardList className="w-4 h-4" />
               New Appraisal
             </>
+          ) : activeTab === 'btor' ? (
+            <>
+              <Briefcase className="w-4 h-4" />
+              New Report
+            </>
           ) : (
             <>
               <Plus className="w-4 h-4" />
-              {activeTab === 'reviews' ? 'Add Review' : 'Add Goal'}
+              {activeTab === 'goals' ? 'Add Goal' : 'Add Tracker'}
             </>
           )}
         </Button>
@@ -133,15 +139,15 @@ export default function PerformancePage() {
             Appraisal Form
           </button>
           <button
-            onClick={() => setActiveTab('reviews')}
+            onClick={() => setActiveTab('btor')}
             className={`pb-4 text-sm font-medium border-b-2 transition-colors ${
-              activeTab === 'reviews'
+              activeTab === 'btor'
                 ? 'border-orange text-orange'
                 : 'border-transparent text-gray-500 hover:text-gray-700'
             }`}
           >
-            <FileText className="w-4 h-4 inline mr-2" />
-            My Reviews
+            <Briefcase className="w-4 h-4 inline mr-2" />
+            Back to Office Report
           </button>
           <button
             onClick={() => setActiveTab('goals')}
@@ -181,76 +187,12 @@ export default function PerformancePage() {
         />
       )}
 
-      {/* Reviews Tab */}
-      {activeTab === 'reviews' && (
-        <Card className="overflow-hidden p-0">
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gray-50 border-b border-gray-200">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Employee</th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Review Period</th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Due Date</th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Rating</th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Status</th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200">
-                {reviewsLoading ? (
-                  <tr>
-                    <td colSpan={6} className="px-6 py-12 text-center">
-                      <div className="flex justify-center">
-                        <div className="h-8 w-8 animate-spin rounded-full border-4 border-orange border-t-transparent" />
-                      </div>
-                    </td>
-                  </tr>
-                ) : typedReviews.length === 0 ? (
-                  <tr>
-                    <td colSpan={6} className="px-6 py-12 text-center text-gray-500">
-                      No performance reviews found.
-                    </td>
-                  </tr>
-                ) : (
-                  typedReviews.map((review) => (
-                    <tr key={review.id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-3">
-                          <Avatar
-                            src={review.employee?.avatar_url}
-                            firstName={review.employee?.first_name || 'U'}
-                            lastName={review.employee?.last_name || ''}
-                          />
-                          <div>
-                            <p className="font-medium text-gray-900">
-                              {review.employee?.first_name} {review.employee?.last_name}
-                            </p>
-                            <p className="text-sm text-gray-500">{review.employee?.email}</p>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 text-sm text-gray-600">
-                        {review.review_period || '-'}
-                      </td>
-                      <td className="px-6 py-4 text-sm text-gray-600">
-                        {review.due_date ? new Date(review.due_date).toLocaleDateString() : '-'}
-                      </td>
-                      <td className="px-6 py-4">
-                        {getRatingStars(review.overall_rating)}
-                      </td>
-                      <td className="px-6 py-4">
-                        {getStatusBadge(review.status || 'pending')}
-                      </td>
-                      <td className="px-6 py-4">
-                        <Button variant="outline" size="sm">View</Button>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-        </Card>
+      {/* Back to Office Report Tab */}
+      {activeTab === 'btor' && (
+        <BackToOfficeReport
+          initialStaffName={`${currentEmployee?.first_name || ''} ${currentEmployee?.last_name || ''}`.trim()}
+          initialUnit={currentEmployee?.department?.name || ''}
+        />
       )}
 
       {/* Goals Tab */}
