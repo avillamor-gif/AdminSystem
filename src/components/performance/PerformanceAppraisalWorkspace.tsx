@@ -210,10 +210,33 @@ export default function PerformanceAppraisalWorkspace({
   ))
   const [activeFormId, setActiveFormId] = useState<string | null>(null)
   const [lastSavedAt, setLastSavedAt] = useState<string | null>(null)
+  const [showAllObjectives, setShowAllObjectives] = useState(false)
   const { data: savedRecords = [] } = useMyPerformanceAppraisals()
   const saveDraftMutation = useSavePerformanceAppraisalDraft()
   const submitMutation = useSubmitPerformanceAppraisal()
   const draftStorageKey = `${DRAFT_STORAGE_KEY}:${storageScopeKey}`
+
+  const getStatusColor = (status: string) => {
+    const colors: Record<string, string> = {
+      on_track: 'bg-green-500',
+      delayed: 'bg-red-500',
+      achieved: 'bg-green-500',
+      partly_achieved: 'bg-yellow-500',
+      not_achieved: 'bg-red-500',
+    }
+    return colors[status] || 'bg-gray-500'
+  }
+
+  const getStatusLabel = (status: string) => {
+    const labels: Record<string, string> = {
+      on_track: 'On Track',
+      delayed: 'Delayed',
+      achieved: 'Achieved',
+      partly_achieved: 'Partly Achieved',
+      not_achieved: 'Not Achieved',
+    }
+    return labels[status] || status
+  }
 
   useEffect(() => {
     const storedDraft = safeJsonParse<AppraisalFormState | null>(localStorage.getItem(draftStorageKey), null)
@@ -523,40 +546,37 @@ export default function PerformanceAppraisalWorkspace({
       </Card>
 
       <Card className="p-5 space-y-4">
-        <h3 className="text-base font-semibold text-gray-900">Part II: Performance Assessment</h3>
-        <p className="text-sm text-gray-500">List objectives for the period and indicate status with comments.</p>
+        <div className="flex items-start gap-2">
+          <h3 className="text-base font-semibold text-gray-900">Part II: Performance Assessment</h3>
+          <div className="relative group">
+            <HelpCircle className="w-4 h-4 text-gray-400 hover:text-gray-600 cursor-help flex-shrink-0" />
+            <div className="absolute left-0 top-full mt-2 hidden group-hover:block bg-gray-900 text-white text-xs rounded-lg shadow-lg z-10 w-72 p-3 pointer-events-none whitespace-normal">
+              <ul className="space-y-2">
+                <li className="flex gap-2">
+                  <span className="text-gray-300 flex-shrink-0">•</span>
+                  <span>For midyear assessment, list the objectives you aimed to achieve during the appraisal period and assess or evaluate whether the status of the objectives are on-track or delayed.</span>
+                </li>
+                <li className="flex gap-2">
+                  <span className="text-gray-300 flex-shrink-0">•</span>
+                  <span>For yearend assessment, list the objectives you aimed to achieve during the appraisal period and assess or evaluate whether the status of the objectives are achieved, partly achieved, or not achieved at all.</span>
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
         <div className="overflow-x-auto">
           <table className="w-full text-sm border border-gray-200 rounded-lg overflow-hidden">
-            <thead className="bg-gray-50">
+            <thead>
               <tr>
-                <th className="px-3 py-2 text-left font-semibold text-gray-600">
-                  <div className="flex items-center gap-2">
-                    <span>Objective</span>
-                    <div className="relative group">
-                      <HelpCircle className="w-4 h-4 text-gray-400 hover:text-gray-600 cursor-help flex-shrink-0" />
-                      <div className="absolute left-0 top-full mt-2 hidden group-hover:block bg-gray-900 text-white text-xs rounded-lg shadow-lg z-10 w-72 p-3 pointer-events-none whitespace-normal">
-                        <ul className="space-y-2">
-                          <li className="flex gap-2">
-                            <span className="text-gray-300 flex-shrink-0">•</span>
-                            <span>For midyear assessment, list the objectives you aimed to achieve during the appraisal period and assess or evaluate whether the status of the objectives are on-track or delayed.</span>
-                          </li>
-                          <li className="flex gap-2">
-                            <span className="text-gray-300 flex-shrink-0">•</span>
-                            <span>For yearend assessment, list the objectives you aimed to achieve during the appraisal period and assess or evaluate whether the status of the objectives are achieved, partly achieved, or not achieved at all.</span>
-                          </li>
-                        </ul>
-                      </div>
-                    </div>
-                  </div>
-                </th>
-                <th className="px-3 py-2 text-left font-semibold text-gray-600">Status</th>
-                <th className="px-3 py-2 text-left font-semibold text-gray-600">Comments</th>
+                <th className="px-4 py-3 text-left font-semibold text-gray-900 bg-green-100 border-b border-gray-200">Objective/s</th>
+                <th className="px-4 py-3 text-left font-semibold text-gray-900 bg-green-100 border-b border-gray-200">Status</th>
+                <th className="px-4 py-3 text-left font-semibold text-gray-900 bg-green-100 border-b border-gray-200">Comments</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
-              {form.objectives.map((item, index) => (
+              {form.objectives.slice(0, showAllObjectives ? undefined : 1).map((item, index) => (
                 <tr key={`objective-${index}`}>
-                  <td className="p-2">
+                  <td className="px-4 py-3 text-gray-700">
                     <Input
                       value={item.objective}
                       placeholder={`Objective ${index + 1}`}
@@ -569,26 +589,31 @@ export default function PerformanceAppraisalWorkspace({
                       }
                     />
                   </td>
-                  <td className="p-2 min-w-[180px]">
-                    <Select
-                      value={item.status}
-                      onChange={(e) =>
-                        setForm((prev) => {
-                          const objectives = [...prev.objectives]
-                          objectives[index] = { ...objectives[index], status: e.target.value }
-                          return { ...prev, objectives }
-                        })
-                      }
-                      options={[
-                        { value: 'on_track', label: 'On Track' },
-                        { value: 'delayed', label: 'Delayed' },
-                        { value: 'achieved', label: 'Achieved' },
-                        { value: 'partly_achieved', label: 'Partly Achieved' },
-                        { value: 'not_achieved', label: 'Not Achieved' },
-                      ]}
-                    />
+                  <td className="px-4 py-3 w-40">
+                    <div className="flex items-center gap-2">
+                      <Select
+                        value={item.status}
+                        onChange={(e) =>
+                          setForm((prev) => {
+                            const objectives = [...prev.objectives]
+                            objectives[index] = { ...objectives[index], status: e.target.value }
+                            return { ...prev, objectives }
+                          })
+                        }
+                        options={[
+                          { value: 'on_track', label: 'On Track' },
+                          { value: 'delayed', label: 'Delayed' },
+                          { value: 'achieved', label: 'Achieved' },
+                          { value: 'partly_achieved', label: 'Partly Achieved' },
+                          { value: 'not_achieved', label: 'Not Achieved' },
+                        ]}
+                      />
+                      <span className={`${getStatusColor(item.status)} text-white text-xs font-semibold px-2 py-1 rounded whitespace-nowrap`}>
+                        {getStatusLabel(item.status)}
+                      </span>
+                    </div>
                   </td>
-                  <td className="p-2">
+                  <td className="px-4 py-3">
                     <Input
                       value={item.comments}
                       placeholder="Comments"
@@ -606,6 +631,22 @@ export default function PerformanceAppraisalWorkspace({
             </tbody>
           </table>
         </div>
+        {!showAllObjectives && form.objectives.length > 1 && (
+          <button
+            onClick={() => setShowAllObjectives(true)}
+            className="text-sm text-blue-600 hover:text-blue-800 font-medium"
+          >
+            + Add More Objective
+          </button>
+        )}
+        {showAllObjectives && form.objectives.length > 1 && (
+          <button
+            onClick={() => setShowAllObjectives(false)}
+            className="text-sm text-blue-600 hover:text-blue-800 font-medium"
+          >
+            - Show Less
+          </button>
+        )}
       </Card>
 
       <Card className="p-5 space-y-4">
