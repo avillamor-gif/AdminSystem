@@ -900,29 +900,21 @@ export default function PerformanceAppraisalWorkspace({
           <div className="space-y-3 text-center">
             {/* Signature Display */}
             <div className="py-4 min-h-12">
-              {form.appraiseeSignature && (
-                form.appraiseeSignature.startsWith('http') ? (
-                  <img src={form.appraiseeSignature} alt="Employee signature" className="max-h-20 max-w-full mx-auto" />
-                ) : (
-                  <div className="text-sm font-semibold text-gray-700">{form.appraiseeSignature}</div>
-                )
+              {form.appraiseeSignature && form.appraiseeSignature.startsWith('http') && (
+                <img src={form.appraiseeSignature} alt="Employee signature" className="max-h-20 max-w-full mx-auto" />
               )}
             </div>
-            {/* Label and signature input */}
-            <div>
-              <p className="text-sm font-semibold text-gray-900 mb-2">Signed by Appraisee</p>
-              <Input
-                placeholder="Employee name/signature"
-                value={form.appraiseeSignature}
-                onChange={(e) => setForm((prev) => ({ ...prev, appraiseeSignature: e.target.value }))}
-              />
-            </div>
+            {/* Appraisee Name */}
+            <p className="text-sm font-semibold text-gray-900">{form.appraiseeName}</p>
+            {/* Appraisee Label */}
+            <p className="text-xs text-gray-600">Appraisee</p>
             {/* Date field */}
-            <Input
-              label="Date"
-              type="date"
+            <input
+              type="text"
+              placeholder="mm/dd/yyyy"
               value={form.appraiseeSignedDate}
               onChange={(e) => setForm((prev) => ({ ...prev, appraiseeSignedDate: e.target.value }))}
+              className="bg-transparent border-0 border-b border-gray-300 text-center text-sm placeholder:text-gray-400 focus:outline-none focus:border-b focus:border-gray-600"
             />
           </div>
 
@@ -930,29 +922,21 @@ export default function PerformanceAppraisalWorkspace({
           <div className="space-y-3 text-center">
             {/* Signature Display */}
             <div className="py-4 min-h-12">
-              {form.appraiserSignature && (
-                form.appraiserSignature.startsWith('http') ? (
-                  <img src={form.appraiserSignature} alt="Manager signature" className="max-h-20 max-w-full mx-auto" />
-                ) : (
-                  <div className="text-sm font-semibold text-gray-700">{form.appraiserSignature}</div>
-                )
+              {form.appraiserSignature && form.appraiserSignature.startsWith('http') && (
+                <img src={form.appraiserSignature} alt="Manager signature" className="max-h-20 max-w-full mx-auto" />
               )}
             </div>
-            {/* Label and signature input */}
-            <div>
-              <p className="text-sm font-semibold text-gray-900 mb-2">Signed by Appraiser</p>
-              <Input
-                placeholder="Manager name/signature"
-                value={form.appraiserSignature}
-                onChange={(e) => setForm((prev) => ({ ...prev, appraiserSignature: e.target.value }))}
-              />
-            </div>
+            {/* Appraiser Name */}
+            <p className="text-sm font-semibold text-gray-900">{form.appraiserName}</p>
+            {/* Appraiser Label */}
+            <p className="text-xs text-gray-600">Appraiser</p>
             {/* Date field */}
-            <Input
-              label="Date"
-              type="date"
+            <input
+              type="text"
+              placeholder="mm/dd/yyyy"
               value={form.appraiserSignedDate}
               onChange={(e) => setForm((prev) => ({ ...prev, appraiserSignedDate: e.target.value }))}
+              className="bg-transparent border-0 border-b border-gray-300 text-center text-sm placeholder:text-gray-400 focus:outline-none focus:border-b focus:border-gray-600"
             />
           </div>
         </div>
