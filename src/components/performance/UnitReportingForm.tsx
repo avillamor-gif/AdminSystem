@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { Button, Card, Input, Select } from '@/components/ui'
-import { Download, Save } from 'lucide-react'
+import { Download, Save, Trash2 } from 'lucide-react'
 import jsPDF from 'jspdf'
 
 interface Activity {
@@ -231,23 +231,22 @@ export default function UnitReportingForm({
       </Card>
 
       {/* Part I: External Engagements */}
-      <Card className="p-0 overflow-hidden">
-        <div className="p-5 pb-4 border-b border-gray-200">
-          <h3 className="text-base font-semibold text-gray-900">Part I: Engagements (External; Non-II)</h3>
-        </div>
+      <Card className="p-5 space-y-4">
+        <h3 className="text-base font-semibold text-gray-900">Part I: Engagements (External; Non-II)</h3>
 
-        <div className="w-full overflow-x-auto">
+        <div className="overflow-x-auto">
           <table className="w-full border-collapse">
             <thead>
-              <tr className="bg-yellow-200 border-b-2 border-gray-400">
-                <th className="border border-gray-400 px-3 py-3 text-left text-xs font-bold text-gray-900 w-20">Activity</th>
-                <th className="border border-gray-400 px-3 py-3 text-left text-xs font-bold text-gray-900 w-24">Type</th>
-                <th className="border border-gray-400 px-3 py-3 text-left text-xs font-bold text-gray-900 w-24">Organiser</th>
-                <th className="border border-gray-400 px-3 py-3 text-left text-xs font-bold text-gray-900 w-24">Level</th>
-                <th className="border border-gray-400 px-3 py-3 text-left text-xs font-bold text-gray-900 w-20">Thematic</th>
-                <th className="border border-gray-400 px-3 py-3 text-left text-xs font-bold text-gray-900 w-32">Intersection</th>
-                <th className="border border-gray-400 px-3 py-3 text-left text-xs font-bold text-gray-900 w-16">Role/s</th>
+              <tr className="bg-green-100 border-b-2 border-gray-400">
+                <th className="border border-gray-400 px-3 py-3 text-left text-xs font-bold text-gray-900">Activity</th>
+                <th className="border border-gray-400 px-3 py-3 text-left text-xs font-bold text-gray-900">Type</th>
+                <th className="border border-gray-400 px-3 py-3 text-left text-xs font-bold text-gray-900">Organiser</th>
+                <th className="border border-gray-400 px-3 py-3 text-left text-xs font-bold text-gray-900">Level</th>
+                <th className="border border-gray-400 px-3 py-3 text-left text-xs font-bold text-gray-900">Thematic</th>
+                <th className="border border-gray-400 px-3 py-3 text-left text-xs font-bold text-gray-900">Intersection</th>
+                <th className="border border-gray-400 px-3 py-3 text-left text-xs font-bold text-gray-900">Role/s</th>
                 <th className="border border-gray-400 px-3 py-3 text-left text-xs font-bold text-gray-900">Highlight/s</th>
+                <th className="border border-gray-400 px-3 py-3 text-center text-xs font-bold text-gray-900 w-10"></th>
               </tr>
             </thead>
             <tbody>
@@ -284,17 +283,22 @@ export default function UnitReportingForm({
                   <td className="border border-gray-300 px-2 py-2">
                     <textarea value={activity.highlights} onChange={(e) => setForm(prev => ({ ...prev, externalEngagements: prev.externalEngagements.map(a => a.id === activity.id ? { ...a, highlights: e.target.value } : a) }))} placeholder="Highlights" className="w-full px-1 py-0.5 text-xs border-0 bg-transparent focus:outline-none resize-none" rows={1} />
                   </td>
+                  <td className="border border-gray-300 px-2 py-2 text-center">
+                    {form.externalEngagements.length > 1 && (
+                      <button onClick={() => removeActivity(activity.id, 'external')} className="text-red-500 hover:text-red-700 transition-colors">
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    )}
+                  </td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
 
-        <div className="p-5 pt-4 border-t border-gray-200">
-          <button onClick={() => addActivity('external')} className="text-blue-600 hover:text-blue-700 text-sm font-medium">
-            + Add More Activities
-          </button>
-        </div>
+        <button onClick={() => addActivity('external')} className="text-blue-600 hover:text-blue-700 text-sm font-medium">
+          + Add More Activities
+        </button>
       </Card>
 
       {/* Part II: II-Organised Activities */}
