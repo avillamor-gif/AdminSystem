@@ -423,71 +423,81 @@ export default function BackToOfficeReport({
       </Card>
 
       {/* Key Actors Response Table */}
-      <Card className="p-5 overflow-x-auto">
-        <h3 className="text-base font-semibold text-gray-900 mb-5">Key Actors Response</h3>
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b border-gray-200">
-              <th className="text-left py-2 font-semibold text-gray-700">Actor</th>
-              <th className="text-left py-2 font-semibold text-gray-700">Response</th>
-              <th className="text-left py-2 font-semibold text-gray-700">Notes</th>
-            </tr>
-          </thead>
-          <tbody>
-            {form.actorResponses.map((actor, idx) => {
-              const allActors = ['State Actors', 'CSOs', 'POs and Social Movements', 'Multilateral Institutions', 'Private Sector', 'Media', 'Donors']
-              const selectedActors = form.actorResponses.map(a => a.actor)
-              const availableActors = allActors.filter(a => a === actor.actor || !selectedActors.includes(a))
-              
-              return (
-                <tr key={idx} className="border-b border-gray-100">
-                  <td className="py-2">
-                    <Select
-                      value={actor.actor}
-                      onChange={(e) => {
-                        const newResponses = [...form.actorResponses]
-                        newResponses[idx].actor = e.target.value
-                        updateForm({ actorResponses: newResponses })
-                      }}
-                      options={[
-                        { value: '', label: '- Select Actor -' },
-                        ...availableActors.map(a => ({ value: a, label: a }))
-                      ]}
-                    />
-                  </td>
-                  <td className="py-2">
-                    <Select
-                      value={actor.response}
-                      onChange={(e) => {
-                        const newResponses = [...form.actorResponses]
-                        newResponses[idx].response = e.target.value
-                        updateForm({ actorResponses: newResponses })
-                      }}
-                      options={[
-                        { value: 'Not Applicable', label: 'Not Applicable' },
-                        { value: 'Supportive', label: 'Supportive' },
-                        { value: 'Opposed', label: 'Opposed' },
-                        { value: 'Neutral', label: 'Neutral' },
-                        { value: 'Acquiescence', label: 'Acquiescence' },
-                      ]}
-                    />
-                  </td>
-                  <td className="py-2">
-                    <Input
-                      value={actor.notes}
-                      onChange={(e) => {
-                        const newResponses = [...form.actorResponses]
-                        newResponses[idx].notes = e.target.value
-                        updateForm({ actorResponses: newResponses })
-                      }}
-                      placeholder="Notes"
-                    />
-                  </td>
-                </tr>
-              )
-            })}
-          </tbody>
-        </table>
+      <Card className="p-5">
+        <div className="mb-4">
+          <label className="block text-sm font-medium text-gray-700 mb-2">Title of Activity</label>
+          <Input
+            value={form.keyActors}
+            onChange={(e) => updateForm({ keyActors: e.target.value })}
+            placeholder="Enter activity title"
+          />
+        </div>
+        
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm border border-gray-300">
+            <thead>
+              <tr className="bg-green-200">
+                <th className="border border-gray-300 px-3 py-2 text-left font-semibold text-gray-900">Key Actors</th>
+                <th className="border border-gray-300 px-3 py-2 text-left font-semibold text-gray-900">Response</th>
+                <th className="border border-gray-300 px-3 py-2 text-left font-semibold text-gray-900">Notes</th>
+              </tr>
+            </thead>
+            <tbody>
+              {form.actorResponses.map((actor, idx) => {
+                const allActors = ['State Actors', 'CSOs', 'POs and Social Movements', 'Multilateral Institutions', 'Private Sector', 'Media', 'Donors']
+                const selectedActors = form.actorResponses.map(a => a.actor)
+                const availableActors = allActors.filter(a => a === actor.actor || !selectedActors.includes(a))
+                
+                return (
+                  <tr key={idx} className="border border-gray-300">
+                    <td className="border border-gray-300 px-3 py-2">
+                      <Select
+                        value={actor.actor}
+                        onChange={(e) => {
+                          const newResponses = [...form.actorResponses]
+                          newResponses[idx].actor = e.target.value
+                          updateForm({ actorResponses: newResponses })
+                        }}
+                        options={[
+                          { value: '', label: '- Select Actor -' },
+                          ...availableActors.map(a => ({ value: a, label: a }))
+                        ]}
+                      />
+                    </td>
+                    <td className="border border-gray-300 px-3 py-2">
+                      <Select
+                        value={actor.response}
+                        onChange={(e) => {
+                          const newResponses = [...form.actorResponses]
+                          newResponses[idx].response = e.target.value
+                          updateForm({ actorResponses: newResponses })
+                        }}
+                        options={[
+                          { value: 'Not Applicable', label: 'Not Applicable' },
+                          { value: 'Supportive', label: 'Supportive' },
+                          { value: 'Opposed', label: 'Opposed' },
+                          { value: 'Neutral', label: 'Neutral' },
+                          { value: 'Acquiescence', label: 'Acquiescence' },
+                        ]}
+                      />
+                    </td>
+                    <td className="border border-gray-300 px-3 py-2">
+                      <Input
+                        value={actor.notes}
+                        onChange={(e) => {
+                          const newResponses = [...form.actorResponses]
+                          newResponses[idx].notes = e.target.value
+                          updateForm({ actorResponses: newResponses })
+                        }}
+                        placeholder="Notes"
+                      />
+                    </td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
+        </div>
       </Card>
 
       {/* Challenges Section */}
