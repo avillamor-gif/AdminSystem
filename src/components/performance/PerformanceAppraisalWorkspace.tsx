@@ -524,6 +524,7 @@ export default function PerformanceAppraisalWorkspace({
 
       <Card className="p-5 space-y-4">
         <h3 className="text-base font-semibold text-gray-900">Part II: Performance Assessment</h3>
+        <p className="text-sm text-gray-600">To be completed by [Name of Staff] in discussion with the [Name of Appraiser]</p>
         <div className="overflow-x-auto">
           <table className="w-full text-sm border border-gray-200 rounded-lg overflow-hidden">
             <thead>
