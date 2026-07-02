@@ -231,32 +231,32 @@ export default function UnitReportingForm({
       </Card>
 
       {/* Part I: External Engagements */}
-      <Card className="p-5 space-y-4">
-        <h3 className="text-base font-semibold text-gray-900">Part I: Engagements (External; Non-II)</h3>
+      <Card className="p-5 space-y-0">
+        <h3 className="text-base font-semibold text-gray-900 mb-4">Part I: Engagements (External; Non-II)</h3>
 
         {/* Header */}
-        <div className="grid grid-cols-12 gap-3 px-4 py-3 bg-green-50 rounded-lg">
-          <div className="col-span-2 text-xs font-semibold text-gray-700">Activity</div>
-          <div className="col-span-2 text-xs font-semibold text-gray-700">Type</div>
-          <div className="col-span-2 text-xs font-semibold text-gray-700">Organiser</div>
-          <div className="col-span-1 text-xs font-semibold text-gray-700">Level</div>
-          <div className="col-span-2 text-xs font-semibold text-gray-700">Thematic</div>
-          <div className="col-span-2 text-xs font-semibold text-gray-700">Intersection</div>
+        <div className="grid grid-cols-12 gap-2 px-3 py-2 text-xs font-semibold text-gray-700 border-b border-gray-300">
+          <div className="col-span-2">Activity</div>
+          <div className="col-span-2">Type</div>
+          <div className="col-span-2">Organiser</div>
+          <div className="col-span-1">Level</div>
+          <div className="col-span-2">Thematic</div>
+          <div className="col-span-2">Intersection</div>
           <div className="col-span-1"></div>
         </div>
 
         {/* Rows */}
-        <div className="space-y-3">
-          {form.externalEngagements.map((activity) => (
-            <div key={activity.id} className="grid grid-cols-12 gap-3 px-4 py-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+        <div className="space-y-0">
+          {form.externalEngagements.map((activity, idx) => (
+            <div key={activity.id} className={`grid grid-cols-12 gap-2 px-3 py-2 ${idx < form.externalEngagements.length - 1 ? 'border-b border-gray-200' : ''}`}>
               <div className="col-span-2">
-                <Input value={activity.title} onChange={(e) => setForm(prev => ({ ...prev, externalEngagements: prev.externalEngagements.map(a => a.id === activity.id ? { ...a, title: e.target.value } : a) }))} placeholder="Title" className="text-xs h-8" />
+                <Input value={activity.title} onChange={(e) => setForm(prev => ({ ...prev, externalEngagements: prev.externalEngagements.map(a => a.id === activity.id ? { ...a, title: e.target.value } : a) }))} placeholder="Title" className="text-xs h-7" />
               </div>
               <div className="col-span-2">
                 <Select value={activity.type} onChange={(e) => setForm(prev => ({ ...prev, externalEngagements: prev.externalEngagements.map(a => a.id === activity.id ? { ...a, type: e.target.value } : a) }))} options={[{ value: '', label: '- Select -' }, { value: 'Forum', label: 'Forum' }, { value: 'Conference', label: 'Conference' }]} />
               </div>
               <div className="col-span-2">
-                <Input value={activity.organiser} onChange={(e) => setForm(prev => ({ ...prev, externalEngagements: prev.externalEngagements.map(a => a.id === activity.id ? { ...a, organiser: e.target.value } : a) }))} placeholder="Organiser" className="text-xs h-8" />
+                <Input value={activity.organiser} onChange={(e) => setForm(prev => ({ ...prev, externalEngagements: prev.externalEngagements.map(a => a.id === activity.id ? { ...a, organiser: e.target.value } : a) }))} placeholder="Organiser" className="text-xs h-7" />
               </div>
               <div className="col-span-1">
                 <Select value={activity.level} onChange={(e) => setForm(prev => ({ ...prev, externalEngagements: prev.externalEngagements.map(a => a.id === activity.id ? { ...a, level: e.target.value } : a) }))} options={[{ value: '', label: '- Select -' }, { value: 'Global', label: 'Global' }, { value: 'Regional', label: 'Regional' }]} />
@@ -265,16 +265,21 @@ export default function UnitReportingForm({
                 <Select value={activity.thematicWork} onChange={(e) => setForm(prev => ({ ...prev, externalEngagements: prev.externalEngagements.map(a => a.id === activity.id ? { ...a, thematicWork: e.target.value } : a) }))} options={[{ value: '', label: '- Select -' }, { value: 'Climate', label: 'Climate' }, { value: 'Gender', label: 'Gender' }]} />
               </div>
               <div className="col-span-2">
-                <div className="space-y-1">
-                  {['Gender', 'Trade', 'Climate'].map((item) => (
-                    <label key={item} className="flex items-center gap-1.5 text-xs cursor-pointer">
-                      <input type="checkbox" checked={activity.intersection.includes(item)} onChange={(e) => setForm(prev => ({ ...prev, externalEngagements: prev.externalEngagements.map(a => a.id === activity.id ? { ...a, intersection: e.target.checked ? [...a.intersection, item] : a.intersection.filter(i => i !== item) } : a) }))} className="w-3 h-3 accent-orange" />
-                      <span>{item}</span>
-                    </label>
-                  ))}
-                </div>
+                <select 
+                  multiple 
+                  value={activity.intersection} 
+                  onChange={(e) => {
+                    const selected = Array.from(e.target.selectedOptions, (option) => option.value)
+                    setForm(prev => ({ ...prev, externalEngagements: prev.externalEngagements.map(a => a.id === activity.id ? { ...a, intersection: selected } : a) }))
+                  }}
+                  className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-orange"
+                >
+                  <option value="Gender">Gender</option>
+                  <option value="Trade">Trade</option>
+                  <option value="Climate">Climate</option>
+                </select>
               </div>
-              <div className="col-span-1 flex items-center justify-end">
+              <div className="col-span-1 flex items-center justify-center">
                 {form.externalEngagements.length > 1 && (
                   <button onClick={() => removeActivity(activity.id, 'external')} className="text-red-500 hover:text-red-700 transition-colors">
                     <Trash2 className="w-4 h-4" />
@@ -285,7 +290,7 @@ export default function UnitReportingForm({
           ))}
         </div>
 
-        <button onClick={() => addActivity('external')} className="text-blue-600 hover:text-blue-700 text-sm font-medium mt-2">
+        <button onClick={() => addActivity('external')} className="text-blue-600 hover:text-blue-700 text-sm font-medium mt-4">
           + Add More Activities
         </button>
       </Card>

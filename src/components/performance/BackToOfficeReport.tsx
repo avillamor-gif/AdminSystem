@@ -278,30 +278,30 @@ export default function BackToOfficeReport({
       </Card>
 
       {/* Activities Section */}
-      <Card className="p-5 space-y-4">
-        <h3 className="text-base font-semibold text-gray-900">Activities</h3>
+      <Card className="p-5 space-y-0">
+        <h3 className="text-base font-semibold text-gray-900 mb-4">Activities</h3>
 
         {/* Header */}
-        <div className="grid grid-cols-12 gap-3 px-4 py-3 bg-green-50 rounded-lg">
-          <div className="col-span-2 text-xs font-semibold text-gray-700">Activity</div>
-          <div className="col-span-2 text-xs font-semibold text-gray-700">Type</div>
-          <div className="col-span-2 text-xs font-semibold text-gray-700">Organiser</div>
-          <div className="col-span-1 text-xs font-semibold text-gray-700">Level</div>
-          <div className="col-span-2 text-xs font-semibold text-gray-700">Thematic</div>
-          <div className="col-span-2 text-xs font-semibold text-gray-700">Intersection</div>
+        <div className="grid grid-cols-12 gap-2 px-3 py-2 text-xs font-semibold text-gray-700 border-b border-gray-300">
+          <div className="col-span-2">Activity</div>
+          <div className="col-span-2">Type</div>
+          <div className="col-span-2">Organiser</div>
+          <div className="col-span-1">Level</div>
+          <div className="col-span-2">Thematic</div>
+          <div className="col-span-2">Intersection</div>
           <div className="col-span-1"></div>
         </div>
 
         {/* Rows */}
-        <div className="space-y-3">
-          {form.activities.map((activity) => (
-            <div key={activity.id} className="grid grid-cols-12 gap-3 px-4 py-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+        <div className="space-y-0">
+          {form.activities.map((activity, idx) => (
+            <div key={activity.id} className={`grid grid-cols-12 gap-2 px-3 py-2 ${idx < form.activities.length - 1 ? 'border-b border-gray-200' : ''}`}>
               <div className="col-span-2">
                 <Input 
                   value={activity.title} 
                   onChange={(e) => updateActivity(activity.id, { title: e.target.value })} 
                   placeholder="Activity"
-                  className="text-xs h-8"
+                  className="text-xs h-7"
                 />
               </div>
               <div className="col-span-2">
@@ -323,7 +323,7 @@ export default function BackToOfficeReport({
                   value={activity.organiser} 
                   onChange={(e) => updateActivity(activity.id, { organiser: e.target.value })} 
                   placeholder="Organiser"
-                  className="text-xs h-8"
+                  className="text-xs h-7"
                 />
               </div>
               <div className="col-span-1">
@@ -353,24 +353,21 @@ export default function BackToOfficeReport({
                 />
               </div>
               <div className="col-span-2">
-                <div className="space-y-1">
-                  {['Gender', 'Trade', 'Climate', 'Militarism', 'DevCoop'].map((item) => (
-                    <label key={item} className="flex items-center gap-1.5 text-xs cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={activity.intersection.includes(item)}
-                        onChange={(e) => {
-                          const newIntersection = e.target.checked
-                            ? [...activity.intersection, item]
-                            : activity.intersection.filter((i) => i !== item)
-                          updateActivity(activity.id, { intersection: newIntersection })
-                        }}
-                        className="w-3 h-3 accent-orange"
-                      />
-                      <span>{item}</span>
-                    </label>
-                  ))}
-                </div>
+                <Select
+                  value={activity.intersection.join(',')}
+                  onChange={(e) => {
+                    const values = e.target.value ? e.target.value.split(',') : []
+                    updateActivity(activity.id, { intersection: values })
+                  }}
+                  options={[
+                    { value: '', label: '- Select -' },
+                    { value: 'Gender', label: 'Gender' },
+                    { value: 'Trade', label: 'Trade' },
+                    { value: 'Climate', label: 'Climate' },
+                    { value: 'Militarism', label: 'Militarism' },
+                    { value: 'DevCoop', label: 'DevCoop' },
+                  ]}
+                />
               </div>
               <div className="col-span-1 flex items-center justify-end">
                 {form.activities.length > 1 && (
@@ -386,7 +383,7 @@ export default function BackToOfficeReport({
           ))}
         </div>
 
-        <button onClick={addActivity} className="text-blue-600 hover:text-blue-700 text-sm font-medium mt-2">
+        <button onClick={addActivity} className="text-blue-600 hover:text-blue-700 text-sm font-medium mt-4">
           + Add More Activities
         </button>
       </Card>
