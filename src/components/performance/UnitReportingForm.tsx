@@ -234,69 +234,58 @@ export default function UnitReportingForm({
       <Card className="p-5 space-y-4">
         <h3 className="text-base font-semibold text-gray-900">Part I: Engagements (External; Non-II)</h3>
 
-        <div className="overflow-x-auto">
-          <table className="w-full border-collapse">
-            <thead>
-              <tr className="bg-green-100 border-b-2 border-gray-400">
-                <th className="border border-gray-400 px-3 py-3 text-left text-xs font-bold text-gray-900">Activity</th>
-                <th className="border border-gray-400 px-3 py-3 text-left text-xs font-bold text-gray-900">Type</th>
-                <th className="border border-gray-400 px-3 py-3 text-left text-xs font-bold text-gray-900">Organiser</th>
-                <th className="border border-gray-400 px-3 py-3 text-left text-xs font-bold text-gray-900">Level</th>
-                <th className="border border-gray-400 px-3 py-3 text-left text-xs font-bold text-gray-900">Thematic</th>
-                <th className="border border-gray-400 px-3 py-3 text-left text-xs font-bold text-gray-900">Intersection</th>
-                <th className="border border-gray-400 px-3 py-3 text-left text-xs font-bold text-gray-900">Role/s</th>
-                <th className="border border-gray-400 px-3 py-3 text-left text-xs font-bold text-gray-900">Highlight/s</th>
-                <th className="border border-gray-400 px-3 py-3 text-center text-xs font-bold text-gray-900 w-10"></th>
-              </tr>
-            </thead>
-            <tbody>
-              {form.externalEngagements.map((activity) => (
-                <tr key={activity.id} className="border-b border-gray-300 hover:bg-gray-50">
-                  <td className="border border-gray-300 px-2 py-2">
-                    <Input value={activity.title} onChange={(e) => setForm(prev => ({ ...prev, externalEngagements: prev.externalEngagements.map(a => a.id === activity.id ? { ...a, title: e.target.value } : a) }))} placeholder="Title" className="text-xs h-8 border-0 bg-transparent p-1" />
-                  </td>
-                  <td className="border border-gray-300 px-2 py-2">
-                    <Select value={activity.type} onChange={(e) => setForm(prev => ({ ...prev, externalEngagements: prev.externalEngagements.map(a => a.id === activity.id ? { ...a, type: e.target.value } : a) }))} options={[{ value: '', label: '- Select -' }, { value: 'Forum', label: 'Forum' }, { value: 'Conference', label: 'Conference' }]} />
-                  </td>
-                  <td className="border border-gray-300 px-2 py-2">
-                    <Input value={activity.organiser} onChange={(e) => setForm(prev => ({ ...prev, externalEngagements: prev.externalEngagements.map(a => a.id === activity.id ? { ...a, organiser: e.target.value } : a) }))} placeholder="Organiser" className="text-xs h-8 border-0 bg-transparent p-1" />
-                  </td>
-                  <td className="border border-gray-300 px-2 py-2">
-                    <Select value={activity.level} onChange={(e) => setForm(prev => ({ ...prev, externalEngagements: prev.externalEngagements.map(a => a.id === activity.id ? { ...a, level: e.target.value } : a) }))} options={[{ value: '', label: '- Select -' }, { value: 'Global', label: 'Global' }, { value: 'Regional', label: 'Regional' }]} />
-                  </td>
-                  <td className="border border-gray-300 px-2 py-2">
-                    <Select value={activity.thematicWork} onChange={(e) => setForm(prev => ({ ...prev, externalEngagements: prev.externalEngagements.map(a => a.id === activity.id ? { ...a, thematicWork: e.target.value } : a) }))} options={[{ value: '', label: '- Select -' }, { value: 'Climate', label: 'Climate' }, { value: 'Gender', label: 'Gender' }]} />
-                  </td>
-                  <td className="border border-gray-300 px-2 py-2">
-                    <div className="space-y-0.5">
-                      {['Gender', 'Trade', 'Climate'].map((item) => (
-                        <label key={item} className="flex items-center gap-1 text-xs cursor-pointer">
-                          <input type="checkbox" checked={activity.intersection.includes(item)} onChange={(e) => setForm(prev => ({ ...prev, externalEngagements: prev.externalEngagements.map(a => a.id === activity.id ? { ...a, intersection: e.target.checked ? [...a.intersection, item] : a.intersection.filter(i => i !== item) } : a) }))} className="w-3 h-3 accent-orange" />
-                          <span className="text-xs">{item}</span>
-                        </label>
-                      ))}
-                    </div>
-                  </td>
-                  <td className="border border-gray-300 px-2 py-2">
-                    <Input value={activity.roles} onChange={(e) => setForm(prev => ({ ...prev, externalEngagements: prev.externalEngagements.map(a => a.id === activity.id ? { ...a, roles: e.target.value } : a) }))} placeholder="Role" className="text-xs h-8 border-0 bg-transparent p-1" />
-                  </td>
-                  <td className="border border-gray-300 px-2 py-2">
-                    <textarea value={activity.highlights} onChange={(e) => setForm(prev => ({ ...prev, externalEngagements: prev.externalEngagements.map(a => a.id === activity.id ? { ...a, highlights: e.target.value } : a) }))} placeholder="Highlights" className="w-full px-1 py-0.5 text-xs border-0 bg-transparent focus:outline-none resize-none" rows={1} />
-                  </td>
-                  <td className="border border-gray-300 px-2 py-2 text-center">
-                    {form.externalEngagements.length > 1 && (
-                      <button onClick={() => removeActivity(activity.id, 'external')} className="text-red-500 hover:text-red-700 transition-colors">
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        {/* Header */}
+        <div className="grid grid-cols-12 gap-3 px-4 py-3 bg-green-50 rounded-lg">
+          <div className="col-span-2 text-xs font-semibold text-gray-700">Activity</div>
+          <div className="col-span-2 text-xs font-semibold text-gray-700">Type</div>
+          <div className="col-span-2 text-xs font-semibold text-gray-700">Organiser</div>
+          <div className="col-span-1 text-xs font-semibold text-gray-700">Level</div>
+          <div className="col-span-2 text-xs font-semibold text-gray-700">Thematic</div>
+          <div className="col-span-2 text-xs font-semibold text-gray-700">Intersection</div>
+          <div className="col-span-1"></div>
         </div>
 
-        <button onClick={() => addActivity('external')} className="text-blue-600 hover:text-blue-700 text-sm font-medium">
+        {/* Rows */}
+        <div className="space-y-3">
+          {form.externalEngagements.map((activity) => (
+            <div key={activity.id} className="grid grid-cols-12 gap-3 px-4 py-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+              <div className="col-span-2">
+                <Input value={activity.title} onChange={(e) => setForm(prev => ({ ...prev, externalEngagements: prev.externalEngagements.map(a => a.id === activity.id ? { ...a, title: e.target.value } : a) }))} placeholder="Title" className="text-xs h-8" />
+              </div>
+              <div className="col-span-2">
+                <Select value={activity.type} onChange={(e) => setForm(prev => ({ ...prev, externalEngagements: prev.externalEngagements.map(a => a.id === activity.id ? { ...a, type: e.target.value } : a) }))} options={[{ value: '', label: '- Select -' }, { value: 'Forum', label: 'Forum' }, { value: 'Conference', label: 'Conference' }]} />
+              </div>
+              <div className="col-span-2">
+                <Input value={activity.organiser} onChange={(e) => setForm(prev => ({ ...prev, externalEngagements: prev.externalEngagements.map(a => a.id === activity.id ? { ...a, organiser: e.target.value } : a) }))} placeholder="Organiser" className="text-xs h-8" />
+              </div>
+              <div className="col-span-1">
+                <Select value={activity.level} onChange={(e) => setForm(prev => ({ ...prev, externalEngagements: prev.externalEngagements.map(a => a.id === activity.id ? { ...a, level: e.target.value } : a) }))} options={[{ value: '', label: '- Select -' }, { value: 'Global', label: 'Global' }, { value: 'Regional', label: 'Regional' }]} />
+              </div>
+              <div className="col-span-2">
+                <Select value={activity.thematicWork} onChange={(e) => setForm(prev => ({ ...prev, externalEngagements: prev.externalEngagements.map(a => a.id === activity.id ? { ...a, thematicWork: e.target.value } : a) }))} options={[{ value: '', label: '- Select -' }, { value: 'Climate', label: 'Climate' }, { value: 'Gender', label: 'Gender' }]} />
+              </div>
+              <div className="col-span-2">
+                <div className="space-y-1">
+                  {['Gender', 'Trade', 'Climate'].map((item) => (
+                    <label key={item} className="flex items-center gap-1.5 text-xs cursor-pointer">
+                      <input type="checkbox" checked={activity.intersection.includes(item)} onChange={(e) => setForm(prev => ({ ...prev, externalEngagements: prev.externalEngagements.map(a => a.id === activity.id ? { ...a, intersection: e.target.checked ? [...a.intersection, item] : a.intersection.filter(i => i !== item) } : a) }))} className="w-3 h-3 accent-orange" />
+                      <span>{item}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+              <div className="col-span-1 flex items-center justify-end">
+                {form.externalEngagements.length > 1 && (
+                  <button onClick={() => removeActivity(activity.id, 'external')} className="text-red-500 hover:text-red-700 transition-colors">
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <button onClick={() => addActivity('external')} className="text-blue-600 hover:text-blue-700 text-sm font-medium mt-2">
           + Add More Activities
         </button>
       </Card>
