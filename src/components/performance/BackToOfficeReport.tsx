@@ -464,18 +464,11 @@ export default function BackToOfficeReport({
       {/* Key Actors Response Table - One per Activity */}
       {form.activities.map((activity) => (
         <Card key={activity.id} className="p-5 space-y-0">
-          {/* Activity Card Header */}
-          <div className="p-3 bg-blue-50 border border-blue-200 rounded">
-            <p className="text-sm text-gray-700">
-              <span className="font-semibold">Activity Card:</span> {activity.title || 'Untitled'}
-            </p>
-          </div>
-          
           {/* Header */}
           <div className="grid grid-cols-12 gap-3 px-4 py-3 bg-green-100 text-xs font-bold text-gray-900">
-            <div className="col-span-4">Key Actors</div>
-            <div className="col-span-3">Response</div>
-            <div className="col-span-4">Notes</div>
+            <div className="col-span-3">Key Actors</div>
+            <div className="col-span-2">Response</div>
+            <div className="col-span-6">Notes</div>
             <div className="col-span-1"></div>
           </div>
 
@@ -488,7 +481,7 @@ export default function BackToOfficeReport({
               
               return (
                 <div key={idx} className={`grid grid-cols-12 gap-3 px-4 py-2 ${idx < activity.actorResponses.length - 1 ? 'border-b border-gray-200' : ''}`}>
-                  <div className="col-span-4">
+                  <div className="col-span-3">
                     <Select
                       value={actor.actor}
                       onChange={(e) => {
@@ -508,7 +501,7 @@ export default function BackToOfficeReport({
                       ]}
                     />
                   </div>
-                  <div className="col-span-3">
+                  <div className="col-span-2">
                     <Select
                       value={actor.response}
                       onChange={(e) => {
@@ -531,7 +524,7 @@ export default function BackToOfficeReport({
                       ]}
                     />
                   </div>
-                  <div className="col-span-4">
+                  <div className="col-span-6">
                     <Input
                       value={actor.notes}
                       onChange={(e) => {
