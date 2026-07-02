@@ -533,16 +533,6 @@ export default function BackToOfficeReport({
             )
           })}
         </div>
-
-        <button 
-          onClick={() => {
-            const newResponse = { actor: '', response: 'Not Applicable', notes: '' }
-            updateForm({ actorResponses: [...form.actorResponses, newResponse] })
-          }}
-          className="text-blue-600 hover:text-blue-700 text-sm font-medium mt-4"
-        >
-          + Add More Actors
-        </button>
       </Card>
 
       {/* Challenges Section */}
