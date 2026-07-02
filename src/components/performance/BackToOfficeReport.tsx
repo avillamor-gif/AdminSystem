@@ -82,12 +82,6 @@ export default function BackToOfficeReport({
       highlights: '',
       actorResponses: [
         { actor: '', response: 'Not Applicable', notes: '' },
-        { actor: '', response: 'Not Applicable', notes: '' },
-        { actor: '', response: 'Not Applicable', notes: '' },
-        { actor: '', response: 'Not Applicable', notes: '' },
-        { actor: '', response: 'Not Applicable', notes: '' },
-        { actor: '', response: 'Not Applicable', notes: '' },
-        { actor: '', response: 'Not Applicable', notes: '' },
       ]
     }],
     mainPositions: '',
@@ -120,12 +114,6 @@ export default function BackToOfficeReport({
             highlights: '',
             actorResponses: [
               { actor: '', response: 'Not Applicable', notes: '' },
-              { actor: '', response: 'Not Applicable', notes: '' },
-              { actor: '', response: 'Not Applicable', notes: '' },
-              { actor: '', response: 'Not Applicable', notes: '' },
-              { actor: '', response: 'Not Applicable', notes: '' },
-              { actor: '', response: 'Not Applicable', notes: '' },
-              { actor: '', response: 'Not Applicable', notes: '' },
             ]
           }]
         }
@@ -133,12 +121,6 @@ export default function BackToOfficeReport({
         parsed.activities = parsed.activities.map((activity: Activity) => ({
           ...activity,
           actorResponses: activity.actorResponses || [
-            { actor: '', response: 'Not Applicable', notes: '' },
-            { actor: '', response: 'Not Applicable', notes: '' },
-            { actor: '', response: 'Not Applicable', notes: '' },
-            { actor: '', response: 'Not Applicable', notes: '' },
-            { actor: '', response: 'Not Applicable', notes: '' },
-            { actor: '', response: 'Not Applicable', notes: '' },
             { actor: '', response: 'Not Applicable', notes: '' },
           ]
         }))
@@ -177,12 +159,6 @@ export default function BackToOfficeReport({
         roles: [],
         highlights: '',
         actorResponses: [
-          { actor: '', response: 'Not Applicable', notes: '' },
-          { actor: '', response: 'Not Applicable', notes: '' },
-          { actor: '', response: 'Not Applicable', notes: '' },
-          { actor: '', response: 'Not Applicable', notes: '' },
-          { actor: '', response: 'Not Applicable', notes: '' },
-          { actor: '', response: 'Not Applicable', notes: '' },
           { actor: '', response: 'Not Applicable', notes: '' },
         ]
       }],
