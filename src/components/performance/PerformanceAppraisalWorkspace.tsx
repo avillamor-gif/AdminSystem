@@ -271,11 +271,12 @@ export default function PerformanceAppraisalWorkspace({
 
   // ── Auto-populate e-signatures from employee profiles ──
   const { data: currentEmployee } = useCurrentEmployee()
-  const { data: attachments = [] } = useEmployeeAttachments(currentEmployee?.id || '')
+  const employeeId = currentEmployee?.id || currentEmployee?.employee_id
+  const { data: attachments = [] } = useEmployeeAttachments(employeeId || '')
   const [signaturesLoaded, setSignaturesLoaded] = useState(false)
 
   useEffect(() => {
-    if (!currentEmployee?.id || signaturesLoaded) return
+    if (!employeeId || signaturesLoaded) return
 
     const fetchSignatures = async () => {
       const supabase = createClient()
@@ -301,7 +302,7 @@ export default function PerformanceAppraisalWorkspace({
       }
 
       // Fetch manager's e-signature if manager_id exists
-      if (currentEmployee.manager_id) {
+      if (currentEmployee?.manager_id) {
         try {
           // Fetch manager employee record
           const { data: manager, error: managerError } = await supabase
@@ -339,10 +340,10 @@ export default function PerformanceAppraisalWorkspace({
       setSignaturesLoaded(true)
     }
 
-    if (attachments.length > 0) {
+    if (attachments.length >= 0) {
       fetchSignatures()
     }
-  }, [currentEmployee?.id, currentEmployee?.manager_id, signaturesLoaded, attachments])
+  }, [employeeId, currentEmployee?.manager_id, signaturesLoaded, attachments])
 
   const mapRecordToSaved = (record: PerformanceAppraisalRecord): SavedAppraisal => {
     const parsedForm = (record.form_data ?? {}) as Partial<AppraisalFormState>
