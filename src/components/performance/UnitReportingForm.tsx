@@ -233,12 +233,7 @@ export default function UnitReportingForm({
       {/* Part I: External Engagements */}
       <Card className="p-0 overflow-hidden">
         <div className="p-5 pb-4 border-b border-gray-200">
-          <div className="flex items-center justify-between">
-            <h3 className="text-base font-semibold text-gray-900">Part I: Engagements (External; Non-II)</h3>
-            <Button variant="secondary" size="sm" onClick={() => addActivity('external')}>
-              + Add Activity
-            </Button>
-          </div>
+          <h3 className="text-base font-semibold text-gray-900">Part I: Engagements (External; Non-II)</h3>
         </div>
 
         <div className="w-full overflow-x-auto">
@@ -293,6 +288,12 @@ export default function UnitReportingForm({
               ))}
             </tbody>
           </table>
+        </div>
+
+        <div className="p-5 pt-4 border-t border-gray-200">
+          <button onClick={() => addActivity('external')} className="text-blue-600 hover:text-blue-700 text-sm font-medium">
+            + Add More Activities
+          </button>
         </div>
       </Card>
 

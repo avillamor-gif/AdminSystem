@@ -278,42 +278,38 @@ export default function BackToOfficeReport({
       </Card>
 
       {/* Activities Section */}
-      <Card className="p-5 space-y-4">
-        <div className="flex items-center justify-between">
+      <Card className="p-0 overflow-hidden">
+        <div className="p-5 pb-4 border-b border-gray-200">
           <h3 className="text-base font-semibold text-gray-900">Activities</h3>
-          <Button variant="secondary" onClick={addActivity}>
-            + Add Activity
-          </Button>
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm border border-gray-200 rounded-lg overflow-hidden">
+        <div className="w-full overflow-x-auto">
+          <table className="w-full border-collapse">
             <thead>
-              <tr>
-                <th className="px-4 py-3 text-left font-semibold text-gray-900 bg-yellow-100 border-b border-gray-200">Activity</th>
-                <th className="px-4 py-3 text-left font-semibold text-gray-900 bg-yellow-100 border-b border-gray-200">Type of Activity</th>
-                <th className="px-4 py-3 text-left font-semibold text-gray-900 bg-yellow-100 border-b border-gray-200">Organiser</th>
-                <th className="px-4 py-3 text-left font-semibold text-gray-900 bg-yellow-100 border-b border-gray-200">Level</th>
-                <th className="px-4 py-3 text-left font-semibold text-gray-900 bg-yellow-100 border-b border-gray-200">Thematic Work</th>
-                <th className="px-4 py-3 text-left font-semibold text-gray-900 bg-yellow-100 border-b border-gray-200">Intersection</th>
-                <th className="px-4 py-3 text-left font-semibold text-gray-900 bg-yellow-100 border-b border-gray-200">Role/s</th>
-                <th className="px-4 py-3 text-left font-semibold text-gray-900 bg-yellow-100 border-b border-gray-200">Highlight/s</th>
+              <tr className="bg-yellow-200 border-b-2 border-gray-400">
+                <th className="border border-gray-400 px-3 py-3 text-left text-xs font-bold text-gray-900">Activity</th>
+                <th className="border border-gray-400 px-3 py-3 text-left text-xs font-bold text-gray-900">Type of Activity</th>
+                <th className="border border-gray-400 px-3 py-3 text-left text-xs font-bold text-gray-900">Organiser</th>
+                <th className="border border-gray-400 px-3 py-3 text-left text-xs font-bold text-gray-900">Level</th>
+                <th className="border border-gray-400 px-3 py-3 text-left text-xs font-bold text-gray-900">Thematic Work</th>
+                <th className="border border-gray-400 px-3 py-3 text-left text-xs font-bold text-gray-900">Intersection</th>
+                <th className="border border-gray-400 px-3 py-3 text-left text-xs font-bold text-gray-900">Role/s</th>
+                <th className="border border-gray-400 px-3 py-3 text-left text-xs font-bold text-gray-900">Highlight/s</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-200">
+            <tbody>
               {form.activities.map((activity) => (
-                <tr key={activity.id} className="bg-gray-50">
-                  {/* Activity Title */}
-                  <td className="px-4 py-3 text-gray-700">
+                <tr key={activity.id} className="border-b border-gray-300 hover:bg-gray-50">
+                  <td className="border border-gray-300 px-2 py-2">
                     <Input 
                       value={activity.title} 
                       onChange={(e) => updateActivity(activity.id, { title: e.target.value })} 
-                      placeholder="Title of activity"
+                      placeholder="Title"
+                      className="text-xs h-8 border-0 bg-transparent p-1"
                     />
                   </td>
 
-                  {/* Type of Activity */}
-                  <td className="px-4 py-3 text-gray-700">
+                  <td className="border border-gray-300 px-2 py-2">
                     <Select
                       value={activity.type}
                       onChange={(e) => updateActivity(activity.id, { type: e.target.value })}
@@ -328,17 +324,16 @@ export default function BackToOfficeReport({
                     />
                   </td>
 
-                  {/* Organiser */}
-                  <td className="px-4 py-3 text-gray-700">
+                  <td className="border border-gray-300 px-2 py-2">
                     <Input 
                       value={activity.organiser} 
                       onChange={(e) => updateActivity(activity.id, { organiser: e.target.value })} 
                       placeholder="Organiser"
+                      className="text-xs h-8 border-0 bg-transparent p-1"
                     />
                   </td>
 
-                  {/* Level of Engagement */}
-                  <td className="px-4 py-3 text-gray-700">
+                  <td className="border border-gray-300 px-2 py-2">
                     <Select
                       value={activity.level}
                       onChange={(e) => updateActivity(activity.id, { level: e.target.value })}
@@ -352,8 +347,7 @@ export default function BackToOfficeReport({
                     />
                   </td>
 
-                  {/* Thematic Work */}
-                  <td className="px-4 py-3 text-gray-700">
+                  <td className="border border-gray-300 px-2 py-2">
                     <Select
                       value={activity.engagement}
                       onChange={(e) => updateActivity(activity.id, { engagement: e.target.value })}
@@ -367,11 +361,10 @@ export default function BackToOfficeReport({
                     />
                   </td>
 
-                  {/* Intersection - Checkboxes */}
-                  <td className="px-4 py-3 text-gray-700">
-                    <div className="space-y-1">
+                  <td className="border border-gray-300 px-2 py-2">
+                    <div className="space-y-0.5">
                       {['Gender', 'Trade', 'Climate', 'Militarism', 'DevCoop'].map((item) => (
-                        <label key={item} className="flex items-center gap-2 text-xs cursor-pointer">
+                        <label key={item} className="flex items-center gap-1 text-xs cursor-pointer">
                           <input
                             type="checkbox"
                             checked={activity.intersection.includes(item)}
@@ -389,8 +382,7 @@ export default function BackToOfficeReport({
                     </div>
                   </td>
 
-                  {/* Role/s */}
-                  <td className="px-4 py-3 text-gray-700">
+                  <td className="border border-gray-300 px-2 py-2">
                     <Select
                       value={activity.roles.join(',')}
                       onChange={(e) => updateActivity(activity.id, { roles: e.target.value ? e.target.value.split(',') : [] })}
@@ -404,20 +396,25 @@ export default function BackToOfficeReport({
                     />
                   </td>
 
-                  {/* Highlight/s */}
-                  <td className="px-4 py-3 text-gray-700">
+                  <td className="border border-gray-300 px-2 py-2">
                     <textarea
                       value={activity.highlights}
                       onChange={(e) => updateActivity(activity.id, { highlights: e.target.value })}
-                      placeholder="Key highlights"
-                      className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-orange"
-                      rows={2}
+                      placeholder="Highlights"
+                      className="w-full px-1 py-0.5 text-xs border-0 bg-transparent focus:outline-none resize-none"
+                      rows={1}
                     />
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
+        </div>
+
+        <div className="p-5 pt-4 border-t border-gray-200">
+          <button onClick={addActivity} className="text-blue-600 hover:text-blue-700 text-sm font-medium">
+            + Add More Activities
+          </button>
         </div>
       </Card>
 
