@@ -466,7 +466,7 @@ export default function BackToOfficeReport({
         <Card key={activity.id} className="p-5 space-y-0">
           {/* Activity Title Display */}
           {activity.title && (
-            <div className="px-4 py-2 text-sm font-medium text-gray-900 bg-gray-50 border-b border-gray-200">
+            <div className="px-4 py-2 text-sm font-medium text-gray-900 bg-blue-50 border-b border-gray-200">
               {activity.title}
             </div>
           )}
