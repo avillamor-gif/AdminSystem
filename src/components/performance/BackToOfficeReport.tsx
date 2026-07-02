@@ -282,7 +282,7 @@ export default function BackToOfficeReport({
         <h3 className="text-base font-semibold text-gray-900 mb-4">Activities</h3>
 
         {/* Header */}
-        <div className="grid grid-cols-12 gap-2 px-3 py-2 text-xs font-semibold text-gray-700 border-b border-gray-300">
+        <div className="grid grid-cols-12 gap-2 px-3 py-2 bg-green-50 text-xs font-semibold text-gray-700 border-b border-gray-300">
           <div className="col-span-2">Activity</div>
           <div className="col-span-2">Type</div>
           <div className="col-span-2">Organiser</div>
@@ -301,7 +301,7 @@ export default function BackToOfficeReport({
                   value={activity.title} 
                   onChange={(e) => updateActivity(activity.id, { title: e.target.value })} 
                   placeholder="Activity"
-                  className="text-xs h-7"
+                  className="text-xs h-8"
                 />
               </div>
               <div className="col-span-2">
@@ -323,7 +323,7 @@ export default function BackToOfficeReport({
                   value={activity.organiser} 
                   onChange={(e) => updateActivity(activity.id, { organiser: e.target.value })} 
                   placeholder="Organiser"
-                  className="text-xs h-7"
+                  className="text-xs h-8"
                 />
               </div>
               <div className="col-span-1">
@@ -360,7 +360,7 @@ export default function BackToOfficeReport({
                     const selected = Array.from(e.target.selectedOptions, (option) => option.value)
                     updateActivity(activity.id, { intersection: selected })
                   }}
-                  className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-orange"
+                  className="w-full px-2 py-1 text-xs h-8 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-orange"
                 >
                   <option value="Gender">Gender</option>
                   <option value="Trade">Trade</option>
