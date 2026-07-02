@@ -410,15 +410,6 @@ export default function BackToOfficeReport({
               rows={3}
             />
           </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Key actors and their responses?</label>
-            <textarea
-              value={form.keyActors}
-              onChange={(e) => updateForm({ keyActors: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange"
-              rows={3}
-            />
-          </div>
         </div>
       </Card>
 
