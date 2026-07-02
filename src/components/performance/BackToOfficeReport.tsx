@@ -46,7 +46,6 @@ interface BTORFormState {
   policyTrends: string
   keyActors: string
   allianceQuestion: string
-  selectedActivityId: string
   actorResponses: KeyActor[]
   challenges: string
   newContacts: Contact[]
@@ -75,7 +74,6 @@ export default function BackToOfficeReport({
     policyTrends: '',
     keyActors: '',
     allianceQuestion: '',
-    selectedActivityId: '',
     actorResponses: [
       { actor: '', response: 'Not Applicable', notes: '' },
       { actor: '', response: 'Not Applicable', notes: '' },
@@ -424,116 +422,95 @@ export default function BackToOfficeReport({
         </div>
       </Card>
 
-      {/* Key Actors Response Table */}
-      <Card className="p-5 space-y-0">
-        <div className="mb-4">
-          <label className="block text-sm font-medium text-gray-700 mb-2">Select Activity Card</label>
-          <Select
-            value={form.selectedActivityId}
-            onChange={(e) => {
-              const selectedId = e.target.value
-              const selectedActivity = form.activities.find(a => a.id === selectedId)
-              updateForm({ 
-                selectedActivityId: selectedId,
-                keyActors: selectedActivity?.title || ''
-              })
-            }}
-            options={[
-              { value: '', label: '- Select Activity -' },
-              ...form.activities
-                .filter(a => a.title.trim() !== '')
-                .map(a => ({ value: a.id, label: a.title }))
-            ]}
-          />
-        </div>
-
-        {/* Activity Title Display */}
-        {form.selectedActivityId && (
+      {/* Key Actors Response Table - One per Activity */}
+      {form.activities.map((activity) => (
+        <Card key={activity.id} className="p-5 space-y-0">
+          {/* Activity Card Header */}
           <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded">
             <p className="text-sm text-gray-700">
-              <span className="font-semibold">Activity Card:</span> {form.keyActors}
+              <span className="font-semibold">Activity Card:</span> {activity.title || 'Untitled'}
             </p>
           </div>
-        )}
-        
-        {/* Header */}
-        <div className="grid grid-cols-12 gap-3 px-4 py-3 bg-green-100 text-xs font-bold text-gray-900">
-          <div className="col-span-4">Key Actors</div>
-          <div className="col-span-3">Response</div>
-          <div className="col-span-4">Notes</div>
-          <div className="col-span-1"></div>
-        </div>
+          
+          {/* Header */}
+          <div className="grid grid-cols-12 gap-3 px-4 py-3 bg-green-100 text-xs font-bold text-gray-900">
+            <div className="col-span-4">Key Actors</div>
+            <div className="col-span-3">Response</div>
+            <div className="col-span-4">Notes</div>
+            <div className="col-span-1"></div>
+          </div>
 
-        {/* Rows */}
-        <div className="space-y-0">
-          {form.actorResponses.map((actor, idx) => {
-            const allActors = ['State Actors', 'CSOs', 'POs and Social Movements', 'Multilateral Institutions', 'Private Sector', 'Media', 'Donors']
-            const selectedActors = form.actorResponses.map(a => a.actor)
-            const availableActors = allActors.filter(a => a === actor.actor || !selectedActors.includes(a))
-            
-            return (
-              <div key={idx} className={`grid grid-cols-12 gap-3 px-4 py-2 ${idx < form.actorResponses.length - 1 ? 'border-b border-gray-200' : ''}`}>
-                <div className="col-span-4">
-                  <Select
-                    value={actor.actor}
-                    onChange={(e) => {
-                      const newResponses = [...form.actorResponses]
-                      newResponses[idx].actor = e.target.value
-                      updateForm({ actorResponses: newResponses })
-                    }}
-                    options={[
-                      { value: '', label: '- Select Actor -' },
-                      ...availableActors.map(a => ({ value: a, label: a }))
-                    ]}
-                  />
-                </div>
-                <div className="col-span-3">
-                  <Select
-                    value={actor.response}
-                    onChange={(e) => {
-                      const newResponses = [...form.actorResponses]
-                      newResponses[idx].response = e.target.value
-                      updateForm({ actorResponses: newResponses })
-                    }}
-                    options={[
-                      { value: 'Not Applicable', label: 'Not Applicable' },
-                      { value: 'Supportive', label: 'Supportive' },
-                      { value: 'Opposed', label: 'Opposed' },
-                      { value: 'Neutral', label: 'Neutral' },
-                      { value: 'Acquiescence', label: 'Acquiescence' },
-                    ]}
-                  />
-                </div>
-                <div className="col-span-4">
-                  <Input
-                    value={actor.notes}
-                    onChange={(e) => {
-                      const newResponses = [...form.actorResponses]
-                      newResponses[idx].notes = e.target.value
-                      updateForm({ actorResponses: newResponses })
-                    }}
-                    placeholder="Notes"
-                    className="text-xs h-8"
-                  />
-                </div>
-                <div className="col-span-1 flex items-center justify-end">
-                  {form.actorResponses.length > 1 && (
-                    <button
-                      onClick={() => {
-                        const newResponses = form.actorResponses.filter((_, i) => i !== idx)
+          {/* Rows */}
+          <div className="space-y-0">
+            {form.actorResponses.map((actor, idx) => {
+              const allActors = ['State Actors', 'CSOs', 'POs and Social Movements', 'Multilateral Institutions', 'Private Sector', 'Media', 'Donors']
+              const selectedActors = form.actorResponses.map(a => a.actor)
+              const availableActors = allActors.filter(a => a === actor.actor || !selectedActors.includes(a))
+              
+              return (
+                <div key={idx} className={`grid grid-cols-12 gap-3 px-4 py-2 ${idx < form.actorResponses.length - 1 ? 'border-b border-gray-200' : ''}`}>
+                  <div className="col-span-4">
+                    <Select
+                      value={actor.actor}
+                      onChange={(e) => {
+                        const newResponses = [...form.actorResponses]
+                        newResponses[idx].actor = e.target.value
                         updateForm({ actorResponses: newResponses })
                       }}
-                      className="text-red-500 hover:text-red-700 transition-colors"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  )}
+                      options={[
+                        { value: '', label: '- Select Actor -' },
+                        ...availableActors.map(a => ({ value: a, label: a }))
+                      ]}
+                    />
+                  </div>
+                  <div className="col-span-3">
+                    <Select
+                      value={actor.response}
+                      onChange={(e) => {
+                        const newResponses = [...form.actorResponses]
+                        newResponses[idx].response = e.target.value
+                        updateForm({ actorResponses: newResponses })
+                      }}
+                      options={[
+                        { value: 'Not Applicable', label: 'Not Applicable' },
+                        { value: 'Supportive', label: 'Supportive' },
+                        { value: 'Opposed', label: 'Opposed' },
+                        { value: 'Neutral', label: 'Neutral' },
+                        { value: 'Acquiescence', label: 'Acquiescence' },
+                      ]}
+                    />
+                  </div>
+                  <div className="col-span-4">
+                    <Input
+                      value={actor.notes}
+                      onChange={(e) => {
+                        const newResponses = [...form.actorResponses]
+                        newResponses[idx].notes = e.target.value
+                        updateForm({ actorResponses: newResponses })
+                      }}
+                      placeholder="Notes"
+                      className="text-xs h-8"
+                    />
+                  </div>
+                  <div className="col-span-1 flex items-center justify-end">
+                    {form.actorResponses.length > 1 && (
+                      <button
+                        onClick={() => {
+                          const newResponses = form.actorResponses.filter((_, i) => i !== idx)
+                          updateForm({ actorResponses: newResponses })
+                        }}
+                        className="text-red-500 hover:text-red-700 transition-colors"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    )}
+                  </div>
                 </div>
-              </div>
-            )
-          })}
-        </div>
-      </Card>
+              )
+            })}
+          </div>
+        </Card>
+      ))}
 
       {/* Challenges Section */}
       <Card className="p-5 space-y-5">
