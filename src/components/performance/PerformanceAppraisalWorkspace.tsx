@@ -9,8 +9,11 @@ import {
   useMyPerformanceAppraisals,
   useSavePerformanceAppraisalDraft,
   useSubmitPerformanceAppraisal,
+  useCurrentEmployee,
+  useEmployeeAttachments,
 } from '@/hooks'
 import type { PerformanceAppraisalRecord } from '@/services'
+import { createClient } from '@/lib/supabase/client'
 
 type PeriodCovered = 'midyear' | 'yearend'
 type AppraisalStatus = 'draft' | 'pending_review' | 'in_review' | 'returned' | 'completed'
@@ -266,6 +269,77 @@ export default function PerformanceAppraisalWorkspace({
     return () => window.clearTimeout(timeout)
   }, [form, draftStorageKey])
 
+  // ── Auto-populate e-signatures from employee profiles ──
+  const { data: currentEmployee } = useCurrentEmployee()
+  const { data: attachments = [] } = useEmployeeAttachments(currentEmployee?.id || '')
+
+  useEffect(() => {
+    if (!currentEmployee?.id) return
+
+    const fetchSignatures = async () => {
+      const supabase = createClient()
+      
+      // Fetch current employee's e-signature
+      const employeeAttachments = attachments
+      const employeeSignatureAttachment = employeeAttachments.find(a => a.document_type === 'e-signature')
+      
+      if (employeeSignatureAttachment?.file_path && !form.appraiseeSignature) {
+        try {
+          const { data: signedUrl, error } = await supabase.storage
+            .from('attachments')
+            .createSignedUrl(employeeSignatureAttachment.file_path, 3600)
+          
+          if (!error && signedUrl?.signedUrl) {
+            setForm(prev => ({
+              ...prev,
+              appraiseeSignature: signedUrl.signedUrl
+            }))
+          }
+        } catch (err) {
+          console.error('Failed to fetch employee e-signature:', err)
+        }
+      }
+
+      // Fetch manager's e-signature if manager_id exists
+      if (currentEmployee.manager_id && !form.appraiserSignature) {
+        try {
+          // Fetch manager employee record
+          const { data: manager, error: managerError } = await supabase
+            .from('employees')
+            .select('id')
+            .eq('id', currentEmployee.manager_id)
+            .single()
+          
+          if (!managerError && manager) {
+            // Fetch manager's attachments
+            const { data: managerAttachments, error: attachError } = await supabase
+              .from('employee_attachments')
+              .select('file_path, document_type')
+              .eq('employee_id', manager.id)
+              .eq('document_type', 'e-signature')
+            
+            if (!attachError && managerAttachments?.[0]?.file_path) {
+              const { data: managerSignedUrl, error: signError } = await supabase.storage
+                .from('attachments')
+                .createSignedUrl(managerAttachments[0].file_path, 3600)
+              
+              if (!signError && managerSignedUrl?.signedUrl) {
+                setForm(prev => ({
+                  ...prev,
+                  appraiserSignature: managerSignedUrl.signedUrl
+                }))
+              }
+            }
+          }
+        } catch (err) {
+          console.error('Failed to fetch manager e-signature:', err)
+        }
+      }
+    }
+
+    fetchSignatures()
+  }, [currentEmployee?.id, currentEmployee?.manager_id, attachments])
+
   const mapRecordToSaved = (record: PerformanceAppraisalRecord): SavedAppraisal => {
     const parsedForm = (record.form_data ?? {}) as Partial<AppraisalFormState>
     const resolvedAppraiserName = record.appraiser
@@ -437,9 +511,16 @@ export default function PerformanceAppraisalWorkspace({
     addLine(`Recommendation: ${entry.form.recommendation || '-'}`)
     addGap()
 
+    // Format signatures for PDF (handle URLs by replacing with placeholder)
+    const formatSignatureForPdf = (sig: string | undefined): string => {
+      if (!sig) return '-'
+      if (sig.startsWith('http')) return '[e-signature]'
+      return sig
+    }
+
     addLine('Signatures', 12, true)
-    addLine(`Appraiser: ${entry.form.appraiserSignature || '-'} (${entry.form.appraiserSignedDate || '-'})`)
-    addLine(`Appraisee: ${entry.form.appraiseeSignature || '-'} (${entry.form.appraiseeSignedDate || '-'})`)
+    addLine(`Appraiser: ${formatSignatureForPdf(entry.form.appraiserSignature)} (${entry.form.appraiserSignedDate || '-'})`)
+    addLine(`Appraisee: ${formatSignatureForPdf(entry.form.appraiseeSignature)} (${entry.form.appraiseeSignedDate || '-'})`)
 
     doc.save(`${entry.filename}.pdf`)
   }
@@ -813,9 +894,11 @@ export default function PerformanceAppraisalWorkspace({
           {/* First Column - Employee/Appraisee */}
           <div className="space-y-3 text-center">
             {/* Signature Image Placeholder */}
-            <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 bg-gray-50 min-h-32 flex items-center justify-center">
-              <div className="text-center">
-                {form.appraiseeSignature ? (
+            <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 bg-gray-50 min-h-32 flex items-center justify-center overflow-hidden">
+              <div className="text-center w-full">
+                {form.appraiseeSignature && form.appraiseeSignature.startsWith('http') ? (
+                  <img src={form.appraiseeSignature} alt="Employee signature" className="max-h-32 max-w-full mx-auto" />
+                ) : form.appraiseeSignature ? (
                   <div className="text-sm font-semibold text-gray-700">{form.appraiseeSignature}</div>
                 ) : (
                   <div className="text-sm text-gray-500">Signature image of the employee</div>
@@ -843,9 +926,11 @@ export default function PerformanceAppraisalWorkspace({
           {/* Second Column - Manager/Appraiser */}
           <div className="space-y-3 text-center">
             {/* Signature Image Placeholder */}
-            <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 bg-gray-50 min-h-32 flex items-center justify-center">
-              <div className="text-center">
-                {form.appraiserSignature ? (
+            <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 bg-gray-50 min-h-32 flex items-center justify-center overflow-hidden">
+              <div className="text-center w-full">
+                {form.appraiserSignature && form.appraiserSignature.startsWith('http') ? (
+                  <img src={form.appraiserSignature} alt="Manager signature" className="max-h-32 max-w-full mx-auto" />
+                ) : form.appraiserSignature ? (
                   <div className="text-sm font-semibold text-gray-700">{form.appraiserSignature}</div>
                 ) : (
                   <div className="text-sm text-gray-500">Signature image of the manager</div>
