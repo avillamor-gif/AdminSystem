@@ -523,24 +523,7 @@ export default function PerformanceAppraisalWorkspace({
       </Card>
 
       <Card className="p-5 space-y-4">
-        <div className="flex items-start gap-2">
-          <h3 className="text-base font-semibold text-gray-900">Part II: Performance Assessment & Work Areas Rating</h3>
-          <div className="relative group">
-            <HelpCircle className="w-4 h-4 text-gray-400 hover:text-gray-600 cursor-help flex-shrink-0" />
-            <div className="absolute left-0 top-full mt-2 hidden group-hover:block bg-gray-900 text-white text-xs rounded-lg shadow-lg z-10 w-72 p-3 pointer-events-none whitespace-normal">
-              <ul className="space-y-2">
-                <li className="flex gap-2">
-                  <span className="text-gray-300 flex-shrink-0">•</span>
-                  <span>For midyear assessment, list the objectives you aimed to achieve during the appraisal period and assess or evaluate whether the status of the objectives are on-track or delayed.</span>
-                </li>
-                <li className="flex gap-2">
-                  <span className="text-gray-300 flex-shrink-0">•</span>
-                  <span>For yearend assessment, list the objectives you aimed to achieve during the appraisal period and assess or evaluate whether the status of the objectives are achieved, partly achieved, or not achieved at all.</span>
-                </li>
-              </ul>
-            </div>
-          </div>
-        </div>
+        <h3 className="text-base font-semibold text-gray-900">Part II: Performance Assessment</h3>
         <div className="overflow-x-auto">
           <table className="w-full text-sm border border-gray-200 rounded-lg overflow-hidden">
             <thead>
@@ -552,6 +535,14 @@ export default function PerformanceAppraisalWorkspace({
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
+              <tr className="bg-gray-50">
+                <td colSpan={4} className="px-4 py-3 text-xs text-gray-600">
+                  <div className="space-y-1">
+                    <p><strong>Note:</strong> For midyear assessment, list the objectives you aimed to achieve during the appraisal period and assess or evaluate whether the status of the objectives are on-track or delayed.</p>
+                    <p>For yearend assessment, list the objectives you aimed to achieve during the appraisal period and assess or evaluate whether the status of the objectives are achieved, partly achieved, or not achieved at all.</p>
+                  </div>
+                </td>
+              </tr>
               {form.objectives.map((item, index) => (
                 <tr key={`objective-${index}`}>
                   <td className="px-4 py-3 text-gray-700">
@@ -633,15 +624,6 @@ export default function PerformanceAppraisalWorkspace({
         </button>
 
         <div className="border-t border-gray-200 pt-6 mt-6">
-          <div className="flex items-start gap-2 mb-4">
-            <h3 className="text-base font-semibold text-gray-900">Work Areas Rating</h3>
-            <div className="relative group">
-              <HelpCircle className="w-5 h-5 text-gray-400 hover:text-gray-600 cursor-help mt-0.5 flex-shrink-0" />
-              <div className="absolute left-0 top-full mt-2 hidden group-hover:block bg-gray-900 text-white text-sm rounded-lg shadow-lg z-10 w-80 p-3 pointer-events-none whitespace-normal">
-                <p>Based on the performance assessment above, rate your knowledge, skills and attitude on the following work areas (poor, satisfactory, good, excellent). Discuss and finalise the rating with the appraiser.</p>
-              </div>
-            </div>
-          </div>
           <div className="overflow-x-auto">
             <table className="w-full text-sm border border-gray-200 rounded-lg overflow-hidden">
               <thead>
@@ -651,6 +633,11 @@ export default function PerformanceAppraisalWorkspace({
                 </tr>
               </thead>
               <tbody>
+                <tr className="bg-gray-50">
+                  <td colSpan={2} className="px-4 py-3 text-xs text-gray-600">
+                    <p><strong>Note:</strong> Based on the performance assessment above, rate your knowledge, skills and attitude on the following work areas (poor, satisfactory, good, excellent). Discuss and finalise the rating with the appraiser.</p>
+                  </td>
+                </tr>
                 {Object.entries(WORK_RATING_CATEGORIES).map(([category, areas]) => (
                   <>
                     <tr key={category}>
