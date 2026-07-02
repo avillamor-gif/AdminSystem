@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
-import { Download, FilePlus2, Save } from 'lucide-react'
+import { Download, FilePlus2, Save, HelpCircle } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { jsPDF } from 'jspdf'
 import { Button, Card, Input, Select, Badge } from '@/components/ui'
@@ -507,7 +507,26 @@ export default function PerformanceAppraisalWorkspace({
           <table className="w-full text-sm border border-gray-200 rounded-lg overflow-hidden">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-3 py-2 text-left font-semibold text-gray-600">Objective</th>
+                <th className="px-3 py-2 text-left font-semibold text-gray-600">
+                  <div className="flex items-center gap-2">
+                    <span>Objective</span>
+                    <div className="relative group">
+                      <HelpCircle className="w-4 h-4 text-gray-400 hover:text-gray-600 cursor-help flex-shrink-0" />
+                      <div className="absolute left-0 top-full mt-2 hidden group-hover:block bg-gray-900 text-white text-xs rounded-lg shadow-lg z-10 w-72 p-3 pointer-events-none whitespace-normal">
+                        <ul className="space-y-2">
+                          <li className="flex gap-2">
+                            <span className="text-gray-300 flex-shrink-0">•</span>
+                            <span>For midyear assessment, list the objectives you aimed to achieve during the appraisal period and assess or evaluate whether the status of the objectives are on-track or delayed.</span>
+                          </li>
+                          <li className="flex gap-2">
+                            <span className="text-gray-300 flex-shrink-0">•</span>
+                            <span>For yearend assessment, list the objectives you aimed to achieve during the appraisal period and assess or evaluate whether the status of the objectives are achieved, partly achieved, or not achieved at all.</span>
+                          </li>
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+                </th>
                 <th className="px-3 py-2 text-left font-semibold text-gray-600">Status</th>
                 <th className="px-3 py-2 text-left font-semibold text-gray-600">Comments</th>
               </tr>
@@ -568,7 +587,15 @@ export default function PerformanceAppraisalWorkspace({
       </Card>
 
       <Card className="p-5 space-y-4">
-        <h3 className="text-base font-semibold text-gray-900">Part II (continued): Work Areas Rating</h3>
+        <div className="flex items-start gap-2">
+          <h3 className="text-base font-semibold text-gray-900">Part II (continued): Work Areas Rating</h3>
+          <div className="relative group">
+            <HelpCircle className="w-5 h-5 text-gray-400 hover:text-gray-600 cursor-help mt-0.5 flex-shrink-0" />
+            <div className="absolute left-0 top-full mt-2 hidden group-hover:block bg-gray-900 text-white text-sm rounded-lg shadow-lg z-10 w-80 p-3 pointer-events-none whitespace-normal">
+              <p>Based on the performance assessment above, rate your knowledge, skills and attitude on the following work areas (poor, satisfactory, good, excellent). Discuss and finalise the rating with the appraiser.</p>
+            </div>
+          </div>
+        </div>
         <p className="text-sm text-gray-500">Rate each area: Poor, Satisfactory, Good, or Excellent.</p>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           {WORK_RATING_AREAS.map((area) => (
