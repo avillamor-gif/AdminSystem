@@ -809,11 +809,66 @@ export default function PerformanceAppraisalWorkspace({
 
       <Card className="p-5 space-y-4">
         <h3 className="text-base font-semibold text-gray-900">Signatures</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <Input label="Signed by Appraiser" value={form.appraiserSignature} onChange={(e) => setForm((prev) => ({ ...prev, appraiserSignature: e.target.value }))} />
-          <Input label="Date" type="date" value={form.appraiserSignedDate} onChange={(e) => setForm((prev) => ({ ...prev, appraiserSignedDate: e.target.value }))} />
-          <Input label="Signed by Appraisee" value={form.appraiseeSignature} onChange={(e) => setForm((prev) => ({ ...prev, appraiseeSignature: e.target.value }))} />
-          <Input label="Date" type="date" value={form.appraiseeSignedDate} onChange={(e) => setForm((prev) => ({ ...prev, appraiseeSignedDate: e.target.value }))} />
+        <div className="grid grid-cols-2 gap-8">
+          {/* First Column - Employee/Appraisee */}
+          <div className="space-y-3 text-center">
+            {/* Signature Image Placeholder */}
+            <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 bg-gray-50 min-h-32 flex items-center justify-center">
+              <div className="text-center">
+                {form.appraiseeSignature ? (
+                  <div className="text-sm font-semibold text-gray-700">{form.appraiseeSignature}</div>
+                ) : (
+                  <div className="text-sm text-gray-500">Signature image of the employee</div>
+                )}
+              </div>
+            </div>
+            {/* Label and signature input */}
+            <div>
+              <p className="text-sm font-semibold text-gray-900 mb-2">Signed by Appraisee</p>
+              <Input
+                placeholder="Employee name/signature"
+                value={form.appraiseeSignature}
+                onChange={(e) => setForm((prev) => ({ ...prev, appraiseeSignature: e.target.value }))}
+              />
+            </div>
+            {/* Date field */}
+            <Input
+              label="Date"
+              type="date"
+              value={form.appraiseeSignedDate}
+              onChange={(e) => setForm((prev) => ({ ...prev, appraiseeSignedDate: e.target.value }))}
+            />
+          </div>
+
+          {/* Second Column - Manager/Appraiser */}
+          <div className="space-y-3 text-center">
+            {/* Signature Image Placeholder */}
+            <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 bg-gray-50 min-h-32 flex items-center justify-center">
+              <div className="text-center">
+                {form.appraiserSignature ? (
+                  <div className="text-sm font-semibold text-gray-700">{form.appraiserSignature}</div>
+                ) : (
+                  <div className="text-sm text-gray-500">Signature image of the manager</div>
+                )}
+              </div>
+            </div>
+            {/* Label and signature input */}
+            <div>
+              <p className="text-sm font-semibold text-gray-900 mb-2">Signed by Appraiser</p>
+              <Input
+                placeholder="Manager name/signature"
+                value={form.appraiserSignature}
+                onChange={(e) => setForm((prev) => ({ ...prev, appraiserSignature: e.target.value }))}
+              />
+            </div>
+            {/* Date field */}
+            <Input
+              label="Date"
+              type="date"
+              value={form.appraiserSignedDate}
+              onChange={(e) => setForm((prev) => ({ ...prev, appraiserSignedDate: e.target.value }))}
+            />
+          </div>
         </div>
       </Card>
 
