@@ -466,17 +466,16 @@ export default function BackToOfficeReport({
         <Card key={activity.id} className="p-5 space-y-0">
           {/* Activity Title Display */}
           {activity.title && (
-            <div className="py-2 text-sm font-medium text-gray-900 bg-gray-50 border-b border-gray-200">
+            <div className="px-4 py-2 text-sm font-medium text-gray-900 bg-gray-50 border-b border-gray-200">
               {activity.title}
             </div>
           )}
           
           {/* Header */}
-          <div className="grid grid-cols-12 gap-3 py-3 bg-green-100 text-xs font-bold text-gray-900">
+          <div className="grid grid-cols-12 gap-3 px-4 py-3 bg-green-100 text-xs font-bold text-gray-900">
             <div className="col-span-3">Key Actors</div>
             <div className="col-span-2">Response</div>
-            <div className="col-span-6">Notes</div>
-            <div className="col-span-1"></div>
+            <div className="col-span-7">Notes</div>
           </div>
 
           {/* Rows */}
@@ -487,7 +486,7 @@ export default function BackToOfficeReport({
               const availableActors = allActors.filter(a => a === actor.actor || !selectedActors.includes(a))
               
               return (
-                <div key={idx} className={`grid grid-cols-12 gap-3 py-2 ${idx < activity.actorResponses.length - 1 ? 'border-b border-gray-200' : ''}`}>
+                <div key={idx} className={`grid grid-cols-12 gap-3 px-4 py-2 ${idx < activity.actorResponses.length - 1 ? 'border-b border-gray-200' : ''}`}>
                   <div className="col-span-3">
                     <Select
                       value={actor.actor}
@@ -531,7 +530,7 @@ export default function BackToOfficeReport({
                       ]}
                     />
                   </div>
-                  <div className="col-span-6">
+                  <div className="col-span-7">
                     <Input
                       value={actor.notes}
                       onChange={(e) => {
@@ -548,25 +547,6 @@ export default function BackToOfficeReport({
                       placeholder="Notes"
                       className="text-xs h-8"
                     />
-                  </div>
-                  <div className="col-span-1 flex items-center justify-end">
-                    {activity.actorResponses.length > 1 && (
-                      <button
-                        onClick={() => {
-                          const newActivities = form.activities.map(a => {
-                            if (a.id === activity.id) {
-                              const newResponses = a.actorResponses.filter((_, i) => i !== idx)
-                              return { ...a, actorResponses: newResponses }
-                            }
-                            return a
-                          })
-                          updateForm({ activities: newActivities })
-                        }}
-                        className="text-red-500 hover:text-red-700 transition-colors"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    )}
                   </div>
                 </div>
               )
