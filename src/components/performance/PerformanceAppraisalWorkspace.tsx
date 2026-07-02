@@ -95,6 +95,29 @@ const WORK_RATING_AREAS = [
   'Compliance with institutional policies and procedures',
 ]
 
+const WORK_RATING_CATEGORIES = {
+  'Knowledge and Skills': [
+    'Communication skills (written and oral)',
+    'Decision making ability and problem-solving skills',
+    'Time management (meeting deadlines/commitments)',
+    'Planning, budgeting and forecasting',
+    'Organizational ability (reporting and administration)',
+    'Analytical skill',
+    'IT/equipment/machinery skills',
+    'Creativity',
+    'Delegation skills, team-working, and developing others',
+    'Energy, determination and work-rate',
+    'Leadership and integrity',
+    'Adaptability, flexibility, and mobility; steadiness under pressure',
+  ],
+  'Attitude and Behavior': [
+    'Work attitude and ethics',
+    'Staff relations',
+    'Compliance with institutional policies and procedures',
+  ],
+}
+]
+
 const emptyObjective = (): ObjectiveRow => ({ objective: '', status: 'on_track', comments: '' })
 const emptyPlan = (): PlanRow => ({ objective: '', criteria: '' })
 
@@ -597,27 +620,48 @@ export default function PerformanceAppraisalWorkspace({
           </div>
         </div>
         <p className="text-sm text-gray-500">Rate each area: Poor, Satisfactory, Good, or Excellent.</p>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          {WORK_RATING_AREAS.map((area) => (
-            <div key={area} className="grid grid-cols-[1fr_180px] gap-3 items-center">
-              <p className="text-sm text-gray-700">{area}</p>
-              <Select
-                value={form.workRatings[area] || 'good'}
-                onChange={(e) =>
-                  setForm((prev) => ({
-                    ...prev,
-                    workRatings: { ...prev.workRatings, [area]: e.target.value },
-                  }))
-                }
-                options={[
-                  { value: 'poor', label: 'Poor' },
-                  { value: 'satisfactory', label: 'Satisfactory' },
-                  { value: 'good', label: 'Good' },
-                  { value: 'excellent', label: 'Excellent' },
-                ]}
-              />
-            </div>
-          ))}
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm border border-gray-200 rounded-lg overflow-hidden">
+            <thead>
+              <tr>
+                <th className="px-4 py-3 text-left font-semibold text-gray-900 bg-blue-100 border-b border-gray-200">Work Areas</th>
+                <th className="px-4 py-3 text-left font-semibold text-gray-900 bg-blue-100 border-b border-gray-200">Rating</th>
+              </tr>
+            </thead>
+            <tbody>
+              {Object.entries(WORK_RATING_CATEGORIES).map(([category, areas]) => (
+                <>
+                  <tr key={category}>
+                    <td colSpan={2} className="px-4 py-2 bg-blue-200 font-semibold text-gray-900 border-b border-gray-200">
+                      {category}
+                    </td>
+                  </tr>
+                  {areas.map((area) => (
+                    <tr key={area} className="border-b border-gray-200">
+                      <td className="px-4 py-3 text-gray-700">{area}</td>
+                      <td className="px-4 py-3 w-40">
+                        <Select
+                          value={form.workRatings[area] || 'good'}
+                          onChange={(e) =>
+                            setForm((prev) => ({
+                              ...prev,
+                              workRatings: { ...prev.workRatings, [area]: e.target.value },
+                            }))
+                          }
+                          options={[
+                            { value: 'poor', label: 'Poor' },
+                            { value: 'satisfactory', label: 'Satisfactory' },
+                            { value: 'good', label: 'Good' },
+                            { value: 'excellent', label: 'Excellent' },
+                          ]}
+                        />
+                      </td>
+                    </tr>
+                  ))}
+                </>
+              ))}
+            </tbody>
+          </table>
         </div>
         <div className="space-y-3">
           <div>
