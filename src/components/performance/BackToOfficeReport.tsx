@@ -10,6 +10,7 @@ interface Activity {
   title: string
   type: string
   organiser: string
+  level: string
   engagement: string
   thematicWork: string[]
   intersection: string[]
@@ -68,7 +69,7 @@ export default function BackToOfficeReport({
     location: '',
     funder: '',
     fundingSupport: 'Fully Supported',
-    activities: [{ id: '1', title: '', type: '', organiser: '', engagement: '', thematicWork: [], intersection: [], roles: [], highlights: '' }],
+    activities: [{ id: '1', title: '', type: '', organiser: '', level: '', engagement: '', thematicWork: [], intersection: [], roles: [], highlights: '' }],
     mainPositions: '',
     policyTrends: '',
     keyActors: '',
@@ -115,7 +116,7 @@ export default function BackToOfficeReport({
     const newId = String(form.activities.length + 1)
     setForm((prev) => ({
       ...prev,
-      activities: [...prev.activities, { id: newId, title: '', type: '', organiser: '', engagement: '', thematicWork: [], intersection: [], roles: [], highlights: '' }],
+      activities: [...prev.activities, { id: newId, title: '', type: '', organiser: '', level: '', engagement: '', thematicWork: [], intersection: [], roles: [], highlights: '' }],
     }))
   }
 
@@ -272,69 +273,151 @@ export default function BackToOfficeReport({
       </Card>
 
       {/* Activities Section */}
-      <Card className="p-6 space-y-4">
-        <div className="flex items-center justify-between">
-          <h3 className="text-lg font-semibold text-gray-900">Activities</h3>
-          <Button variant="secondary" onClick={addActivity}>
-            + Add Activity
-          </Button>
+      <Card className="p-0 overflow-hidden border-none">
+        <div className="p-6 pb-4 border-b border-gray-200">
+          <div className="flex items-center justify-between">
+            <h3 className="text-lg font-semibold text-gray-900">Activities</h3>
+            <Button variant="secondary" onClick={addActivity}>
+              + Add Activity
+            </Button>
+          </div>
         </div>
 
-        {form.activities.map((activity) => (
-          <div key={activity.id} className="p-4 border border-gray-200 rounded-lg space-y-3">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Activity Title</label>
-                <Input value={activity.title} onChange={(e) => updateActivity(activity.id, { title: e.target.value })} placeholder="Title" />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Type</label>
-                <Select
-                  value={activity.type}
-                  onChange={(e) => updateActivity(activity.id, { type: e.target.value })}
-                  options={[
-                    { value: 'Forum/Conference', label: 'Forum/Conference' },
-                    { value: 'Training', label: 'Training' },
-                    { value: 'Meeting', label: 'Meeting' },
-                    { value: 'Workshop', label: 'Workshop' },
-                    { value: 'Other', label: 'Other' },
-                  ]}
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Organiser</label>
-                <Input value={activity.organiser} onChange={(e) => updateActivity(activity.id, { organiser: e.target.value })} placeholder="Organiser" />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Level of Engagement</label>
-                <Select
-                  value={activity.engagement}
-                  onChange={(e) => updateActivity(activity.id, { engagement: e.target.value })}
-                  options={[
-                    { value: 'Representative', label: 'Representative' },
-                    { value: 'Participant', label: 'Participant' },
-                    { value: 'Observer', label: 'Observer' },
-                  ]}
-                />
-              </div>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Highlights</label>
-              <textarea
-                value={activity.highlights}
-                onChange={(e) => updateActivity(activity.id, { highlights: e.target.value })}
-                placeholder="Include key highlights from the activity"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange"
-                rows={3}
-              />
-            </div>
-            {form.activities.length > 1 && (
-              <Button variant="danger" onClick={() => removeActivity(activity.id)}>
-                Remove Activity
-              </Button>
-            )}
-          </div>
-        ))}
+        <div className="w-full overflow-x-auto">
+          <table className="w-full border-collapse">
+            <thead>
+              <tr className="bg-yellow-200 border-b-2 border-gray-400">
+                <th className="border border-gray-400 px-3 py-3 text-left text-xs font-bold text-gray-900 w-20">Activity</th>
+                <th className="border border-gray-400 px-3 py-3 text-left text-xs font-bold text-gray-900 w-24">Type of Activity</th>
+                <th className="border border-gray-400 px-3 py-3 text-left text-xs font-bold text-gray-900 w-24">Organiser</th>
+                <th className="border border-gray-400 px-3 py-3 text-left text-xs font-bold text-gray-900 w-24">Level of Engagement</th>
+                <th className="border border-gray-400 px-3 py-3 text-left text-xs font-bold text-gray-900 w-20">Thematic Work</th>
+                <th className="border border-gray-400 px-3 py-3 text-left text-xs font-bold text-gray-900 w-32">Intersection</th>
+                <th className="border border-gray-400 px-3 py-3 text-left text-xs font-bold text-gray-900 w-16">Role/s</th>
+                <th className="border border-gray-400 px-3 py-3 text-left text-xs font-bold text-gray-900">Highlight/s</th>
+              </tr>
+            </thead>
+            <tbody>
+              {form.activities.map((activity) => (
+                <tr key={activity.id} className="border-b border-gray-300 hover:bg-gray-50">
+                  {/* Activity Title */}
+                  <td className="border border-gray-300 px-2 py-2">
+                    <Input 
+                      value={activity.title} 
+                      onChange={(e) => updateActivity(activity.id, { title: e.target.value })} 
+                      placeholder="Title"
+                      className="text-xs h-8 border-0 bg-transparent p-1"
+                    />
+                  </td>
+
+                  {/* Type of Activity */}
+                  <td className="border border-gray-300 px-2 py-2">
+                    <Select
+                      value={activity.type}
+                      onChange={(e) => updateActivity(activity.id, { type: e.target.value })}
+                      options={[
+                        { value: '', label: '- Select -' },
+                        { value: 'Forum/Conference', label: 'Forum/Conf' },
+                        { value: 'Training', label: 'Training' },
+                        { value: 'Meeting', label: 'Meeting' },
+                        { value: 'Workshop', label: 'Workshop' },
+                        { value: 'Other', label: 'Other' },
+                      ]}
+                    />
+                  </td>
+
+                  {/* Organiser */}
+                  <td className="border border-gray-300 px-2 py-2">
+                    <Input 
+                      value={activity.organiser} 
+                      onChange={(e) => updateActivity(activity.id, { organiser: e.target.value })} 
+                      placeholder="Organiser"
+                      className="text-xs h-8 border-0 bg-transparent p-1"
+                    />
+                  </td>
+
+                  {/* Level of Engagement */}
+                  <td className="border border-gray-300 px-2 py-2">
+                    <Select
+                      value={activity.level}
+                      onChange={(e) => updateActivity(activity.id, { level: e.target.value })}
+                      options={[
+                        { value: '', label: '- Select -' },
+                        { value: 'Global', label: 'Global' },
+                        { value: 'Regional', label: 'Regional' },
+                        { value: 'National', label: 'National' },
+                        { value: 'Local', label: 'Local' },
+                      ]}
+                    />
+                  </td>
+
+                  {/* Thematic Work */}
+                  <td className="border border-gray-300 px-2 py-2">
+                    <Select
+                      value={activity.engagement}
+                      onChange={(e) => updateActivity(activity.id, { engagement: e.target.value })}
+                      options={[
+                        { value: '', label: '- Select -' },
+                        { value: 'Climate', label: 'Climate' },
+                        { value: 'Gender', label: 'Gender' },
+                        { value: 'Trade', label: 'Trade' },
+                        { value: 'Militarism', label: 'Militarism' },
+                      ]}
+                    />
+                  </td>
+
+                  {/* Intersection - Checkboxes */}
+                  <td className="border border-gray-300 px-2 py-2">
+                    <div className="space-y-0.5">
+                      {['Gender', 'Trade', 'Climate', 'Militarism', 'DevCoop'].map((item) => (
+                        <label key={item} className="flex items-center gap-1 text-xs cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={activity.intersection.includes(item)}
+                            onChange={(e) => {
+                              const newIntersection = e.target.checked
+                                ? [...activity.intersection, item]
+                                : activity.intersection.filter((i) => i !== item)
+                              updateActivity(activity.id, { intersection: newIntersection })
+                            }}
+                            className="w-3 h-3 accent-orange"
+                          />
+                          <span className="text-xs">{item}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </td>
+
+                  {/* Role/s */}
+                  <td className="border border-gray-300 px-2 py-2">
+                    <Select
+                      value={activity.roles.join(',')}
+                      onChange={(e) => updateActivity(activity.id, { roles: e.target.value ? e.target.value.split(',') : [] })}
+                      options={[
+                        { value: '', label: '- Select -' },
+                        { value: 'Rep', label: 'Rep' },
+                        { value: 'Part', label: 'Part' },
+                        { value: 'Obs', label: 'Obs' },
+                        { value: 'Speaker', label: 'Speaker' },
+                      ]}
+                    />
+                  </td>
+
+                  {/* Highlight/s */}
+                  <td className="border border-gray-300 px-2 py-2">
+                    <textarea
+                      value={activity.highlights}
+                      onChange={(e) => updateActivity(activity.id, { highlights: e.target.value })}
+                      placeholder="Highlights"
+                      className="w-full px-1 py-0.5 text-xs border-0 bg-transparent focus:outline-none resize-none"
+                      rows={1}
+                    />
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </Card>
 
       {/* Reflections Section */}
