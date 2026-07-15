@@ -625,8 +625,8 @@ export default function PerformanceAppraisalWorkspace({
               <tr className="bg-gray-50">
                 <td colSpan={4} className="px-4 py-3 text-xs text-gray-600">
                   <div className="space-y-1">
-                    <p><strong>Note:</strong> For midyear assessment, list the objectives you aimed to achieve during the appraisal period and assess or evaluate whether the status of the objectives are on-track or delayed.</p>
-                    <p>For yearend assessment, list the objectives you aimed to achieve during the appraisal period and assess or evaluate whether the status of the objectives are achieved, partly achieved, or not achieved at all.</p>
+                    <p><strong>Note:</strong> For <u>midyear assessment</u>, list the objectives you aimed to achieve during the appraisal period and assess or evaluate whether the status of the objectives are <strong>on-track</strong> or <strong>delayed</strong>.</p>
+                    <p>For <u>yearend assessment</u>, list the objectives you aimed to achieve during the appraisal period and assess or evaluate whether the status of the objectives are <strong>achieved, partly achieved</strong>, or <strong>not achieved</strong> at all.</p>
                   </div>
                 </td>
               </tr>
