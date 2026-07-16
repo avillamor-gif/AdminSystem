@@ -164,7 +164,7 @@ function CertificateTemplate({ enrollment, companyName = 'II Admin' }: CertTempl
       </div>
 
       {/* Body */}
-      <div style={{ textAlign: 'center', maxWidth: 580, marginBottom: 32 }}>
+      <div style={{ textAlign: 'center', maxWidth: 650, marginBottom: 32 }}>
         <div style={{ fontSize: 13, color: '#6b7280', marginBottom: 8, letterSpacing: 1 }}>
           THIS IS TO CERTIFY THAT
         </div>
@@ -192,7 +192,7 @@ function CertificateTemplate({ enrollment, companyName = 'II Admin' }: CertTempl
               <> from{' '}<strong>{formatDate(enrollment.start_date)}</strong>{' '}to{' '}<strong>{formatDate(enrollment.end_date)}</strong></>
             )}
           </div>
-          <div style={{ marginTop: 8, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+          <div style={{ marginTop: 8 }}>
             Issued this {getOrdinalDate(new Date().toISOString().split('T')[0])} at IBON International Foundation Inc., Head Office, Quezon City, Philippines.
           </div>
         </div>
