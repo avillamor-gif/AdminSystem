@@ -43,7 +43,6 @@ function CertificateTemplate({ enrollment, companyName = 'II Admin' }: CertTempl
         height: 562,
         fontFamily: 'Georgia, serif',
         background: 'linear-gradient(135deg, #fff8f0 0%, #fff 50%, #fff8f0 100%)',
-        border: '8px solid #b45309',
         position: 'relative',
         display: 'flex',
         flexDirection: 'column',
@@ -55,21 +54,6 @@ function CertificateTemplate({ enrollment, companyName = 'II Admin' }: CertTempl
         userSelect: 'none',
       }}
     >
-      {/* Decorative corners */}
-      {[
-        { top: 12, left: 12 },
-        { top: 12, right: 12 },
-        { bottom: 12, left: 12 },
-        { bottom: 12, right: 12 },
-      ].map((pos, i) => (
-        <div key={i} style={{
-          position: 'absolute', ...pos,
-          width: 40, height: 40,
-          border: '3px solid #d97706',
-          borderRadius: 2,
-        }} />
-      ))}
-
       {/* Award icon watermark */}
       <div style={{
         position: 'absolute', opacity: 0.05,
