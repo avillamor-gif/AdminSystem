@@ -15,6 +15,15 @@ interface CertTemplateProps {
   companyName?: string
 }
 
+// Helper to format date with ordinal (1st, 2nd, 3rd, etc.)
+function getOrdinalDate(dateStr: string): string {
+  const date = new Date(dateStr + 'T00:00:00')
+  const day = date.getDate()
+  const suffix = ['th', 'st', 'nd', 'rd'][((day % 10 > 3 || Math.floor((day % 100) / 10) === 1) ? 0 : day % 10)]
+  const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
+  return `${day}${suffix} day of ${months[date.getMonth()]} ${date.getFullYear()}`
+}
+
 function CertificateTemplate({ enrollment, companyName = 'II Admin' }: CertTemplateProps) {
   const fullName = enrollment.employee
     ? `${enrollment.employee.first_name} ${enrollment.employee.last_name}`
@@ -93,7 +102,7 @@ function CertificateTemplate({ enrollment, companyName = 'II Admin' }: CertTempl
       </div>
 
       {/* Body */}
-      <div style={{ textAlign: 'center', maxWidth: 580 }}>
+      <div style={{ textAlign: 'center', maxWidth: 580, marginBottom: 32 }}>
         <div style={{ fontSize: 13, color: '#6b7280', marginBottom: 16, letterSpacing: 1 }}>
           THIS IS TO CERTIFY THAT
         </div>
@@ -125,19 +134,43 @@ function CertificateTemplate({ enrollment, companyName = 'II Admin' }: CertTempl
       </div>
 
       {/* Footer */}
-      <div style={{ position: 'absolute', bottom: 36, width: '100%', display: 'flex', justifyContent: 'space-around', padding: '0 80px', boxSizing: 'border-box' }}>
-        {/* Date */}
-        <div style={{ textAlign: 'center' }}>
-          <div style={{ width: 140, borderTop: '2px solid #a16207', paddingTop: 4 }}>
-            <div style={{ fontSize: 12, color: '#6b7280' }}>Date Issued</div>
-            <div style={{ fontSize: 13, fontWeight: 600 }}>{formatDate(new Date().toISOString().split('T')[0])}</div>
-          </div>
+      <div style={{ position: 'absolute', bottom: 36, width: '100%', padding: '0 40px', boxSizing: 'border-box', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
+        {/* Given this... text */}
+        <div style={{ fontSize: 11, color: '#6b7280', textAlign: 'center', lineHeight: 1.4 }}>
+          Given this {getOrdinalDate(new Date().toISOString().split('T')[0])} at IBON International Foundation Inc., Head Office, Quezon City, Philippines.
         </div>
-        {/* Signatory */}
-        <div style={{ textAlign: 'center' }}>
-          <div style={{ width: 140, borderTop: '2px solid #a16207', paddingTop: 4 }}>
-            <div style={{ fontSize: 12, color: '#6b7280' }}>Authorized By</div>
-            <div style={{ fontSize: 13, fontWeight: 600 }}>HR Manager</div>
+
+        {/* Signature lines */}
+        <div style={{ width: '100%', display: 'flex', justifyContent: 'space-between', gap: 8 }}>
+          {/* Department Head */}
+          <div style={{ textAlign: 'center', flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: 10, color: '#6b7280', marginBottom: 20 }}>e-signature</div>
+            <div style={{ fontSize: 10, fontWeight: 600, marginBottom: 4, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              {enrollment.departmentHead
+                ? `${enrollment.departmentHead.first_name} ${enrollment.departmentHead.last_name}`
+                : '_______________'}
+            </div>
+            <div style={{ fontSize: 9, color: '#6b7280' }}>Department Head</div>
+          </div>
+          {/* Internship Program Coordinator */}
+          <div style={{ textAlign: 'center', flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: 10, color: '#6b7280', marginBottom: 20 }}>e-signature</div>
+            <div style={{ fontSize: 10, fontWeight: 600, marginBottom: 4, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              {enrollment.supervisor
+                ? `${enrollment.supervisor.first_name} ${enrollment.supervisor.last_name}`
+                : '_______________'}
+            </div>
+            <div style={{ fontSize: 9, color: '#6b7280' }}>Internship Program Coordinator</div>
+          </div>
+          {/* Executive Director */}
+          <div style={{ textAlign: 'center', flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: 10, color: '#6b7280', marginBottom: 20 }}>e-signature</div>
+            <div style={{ fontSize: 10, fontWeight: 600, marginBottom: 4, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              {enrollment.executiveDirector
+                ? `${enrollment.executiveDirector.first_name} ${enrollment.executiveDirector.last_name}`
+                : '_______________'}
+            </div>
+            <div style={{ fontSize: 9, color: '#6b7280' }}>Executive Director</div>
           </div>
         </div>
       </div>
