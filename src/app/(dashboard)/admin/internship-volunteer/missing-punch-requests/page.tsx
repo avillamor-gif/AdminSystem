@@ -1,25 +1,15 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { Clock, CheckCircle, XCircle, AlertCircle } from 'lucide-react'
 import { Card, Button, Badge, Modal, ModalHeader, ModalBody, ModalFooter } from '@/components/ui'
 import { formatDate } from '@/lib/utils'
-import toast from 'react-hot-toast'
-
-interface MissingPunchRequest {
-  id: string
-  enrollment_id: string
-  date: string
-  time_in: string
-  time_out: string | null
-  status: 'pending' | 'approved' | 'rejected'
-  reason: string
-  requested_by: string
-  reviewed_by: string | null
-  reviewed_at: string | null
-  reviewed_notes: string | null
-  created_at: string
-}
+import {
+  useMissingPunchRequests,
+  useApproveMissingPunchRequest,
+  useRejectMissingPunchRequest,
+  type MissingPunchRequest,
+} from '@/hooks/useInternship'
 
 const statusColors: Record<string, string> = {
   pending: 'bg-yellow-100 text-yellow-800',
@@ -55,57 +45,28 @@ function calculateHours(timeIn: string, timeOut: string | null): string {
 }
 
 export default function MissingPunchRequestsPage() {
-  const [requests, setRequests] = useState<MissingPunchRequest[]>([])
-  const [isLoading, setIsLoading] = useState(true)
   const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'approved' | 'rejected'>('pending')
   const [selectedRequest, setSelectedRequest] = useState<MissingPunchRequest | null>(null)
   const [reviewNotes, setReviewNotes] = useState('')
-  const [isReviewing, setIsReviewing] = useState(false)
 
-  useEffect(() => {
-    fetchRequests()
-  }, [statusFilter])
-
-  async function fetchRequests() {
-    setIsLoading(true)
-    try {
-      const url = statusFilter === 'all'
-        ? '/api/internship/missing-punch-requests'
-        : `/api/internship/missing-punch-requests?status=${statusFilter}`
-      const res = await fetch(url)
-      if (res.ok) {
-        setRequests(await res.json())
-      }
-    } finally {
-      setIsLoading(false)
-    }
-  }
+  const { data: requests = [], isLoading } = useMissingPunchRequests(
+    statusFilter === 'all' ? {} : { status: statusFilter as any }
+  )
+  const approveMutation = useApproveMissingPunchRequest()
+  const rejectMutation = useRejectMissingPunchRequest()
 
   async function handleReview(status: 'approved' | 'rejected') {
     if (!selectedRequest) return
-    setIsReviewing(true)
     try {
-      const res = await fetch('/api/internship/missing-punch-requests', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          id: selectedRequest.id,
-          status,
-          reviewed_notes: reviewNotes || null,
-        }),
+      const mutation = status === 'approved' ? approveMutation : rejectMutation
+      await mutation.mutateAsync({
+        id: selectedRequest.id,
+        reviewed_notes: reviewNotes || undefined,
       })
-      if (!res.ok) {
-        const json = await res.json().catch(() => ({}))
-        throw new Error(json.error || 'Failed to review request')
-      }
-      toast.success(`Request ${status === 'approved' ? 'approved' : 'rejected'}. Hours will be ${status === 'approved' ? 'added to' : 'not added to'} the participant's total.`)
       setSelectedRequest(null)
       setReviewNotes('')
-      await fetchRequests()
     } catch (e: any) {
-      toast.error(e.message || 'Failed to review request')
-    } finally {
-      setIsReviewing(false)
+      // Error toast is handled by mutation onError
     }
   }
 
@@ -256,7 +217,7 @@ export default function MissingPunchRequestsPage() {
                 <p className="text-gray-900 font-medium">{selectedRequest.reason}</p>
               </div>
 
-              {selectedRequest.status === 'pending' ? (
+          {selectedRequest.status === 'pending' ? (
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Review Notes (optional)</label>
                   <textarea
@@ -290,22 +251,22 @@ export default function MissingPunchRequestsPage() {
           </ModalBody>
           {selectedRequest.status === 'pending' && (
             <ModalFooter>
-              <Button variant="secondary" onClick={() => { setSelectedRequest(null); setReviewNotes('') }} disabled={isReviewing}>
+              <Button variant="secondary" onClick={() => { setSelectedRequest(null); setReviewNotes('') }} disabled={approveMutation.isPending || rejectMutation.isPending}>
                 Cancel
               </Button>
               <Button
                 variant="danger"
                 onClick={() => handleReview('rejected')}
-                disabled={isReviewing}
+                disabled={approveMutation.isPending || rejectMutation.isPending}
               >
-                {isReviewing ? 'Processing…' : 'Reject'}
+                {rejectMutation.isPending ? 'Processing…' : 'Reject'}
               </Button>
               <Button
                 variant="primary"
                 onClick={() => handleReview('approved')}
-                disabled={isReviewing}
+                disabled={approveMutation.isPending || rejectMutation.isPending}
               >
-                {isReviewing ? 'Processing…' : 'Approve & Add Hours'}
+                {approveMutation.isPending ? 'Processing…' : 'Approve & Add Hours'}
               </Button>
             </ModalFooter>
           )}

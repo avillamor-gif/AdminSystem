@@ -266,3 +266,116 @@ export function useRecalcInternshipHours() {
     onError: (err: any) => toast.error(err.message || 'Failed to recalculate hours'),
   })
 }
+
+// ─── Missing Punch Requests ──────────────────────────────────────────────────
+
+export interface MissingPunchRequest {
+  id: string
+  enrollment_id: string
+  date: string
+  time_in: string
+  time_out: string | null
+  status: 'pending' | 'approved' | 'rejected'
+  reason: string
+  requested_by: string
+  reviewed_by: string | null
+  reviewed_at: string | null
+  reviewed_notes: string | null
+  created_at: string
+}
+
+export const missingPunchRequestKeys = {
+  all: ['missing_punch_requests'] as const,
+  lists: () => [...missingPunchRequestKeys.all, 'list'] as const,
+  list: (filters: object) => [...missingPunchRequestKeys.lists(), filters] as const,
+  detail: (id: string) => [...missingPunchRequestKeys.all, id] as const,
+}
+
+export function useMissingPunchRequests(filters?: { status?: 'pending' | 'approved' | 'rejected' }) {
+  return useQuery({
+    queryKey: missingPunchRequestKeys.list(filters ?? {}),
+    queryFn: async () => {
+      const params = new URLSearchParams()
+      if (filters?.status) params.append('status', filters.status)
+      const res = await fetch(`/api/internship/missing-punch-requests?${params}`)
+      if (!res.ok) throw new Error('Failed to fetch missing punch requests')
+      return res.json()
+    },
+  })
+}
+
+export function useCreateMissingPunchRequest() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async (data: {
+      enrollment_id: string
+      date: string
+      time_in: string
+      time_out: string
+      reason: string
+    }) => {
+      const res = await fetch('/api/internship/missing-punch-requests', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      })
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}))
+        throw new Error(err.error ?? 'Failed to create request')
+      }
+      return res.json()
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: missingPunchRequestKeys.lists() })
+      toast.success('Missing punch request submitted')
+    },
+    onError: (err: any) => toast.error(err.message || 'Failed to submit request'),
+  })
+}
+
+export function useApproveMissingPunchRequest() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async (data: { id: string; reviewed_notes?: string }) => {
+      const res = await fetch('/api/internship/missing-punch-requests', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...data, status: 'approved' }),
+      })
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}))
+        throw new Error(err.error ?? 'Failed to approve request')
+      }
+      return res.json()
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: missingPunchRequestKeys.lists() })
+      queryClient.invalidateQueries({ queryKey: programEnrollmentKeys.lists() })
+      toast.success('Request approved and hours added')
+    },
+    onError: (err: any) => toast.error(err.message || 'Failed to approve request'),
+  })
+}
+
+export function useRejectMissingPunchRequest() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async (data: { id: string; reviewed_notes?: string }) => {
+      const res = await fetch('/api/internship/missing-punch-requests', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...data, status: 'rejected' }),
+      })
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}))
+        throw new Error(err.error ?? 'Failed to reject request')
+      }
+      return res.json()
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: missingPunchRequestKeys.lists() })
+      toast.success('Request rejected')
+    },
+    onError: (err: any) => toast.error(err.message || 'Failed to reject request'),
+  })
+}
