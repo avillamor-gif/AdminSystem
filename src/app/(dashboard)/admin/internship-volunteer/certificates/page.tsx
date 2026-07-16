@@ -123,6 +123,37 @@ function CertificateTemplate({ enrollment, companyName = 'II Admin' }: CertTempl
         <div style={{ fontSize: 13, color: '#6b7280', textAlign: 'center', lineHeight: 1.4 }}>
           Issued this {getOrdinalDate(new Date().toISOString().split('T')[0])} at IBON International Foundation Inc., Head Office, Quezon City, Philippines.
         </div>
+
+        {/* Signatories */}
+        <div style={{ width: '100%', display: 'flex', justifyContent: 'space-between', gap: 8, marginTop: 8 }}>
+          {/* Department Head */}
+          <div style={{ textAlign: 'center', flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: 10, fontWeight: 600, marginBottom: 4, lineHeight: 1.2, wordBreak: 'break-word' }}>
+              {enrollment.departmentHead
+                ? `${enrollment.departmentHead.first_name} ${enrollment.departmentHead.last_name}`
+                : '_______________'}
+            </div>
+            <div style={{ fontSize: 9, color: '#6b7280' }}>Department Head</div>
+          </div>
+          {/* Internship Program Coordinator */}
+          <div style={{ textAlign: 'center', flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: 10, fontWeight: 600, marginBottom: 4, lineHeight: 1.2, wordBreak: 'break-word' }}>
+              {enrollment.supervisor
+                ? `${enrollment.supervisor.first_name} ${enrollment.supervisor.last_name}`
+                : '_______________'}
+            </div>
+            <div style={{ fontSize: 9, color: '#6b7280' }}>Internship Program Coordinator</div>
+          </div>
+          {/* Executive Director */}
+          <div style={{ textAlign: 'center', flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: 10, fontWeight: 600, marginBottom: 4, lineHeight: 1.2, wordBreak: 'break-word' }}>
+              {enrollment.executiveDirector
+                ? `${enrollment.executiveDirector.first_name} ${enrollment.executiveDirector.last_name}`
+                : '_______________'}
+            </div>
+            <div style={{ fontSize: 9, color: '#6b7280' }}>Executive Director</div>
+          </div>
+        </div>
       </div>
     </div>
   )
