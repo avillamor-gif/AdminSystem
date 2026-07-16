@@ -68,8 +68,18 @@ export interface ProgramEnrollmentWithRelations extends ProgramEnrollment {
     short_name: string | null
     moa_status: string
   }
-  department?: { id: string; name: string }
+  department?: { id: string; name: string; head_id?: string | null }
   supervisor?: {
+    id: string
+    first_name: string
+    last_name: string
+  }
+  departmentHead?: {
+    id: string
+    first_name: string
+    last_name: string
+  }
+  executiveDirector?: {
     id: string
     first_name: string
     last_name: string
@@ -194,7 +204,7 @@ export const programEnrollmentService = {
         ? (supabase as any).from('partner_institutions').select('id, name, short_name, moa_status').in('id', institutionIds)
         : { data: [] },
       departmentIds.length
-        ? (supabase as any).from('departments').select('id, name').in('id', departmentIds)
+        ? (supabase as any).from('departments').select('id, name, head_id').in('id', departmentIds)
         : { data: [] },
       supervisorIds.length
         ? (supabase as any).from('employees').select('id, first_name, last_name').in('id', supervisorIds)
@@ -206,12 +216,39 @@ export const programEnrollmentService = {
     const deptMap = Object.fromEntries((deptRes.data ?? []).map((d: any) => [d.id, d]))
     const supMap = Object.fromEntries((supRes.data ?? []).map((s: any) => [s.id, s]))
 
+    // Fetch department heads
+    const deptHeadIds = [...new Set(
+      (deptRes.data ?? [])
+        .map((d: any) => d.head_id)
+        .filter(Boolean)
+    )]
+
+    const deptHeadRes = deptHeadIds.length
+      ? await (supabase as any).from('employees').select('id, first_name, last_name').in('id', deptHeadIds)
+      : { data: [] }
+
+    const deptHeadMap = Object.fromEntries((deptHeadRes.data ?? []).map((e: any) => [e.id, e]))
+
+    // Fetch Executive Director (user with 'ed' role)
+    const { data: edRes } = await (supabase as any)
+      .from('user_roles')
+      .select('employees(id, first_name, last_name)')
+      .eq('role', 'ed')
+      .limit(1)
+      .single()
+
+    const executiveDirector = edRes?.employees
+
     return enrollments.map(e => ({
       ...e,
       employee: empMap[e.employee_id],
       partner_institution: e.partner_institution_id ? instMap[e.partner_institution_id] : undefined,
       department: e.department_id ? deptMap[e.department_id] : undefined,
       supervisor: e.supervisor_id ? supMap[e.supervisor_id] : undefined,
+      departmentHead: e.department_id && deptMap[e.department_id]?.head_id
+        ? deptHeadMap[deptMap[e.department_id].head_id]
+        : undefined,
+      executiveDirector: executiveDirector,
     }))
   },
 
