@@ -175,35 +175,33 @@ function CertificateTemplate({ enrollment, companyName = 'II Admin' }: CertTempl
         }}>
           {fullName}
         </div>
-        <div style={{ fontSize: 13, color: '#6b7280', margin: '12px 0 4px', letterSpacing: 0.5 }}>
-          has successfully completed the
-        </div>
-        <div style={{ fontSize: 20, fontWeight: 600, color: '#78350f', marginBottom: 4 }}>
-          {programLabel[enrollment.program_type] ?? enrollment.program_type}
-        </div>
-        {enrollment.partner_institution && (
-          <div style={{ fontSize: 13, color: '#4b5563' }}>
-            in partnership with <strong>{enrollment.partner_institution.name}</strong>
+        
+        {/* Single wrapper for all remaining text */}
+        <div style={{ fontSize: 13, color: '#6b7280', margin: '12px 0', lineHeight: 1.6 }}>
+          <div>has successfully completed the</div>
+          <div style={{ fontSize: 20, fontWeight: 600, color: '#78350f', margin: '4px 0' }}>
+            {programLabel[enrollment.program_type] ?? enrollment.program_type}
           </div>
-        )}
-        <div style={{ fontSize: 13, color: '#6b7280', marginTop: 8, marginBottom: 8 }}>
-          rendering a total of{' '}
-          <strong style={{ color: '#78350f' }}>{Number(enrollment.rendered_hours).toFixed(0)} hours</strong>
-          {enrollment.start_date && enrollment.end_date && (
-            <> from{' '}<strong>{formatDate(enrollment.start_date)}</strong>{' '}to{' '}<strong>{formatDate(enrollment.end_date)}</strong></>
+          {enrollment.partner_institution && (
+            <div>in partnership with <strong>{enrollment.partner_institution.name}</strong></div>
           )}
+          <div style={{ margin: '8px 0' }}>
+            rendering a total of{' '}
+            <strong style={{ color: '#78350f' }}>{Number(enrollment.rendered_hours).toFixed(0)} hours</strong>
+            {enrollment.start_date && enrollment.end_date && (
+              <> from{' '}<strong>{formatDate(enrollment.start_date)}</strong>{' '}to{' '}<strong>{formatDate(enrollment.end_date)}</strong></>
+            )}
+          </div>
+          <div style={{ marginTop: 8 }}>
+            Issued this {getOrdinalDate(new Date().toISOString().split('T')[0])} at IBON International Foundation Inc., Head Office, Quezon City, Philippines.
+          </div>
         </div>
       </div>
 
       {/* Footer */}
       <div style={{ position: 'absolute', bottom: 36, width: '100%', padding: '0 40px', boxSizing: 'border-box', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12, zIndex: 10 }}>
-        {/* Issued this... text */}
-        <div style={{ fontSize: 13, color: '#6b7280', textAlign: 'center', lineHeight: 1.4 }}>
-          Issued this {getOrdinalDate(new Date().toISOString().split('T')[0])} at IBON International Foundation Inc., Head Office, Quezon City, Philippines.
-        </div>
-
         {/* Signatories */}
-        <div style={{ width: '100%', display: 'flex', justifyContent: 'space-between', gap: 8, marginTop: 8 }}>
+        <div style={{ width: '100%', display: 'flex', justifyContent: 'space-between', gap: 8 }}>
           {/* Department Head */}
           <div style={{ textAlign: 'center', flex: 1, minWidth: 0 }}>
             {deptHeadSig && (
