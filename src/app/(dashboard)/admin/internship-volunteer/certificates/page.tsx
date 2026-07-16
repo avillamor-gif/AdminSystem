@@ -192,7 +192,7 @@ function CertificateTemplate({ enrollment, companyName = 'II Admin' }: CertTempl
               <> from{' '}<strong>{formatDate(enrollment.start_date)}</strong>{' '}to{' '}<strong>{formatDate(enrollment.end_date)}</strong></>
             )}
           </div>
-          <div style={{ marginTop: 8 }}>
+          <div style={{ marginTop: 8, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
             Issued this {getOrdinalDate(new Date().toISOString().split('T')[0])} at IBON International Foundation Inc., Head Office, Quezon City, Philippines.
           </div>
         </div>
@@ -206,7 +206,7 @@ function CertificateTemplate({ enrollment, companyName = 'II Admin' }: CertTempl
           <div style={{ textAlign: 'center', flex: 1, minWidth: 0 }}>
             {deptHeadSig && (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={deptHeadSig} alt="Department Head signature" style={{ height: 24, objectFit: 'contain', marginBottom: 8, display: 'block', margin: '0 auto 8px' }} />
+              <img src={deptHeadSig} alt="Department Head signature" style={{ height: 48, objectFit: 'contain', marginBottom: 2, display: 'block', margin: '0 auto 2px' }} />
             )}
             <div style={{ fontSize: 10, fontWeight: 600, marginBottom: 4, lineHeight: 1.2, wordBreak: 'break-word' }}>
               {enrollment.departmentHead
@@ -219,7 +219,7 @@ function CertificateTemplate({ enrollment, companyName = 'II Admin' }: CertTempl
           <div style={{ textAlign: 'center', flex: 1, minWidth: 0 }}>
             {coordinatorSig && (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={coordinatorSig} alt="Coordinator signature" style={{ height: 24, objectFit: 'contain', marginBottom: 8, display: 'block', margin: '0 auto 8px' }} />
+              <img src={coordinatorSig} alt="Coordinator signature" style={{ height: 48, objectFit: 'contain', marginBottom: 2, display: 'block', margin: '0 auto 2px' }} />
             )}
             <div style={{ fontSize: 10, fontWeight: 600, marginBottom: 4, lineHeight: 1.2, wordBreak: 'break-word' }}>
               {enrollment.supervisor
@@ -232,7 +232,7 @@ function CertificateTemplate({ enrollment, companyName = 'II Admin' }: CertTempl
           <div style={{ textAlign: 'center', flex: 1, minWidth: 0 }}>
             {edSig && (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={edSig} alt="Executive Director signature" style={{ height: 24, objectFit: 'contain', marginBottom: 8, display: 'block', margin: '0 auto 8px' }} />
+              <img src={edSig} alt="Executive Director signature" style={{ height: 48, objectFit: 'contain', marginBottom: 2, display: 'block', margin: '0 auto 2px' }} />
             )}
             <div style={{ fontSize: 10, fontWeight: 600, marginBottom: 4, lineHeight: 1.2, wordBreak: 'break-word' }}>
               {enrollment.executiveDirector
