@@ -447,9 +447,9 @@ export default function CertificatesPage() {
             </button>
           </div>
         </ModalHeader>
-        <ModalBody className="max-h-96 overflow-y-auto flex justify-center">
+        <ModalBody className="max-h-[90vh] overflow-y-auto flex justify-center items-center p-8">
           {previewModal && (
-            <div style={{ transform: 'scale(0.6)', transformOrigin: 'top center', marginBottom: '-200px' }}>
+            <div style={{ transform: 'scale(0.75)', transformOrigin: 'top center', marginBottom: '-140px' }}>
               <CertificateTemplate enrollment={previewModal} />
             </div>
           )}
