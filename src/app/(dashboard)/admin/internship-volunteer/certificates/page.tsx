@@ -51,11 +51,12 @@ function CertificateTemplate({ enrollment, companyName = 'II Admin' }: CertTempl
         padding: '40px 60px',
         boxSizing: 'border-box',
         userSelect: 'none',
+        zIndex: 1,
       }}
     >
       {/* Award icon watermark */}
       <div style={{
-        position: 'absolute', opacity: 0.05,
+        position: 'absolute', opacity: 0.05, zIndex: 0,
         top: '50%', left: '50%',
         transform: 'translate(-50%, -50%)',
         pointerEvents: 'none',
@@ -117,7 +118,7 @@ function CertificateTemplate({ enrollment, companyName = 'II Admin' }: CertTempl
       </div>
 
       {/* Footer */}
-      <div style={{ position: 'absolute', bottom: 36, width: '100%', padding: '0 40px', boxSizing: 'border-box', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
+      <div style={{ position: 'absolute', bottom: 36, width: '100%', padding: '0 40px', boxSizing: 'border-box', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12, zIndex: 10 }}>
         {/* Given this... text */}
         <div style={{ fontSize: 11, color: '#6b7280', textAlign: 'center', lineHeight: 1.4 }}>
           Given this {getOrdinalDate(new Date().toISOString().split('T')[0])} at IBON International Foundation Inc., Head Office, Quezon City, Philippines.
