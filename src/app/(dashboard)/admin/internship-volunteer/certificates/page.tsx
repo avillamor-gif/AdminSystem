@@ -1,8 +1,9 @@
 'use client'
 
 import { useRef, useState } from 'react'
-import { Award, Download, CheckCircle, Clock } from 'lucide-react'
-import { Card, Button, ConfirmModal } from '@/components/ui'
+import { Award, Download, CheckCircle, Clock, Eye, X } from 'lucide-react'
+import Image from 'next/image'
+import { Card, Button, ConfirmModal, Modal, ModalHeader, ModalBody, ModalFooter } from '@/components/ui'
 import { useProgramEnrollments, useMarkCertificateIssued } from '@/hooks/useInternship'
 import type { ProgramEnrollmentWithRelations } from '@/services/internship.service'
 import { formatDate } from '@/lib/utils'
@@ -74,8 +75,21 @@ function CertificateTemplate({ enrollment, companyName = 'II Admin' }: CertTempl
 
       {/* Header */}
       <div style={{ textAlign: 'center', marginBottom: 8 }}>
-        <div style={{ fontSize: 11, letterSpacing: 6, color: '#92400e', textTransform: 'uppercase', marginBottom: 4 }}>
-          {companyName}
+        {/* IBON Logo */}
+        <div style={{ marginBottom: 12 }}>
+          <svg width={120} height={60} viewBox="0 0 600 300" style={{ margin: '0 auto' }}>
+            {/* Orange curves (stylized bird/dove) */}
+            <g fill="none" stroke="#f97316" strokeWidth="14" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M80 60 Q100 40 120 35 Q140 30 160 45 Q180 60 175 90 Q170 110 150 115" />
+              <path d="M100 80 Q115 65 135 62 Q155 60 170 80 Q180 95 170 115" />
+              <path d="M85 100 Q100 95 120 98 Q145 102 160 130" />
+              <path d="M120 150 Q130 140 145 142 Q160 145 170 160 Q175 175 165 190 Q150 205 130 200 Q110 195 105 175" />
+              <path d="M140 160 Q150 155 160 160 Q168 168 160 185 Q150 195 140 190" />
+            </g>
+            {/* Green text: IBON INTERNATIONAL */}
+            <text x="240" y="110" fontSize="72" fontWeight="bold" fill="#16a34a" fontFamily="Arial, sans-serif" letterSpacing="2">IBON</text>
+            <text x="240" y="180" fontSize="44" fill="#16a34a" fontFamily="Arial, sans-serif" letterSpacing="4">INTERNATIONAL</text>
+          </svg>
         </div>
         <div style={{ fontSize: 38, fontWeight: 700, color: '#78350f', letterSpacing: 2, lineHeight: 1.1 }}>
           Certificate of Completion
@@ -143,6 +157,7 @@ export default function CertificatesPage() {
   const markIssuedMutation = useMarkCertificateIssued()
 
   const [previewEnrollment, setPreviewEnrollment] = useState<ProgramEnrollmentWithRelations | null>(null)
+  const [previewModal, setPreviewModal]           = useState<ProgramEnrollmentWithRelations | null>(null)
   const [confirmIssue, setConfirmIssue]           = useState<ProgramEnrollmentWithRelations | null>(null)
   const [statusFilter, setStatusFilter]           = useState<'all' | 'issued' | 'pending'>('all')
   const certRef = useRef<HTMLDivElement>(null)
@@ -278,6 +293,14 @@ export default function CertificatesPage() {
                 <div className="flex gap-2 pt-1">
                   <Button
                     variant="secondary"
+                    onClick={() => setPreviewModal(enr)}
+                    className="flex-1 text-xs"
+                  >
+                    <Eye className="w-3 h-3 mr-1" />
+                    Preview
+                  </Button>
+                  <Button
+                    variant="secondary"
                     onClick={() => handleDownload(enr)}
                     className="flex-1 text-xs"
                   >
@@ -308,6 +331,41 @@ export default function CertificatesPage() {
           </div>
         </div>
       )}
+
+      {/* Preview Modal */}
+      <Modal open={!!previewModal} onClose={() => setPreviewModal(null)}>
+        <ModalHeader>
+          <div className="flex justify-between items-center">
+            <h2 className="text-xl font-bold">Preview Certificate</h2>
+            <button onClick={() => setPreviewModal(null)} className="text-gray-400 hover:text-gray-600">
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+        </ModalHeader>
+        <ModalBody className="max-h-96 overflow-y-auto flex justify-center">
+          {previewModal && (
+            <div style={{ transform: 'scale(0.6)', transformOrigin: 'top center', marginBottom: '-200px' }}>
+              <CertificateTemplate enrollment={previewModal} />
+            </div>
+          )}
+        </ModalBody>
+        <ModalFooter>
+          <Button variant="secondary" onClick={() => setPreviewModal(null)}>
+            Close
+          </Button>
+          <Button
+            onClick={() => {
+              if (previewModal) {
+                handleDownload(previewModal)
+                setPreviewModal(null)
+              }
+            }}
+          >
+            <Download className="w-4 h-4 mr-2" />
+            Download PDF
+          </Button>
+        </ModalFooter>
+      </Modal>
 
       {/* Confirm mark issued */}
       <ConfirmModal
