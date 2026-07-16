@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { Clock, TrendingUp, Users, AlertCircle, ListOrdered, Plus, Edit2, Trash2, X, RefreshCw } from 'lucide-react'
 import { Card, Input, Button, Modal, ModalHeader, ModalBody, ModalFooter } from '@/components/ui'
-import { useProgramEnrollments, useUpdateProgramEnrollment, useRecalcInternshipHours } from '@/hooks/useInternship'
+import { useProgramEnrollments, useRecalcInternshipHours } from '@/hooks/useInternship'
 import type { ProgramEnrollmentWithRelations } from '@/services/internship.service'
 import type { AttendanceRecord } from '@/services/attendance.service'
 import { formatDate, localDateStr } from '@/lib/utils'
@@ -289,12 +289,9 @@ function SessionsModal({
 
 export default function HoursMonitoringPage() {
   const { data: enrollments = [], isLoading, refetch } = useProgramEnrollments({ status: 'active' })
-  const updateMutation = useUpdateProgramEnrollment()
   const recalcMutation = useRecalcInternshipHours()
 
   const [search, setSearch] = useState('')
-  const [editingId, setEditingId] = useState<string | null>(null)
-  const [editHours, setEditHours] = useState<string>('')
   const [sessionsTarget, setSessionsTarget] = useState<ProgramEnrollmentWithRelations | null>(null)
 
   const filtered = enrollments.filter(e => {
@@ -312,12 +309,7 @@ export default function HoursMonitoringPage() {
     return daysLeft !== null && daysLeft <= 14 && pct < 80
   }).length
 
-  async function saveHours(enr: ProgramEnrollmentWithRelations) {
-    const parsed = parseFloat(editHours)
-    if (isNaN(parsed) || parsed < 0) return
-    await updateMutation.mutateAsync({ id: enr.id, data: { rendered_hours: parsed } })
-    setEditingId(null)
-  }
+
 
   return (
     <div className="space-y-6">
@@ -325,7 +317,7 @@ export default function HoursMonitoringPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Hours Monitoring</h1>
-          <p className="text-gray-600 mt-1">Track rendered vs required hours for active participants</p>
+          <p className="text-gray-600 mt-1">Track rendered vs required hours for active participants. Hours are calculated from attendance records only.</p>
         </div>
         <Button
           onClick={() => recalcMutation.mutate(undefined)}
@@ -446,38 +438,9 @@ export default function HoursMonitoringPage() {
                       )}
                     </td>
                     <td className="px-4 py-3">
-                      {editingId === enr.id ? (
-                        <div className="flex items-center gap-1">
-                          <input
-                            type="number"
-                            min={0}
-                            step={0.5}
-                            className="w-20 px-2 py-1 border border-orange-400 rounded text-sm focus:outline-none focus:ring-1 focus:ring-orange-500"
-                            value={editHours}
-                            onChange={e => setEditHours(e.target.value)}
-                            autoFocus
-                            onKeyDown={e => { if (e.key === 'Enter') saveHours(enr); if (e.key === 'Escape') setEditingId(null) }}
-                          />
-                          <button
-                            onClick={() => saveHours(enr)}
-                            disabled={updateMutation.isPending}
-                            className="px-2 py-1 bg-orange-600 text-white text-xs rounded hover:bg-orange-700 disabled:opacity-50"
-                          >
-                            Save
-                          </button>
-                          <button onClick={() => setEditingId(null)} className="px-2 py-1 text-xs text-gray-500 hover:text-gray-700">
-                            Cancel
-                          </button>
-                        </div>
-                      ) : (
-                        <button
-                          onClick={() => { setEditingId(enr.id); setEditHours(rendered.toString()) }}
-                          className="text-sm font-medium text-gray-700 hover:text-orange-600 hover:underline"
-                          title="Click to update rendered hours"
-                        >
-                          {rendered.toFixed(1)}h
-                        </button>
-                      )}
+                      <span className="text-sm font-medium text-gray-700" title="Hours calculated from attendance records">
+                        {rendered.toFixed(1)}h
+                      </span>
                     </td>
                     <td className="px-4 py-3">
                       <button
