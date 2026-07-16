@@ -55,7 +55,7 @@ function CertificateTemplate({ enrollment, companyName = 'II Admin' }: CertTempl
             .select('file_path')
             .eq('employee_id', enrollment.departmentHead.id)
             .eq('document_type', 'e-signature')
-            .single()
+            .maybeSingle()
           
           if (attachments?.file_path) {
             const { data } = await supabase.storage
@@ -76,7 +76,7 @@ function CertificateTemplate({ enrollment, companyName = 'II Admin' }: CertTempl
             .select('file_path')
             .eq('employee_id', enrollment.supervisor.id)
             .eq('document_type', 'e-signature')
-            .single()
+            .maybeSingle()
           
           if (attachments?.file_path) {
             const { data } = await supabase.storage
@@ -97,7 +97,7 @@ function CertificateTemplate({ enrollment, companyName = 'II Admin' }: CertTempl
             .select('file_path')
             .eq('employee_id', enrollment.executiveDirector.id)
             .eq('document_type', 'e-signature')
-            .single()
+            .maybeSingle()
           
           if (attachments?.file_path) {
             const { data } = await supabase.storage
