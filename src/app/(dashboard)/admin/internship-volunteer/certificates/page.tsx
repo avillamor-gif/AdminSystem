@@ -64,17 +64,21 @@ function CertificateTemplate({ enrollment, companyName = 'II Admin' }: CertTempl
       {/* Award icon watermark */}
       <div style={{
         position: 'absolute', opacity: 0.05,
-        fontSize: 280, color: '#b45309',
         top: '50%', left: '50%',
         transform: 'translate(-50%, -50%)',
         pointerEvents: 'none',
-        lineHeight: 1,
+        width: 400,
+        height: 400,
       }}>
-        ★
+        <img
+          src="/ibon-icon.png"
+          alt="watermark"
+          style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+        />
       </div>
 
       {/* Header */}
-      <div style={{ textAlign: 'center', marginBottom: 8 }}>
+      <div style={{ textAlign: 'center', marginBottom: 24, marginTop: -20 }}>
         {/* IBON Logo */}
         <div style={{ marginBottom: 0, marginLeft: -40 }}>
           <img
