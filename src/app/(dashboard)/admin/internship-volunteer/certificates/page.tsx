@@ -286,7 +286,7 @@ export default function CertificatesPage() {
     const { jsPDF }   = await import('jspdf')
     if (!certRef.current) return
     const canvas = await html2canvas(certRef.current, { scale: 2, useCORS: true, backgroundColor: '#fff8f0' })
-    const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' })
+    const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'letter' })
     const w = pdf.internal.pageSize.getWidth()
     const h = pdf.internal.pageSize.getHeight()
     pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, 0, w, h)
