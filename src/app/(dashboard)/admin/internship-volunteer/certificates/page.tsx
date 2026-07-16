@@ -186,7 +186,7 @@ function CertificateTemplate({ enrollment, companyName = 'II Admin' }: CertTempl
             in partnership with <strong>{enrollment.partner_institution.name}</strong>
           </div>
         )}
-        <div style={{ fontSize: 13, color: '#6b7280', marginTop: 8 }}>
+        <div style={{ fontSize: 13, color: '#6b7280', marginTop: 8, marginBottom: 40 }}>
           rendering a total of{' '}
           <strong style={{ color: '#78350f' }}>{Number(enrollment.rendered_hours).toFixed(0)} hours</strong>
           {enrollment.start_date && enrollment.end_date && (
