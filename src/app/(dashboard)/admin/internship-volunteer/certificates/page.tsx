@@ -76,7 +76,7 @@ function CertificateTemplate({ enrollment, companyName = 'II Admin' }: CertTempl
       {/* Header */}
       <div style={{ textAlign: 'center', marginBottom: 8 }}>
         {/* IBON Logo */}
-        <div style={{ marginBottom: 12 }}>
+        <div style={{ marginBottom: 0, marginLeft: -40 }}>
           <img
             src="/ibon-logo.png"
             alt="IBON International"
@@ -86,7 +86,6 @@ function CertificateTemplate({ enrollment, companyName = 'II Admin' }: CertTempl
         <div style={{ fontSize: 38, fontWeight: 700, color: '#78350f', letterSpacing: 2, lineHeight: 1.1 }}>
           Certificate of Completion
         </div>
-        <div style={{ width: 80, height: 3, background: '#d97706', margin: '10px auto' }} />
       </div>
 
       {/* Body */}
