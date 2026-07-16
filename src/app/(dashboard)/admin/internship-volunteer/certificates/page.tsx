@@ -206,7 +206,6 @@ function CertificateTemplate({ enrollment, companyName = 'II Admin' }: CertTempl
         <div style={{ width: '100%', display: 'flex', justifyContent: 'space-between', gap: 8 }}>
           {/* Department Head */}
           <div style={{ textAlign: 'center', flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: 10, color: '#6b7280', marginBottom: 8 }}>e-signature</div>
             {deptHeadSig ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img src={deptHeadSig} alt="Department Head signature" style={{ height: 24, objectFit: 'contain', marginBottom: 8, display: 'block', margin: '0 auto 8px' }} />
@@ -222,7 +221,6 @@ function CertificateTemplate({ enrollment, companyName = 'II Admin' }: CertTempl
           </div>
           {/* Internship Program Coordinator */}
           <div style={{ textAlign: 'center', flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: 10, color: '#6b7280', marginBottom: 8 }}>e-signature</div>
             {coordinatorSig ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img src={coordinatorSig} alt="Coordinator signature" style={{ height: 24, objectFit: 'contain', marginBottom: 8, display: 'block', margin: '0 auto 8px' }} />
@@ -238,7 +236,6 @@ function CertificateTemplate({ enrollment, companyName = 'II Admin' }: CertTempl
           </div>
           {/* Executive Director */}
           <div style={{ textAlign: 'center', flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: 10, color: '#6b7280', marginBottom: 8 }}>e-signature</div>
             {edSig ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img src={edSig} alt="Executive Director signature" style={{ height: 24, objectFit: 'contain', marginBottom: 8, display: 'block', margin: '0 auto 8px' }} />
