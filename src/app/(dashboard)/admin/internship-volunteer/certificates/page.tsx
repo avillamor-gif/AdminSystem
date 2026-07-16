@@ -438,18 +438,18 @@ export default function CertificatesPage() {
       )}
 
       {/* Preview Modal */}
-      <Modal open={!!previewModal} onClose={() => setPreviewModal(null)}>
+      <Modal open={!!previewModal} onClose={() => setPreviewModal(null)} centered size="xl">
         <ModalHeader>
           <div className="flex justify-between items-center">
-            <h2 className="text-xl font-bold">Preview Certificate</h2>
+            <h2 className="text-xl font-bold">Certificate Preview</h2>
             <button onClick={() => setPreviewModal(null)} className="text-gray-400 hover:text-gray-600">
               <X className="w-5 h-5" />
             </button>
           </div>
         </ModalHeader>
-        <ModalBody className="max-h-[90vh] overflow-y-auto flex justify-center items-center p-8">
+        <ModalBody className="max-h-[85vh] overflow-auto flex justify-center items-center p-8">
           {previewModal && (
-            <div style={{ transform: 'scale(0.75)', transformOrigin: 'top center', marginBottom: '-140px' }}>
+            <div>
               <CertificateTemplate enrollment={previewModal} />
             </div>
           )}
