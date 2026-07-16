@@ -1,12 +1,13 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { GraduationCap, Clock, Award, CheckCircle, AlertCircle, Building2, User, Calendar, ClipboardList, ChevronDown, ChevronUp } from 'lucide-react'
-import { Card, Badge, Button } from '@/components/ui'
+import { GraduationCap, Clock, Award, CheckCircle, AlertCircle, Building2, User, Calendar, ClipboardList, ChevronDown, ChevronUp, Plus } from 'lucide-react'
+import { Card, Badge, Button, Modal, ModalHeader, ModalBody, ModalFooter, Input } from '@/components/ui'
 import { useCurrentEmployee } from '@/hooks'
 import { useProgramEnrollments, useMarkCertificateIssued, useInternshipAssessmentByEnrollment, useSubmitAssessmentPart1 } from '@/hooks/useInternship'
 import { formatDate } from '@/lib/utils'
 import type { ProgramEnrollmentWithRelations, InternshipAssessmentPart1Update } from '@/services/internship.service'
+import toast from 'react-hot-toast'
 
 function progressColor(pct: number) {
   if (pct >= 100) return 'bg-green-500'
@@ -34,6 +35,8 @@ const PROGRAM_LABELS: Record<string, string> = {
 export default function MyInternshipPage() {
   const { data: currentEmployee } = useCurrentEmployee()
   const { data: allEnrollments = [], isLoading } = useProgramEnrollments()
+  const [showMissingPunchModal, setShowMissingPunchModal] = useState(false)
+  const [selectedEnrollmentForRequest, setSelectedEnrollmentForRequest] = useState<ProgramEnrollmentWithRelations | null>(null)
 
   // Filter to only this employee's enrollments
   const enrollments = allEnrollments.filter(
@@ -75,15 +78,27 @@ export default function MyInternshipPage() {
       </div>
 
       {/* Active enrollment */}
-      {active && <EnrollmentCard enrollment={active} isActive />}
+      {active && <EnrollmentCard enrollment={active} isActive onRequestMissingPunch={() => { setSelectedEnrollmentForRequest(active); setShowMissingPunchModal(true) }} />}
 
       {/* Completed enrollments */}
       {completed.map(e => <EnrollmentCard key={e.id} enrollment={e} />)}
+
+      {/* Missing Punch Request Modal */}
+      {showMissingPunchModal && selectedEnrollmentForRequest && (
+        <RequestMissingPunchModal
+          open={showMissingPunchModal}
+          enrollment={selectedEnrollmentForRequest}
+          onClose={() => {
+            setShowMissingPunchModal(false)
+            setSelectedEnrollmentForRequest(null)
+          }}
+        />
+      )}
     </div>
   )
 }
 
-function EnrollmentCard({ enrollment: e, isActive }: { enrollment: ProgramEnrollmentWithRelations; isActive?: boolean }) {
+function EnrollmentCard({ enrollment: e, isActive, onRequestMissingPunch }: { enrollment: ProgramEnrollmentWithRelations; isActive?: boolean; onRequestMissingPunch?: () => void }) {
   // Calculate progress as simple ratio: rendered_hours / required_hours
   const pct = e.required_hours > 0
     ? Math.min(100, Math.round((Number(e.rendered_hours) / e.required_hours) * 100))
@@ -111,9 +126,17 @@ function EnrollmentCard({ enrollment: e, isActive }: { enrollment: ProgramEnroll
             )}
           </div>
         </div>
-        <span className={`shrink-0 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold ${STATUS_COLORS[e.status] ?? 'bg-gray-100 text-gray-700'}`}>
-          {e.status.charAt(0).toUpperCase() + e.status.slice(1)}
-        </span>
+        <div className="flex items-center gap-2">
+          {isActive && onRequestMissingPunch && (
+            <Button variant="secondary" onClick={onRequestMissingPunch} size="sm" className="text-xs">
+              <Plus className="w-3.5 h-3.5 mr-1" />
+              Missing Punch
+            </Button>
+          )}
+          <span className={`shrink-0 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold ${STATUS_COLORS[e.status] ?? 'bg-gray-100 text-gray-700'}`}>
+            {e.status.charAt(0).toUpperCase() + e.status.slice(1)}
+          </span>
+        </div>
       </div>
 
       {/* Hours progress */}
@@ -456,5 +479,135 @@ function AssessmentSection({ enrollmentId }: { enrollmentId: string }) {
         </form>
       )}
     </div>
+  )
+}
+
+// ─── Request Missing Punch Modal ──────────────────────────────────────────────
+
+interface RequestMissingPunchModalProps {
+  open: boolean
+  enrollment: ProgramEnrollmentWithRelations
+  onClose: () => void
+}
+
+function RequestMissingPunchModal({ open, enrollment, onClose }: RequestMissingPunchModalProps) {
+  const [requestDate, setRequestDate] = useState('')
+  const [timeIn, setTimeIn] = useState('')
+  const [timeOut, setTimeOut] = useState('')
+  const [reason, setReason] = useState('')
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState('')
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    if (!requestDate || !timeIn || !reason.trim()) {
+      setError('Please fill in all required fields.')
+      return
+    }
+    setError('')
+    setSaving(true)
+    try {
+      const res = await fetch('/api/internship/missing-punch-requests', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          enrollment_id: enrollment.id,
+          date: requestDate,
+          time_in: timeIn,
+          time_out: timeOut || null,
+          reason: reason.trim(),
+        }),
+      })
+      if (!res.ok) {
+        const json = await res.json().catch(() => ({}))
+        throw new Error(json.error || 'Failed to submit request')
+      }
+      toast.success('Missing punch request submitted. It will be reviewed by your supervisor.')
+      onClose()
+    } catch (e: any) {
+      setError(e.message || 'Failed to submit request')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <Modal open={open} onClose={onClose} size="lg">
+      <ModalHeader onClose={onClose}>Request Missing Punch</ModalHeader>
+      <form onSubmit={handleSubmit}>
+        <ModalBody>
+          <div className="space-y-4">
+            <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+              <p className="text-sm text-blue-800">
+                📝 If you forgot to punch in or out, submit a request here. Your supervisor will review and approve it, and the hours will be automatically added to your total.
+              </p>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Date <span className="text-red-500">*</span>
+              </label>
+              <Input
+                type="date"
+                value={requestDate}
+                onChange={e => setRequestDate(e.target.value)}
+                required
+                max={new Date().toISOString().split('T')[0]}
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Time In <span className="text-red-500">*</span>
+                </label>
+                <Input
+                  type="time"
+                  value={timeIn}
+                  onChange={e => setTimeIn(e.target.value)}
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Time Out <span className="text-gray-400 font-normal">(optional)</span>
+                </label>
+                <Input
+                  type="time"
+                  value={timeOut}
+                  onChange={e => setTimeOut(e.target.value)}
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Reason <span className="text-red-500">*</span>
+              </label>
+              <textarea
+                rows={3}
+                value={reason}
+                onChange={e => setReason(e.target.value)}
+                placeholder="Explain why you forgot to punch in/out (e.g., system was unavailable, emergency…)"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 resize-none"
+                required
+              />
+            </div>
+
+            {error && (
+              <p className="text-sm text-red-600">{error}</p>
+            )}
+          </div>
+        </ModalBody>
+        <ModalFooter>
+          <Button variant="secondary" onClick={onClose} disabled={saving}>
+            Cancel
+          </Button>
+          <Button variant="primary" type="submit" disabled={saving}>
+            {saving ? 'Submitting…' : 'Submit Request'}
+          </Button>
+        </ModalFooter>
+      </form>
+    </Modal>
   )
 }
