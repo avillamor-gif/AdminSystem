@@ -1,13 +1,12 @@
 'use client'
 
-import { useRef, useState, useEffect } from 'react'
+import { useRef, useState } from 'react'
 import { Award, Download, CheckCircle, Clock, Eye, X } from 'lucide-react'
 import Image from 'next/image'
 import { Card, Button, ConfirmModal, Modal, ModalHeader, ModalBody, ModalFooter } from '@/components/ui'
 import { useProgramEnrollments, useMarkCertificateIssued } from '@/hooks/useInternship'
 import type { ProgramEnrollmentWithRelations } from '@/services/internship.service'
 import { formatDate } from '@/lib/utils'
-import { createClient } from '@/lib/supabase/client'
 
 // ─── Certificate Template ──────────────────────────────────────────────────────
 
@@ -36,83 +35,6 @@ function CertificateTemplate({ enrollment, companyName = 'II Admin' }: CertTempl
     practicum:     'Practicum Program',
     apprenticeship:'Apprenticeship Program',
   }
-
-  // State for e-signature URLs
-  const [deptHeadSig, setDeptHeadSig] = useState<string | null>(null)
-  const [coordinatorSig, setCoordinatorSig] = useState<string | null>(null)
-  const [edSig, setEdSig] = useState<string | null>(null)
-
-  // Fetch e-signatures for all three signatories
-  useEffect(() => {
-    const fetchSignatures = async () => {
-      const supabase = createClient()
-      
-      // Fetch Department Head signature
-      if (enrollment.departmentHead?.id) {
-        try {
-          const { data: attachments } = await supabase
-            .from('employee_attachments')
-            .select('file_path')
-            .eq('employee_id', enrollment.departmentHead.id)
-            .eq('document_type', 'e-signature')
-            .maybeSingle()
-          
-          if (attachments?.file_path) {
-            const { data } = await supabase.storage
-              .from('attachments')
-              .createSignedUrl(attachments.file_path, 3600)
-            if (data?.signedUrl) setDeptHeadSig(data.signedUrl)
-          }
-        } catch (err) {
-          console.error('Failed to fetch department head signature:', err)
-        }
-      }
-
-      // Fetch Coordinator signature
-      if (enrollment.supervisor?.id) {
-        try {
-          const { data: attachments } = await supabase
-            .from('employee_attachments')
-            .select('file_path')
-            .eq('employee_id', enrollment.supervisor.id)
-            .eq('document_type', 'e-signature')
-            .maybeSingle()
-          
-          if (attachments?.file_path) {
-            const { data } = await supabase.storage
-              .from('attachments')
-              .createSignedUrl(attachments.file_path, 3600)
-            if (data?.signedUrl) setCoordinatorSig(data.signedUrl)
-          }
-        } catch (err) {
-          console.error('Failed to fetch coordinator signature:', err)
-        }
-      }
-
-      // Fetch Executive Director signature
-      if (enrollment.executiveDirector?.id) {
-        try {
-          const { data: attachments } = await supabase
-            .from('employee_attachments')
-            .select('file_path')
-            .eq('employee_id', enrollment.executiveDirector.id)
-            .eq('document_type', 'e-signature')
-            .maybeSingle()
-          
-          if (attachments?.file_path) {
-            const { data } = await supabase.storage
-              .from('attachments')
-              .createSignedUrl(attachments.file_path, 3600)
-            if (data?.signedUrl) setEdSig(data.signedUrl)
-          }
-        } catch (err) {
-          console.error('Failed to fetch executive director signature:', err)
-        }
-      }
-    }
-    
-    fetchSignatures()
-  }, [enrollment.departmentHead?.id, enrollment.supervisor?.id, enrollment.executiveDirector?.id])
 
   return (
     <div
@@ -186,7 +108,7 @@ function CertificateTemplate({ enrollment, companyName = 'II Admin' }: CertTempl
             in partnership with <strong>{enrollment.partner_institution.name}</strong>
           </div>
         )}
-        <div style={{ fontSize: 13, color: '#6b7280', marginTop: 8, marginBottom: 40 }}>
+        <div style={{ fontSize: 13, color: '#6b7280', marginTop: 8, marginBottom: 8 }}>
           rendering a total of{' '}
           <strong style={{ color: '#78350f' }}>{Number(enrollment.rendered_hours).toFixed(0)} hours</strong>
           {enrollment.start_date && enrollment.end_date && (
@@ -197,58 +119,9 @@ function CertificateTemplate({ enrollment, companyName = 'II Admin' }: CertTempl
 
       {/* Footer */}
       <div style={{ position: 'absolute', bottom: 36, width: '100%', padding: '0 40px', boxSizing: 'border-box', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12, zIndex: 10 }}>
-        {/* Given this... text */}
+        {/* Issued this... text */}
         <div style={{ fontSize: 13, color: '#6b7280', textAlign: 'center', lineHeight: 1.4 }}>
           Issued this {getOrdinalDate(new Date().toISOString().split('T')[0])} at IBON International Foundation Inc., Head Office, Quezon City, Philippines.
-        </div>
-
-        {/* Signature lines */}
-        <div style={{ width: '100%', display: 'flex', justifyContent: 'space-between', gap: 8 }}>
-          {/* Department Head */}
-          <div style={{ textAlign: 'center', flex: 1, minWidth: 0 }}>
-            {deptHeadSig ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={deptHeadSig} alt="Department Head signature" style={{ height: 24, objectFit: 'contain', marginBottom: 8, display: 'block', margin: '0 auto 8px' }} />
-            ) : (
-              <div style={{ borderBottom: '1px solid #d97706', height: 20, marginBottom: 8 }} />
-            )}
-            <div style={{ fontSize: 10, fontWeight: 600, marginBottom: 4, lineHeight: 1.2, wordBreak: 'break-word' }}>
-              {enrollment.departmentHead
-                ? `${enrollment.departmentHead.first_name} ${enrollment.departmentHead.last_name}`
-                : '_______________'}
-            </div>
-            <div style={{ fontSize: 9, color: '#6b7280' }}>Department Head</div>
-          </div>
-          {/* Internship Program Coordinator */}
-          <div style={{ textAlign: 'center', flex: 1, minWidth: 0 }}>
-            {coordinatorSig ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={coordinatorSig} alt="Coordinator signature" style={{ height: 24, objectFit: 'contain', marginBottom: 8, display: 'block', margin: '0 auto 8px' }} />
-            ) : (
-              <div style={{ borderBottom: '1px solid #d97706', height: 20, marginBottom: 8 }} />
-            )}
-            <div style={{ fontSize: 10, fontWeight: 600, marginBottom: 4, lineHeight: 1.2, wordBreak: 'break-word' }}>
-              {enrollment.supervisor
-                ? `${enrollment.supervisor.first_name} ${enrollment.supervisor.last_name}`
-                : '_______________'}
-            </div>
-            <div style={{ fontSize: 9, color: '#6b7280' }}>Internship Program Coordinator</div>
-          </div>
-          {/* Executive Director */}
-          <div style={{ textAlign: 'center', flex: 1, minWidth: 0 }}>
-            {edSig ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={edSig} alt="Executive Director signature" style={{ height: 24, objectFit: 'contain', marginBottom: 8, display: 'block', margin: '0 auto 8px' }} />
-            ) : (
-              <div style={{ borderBottom: '1px solid #d97706', height: 20, marginBottom: 8 }} />
-            )}
-            <div style={{ fontSize: 10, fontWeight: 600, marginBottom: 4, lineHeight: 1.2, wordBreak: 'break-word' }}>
-              {enrollment.executiveDirector
-                ? `${enrollment.executiveDirector.first_name} ${enrollment.executiveDirector.last_name}`
-                : '_______________'}
-            </div>
-            <div style={{ fontSize: 9, color: '#6b7280' }}>Executive Director</div>
-          </div>
         </div>
       </div>
     </div>
