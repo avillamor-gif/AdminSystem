@@ -259,3 +259,14 @@ export type { GovernanceNode, GovernanceNodeInsert } from './governanceNode.serv
 
 export { programService, projectService, indicatorService, dataEntryService, meReportService, citationService } from './monitoring.service'
 export type { MEProgram, MEProject, MEIndicator, MEDataEntry, MEReport, MECitation } from './monitoring.service'
+
+export { partnerInstitutionService, programEnrollmentService } from './internship.service'
+export type { 
+  PartnerInstitution, 
+  PartnerInstitutionInsert, 
+  PartnerInstitutionUpdate,
+  ProgramEnrollment,
+  ProgramEnrollmentWithRelations,
+  ProgramEnrollmentInsert,
+  ProgramEnrollmentUpdate
+} from './internship.service'
