@@ -50,7 +50,6 @@ function CertificateTemplate({ enrollment, companyName = 'II Admin' }: CertTempl
         justifyContent: 'center',
         padding: '40px 60px',
         boxSizing: 'border-box',
-        overflow: 'hidden',
         userSelect: 'none',
       }}
     >
