@@ -80,7 +80,7 @@ function CertificateTemplate({ enrollment, companyName = 'II Admin' }: CertTempl
       {/* Header */}
       <div style={{ textAlign: 'center', marginBottom: 24, marginTop: -20 }}>
         {/* IBON Logo */}
-        <div style={{ marginBottom: -20, marginLeft: -40 }}>
+        <div style={{ marginBottom: 16, marginLeft: -40 }}>
           <img
             src="/ibon-logo.png"
             alt="IBON International"
