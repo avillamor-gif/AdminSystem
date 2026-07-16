@@ -128,8 +128,9 @@ function CertificateTemplate({ enrollment, companyName = 'II Admin' }: CertTempl
         <div style={{ width: '100%', display: 'flex', justifyContent: 'space-between', gap: 8 }}>
           {/* Department Head */}
           <div style={{ textAlign: 'center', flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: 10, color: '#6b7280', marginBottom: 20 }}>e-signature</div>
-            <div style={{ fontSize: 10, fontWeight: 600, marginBottom: 4, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+            <div style={{ fontSize: 10, color: '#6b7280', marginBottom: 12 }}>e-signature</div>
+            <div style={{ borderBottom: '1px solid #d97706', height: 20, marginBottom: 8 }} />
+            <div style={{ fontSize: 10, fontWeight: 600, marginBottom: 4, lineHeight: 1.2, wordBreak: 'break-word' }}>
               {enrollment.departmentHead
                 ? `${enrollment.departmentHead.first_name} ${enrollment.departmentHead.last_name}`
                 : '_______________'}
@@ -138,8 +139,9 @@ function CertificateTemplate({ enrollment, companyName = 'II Admin' }: CertTempl
           </div>
           {/* Internship Program Coordinator */}
           <div style={{ textAlign: 'center', flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: 10, color: '#6b7280', marginBottom: 20 }}>e-signature</div>
-            <div style={{ fontSize: 10, fontWeight: 600, marginBottom: 4, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+            <div style={{ fontSize: 10, color: '#6b7280', marginBottom: 12 }}>e-signature</div>
+            <div style={{ borderBottom: '1px solid #d97706', height: 20, marginBottom: 8 }} />
+            <div style={{ fontSize: 10, fontWeight: 600, marginBottom: 4, lineHeight: 1.2, wordBreak: 'break-word' }}>
               {enrollment.supervisor
                 ? `${enrollment.supervisor.first_name} ${enrollment.supervisor.last_name}`
                 : '_______________'}
@@ -148,8 +150,9 @@ function CertificateTemplate({ enrollment, companyName = 'II Admin' }: CertTempl
           </div>
           {/* Executive Director */}
           <div style={{ textAlign: 'center', flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: 10, color: '#6b7280', marginBottom: 20 }}>e-signature</div>
-            <div style={{ fontSize: 10, fontWeight: 600, marginBottom: 4, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+            <div style={{ fontSize: 10, color: '#6b7280', marginBottom: 12 }}>e-signature</div>
+            <div style={{ borderBottom: '1px solid #d97706', height: 20, marginBottom: 8 }} />
+            <div style={{ fontSize: 10, fontWeight: 600, marginBottom: 4, lineHeight: 1.2, wordBreak: 'break-word' }}>
               {enrollment.executiveDirector
                 ? `${enrollment.executiveDirector.first_name} ${enrollment.executiveDirector.last_name}`
                 : '_______________'}
