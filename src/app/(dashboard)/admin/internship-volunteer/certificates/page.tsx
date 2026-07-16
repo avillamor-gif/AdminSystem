@@ -77,19 +77,11 @@ function CertificateTemplate({ enrollment, companyName = 'II Admin' }: CertTempl
       <div style={{ textAlign: 'center', marginBottom: 8 }}>
         {/* IBON Logo */}
         <div style={{ marginBottom: 12 }}>
-          <svg width={120} height={60} viewBox="0 0 600 300" style={{ margin: '0 auto' }}>
-            {/* Orange curves (stylized bird/dove) */}
-            <g fill="none" stroke="#f97316" strokeWidth="14" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M80 60 Q100 40 120 35 Q140 30 160 45 Q180 60 175 90 Q170 110 150 115" />
-              <path d="M100 80 Q115 65 135 62 Q155 60 170 80 Q180 95 170 115" />
-              <path d="M85 100 Q100 95 120 98 Q145 102 160 130" />
-              <path d="M120 150 Q130 140 145 142 Q160 145 170 160 Q175 175 165 190 Q150 205 130 200 Q110 195 105 175" />
-              <path d="M140 160 Q150 155 160 160 Q168 168 160 185 Q150 195 140 190" />
-            </g>
-            {/* Green text: IBON INTERNATIONAL */}
-            <text x="240" y="110" fontSize="72" fontWeight="bold" fill="#16a34a" fontFamily="Arial, sans-serif" letterSpacing="2">IBON</text>
-            <text x="240" y="180" fontSize="44" fill="#16a34a" fontFamily="Arial, sans-serif" letterSpacing="4">INTERNATIONAL</text>
-          </svg>
+          <img
+            src="/ibon-logo.png"
+            alt="IBON International"
+            style={{ height: 60, margin: '0 auto', objectFit: 'contain' }}
+          />
         </div>
         <div style={{ fontSize: 38, fontWeight: 700, color: '#78350f', letterSpacing: 2, lineHeight: 1.1 }}>
           Certificate of Completion
