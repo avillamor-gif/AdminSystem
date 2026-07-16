@@ -71,12 +71,12 @@ export default function MissingPunchRequestsPage() {
   }
 
   const stats = {
-    pending: requests.filter(r => r.status === 'pending').length,
-    approved: requests.filter(r => r.status === 'approved').length,
-    rejected: requests.filter(r => r.status === 'rejected').length,
+    pending: requests.filter((r: MissingPunchRequest) => r.status === 'pending').length,
+    approved: requests.filter((r: MissingPunchRequest) => r.status === 'approved').length,
+    rejected: requests.filter((r: MissingPunchRequest) => r.status === 'rejected').length,
   }
 
-  const filtered = statusFilter === 'all' ? requests : requests.filter(r => r.status === statusFilter)
+  const filtered = statusFilter === 'all' ? requests : requests.filter((r: MissingPunchRequest) => r.status === statusFilter)
 
   return (
     <div className="space-y-6">
@@ -144,7 +144,7 @@ export default function MissingPunchRequestsPage() {
                 <tr>
                   <td colSpan={7} className="px-4 py-8 text-center text-gray-500">No requests found.</td>
                 </tr>
-              ) : filtered.map(req => (
+              ) : filtered.map((req: MissingPunchRequest) => (
                 <tr key={req.id} className="hover:bg-gray-50">
                   <td className="px-4 py-3 text-sm font-medium text-gray-900">{formatDate(req.date)}</td>
                   <td className="px-4 py-3 text-sm text-gray-700">{formatTime(req.time_in)}</td>
