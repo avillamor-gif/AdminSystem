@@ -39,6 +39,7 @@ function CertificateTemplate({ enrollment, companyName = 'II Admin' }: CertTempl
 
   // State for e-signature URLs
   const [deptHeadSig, setDeptHeadSig] = useState<string | null>(null)
+  const [deptHeadTitle, setDeptHeadTitle] = useState<string>('Department Head')
   const [coordinatorSig, setCoordinatorSig] = useState<string | null>(null)
   const [coordinatorName, setCoordinatorName] = useState<string>('_______________')
   const [edSig, setEdSig] = useState<string | null>(null)
@@ -48,9 +49,20 @@ function CertificateTemplate({ enrollment, companyName = 'II Admin' }: CertTempl
     const fetchSignatures = async () => {
       const supabase = createClient()
       
-      // Fetch Department Head signature
+      // Fetch Department Head signature and department title
       if (enrollment.departmentHead?.id) {
         try {
+          // Get the department where this person is the head
+          const { data: department } = await supabase
+            .from('departments')
+            .select('name')
+            .eq('head_id', enrollment.departmentHead.id)
+            .maybeSingle()
+          
+          if (department?.name) {
+            setDeptHeadTitle(department.name)
+          }
+          
           const { data: attachments } = await supabase
             .from('employee_attachments')
             .select('file_path')
@@ -224,7 +236,7 @@ function CertificateTemplate({ enrollment, companyName = 'II Admin' }: CertTempl
                 ? `${enrollment.departmentHead.first_name} ${enrollment.departmentHead.last_name}`
                 : '_______________'}
             </div>
-            <div style={{ fontSize: 9, color: '#6b7280' }}>Department Head</div>
+            <div style={{ fontSize: 9, color: '#6b7280' }}>{deptHeadTitle}</div>
           </div>
           {/* Internship Program Coordinator */}
           <div style={{ textAlign: 'center', flex: 1, minWidth: 0 }}>
