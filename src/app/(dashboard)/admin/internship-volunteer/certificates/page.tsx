@@ -217,9 +217,9 @@ function CertificateTemplate({ enrollment, companyName = 'II Admin' }: CertTempl
           <div style={{ textAlign: 'center', flex: 1, minWidth: 0 }}>
             {deptHeadSig && (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={deptHeadSig} alt="Department Head signature" style={{ height: 48, objectFit: 'contain', marginBottom: 0, display: 'block', margin: '0 auto' }} />
+              <img src={deptHeadSig} alt="Department Head signature" style={{ height: 48, objectFit: 'contain', marginBottom: -8, display: 'block', margin: '0 auto' }} />
             )}
-            <div style={{ fontSize: 10, fontWeight: 600, marginBottom: 4, lineHeight: 1.2, wordBreak: 'break-word', marginTop: 2 }}>
+            <div style={{ fontSize: 10, fontWeight: 600, marginBottom: 4, lineHeight: 1.2, wordBreak: 'break-word', marginTop: 8 }}>
               {enrollment.departmentHead
                 ? `${enrollment.departmentHead.first_name} ${enrollment.departmentHead.last_name}`
                 : '_______________'}
@@ -230,9 +230,9 @@ function CertificateTemplate({ enrollment, companyName = 'II Admin' }: CertTempl
           <div style={{ textAlign: 'center', flex: 1, minWidth: 0 }}>
             {coordinatorSig && (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={coordinatorSig} alt="Coordinator signature" style={{ height: 48, objectFit: 'contain', marginBottom: 0, display: 'block', margin: '0 auto' }} />
+              <img src={coordinatorSig} alt="Coordinator signature" style={{ height: 48, objectFit: 'contain', marginBottom: -8, display: 'block', margin: '0 auto' }} />
             )}
-            <div style={{ fontSize: 10, fontWeight: 600, marginBottom: 4, lineHeight: 1.2, wordBreak: 'break-word', marginTop: 2 }}>
+            <div style={{ fontSize: 10, fontWeight: 600, marginBottom: 4, lineHeight: 1.2, wordBreak: 'break-word', marginTop: 8 }}>
               {coordinatorName}
             </div>
             <div style={{ fontSize: 9, color: '#6b7280' }}>Internship Program Coordinator</div>
@@ -241,9 +241,9 @@ function CertificateTemplate({ enrollment, companyName = 'II Admin' }: CertTempl
           <div style={{ textAlign: 'center', flex: 1, minWidth: 0 }}>
             {edSig && (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={edSig} alt="Executive Director signature" style={{ height: 48, objectFit: 'contain', marginBottom: 0, display: 'block', margin: '0 auto' }} />
+              <img src={edSig} alt="Executive Director signature" style={{ height: 48, objectFit: 'contain', marginBottom: -8, display: 'block', margin: '0 auto' }} />
             )}
-            <div style={{ fontSize: 10, fontWeight: 600, marginBottom: 4, lineHeight: 1.2, wordBreak: 'break-word', marginTop: 2 }}>
+            <div style={{ fontSize: 10, fontWeight: 600, marginBottom: 4, lineHeight: 1.2, wordBreak: 'break-word', marginTop: 8 }}>
               {enrollment.executiveDirector
                 ? `${enrollment.executiveDirector.first_name} ${enrollment.executiveDirector.last_name}`
                 : '_______________'}
