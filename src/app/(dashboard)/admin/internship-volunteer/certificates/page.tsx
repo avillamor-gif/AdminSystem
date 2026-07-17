@@ -40,6 +40,7 @@ function CertificateTemplate({ enrollment, companyName = 'II Admin' }: CertTempl
   // State for e-signature URLs
   const [deptHeadSig, setDeptHeadSig] = useState<string | null>(null)
   const [coordinatorSig, setCoordinatorSig] = useState<string | null>(null)
+  const [coordinatorName, setCoordinatorName] = useState<string>('_______________')
   const [edSig, setEdSig] = useState<string | null>(null)
 
   // Fetch e-signatures for all three signatories
@@ -68,13 +69,23 @@ function CertificateTemplate({ enrollment, companyName = 'II Admin' }: CertTempl
         }
       }
 
-      // Fetch Coordinator signature
-      if (enrollment.supervisor?.id) {
-        try {
+      // Always fetch Jainno Bongon as Internship Program Coordinator
+      try {
+        const { data: employees } = await supabase
+          .from('employees')
+          .select('id, first_name, last_name')
+          .eq('first_name', 'Jainno')
+          .eq('last_name', 'Bongon')
+          .maybeSingle()
+        
+        if (employees) {
+          setCoordinatorName(`${employees.first_name} ${employees.last_name}`)
+          
+          // Fetch coordinator's signature
           const { data: attachments } = await supabase
             .from('employee_attachments')
             .select('file_path')
-            .eq('employee_id', enrollment.supervisor.id)
+            .eq('employee_id', employees.id)
             .eq('document_type', 'e-signature')
             .maybeSingle()
           
@@ -84,9 +95,9 @@ function CertificateTemplate({ enrollment, companyName = 'II Admin' }: CertTempl
               .createSignedUrl(attachments.file_path, 3600)
             if (data?.signedUrl) setCoordinatorSig(data.signedUrl)
           }
-        } catch (err) {
-          console.error('Failed to fetch coordinator signature:', err)
         }
+      } catch (err) {
+        console.error('Failed to fetch coordinator:', err)
       }
 
       // Fetch Executive Director signature
@@ -112,7 +123,7 @@ function CertificateTemplate({ enrollment, companyName = 'II Admin' }: CertTempl
     }
     
     fetchSignatures()
-  }, [enrollment.departmentHead?.id, enrollment.supervisor?.id, enrollment.executiveDirector?.id])
+  }, [enrollment.departmentHead?.id, enrollment.executiveDirector?.id])
 
   return (
     <div
@@ -206,9 +217,9 @@ function CertificateTemplate({ enrollment, companyName = 'II Admin' }: CertTempl
           <div style={{ textAlign: 'center', flex: 1, minWidth: 0 }}>
             {deptHeadSig && (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={deptHeadSig} alt="Department Head signature" style={{ height: 48, objectFit: 'contain', marginBottom: 2, display: 'block', margin: '0 auto 2px' }} />
+              <img src={deptHeadSig} alt="Department Head signature" style={{ height: 48, objectFit: 'contain', marginBottom: 0, display: 'block', margin: '0 auto' }} />
             )}
-            <div style={{ fontSize: 10, fontWeight: 600, marginBottom: 4, lineHeight: 1.2, wordBreak: 'break-word' }}>
+            <div style={{ fontSize: 10, fontWeight: 600, marginBottom: 4, lineHeight: 1.2, wordBreak: 'break-word', marginTop: 2 }}>
               {enrollment.departmentHead
                 ? `${enrollment.departmentHead.first_name} ${enrollment.departmentHead.last_name}`
                 : '_______________'}
@@ -219,12 +230,10 @@ function CertificateTemplate({ enrollment, companyName = 'II Admin' }: CertTempl
           <div style={{ textAlign: 'center', flex: 1, minWidth: 0 }}>
             {coordinatorSig && (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={coordinatorSig} alt="Coordinator signature" style={{ height: 48, objectFit: 'contain', marginBottom: 2, display: 'block', margin: '0 auto 2px' }} />
+              <img src={coordinatorSig} alt="Coordinator signature" style={{ height: 48, objectFit: 'contain', marginBottom: 0, display: 'block', margin: '0 auto' }} />
             )}
-            <div style={{ fontSize: 10, fontWeight: 600, marginBottom: 4, lineHeight: 1.2, wordBreak: 'break-word' }}>
-              {enrollment.supervisor
-                ? `${enrollment.supervisor.first_name} ${enrollment.supervisor.last_name}`
-                : '_______________'}
+            <div style={{ fontSize: 10, fontWeight: 600, marginBottom: 4, lineHeight: 1.2, wordBreak: 'break-word', marginTop: 2 }}>
+              {coordinatorName}
             </div>
             <div style={{ fontSize: 9, color: '#6b7280' }}>Internship Program Coordinator</div>
           </div>
@@ -232,9 +241,9 @@ function CertificateTemplate({ enrollment, companyName = 'II Admin' }: CertTempl
           <div style={{ textAlign: 'center', flex: 1, minWidth: 0 }}>
             {edSig && (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={edSig} alt="Executive Director signature" style={{ height: 48, objectFit: 'contain', marginBottom: 2, display: 'block', margin: '0 auto 2px' }} />
+              <img src={edSig} alt="Executive Director signature" style={{ height: 48, objectFit: 'contain', marginBottom: 0, display: 'block', margin: '0 auto' }} />
             )}
-            <div style={{ fontSize: 10, fontWeight: 600, marginBottom: 4, lineHeight: 1.2, wordBreak: 'break-word' }}>
+            <div style={{ fontSize: 10, fontWeight: 600, marginBottom: 4, lineHeight: 1.2, wordBreak: 'break-word', marginTop: 2 }}>
               {enrollment.executiveDirector
                 ? `${enrollment.executiveDirector.first_name} ${enrollment.executiveDirector.last_name}`
                 : '_______________'}
