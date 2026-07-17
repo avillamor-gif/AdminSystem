@@ -302,7 +302,7 @@ export default function CertificatesPage() {
   async function handleDownload(enr: ProgramEnrollmentWithRelations) {
     setPreviewEnrollment(enr)
     // Give React time to render the template before capturing
-    await new Promise(resolve => setTimeout(resolve, 300))
+    await new Promise(resolve => setTimeout(resolve, 800))
 
     // Wait for ALL images (including signatures) to load
     if (certRef.current) {
@@ -320,16 +320,22 @@ export default function CertificatesPage() {
             })
         )
       )
+      // Extra wait to ensure images are truly loaded
+      await new Promise(resolve => setTimeout(resolve, 500))
     }
 
     // Now convert all images to base64 data URLs for reliable PDF capture
     if (certRef.current) {
       const images = certRef.current.querySelectorAll('img')
-      await Promise.all(
+      const conversionResults = await Promise.allSettled(
         Array.from(images).map(async (img: HTMLImageElement) => {
           if (img.src && img.src.startsWith('http')) {
             try {
-              const response = await fetch(img.src)
+              const response = await fetch(img.src, { mode: 'cors', credentials: 'omit' })
+              if (!response.ok) {
+                console.warn(`Image fetch failed with status ${response.status}:`, img.src)
+                return
+              }
               const blob = await response.blob()
               const dataUrl = await new Promise<string>(resolve => {
                 const reader = new FileReader()
@@ -337,18 +343,20 @@ export default function CertificatesPage() {
                 reader.readAsDataURL(blob)
               })
               img.src = dataUrl
+              console.log('Image converted to base64:', img.alt)
             } catch (err) {
-              console.warn('Failed to convert image to base64:', img.src, err)
+              console.warn('Failed to convert image to base64:', img.alt, err)
             }
           }
         })
       )
+      console.log('Image conversion results:', conversionResults)
     }
     
     const html2canvas = (await import('html2canvas')).default
     const { jsPDF }   = await import('jspdf')
     if (!certRef.current) return
-    const canvas = await html2canvas(certRef.current, { scale: 2, useCORS: true, allowTaint: true, backgroundColor: '#fff8f0' })
+    const canvas = await html2canvas(certRef.current, { scale: 2, useCORS: true, allowTaint: true, backgroundColor: '#fff8f0', logging: false })
     const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' })
     const w = pdf.internal.pageSize.getWidth()
     const h = pdf.internal.pageSize.getHeight()
