@@ -237,7 +237,7 @@ function CertificateTemplate({ enrollment, companyName = 'II Admin' }: CertTempl
           <div style={{ textAlign: 'center', flex: 1, minWidth: 0 }}>
             {deptHeadSig && (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={deptHeadSig} alt="Department Head signature" style={{ height: 48, objectFit: 'contain', display: 'block', marginLeft: 'auto', marginRight: 'auto', position: 'relative', top: -8 }} />
+              <img src={deptHeadSig} alt="Department Head signature" style={{ height: 48, objectFit: 'contain', display: 'block', marginLeft: 'auto', marginRight: 'auto', position: 'relative', top: 8 }} />
             )}
             <div style={{ fontSize: 10, fontWeight: 600, marginBottom: 4, lineHeight: 1.2, wordBreak: 'break-word', marginTop: 8 }}>
               {enrollment.departmentHead
@@ -250,7 +250,7 @@ function CertificateTemplate({ enrollment, companyName = 'II Admin' }: CertTempl
           <div style={{ textAlign: 'center', flex: 1, minWidth: 0 }}>
             {coordinatorSig && (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={coordinatorSig} alt="Coordinator signature" style={{ height: 48, objectFit: 'contain', display: 'block', marginLeft: 'auto', marginRight: 'auto', position: 'relative', top: -8 }} />
+              <img src={coordinatorSig} alt="Coordinator signature" style={{ height: 48, objectFit: 'contain', display: 'block', marginLeft: 'auto', marginRight: 'auto', position: 'relative', top: 8 }} />
             )}
             <div style={{ fontSize: 10, fontWeight: 600, marginBottom: 4, lineHeight: 1.2, wordBreak: 'break-word', marginTop: 8 }}>
               {coordinatorName}
@@ -261,7 +261,7 @@ function CertificateTemplate({ enrollment, companyName = 'II Admin' }: CertTempl
           <div style={{ textAlign: 'center', flex: 1, minWidth: 0 }}>
             {edSig && (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={edSig} alt="Executive Director signature" style={{ height: 48, objectFit: 'contain', display: 'block', marginLeft: 'auto', marginRight: 'auto', position: 'relative', top: -8 }} />
+              <img src={edSig} alt="Executive Director signature" style={{ height: 48, objectFit: 'contain', display: 'block', marginLeft: 'auto', marginRight: 'auto', position: 'relative', top: 8 }} />
             )}
             <div style={{ fontSize: 10, fontWeight: 600, marginBottom: 4, lineHeight: 1.2, wordBreak: 'break-word', marginTop: 8 }}>
               {enrollment.executiveDirector
