@@ -49,18 +49,26 @@ function CertificateTemplate({ enrollment, companyName = 'II Admin' }: CertTempl
     const fetchSignatures = async () => {
       const supabase = createClient()
       
-      // Fetch Department Head signature and department title
+      // Fetch Department Head signature and job title
       if (enrollment.departmentHead?.id) {
         try {
-          // Get the department where this person is the head
-          const { data: department } = await supabase
-            .from('departments')
-            .select('name')
-            .eq('head_id', enrollment.departmentHead.id)
+          // Get the employee's job title
+          const { data: employee } = await supabase
+            .from('employees')
+            .select('job_title_id')
+            .eq('id', enrollment.departmentHead.id)
             .maybeSingle()
           
-          if (department?.name) {
-            setDeptHeadTitle(department.name)
+          if (employee?.job_title_id) {
+            const { data: jobTitle } = await supabase
+              .from('job_titles')
+              .select('title')
+              .eq('id', employee.job_title_id)
+              .maybeSingle()
+            
+            if (jobTitle?.title) {
+              setDeptHeadTitle(jobTitle.title)
+            }
           }
           
           const { data: attachments } = await supabase
