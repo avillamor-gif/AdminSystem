@@ -950,7 +950,7 @@ export default function TimePage() {
                   // Parse the UI attendance type from notes — handles both JSON sessions and legacy plain-text
                   const _noteSessions = attendance ? parseSessions(attendance.notes) : []
                   const attendanceUiType = attendance
-                    ? (_noteSessions.length > 0 && _noteSessions[0].timeIn
+                    ? (_noteSessions.length > 0
                         ? (_noteSessions[_noteSessions.length - 1].type as AttendanceType)
                         : (attendance.status as AttendanceType | undefined))
                     : undefined
@@ -962,7 +962,7 @@ export default function TimePage() {
                   const hasSessions = daySessions.length > 0 && daySessions[0].timeIn !== ''
 
                   // Priority: holiday > attendance-with-sessions > leave > bare attendance
-                  // If the employee actually punched in (hasSessions), attendance takes precedence over leave
+                  // If the employee has an attendance entry (hasSessions), attendance takes precedence over leave
                   const showAttendanceSessions = !holiday && hasSessions
                   const showLeaveBlock = !holiday && !showAttendanceSessions && !!leaveRequest
 

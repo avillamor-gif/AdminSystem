@@ -327,7 +327,7 @@ export default function AttendanceReportsPage() {
     const tableRows = SHEET_TYPES.map(t => {
       const matched = sheetRecords.filter(r => {
         const sessions = parseSessions(r.notes)
-        if (sessions.length > 0 && sessions[0].timeIn) return sessions.some(s => s.type === t.key)
+        if (sessions.length > 0 && sessions[0].type) return sessions.some(s => s.type === t.key)
         return r.status === t.key
       })
 
@@ -755,7 +755,7 @@ body{font-family:Arial,sans-serif;font-size:11px;padding:12px;}
                       // Attendance records matching this row type
                       const matched = sheetRecords.filter(r => {
                         const sessions = parseSessions(r.notes)
-                        if (sessions.length > 0 && sessions[0].timeIn) return sessions.some(s => s.type === t.key)
+                        if (sessions.length > 0 && sessions[0].type) return sessions.some(s => s.type === t.key)
                         return r.status === t.key
                       })
 
@@ -903,10 +903,10 @@ body{font-family:Arial,sans-serif;font-size:11px;padding:12px;}
 
                         // Sessions — parse regardless of leave, so attendance can override leave
                         const daySessions = !holiday && attendance ? parseSessions(attendance.notes) : []
-                        const hasSessions = daySessions.length > 0 && daySessions[0].timeIn !== ''
+                        const hasSessions = daySessions.length > 0 && (daySessions[0].timeIn !== '' || daySessions[0].type !== '')
 
                         // Priority: holiday > attendance-with-sessions > leave > bare attendance
-                        // If the employee actually punched in (hasSessions), show attendance over leave
+                        // If the employee has an attendance entry (hasSessions checks for any parsed data), show attendance over leave
                         const showAttendance = !holiday && hasSessions
                         const showLeave      = !holiday && !showAttendance && !!leave
 
