@@ -439,15 +439,15 @@ body{font-family:Arial,sans-serif;font-size:11px;padding:12px;}
 
       {/* Filters — hidden for Calendar tab which has its own controls */}
       {activeReport !== 'calendar' && (
-      <Card className="p-4">
-        <div className="flex flex-wrap gap-4 items-end">
+      <Card className="p-2 sm:p-4">
+        <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 items-end">
           {/* Employee picker */}
           <div className="flex-1 min-w-[200px]">
             <label className="block text-xs font-medium text-gray-600 mb-1">Employee</label>
             <select
               value={selectedEmployeeId}
               onChange={e => setSelectedEmployeeId(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange focus:border-transparent"
+              className="w-full px-3 py-2 min-h-[44px] border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange focus:border-transparent"
             >
               <option value="">All Employees</option>
               {employees.map(e => (
@@ -461,12 +461,12 @@ body{font-family:Arial,sans-serif;font-size:11px;padding:12px;}
               <div>
                 <label className="block text-xs font-medium text-gray-600 mb-1">Start Date</label>
                 <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)}
-                  className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange focus:border-transparent" />
+                  className="px-3 py-2 min-h-[44px] border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange focus:border-transparent" />
               </div>
               <div>
                 <label className="block text-xs font-medium text-gray-600 mb-1">End Date</label>
                 <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)}
-                  className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange focus:border-transparent" />
+                  className="px-3 py-2 min-h-[44px] border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange focus:border-transparent" />
               </div>
               <Button onClick={handleExportCSV} variant="secondary" className="flex items-center gap-2">
                 <Download className="w-4 h-4" /> Export CSV
@@ -477,7 +477,7 @@ body{font-family:Arial,sans-serif;font-size:11px;padding:12px;}
               <div>
                 <label className="block text-xs font-medium text-gray-600 mb-1">Month</label>
                 <select value={sheetMonth} onChange={e => setSheetMonth(Number(e.target.value))}
-                  className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange focus:border-transparent">
+                  className="px-3 py-2 min-h-[44px] border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange focus:border-transparent">
                   {MONTHS.map((m, i) => <option key={m} value={i}>{m}</option>)}
                 </select>
               </div>
@@ -832,15 +832,15 @@ body{font-family:Arial,sans-serif;font-size:11px;padding:12px;}
           {activeReport === 'calendar' && (
             <div className="space-y-4">
               {/* Calendar controls */}
-              <Card className="p-4">
-                <div className="flex flex-wrap gap-4 items-end">
+              <Card className="p-2 sm:p-4">
+                <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 items-end">
                   {/* Employee picker */}
                   <div className="flex-1 min-w-[220px]">
                     <label className="block text-xs font-medium text-gray-600 mb-1">Employee</label>
                     <select
                       value={calEmployee}
                       onChange={e => setCalEmployee(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange focus:border-transparent"
+                      className="w-full px-3 py-2 min-h-[44px] border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange focus:border-transparent"
                     >
                       <option value="">— Select Employee —</option>
                       {employees.map(e => (

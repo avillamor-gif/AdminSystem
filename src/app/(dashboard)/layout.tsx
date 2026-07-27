@@ -141,7 +141,7 @@ function DashboardContent({
               : null
           }
         />
-        <main className="p-4 md:p-6 bg-gray-100 min-h-[calc(100vh-64px)] pb-20 md:pb-6">{children}</main>
+        <main className="p-2 sm:p-4 md:p-6 bg-gray-100 min-h-[calc(100vh-64px)] pb-20 md:pb-6 safe-area-px">{children}</main>
       </div>
       <MobileBottomNav />
     </div>

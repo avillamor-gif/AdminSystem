@@ -6,6 +6,28 @@
   .safe-area-pb {
     padding-bottom: env(safe-area-inset-bottom, 0px);
   }
+  .safe-area-pt {
+    padding-top: env(safe-area-inset-top, 0px);
+  }
+  .safe-area-px {
+    padding-left: env(safe-area-inset-left, 0px);
+    padding-right: env(safe-area-inset-right, 0px);
+  }
+  .touch-target {
+    @apply min-h-[44px] min-w-[44px];
+  }
+  /* Responsive font sizes for mobile */
+  @screen md {
+    .text-responsive-h1 {
+      @apply text-xl sm:text-2xl md:text-3xl;
+    }
+    .text-responsive-h2 {
+      @apply text-lg sm:text-xl md:text-2xl;
+    }
+    .text-responsive-p {
+      @apply text-xs sm:text-sm md:text-base;
+    }
+  }
 }
 
 @layer base {
@@ -20,7 +42,7 @@
 @layer components {
   /* II Button Styles */
   .btn {
-    @apply inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none;
+    @apply inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none min-h-[44px] min-w-[44px];
   }
   .btn-primary {
     @apply bg-orange text-white hover:bg-orange-dark focus:ring-orange shadow-sm;
@@ -40,7 +62,7 @@
   
   /* II Input Styles */
   .input {
-    @apply block w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm shadow-sm placeholder:text-gray-400 focus:border-orange focus:outline-none focus:ring-2 focus:ring-orange/20 disabled:bg-gray-50 disabled:text-gray-500 transition-colors;
+    @apply block w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm shadow-sm placeholder:text-gray-400 focus:border-orange focus:outline-none focus:ring-2 focus:ring-orange/20 disabled:bg-gray-50 disabled:text-gray-500 transition-colors min-h-[44px];
   }
   .label {
     @apply block text-sm font-medium text-gray-700 mb-1.5;

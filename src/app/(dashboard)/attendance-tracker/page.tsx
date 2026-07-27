@@ -97,7 +97,7 @@ function OtObTab({ employeeId }: { employeeId: string }) {
       </div>
 
       {/* Summary cards */}
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         <Card className="p-4 flex items-center gap-3">
           <div className="p-2.5 rounded-xl bg-blue-100 text-blue-600"><Clock className="w-4 h-4" /></div>
           <div>
@@ -143,14 +143,14 @@ function OtObTab({ employeeId }: { employeeId: string }) {
             </div>
 
             {/* Date + Day Type */}
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">Date <span className="text-red-500">*</span></label>
                 <input
                   type="date"
                   value={requestDate}
                   onChange={e => setRequestDate(e.target.value)}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2.5 min-h-[44px] text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
                 />
               </div>
               <div>
@@ -158,7 +158,7 @@ function OtObTab({ employeeId }: { employeeId: string }) {
                 <select
                   value={dayType}
                   onChange={e => setDayType(e.target.value as OvertimeDayType)}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2.5 min-h-[44px] text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
                 >
                   {Object.entries(DAY_TYPE_LABELS).map(([val, label]) => (
                     <option key={val} value={val}>{label}</option>
@@ -168,14 +168,14 @@ function OtObTab({ employeeId }: { employeeId: string }) {
             </div>
 
             {/* Start / End Time */}
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">Start Time <span className="text-red-500">*</span></label>
                 <input
                   type="time"
                   value={startTime}
                   onChange={e => setStartTime(e.target.value)}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2.5 min-h-[44px] text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
                 />
               </div>
               <div>
@@ -184,7 +184,7 @@ function OtObTab({ employeeId }: { employeeId: string }) {
                   type="time"
                   value={endTime}
                   onChange={e => setEndTime(e.target.value)}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2.5 min-h-[44px] text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
                 />
               </div>
             </div>
@@ -756,11 +756,11 @@ export default function TimePage() {
       </div>
 
       {/* Tabs */}
-      <div className="border-b border-gray-200">
-        <nav className="flex gap-8">
+      <div className="border-b border-gray-200 overflow-x-auto">
+        <nav className="flex gap-2 sm:gap-8 whitespace-nowrap">
           <button
             onClick={() => setActiveTab('punch')}
-            className={`pb-4 text-sm font-medium border-b-2 transition-colors ${
+            className={`pb-4 px-1 sm:px-0 text-xs sm:text-sm font-medium border-b-2 transition-colors ${
               activeTab === 'punch'
                 ? 'border-orange text-orange'
                 : 'border-transparent text-gray-500 hover:text-gray-700'
@@ -771,7 +771,7 @@ export default function TimePage() {
           </button>
           <button
             onClick={() => setActiveTab('timesheets')}
-            className={`pb-4 text-sm font-medium border-b-2 transition-colors ${
+            className={`pb-4 px-1 sm:px-0 text-xs sm:text-sm font-medium border-b-2 transition-colors ${
               activeTab === 'timesheets'
                 ? 'border-orange text-orange'
                 : 'border-transparent text-gray-500 hover:text-gray-700'
@@ -782,7 +782,7 @@ export default function TimePage() {
           </button>
           <button
             onClick={() => setActiveTab('attendance')}
-            className={`pb-4 text-sm font-medium border-b-2 transition-colors ${
+            className={`pb-4 px-1 sm:px-0 text-xs sm:text-sm font-medium border-b-2 transition-colors ${
               activeTab === 'attendance'
                 ? 'border-orange text-orange'
                 : 'border-transparent text-gray-500 hover:text-gray-700'
@@ -793,7 +793,7 @@ export default function TimePage() {
           </button>
           <button
             onClick={() => setActiveTab('ot-ob')}
-            className={`pb-4 text-sm font-medium border-b-2 transition-colors ${
+            className={`pb-4 px-1 sm:px-0 text-xs sm:text-sm font-medium border-b-2 transition-colors ${
               activeTab === 'ot-ob'
                 ? 'border-orange text-orange'
                 : 'border-transparent text-gray-500 hover:text-gray-700'
@@ -807,7 +807,7 @@ export default function TimePage() {
 
       {/* Punch In/Out Tab */}
       {activeTab === 'punch' && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
           <Card className="p-8 text-center">
             <div className="mb-6">
               <p className="text-gray-500">{formatDate(currentTime)}</p>
@@ -859,7 +859,7 @@ export default function TimePage() {
 
           <Card className="p-6">
             <h3 className="font-semibold text-gray-900 mb-4">This Week's Hours</h3>
-            <div className="space-y-3">
+            <div className="space-y-2 sm:space-y-3">
               {weeklyData.map((day) => {
                 const today = localDateStr(currentTime)
                 const isToday = day.date === today
@@ -918,18 +918,18 @@ export default function TimePage() {
           </div>
 
           {/* Calendar Grid */}
-          <div className="border border-gray-200 rounded-lg overflow-hidden">
+          <div className="border border-gray-200 rounded-lg overflow-x-auto">
             {/* Calendar Header */}
-            <div className="grid grid-cols-7 bg-gray-50 border-b border-gray-200">
+            <div className="grid grid-cols-7 bg-gray-50 border-b border-gray-200 min-w-full">
               {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => (
-                <div key={day} className="p-3 text-center text-sm font-medium text-gray-600">
+                <div key={day} className="p-2 sm:p-3 text-center text-xs sm:text-sm font-medium text-gray-600">
                   {day}
                 </div>
               ))}
             </div>
 
             {/* Calendar Body */}
-            <div className="grid grid-cols-7">
+            <div className="grid grid-cols-7 min-w-full">
               {(() => {
                 const { firstDay, daysInMonth, year, month } = getDaysInMonth(currentMonth)
                 const days = []
@@ -937,7 +937,7 @@ export default function TimePage() {
                 // Empty cells for days before month starts
                 for (let i = 0; i < firstDay; i++) {
                   days.push(
-                    <div key={`empty-${i}`} className="min-h-[100px] p-2 border-r border-b border-gray-200 bg-gray-50"></div>
+                    <div key={`empty-${i}`} className="min-h-[80px] sm:min-h-[100px] p-1 sm:p-2 border-r border-b border-gray-200 bg-gray-50"></div>
                   )
                 }
                 
@@ -1039,12 +1039,12 @@ export default function TimePage() {
                           : (rawNote.includes(':') ? rawNote.split(':').slice(1).join(':').trim() : '')
                         handleDateClick(dateStr, attendanceUiType, existingNote)
                       }}
-                      className={`min-h-[100px] p-2 border-b border-gray-200 ${holiday || !isAdmin ? 'cursor-default' : 'cursor-pointer hover:bg-gray-50'} transition-colors ${
+                      className={`min-h-[80px] sm:min-h-[100px] p-1 sm:p-2 border-b border-gray-200 ${holiday || !isAdmin ? 'cursor-default' : 'cursor-pointer hover:bg-gray-50'} transition-colors ${
                         !isLastCol ? 'border-r' : ''
                       } ${bgColor} group relative`}
                     >
                       <div className="flex items-start justify-between">
-                        <div className={`text-sm ${attendance || leaveRequest || holiday ? 'font-medium' : 'text-gray-500'}`}>{day}</div>
+                        <div className={`text-xs sm:text-sm ${attendance || leaveRequest || holiday ? 'font-medium' : 'text-gray-500'}`}>{day}</div>
 
                         {/* Late Entry button — shown for employees on empty past dates */}
                         {canSubmitLateEntry && (
@@ -1136,7 +1136,7 @@ export default function TimePage() {
           {/* Legend */}
           <div className="mt-6 pt-4 border-t border-gray-200">
             <h3 className="text-sm font-semibold text-gray-700 mb-3">Legend</h3>
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 sm:gap-3">
               <div className="flex items-center gap-2">
                 <div className="w-4 h-4 bg-blue-500 rounded"></div>
                 <span className="text-xs text-gray-600">Work on-site</span>
@@ -1206,15 +1206,15 @@ export default function TimePage() {
             </button>
           </div>
           <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gray-50 border-b border-gray-200">
+            <table className="w-full text-sm">
+              <thead className="bg-gray-50 border-b border-gray-200 hidden sm:table-header-group">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Date</th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Punch In</th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Punch Out</th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Duration</th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Status</th>
-                  <th className="px-6 py-3 text-right text-xs font-semibold text-gray-600 uppercase">Actions</th>
+                  <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-semibold text-gray-600 uppercase">Date</th>
+                  <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-semibold text-gray-600 uppercase hidden sm:table-cell">Punch In</th>
+                  <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-semibold text-gray-600 uppercase hidden md:table-cell">Punch Out</th>
+                  <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-semibold text-gray-600 uppercase hidden lg:table-cell">Duration</th>
+                  <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-semibold text-gray-600 uppercase">Status</th>
+                  <th className="px-3 sm:px-6 py-2 sm:py-3 text-right text-xs font-semibold text-gray-600 uppercase">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
