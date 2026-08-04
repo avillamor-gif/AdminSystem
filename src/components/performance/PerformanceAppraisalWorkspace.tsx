@@ -452,26 +452,53 @@ export default function PerformanceAppraisalWorkspace({
     toast.success(`Loaded ${entry.filename}`)
   }
 
-  const downloadEntry = (entry: SavedAppraisal) => {
+  const downloadEntry = async (entry: SavedAppraisal) => {
     const doc = new jsPDF({ unit: 'pt', format: 'a4' })
-    const left = 40
     const pageWidth = doc.internal.pageSize.getWidth()
+    const pageHeight = doc.internal.pageSize.getHeight()
+    const left = 40
+    const right = pageWidth - 40
     const maxWidth = pageWidth - left * 2
     let y = 40
+    let pageNum = 1
+
+    // Colors for styling
+    const primaryColor = { r: 34, g: 197, b: 94 } // Green
+    const darkGray = { r: 31, g: 41, b: 55 }
+    const accentColor = { r: 59, g: 130, b: 246 } // Blue
 
     const ensureSpace = (needed = 22) => {
-      if (y + needed > 800) {
+      if (y + needed > pageHeight - 60) {
+        // Add footer
+        doc.setFontSize(8)
+        doc.setTextColor(150, 150, 150)
+        doc.text(`Page ${pageNum}`, pageWidth / 2, pageHeight - 20, { align: 'center' })
+        
         doc.addPage()
+        pageNum += 1
         y = 40
       }
     }
 
-    const addLine = (text: string, size = 10, bold = false) => {
+    const addSectionHeader = (title: string) => {
+      ensureSpace(20)
+      doc.setFillColor(primaryColor.r, primaryColor.g, primaryColor.b)
+      doc.rect(left, y - 12, maxWidth, 18, 'F')
+      doc.setFont('helvetica', 'bold')
+      doc.setFontSize(12)
+      doc.setTextColor(255, 255, 255)
+      doc.text(title, left + 8, y)
+      doc.setTextColor(darkGray.r, darkGray.g, darkGray.b)
+      y += 22
+    }
+
+    const addLine = (text: string, size = 10, bold = false, indent = 0) => {
       ensureSpace(18)
       doc.setFont('helvetica', bold ? 'bold' : 'normal')
       doc.setFontSize(size)
-      const lines = doc.splitTextToSize(text || '-', maxWidth)
-      doc.text(lines, left, y)
+      doc.setTextColor(darkGray.r, darkGray.g, darkGray.b)
+      const lines = doc.splitTextToSize(text || '-', maxWidth - indent)
+      doc.text(lines, left + indent, y)
       y += lines.length * (size + 3)
     }
 
@@ -479,53 +506,197 @@ export default function PerformanceAppraisalWorkspace({
       y += amount
     }
 
-    addLine('IBON International - Performance Appraisal Form', 14, true)
-    addLine(`Filename: ${entry.filename}`, 10)
-    addLine(`Status: ${statusLabelMap[entry.status]}`, 10)
-    addLine(`Period: ${entry.form.periodCovered === 'yearend' ? 'Yearend' : 'Midyear'}`, 10)
-    addLine(`Appraisal Date: ${entry.form.appraisalDate || '-'}`, 10)
-    if (entry.returnComment) addLine(`Admin Return Comment: ${entry.returnComment}`, 10)
+    const addLabelValue = (label: string, value: string) => {
+      ensureSpace(16)
+      doc.setFont('helvetica', 'bold')
+      doc.setFontSize(10)
+      doc.setTextColor(accentColor.r, accentColor.g, accentColor.b)
+      doc.text(`${label}:`, left, y)
+      
+      doc.setFont('helvetica', 'normal')
+      doc.setFontSize(10)
+      doc.setTextColor(darkGray.r, darkGray.g, darkGray.b)
+      const lines = doc.splitTextToSize(value || '-', maxWidth - 120)
+      doc.text(lines, left + 120, y)
+      y += Math.max(lines.length * 13, 14)
+    }
+
+    // Add decorative header
+    doc.setFillColor(primaryColor.r, primaryColor.g, primaryColor.b)
+    doc.rect(0, 0, pageWidth, 60, 'F')
+    
+    // Add logo
+    try {
+      doc.addImage('/Users/leopura/Desktop/iiadminsystem/public/ibon-logo.png', 'PNG', left, 6, 40, 40)
+    } catch (err) {
+      // Logo not found, continue without it
+    }
+    
+    // Company name in header
+    doc.setFont('helvetica', 'bold')
+    doc.setFontSize(20)
+    doc.setTextColor(255, 255, 255)
+    doc.text('IBON International', left + 50, 30)
+    
+    doc.setFont('helvetica', 'normal')
+    doc.setFontSize(10)
+    doc.text('Performance Appraisal Form', left + 50, 48)
+
+    // Try to fetch employee photo
+    const supabase = createClient()
+    let photoUrl = null
+    try {
+      const { data: attachments } = await supabase
+        .from('employee_attachments')
+        .select('file_url')
+        .eq('employee_id', entry.form.appraiseeName.toLowerCase())
+        .eq('attachment_type', 'photo')
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single()
+      
+      if (attachments?.file_url) {
+        photoUrl = attachments.file_url
+      }
+    } catch (err) {
+      // Photo not found, continue without it
+    }
+
+    // Add employee photo in upper-right corner if available
+    if (photoUrl) {
+      try {
+        doc.addImage(photoUrl, 'JPEG', pageWidth - 100, 8, 88, 88)
+      } catch (err) {
+        // Image failed to load, continue without it
+      }
+    }
+
+    y = 75
+
+    // Basic Information Section
+    addSectionHeader('Basic Information')
+    addLabelValue('Appraisee', entry.form.appraiseeName)
+    addLabelValue('Appraiser', entry.form.appraiserName)
+    addLabelValue('Department', entry.form.department)
+    addLabelValue('Position', entry.form.position)
+    addLabelValue('Time in Present Position', entry.form.timeInPresentPosition)
+    addLabelValue('Length of Service', entry.form.lengthOfService)
+    addLabelValue('Period Covered', entry.form.periodCovered === 'yearend' ? 'Yearend (January to December)' : 'Midyear (January to June)')
+    addLabelValue('Appraisal Date', entry.form.appraisalDate || '-')
+    if (entry.returnComment) {
+      doc.setFillColor(254, 242, 242)
+      doc.rect(left, y - 4, maxWidth, 16, 'F')
+      addLine(`Admin Return Comment: ${entry.returnComment}`, 9, false)
+    }
     addGap()
 
-    addLine('Basic Information', 12, true)
-    addLine(`Appraisee: ${entry.form.appraiseeName}`)
-    addLine(`Appraiser: ${entry.form.appraiserName}`)
-    addLine(`Department: ${entry.form.department}`)
-    addLine(`Position: ${entry.form.position}`)
-    addLine(`Time in Present Position: ${entry.form.timeInPresentPosition}`)
-    addLine(`Length of Service: ${entry.form.lengthOfService}`)
-    addGap()
-
-    addLine('Part I: Discussion Points', 12, true)
+    // Discussion Points
+    addSectionHeader('Part I: Discussion Points')
     DISCUSSION_PROMPTS.forEach((prompt, idx) => {
       addLine(`${idx + 1}. ${prompt}`, 10, true)
-      addLine(entry.form.discussionPoints[idx] || '-')
-    })
-    addGap()
-
-    addLine('Part II: Performance Assessment', 12, true)
-    entry.form.objectives.forEach((objective, idx) => {
-      addLine(`Objective ${idx + 1}: ${objective.objective || '-'}`)
-      addLine(`Status: ${objective.status || '-'}`)
-      addLine(`Comments: ${objective.comments || '-'}`)
+      addLine(entry.form.discussionPoints[idx] || '-', 9, false, 12)
       addGap(4)
     })
-
-    addLine('Overall Rating and Recommendation', 12, true)
-    addLine(`Overall Rating: ${entry.form.overallRating}`)
-    addLine(`Recommendation: ${entry.form.recommendation || '-'}`)
     addGap()
 
-    // Format signatures for PDF (handle URLs by replacing with placeholder)
+    // Performance Assessment
+    addSectionHeader('Part II: Performance Assessment')
+    entry.form.objectives.forEach((objective, idx) => {
+      addLine(`Objective ${idx + 1}`, 10, true)
+      addLine(`Objective: ${objective.objective || '-'}`, 9, false, 12)
+      addLine(`Status: ${objective.status || '-'}`, 9, false, 12)
+      addLine(`Comments: ${objective.comments || '-'}`, 9, false, 12)
+      addGap(4)
+    })
+    addGap()
+
+    // Work Ratings
+    addSectionHeader('Work Ratings by Category')
+    Object.entries(WORK_RATING_CATEGORIES).forEach(([category, areas]) => {
+      addLine(category, 10, true)
+      areas.forEach((area) => {
+        const rating = entry.form.workRatings[area] || 'good'
+        addLine(`${area}: ${rating}`, 9, false, 12)
+      })
+      addGap(4)
+    })
+    addGap()
+
+    // Problems and Feedback
+    addSectionHeader('Performance Insights')
+    addLine('Problems Faced and Resolution:', 10, true)
+    addLine(entry.form.problemsFaced || '-', 9, false, 12)
+    addGap(8)
+    addLine('Feedback on Supervisor Role:', 10, true)
+    addLine(entry.form.supervisorFeedback || '-', 9, false, 12)
+    addGap()
+
+    // Overall Rating
+    addSectionHeader('Overall Rating & Recommendation')
+    addLabelValue('Overall Rating', entry.form.overallRating)
+    addLabelValue('Recommendation', entry.form.recommendation || '-')
+    addGap()
+
+    // Training and Development
+    addSectionHeader('Part IV: Training & Staff Development')
+    addLine('Agreed Development Aims:', 10, true)
+    addLine(entry.form.trainingDevelopmentAims || '-', 9, false, 12)
+    addGap(8)
+    addLine('Training and Development Support:', 10, true)
+    addLine(entry.form.trainingSupport || '-', 9, false, 12)
+    addGap()
+
+    // Performance Plan
+    addSectionHeader('Part V: Performance Plan')
+    entry.form.performancePlan.forEach((plan, idx) => {
+      if (plan.objective || plan.criteria) {
+        addLine(`Plan ${idx + 1}:`, 10, true)
+        addLine(`Objective: ${plan.objective || '-'}`, 9, false, 12)
+        addLine(`Criteria: ${plan.criteria || '-'}`, 9, false, 12)
+        addGap(4)
+      }
+    })
+    addGap()
+
+    // Management Action
+    addSectionHeader('Part VI: Management Action')
+    addLine('Grade, Recommendation, Summary:', 10, true)
+    addLine(entry.form.managementActionSummary || '-', 9, false, 12)
+    addGap(8)
+    addLine('Confidentiality Notes:', 10, true)
+    addLine(entry.form.confidentialityNotes || '-', 9, false, 12)
+    addGap()
+
+    // Signatures Section
+    addSectionHeader('Signatures')
     const formatSignatureForPdf = (sig: string | undefined): string => {
       if (!sig) return '-'
       if (sig.startsWith('http')) return '[e-signature]'
       return sig
     }
 
-    addLine('Signatures', 12, true)
-    addLine(`Appraiser: ${formatSignatureForPdf(entry.form.appraiserSignature)} (${entry.form.appraiserSignedDate || '-'})`)
-    addLine(`Appraisee: ${formatSignatureForPdf(entry.form.appraiseeSignature)} (${entry.form.appraiseeSignedDate || '-'})`)
+    ensureSpace(40)
+    doc.setFont('helvetica', 'bold')
+    doc.setFontSize(10)
+    doc.setTextColor(darkGray.r, darkGray.g, darkGray.b)
+    doc.text('Appraiser:', left, y)
+    doc.setFont('helvetica', 'normal')
+    doc.setFontSize(9)
+    doc.text(`${formatSignatureForPdf(entry.form.appraiserSignature)} | Signed: ${entry.form.appraiserSignedDate || '-'}`, left + 120, y)
+    y += 20
+
+    doc.setFont('helvetica', 'bold')
+    doc.setFontSize(10)
+    doc.text('Appraisee:', left, y)
+    doc.setFont('helvetica', 'normal')
+    doc.setFontSize(9)
+    doc.text(`${formatSignatureForPdf(entry.form.appraiseeSignature)} | Signed: ${entry.form.appraiseeSignedDate || '-'}`, left + 120, y)
+
+    // Add final footer
+    doc.setFontSize(8)
+    doc.setTextColor(150, 150, 150)
+    doc.text(`Page ${pageNum}`, pageWidth / 2, pageHeight - 20, { align: 'center' })
+    doc.text(`Generated on ${new Date().toLocaleDateString()}`, pageWidth / 2, pageHeight - 10, { align: 'center' })
 
     doc.save(`${entry.filename}.pdf`)
   }
