@@ -460,11 +460,11 @@ export default function PerformanceAppraisalWorkspace({
 
     // Color palette - Matching IBON International brand colors
     const colors = {
-      primary: '#228B22', // Forest green from IBON logo
+      primary: '#01735e', // IBON brand green
       secondary: '#FF8C00', // Orange from navigation
       accent: '#1F4788', // Dark blue accent
       dark: '#1F2937',
-      light: '#FFF8DC', // Cream/beige background
+      light: '#fcedd1', // Cream/beige background
       border: '#E5E7EB',
       success: '#10b981',
       warning: '#EF4444',
