@@ -458,16 +458,16 @@ export default function PerformanceAppraisalWorkspace({
     const pageHeight = 297 // A4 height in mm
     let y = 0
 
-    // Color palette
+    // Color palette - Matching IBON International brand colors
     const colors = {
-      primary: '#22c55e',
-      secondary: '#0891b2',
-      accent: '#f59e0b',
-      dark: '#1f2937',
-      light: '#f3f4f6',
-      border: '#e5e7eb',
+      primary: '#228B22', // Forest green from IBON logo
+      secondary: '#FF8C00', // Orange from navigation
+      accent: '#1F4788', // Dark blue accent
+      dark: '#1F2937',
+      light: '#FFF8DC', // Cream/beige background
+      border: '#E5E7EB',
       success: '#10b981',
-      warning: '#ef4444',
+      warning: '#EF4444',
     }
 
     // Helper: Convert hex to RGB and set fill color
@@ -503,14 +503,33 @@ export default function PerformanceAppraisalWorkspace({
     // Helper: Load image from URL to base64
     const loadImageAsBase64 = async (url: string): Promise<string | null> => {
       try {
-        const response = await fetch(url)
+        // Convert relative paths to absolute URLs
+        let fullUrl = url
+        if (url.startsWith('/') && typeof window !== 'undefined') {
+          fullUrl = `${window.location.origin}${url}`
+        }
+
+        const response = await fetch(fullUrl)
+        if (!response.ok) {
+          console.warn(`Failed to fetch image from ${fullUrl}: ${response.statusText}`)
+          return null
+        }
         const blob = await response.blob()
-        return new Promise((resolve) => {
+        return new Promise((resolve, reject) => {
           const reader = new FileReader()
-          reader.onloadend = () => resolve(reader.result as string)
+          reader.onloadend = () => {
+            const result = reader.result as string
+            if (result && result.startsWith('data:')) {
+              resolve(result)
+            } else {
+              reject(new Error('Invalid data URL'))
+            }
+          }
+          reader.onerror = () => reject(reader.error)
           reader.readAsDataURL(blob)
         })
-      } catch {
+      } catch (error) {
+        console.warn(`Error loading image from ${url}:`, error)
         return null
       }
     }
@@ -529,12 +548,15 @@ export default function PerformanceAppraisalWorkspace({
 
       // Load and add logo
       try {
-        const logoBase64 = await loadImageAsBase64('/Users/leopura/Desktop/iiadminsystem/public/ibon-logo.png')
+        const logoBase64 = await loadImageAsBase64('/ibon-logo.png')
         if (logoBase64) {
-          doc.addImage(logoBase64, 'PNG', 10, 8, 20, 20)
+          // Detect format from data URL
+          const format = logoBase64.includes('image/png') ? 'PNG' : logoBase64.includes('image/jpeg') ? 'JPEG' : 'PNG'
+          doc.addImage(logoBase64, format, 10, 8, 20, 20)
         }
-      } catch {
-        // Logo loading failed, continue
+      } catch (error) {
+        console.warn('Logo loading failed:', error)
+        // Continue without logo
       }
 
       // Company branding
@@ -591,14 +613,22 @@ export default function PerformanceAppraisalWorkspace({
         if (attachments?.file_url) {
           const photoBase64 = await loadImageAsBase64(attachments.file_url)
           if (photoBase64) {
-            // Create circular mask effect with border
-            setColorDraw(colors.primary)
-            doc.setLineWidth(0.5)
-            doc.circle(pageWidth - 25, y + 22, 18, 'S')
-            doc.addImage(photoBase64, 'JPEG', pageWidth - 42, y + 4, 34, 36)
+            // Detect format from data URL or file extension
+            const format = photoBase64.includes('image/png') ? 'PNG' : photoBase64.includes('image/jpeg') || attachments.file_url.endsWith('.jpg') || attachments.file_url.endsWith('.jpeg') ? 'JPEG' : 'PNG'
+            try {
+              // Create circular mask effect with border
+              setColorDraw(colors.primary)
+              doc.setLineWidth(0.5)
+              doc.circle(pageWidth - 25, y + 22, 18, 'S')
+              doc.addImage(photoBase64, format, pageWidth - 42, y + 4, 34, 36)
+            } catch (imgError) {
+              console.warn('Failed to add employee photo:', imgError)
+              // Continue without photo
+            }
           }
         }
-      } catch {
+      } catch (error) {
+        console.warn('Photo fetch failed:', error)
         // Photo not found
       }
 
