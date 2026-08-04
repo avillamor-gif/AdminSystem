@@ -453,250 +453,449 @@ export default function PerformanceAppraisalWorkspace({
   }
 
   const downloadEntry = async (entry: SavedAppraisal) => {
-    const doc = new jsPDF({ unit: 'pt', format: 'a4' })
-    const pageWidth = doc.internal.pageSize.getWidth()
-    const pageHeight = doc.internal.pageSize.getHeight()
-    const left = 40
-    const right = pageWidth - 40
-    const maxWidth = pageWidth - left * 2
-    let y = 40
-    let pageNum = 1
+    const doc = new jsPDF({ unit: 'mm', format: 'a4' })
+    const pageWidth = 210 // A4 width in mm
+    const pageHeight = 297 // A4 height in mm
+    let y = 0
 
-    // Colors for styling
-    const primaryColor = { r: 34, g: 197, b: 94 } // Green
-    const darkGray = { r: 31, g: 41, b: 55 }
-    const accentColor = { r: 59, g: 130, b: 246 } // Blue
+    // Color palette
+    const colors = {
+      primary: '#22c55e',
+      secondary: '#0891b2',
+      accent: '#f59e0b',
+      dark: '#1f2937',
+      light: '#f3f4f6',
+      border: '#e5e7eb',
+      success: '#10b981',
+      warning: '#ef4444',
+    }
 
-    const ensureSpace = (needed = 22) => {
-      if (y + needed > pageHeight - 60) {
-        // Add footer
-        doc.setFontSize(8)
-        doc.setTextColor(150, 150, 150)
-        doc.text(`Page ${pageNum}`, pageWidth / 2, pageHeight - 20, { align: 'center' })
-        
-        doc.addPage()
-        pageNum += 1
-        y = 40
+    // Helper: Convert hex to RGB and set fill color
+    const setColorFill = (hex: string) => {
+      const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex)
+      if (result) {
+        doc.setFillColor(parseInt(result[1], 16), parseInt(result[2], 16), parseInt(result[3], 16))
       }
     }
 
-    const addSectionHeader = (title: string) => {
-      ensureSpace(20)
-      doc.setFillColor(primaryColor.r, primaryColor.g, primaryColor.b)
-      doc.rect(left, y - 12, maxWidth, 18, 'F')
-      doc.setFont('helvetica', 'bold')
-      doc.setFontSize(12)
-      doc.setTextColor(255, 255, 255)
-      doc.text(title, left + 8, y)
-      doc.setTextColor(darkGray.r, darkGray.g, darkGray.b)
-      y += 22
-    }
-
-    const addLine = (text: string, size = 10, bold = false, indent = 0) => {
-      ensureSpace(18)
-      doc.setFont('helvetica', bold ? 'bold' : 'normal')
-      doc.setFontSize(size)
-      doc.setTextColor(darkGray.r, darkGray.g, darkGray.b)
-      const lines = doc.splitTextToSize(text || '-', maxWidth - indent)
-      doc.text(lines, left + indent, y)
-      y += lines.length * (size + 3)
-    }
-
-    const addGap = (amount = 8) => {
-      y += amount
-    }
-
-    const addLabelValue = (label: string, value: string) => {
-      ensureSpace(16)
-      doc.setFont('helvetica', 'bold')
-      doc.setFontSize(10)
-      doc.setTextColor(accentColor.r, accentColor.g, accentColor.b)
-      doc.text(`${label}:`, left, y)
-      
-      doc.setFont('helvetica', 'normal')
-      doc.setFontSize(10)
-      doc.setTextColor(darkGray.r, darkGray.g, darkGray.b)
-      const lines = doc.splitTextToSize(value || '-', maxWidth - 120)
-      doc.text(lines, left + 120, y)
-      y += Math.max(lines.length * 13, 14)
-    }
-
-    // Add decorative header
-    doc.setFillColor(primaryColor.r, primaryColor.g, primaryColor.b)
-    doc.rect(0, 0, pageWidth, 60, 'F')
-    
-    // Add logo
-    try {
-      doc.addImage('/Users/leopura/Desktop/iiadminsystem/public/ibon-logo.png', 'PNG', left, 6, 40, 40)
-    } catch (err) {
-      // Logo not found, continue without it
-    }
-    
-    // Company name in header
-    doc.setFont('helvetica', 'bold')
-    doc.setFontSize(20)
-    doc.setTextColor(255, 255, 255)
-    doc.text('IBON International', left + 50, 30)
-    
-    doc.setFont('helvetica', 'normal')
-    doc.setFontSize(10)
-    doc.text('Performance Appraisal Form', left + 50, 48)
-
-    // Try to fetch employee photo
-    const supabase = createClient()
-    let photoUrl = null
-    try {
-      const { data: attachments } = await supabase
-        .from('employee_attachments')
-        .select('file_url')
-        .eq('employee_id', entry.form.appraiseeName.toLowerCase())
-        .eq('attachment_type', 'photo')
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .single()
-      
-      if (attachments?.file_url) {
-        photoUrl = attachments.file_url
+    // Helper: Convert hex to RGB and set text color
+    const setColorText = (hex: string) => {
+      const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex)
+      if (result) {
+        doc.setTextColor(parseInt(result[1], 16), parseInt(result[2], 16), parseInt(result[3], 16))
       }
-    } catch (err) {
-      // Photo not found, continue without it
     }
 
-    // Add employee photo in upper-right corner if available
-    if (photoUrl) {
+    // Helper: Convert hex to RGB and set draw color
+    const setColorDraw = (hex: string) => {
+      const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex)
+      if (result) {
+        doc.setDrawColor(parseInt(result[1], 16), parseInt(result[2], 16), parseInt(result[3], 16))
+      }
+    }
+
+    // Helper: Convert hex to RGB array
+    const hexToRgb = (hex: string): [number, number, number] => {
+      const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex)
+      return result ? [parseInt(result[1], 16), parseInt(result[2], 16), parseInt(result[3], 16)] : [0, 0, 0]
+    }
+
+    // Helper: Load image from URL to base64
+    const loadImageAsBase64 = async (url: string): Promise<string | null> => {
       try {
-        doc.addImage(photoUrl, 'JPEG', pageWidth - 100, 8, 88, 88)
-      } catch (err) {
-        // Image failed to load, continue without it
+        const response = await fetch(url)
+        const blob = await response.blob()
+        return new Promise((resolve) => {
+          const reader = new FileReader()
+          reader.onloadend = () => resolve(reader.result as string)
+          reader.readAsDataURL(blob)
+        })
+      } catch {
+        return null
       }
     }
 
-    y = 75
+    // Helper: Add page header with logo
+    const addPageHeader = async (isFirstPage = true) => {
+      if (!isFirstPage) return
 
-    // Basic Information Section
-    addSectionHeader('Basic Information')
-    addLabelValue('Appraisee', entry.form.appraiseeName)
-    addLabelValue('Appraiser', entry.form.appraiserName)
-    addLabelValue('Department', entry.form.department)
-    addLabelValue('Position', entry.form.position)
-    addLabelValue('Time in Present Position', entry.form.timeInPresentPosition)
-    addLabelValue('Length of Service', entry.form.lengthOfService)
-    addLabelValue('Period Covered', entry.form.periodCovered === 'yearend' ? 'Yearend (January to December)' : 'Midyear (January to June)')
-    addLabelValue('Appraisal Date', entry.form.appraisalDate || '-')
-    if (entry.returnComment) {
-      doc.setFillColor(254, 242, 242)
-      doc.rect(left, y - 4, maxWidth, 16, 'F')
-      addLine(`Admin Return Comment: ${entry.returnComment}`, 9, false)
+      // Modern gradient background effect with shapes
+      setColorFill(colors.primary)
+      doc.rect(0, 0, pageWidth, 50, 'F')
+
+      // Accent stripe
+      setColorFill(colors.secondary)
+      doc.rect(0, 48, pageWidth, 4, 'F')
+
+      // Load and add logo
+      try {
+        const logoBase64 = await loadImageAsBase64('/Users/leopura/Desktop/iiadminsystem/public/ibon-logo.png')
+        if (logoBase64) {
+          doc.addImage(logoBase64, 'PNG', 10, 8, 20, 20)
+        }
+      } catch {
+        // Logo loading failed, continue
+      }
+
+      // Company branding
+      doc.setFont('helvetica', 'bold')
+      doc.setFontSize(22)
+      doc.setTextColor(255, 255, 255)
+      doc.text('IBON International', 35, 18)
+
+      doc.setFont('helvetica', 'normal')
+      doc.setFontSize(9)
+      doc.setTextColor(220, 220, 220)
+      doc.text('Performance Appraisal Form', 35, 28)
+
+      // Date in top right
+      doc.setFont('helvetica', 'normal')
+      doc.setFontSize(8)
+      doc.setTextColor(200, 200, 200)
+      doc.text(`Generated: ${new Date().toLocaleDateString()}`, pageWidth - 45, 25)
+
+      y = 58
     }
-    addGap()
+
+    // Helper: Add employee card with photo
+    const addEmployeeCard = async () => {
+      // Card background
+      setColorFill(colors.light)
+      doc.roundedRect(10, y, pageWidth - 20, 45, 3, 3, 'F')
+
+      // Left side: Employee info
+      doc.setFont('helvetica', 'bold')
+      doc.setFontSize(14)
+      setColorText(colors.dark)
+      doc.text(entry.form.appraiseeName, 15, y + 12)
+
+      doc.setFont('helvetica', 'normal')
+      doc.setFontSize(9)
+      setColorText(colors.dark)
+      doc.text(`Position: ${entry.form.position}`, 15, y + 20)
+      doc.text(`Department: ${entry.form.department}`, 15, y + 26)
+      doc.text(`Period: ${entry.form.periodCovered === 'yearend' ? 'Yearend' : 'Midyear'} | Date: ${entry.form.appraisalDate}`, 15, y + 32)
+
+      // Right side: Photo
+      const supabase = createClient()
+      try {
+        const { data: attachments } = await supabase
+          .from('employee_attachments')
+          .select('file_url')
+          .eq('employee_id', entry.form.appraiseeName.toLowerCase())
+          .eq('attachment_type', 'photo')
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .single()
+
+        if (attachments?.file_url) {
+          const photoBase64 = await loadImageAsBase64(attachments.file_url)
+          if (photoBase64) {
+            // Create circular mask effect with border
+            setColorDraw(colors.primary)
+            doc.setLineWidth(0.5)
+            doc.circle(pageWidth - 25, y + 22, 18, 'S')
+            doc.addImage(photoBase64, 'JPEG', pageWidth - 42, y + 4, 34, 36)
+          }
+        }
+      } catch {
+        // Photo not found
+      }
+
+      y += 52
+    }
+
+    // Helper: Section header with icon-style indicator
+    const addSectionHeader = (title: string, number?: string) => {
+      // Subtle background
+      setColorFill(colors.light)
+      doc.rect(10, y, pageWidth - 20, 10, 'F')
+
+      // Left colored bar
+      setColorFill(colors.primary)
+      doc.rect(10, y, 2, 10, 'F')
+
+      // Section number badge
+      if (number) {
+        setColorFill(colors.secondary)
+        doc.circle(16, y + 5, 2, 'F')
+        doc.setFont('helvetica', 'bold')
+        doc.setFontSize(7)
+        doc.setTextColor(255, 255, 255)
+        doc.text(number, 15, y + 6)
+      }
+
+      // Title
+      doc.setFont('helvetica', 'bold')
+      doc.setFontSize(11)
+      setColorText(colors.dark)
+      doc.text(title, 25, y + 6.5)
+
+      y += 14
+    }
+
+    // Helper: Content paragraph
+    const addParagraph = (label: string, value: string, indent = 5) => {
+      doc.setFont('helvetica', 'bold')
+      doc.setFontSize(8.5)
+      setColorText(colors.secondary)
+      doc.text(label + ':', 10 + indent, y)
+
+      doc.setFont('helvetica', 'normal')
+      doc.setFontSize(8)
+      setColorText(colors.dark)
+      const lines = doc.splitTextToSize(value || '—', pageWidth - 30 - indent)
+      doc.text(lines, 15 + indent, y + 4)
+
+      y += Math.max(lines.length * 3.5 + 5, 8)
+    }
+
+    // Helper: Ratings table
+    const addRatingsTable = (ratings: Record<string, string>) => {
+      const tableY = y
+      const colWidth = (pageWidth - 20) / 2
+      const cellHeight = 5
+
+      // Headers
+      setColorFill(colors.secondary)
+      doc.rect(10, tableY, colWidth, cellHeight, 'F')
+      doc.rect(10 + colWidth, tableY, colWidth, cellHeight, 'F')
+
+      doc.setFont('helvetica', 'bold')
+      doc.setFontSize(8)
+      doc.setTextColor(255, 255, 255)
+      doc.text('Area', 12, tableY + 3.5)
+      doc.text('Rating', 12 + colWidth, tableY + 3.5)
+
+      y = tableY + cellHeight
+
+      // Data rows
+      let rowIndex = 0
+      Object.entries(ratings).forEach(([area, rating]) => {
+        const bgColor = rowIndex % 2 === 0 ? colors.light : '#ffffff'
+        setColorFill(bgColor)
+        doc.rect(10, y, pageWidth - 20, cellHeight, 'F')
+
+        doc.setFont('helvetica', 'normal')
+        doc.setFontSize(7.5)
+        setColorText(colors.dark)
+        const areaLines = doc.splitTextToSize(area, colWidth - 4)
+        doc.text(areaLines, 12, y + 2)
+        doc.text(rating, 12 + colWidth, y + 2)
+
+        y += cellHeight
+        rowIndex++
+      })
+
+      y += 3
+    }
+
+    // Helper: Overall rating badge
+    const addRatingBadge = (label: string, rating: string) => {
+      const badgeY = y
+
+      // Background
+      setColorFill(colors.light)
+      doc.roundedRect(10, badgeY, pageWidth - 20, 12, 2, 2, 'F')
+
+      // Rating color based on value
+      let ratingColor = colors.success
+      if (rating.toLowerCase().includes('poor')) ratingColor = colors.warning
+      else if (rating.toLowerCase().includes('satisfactory')) ratingColor = colors.accent
+      else if (rating.toLowerCase().includes('excellent')) ratingColor = colors.primary
+
+      setColorFill(ratingColor)
+      doc.circle(pageWidth - 20, badgeY + 6, 5, 'F')
+
+      doc.setFont('helvetica', 'bold')
+      doc.setFontSize(7)
+      doc.setTextColor(255, 255, 255)
+      doc.text(rating.toUpperCase(), pageWidth - 20, badgeY + 7.5)
+
+      // Label
+      doc.setFont('helvetica', 'bold')
+      doc.setFontSize(9)
+      setColorText(colors.dark)
+      doc.text(label, 15, badgeY + 8)
+
+      y += 16
+    }
+
+    // Helper: Ensure page space
+    const ensureSpace = (needed = 20) => {
+      if (y + needed > pageHeight - 20) {
+        // Add footer
+        doc.setFontSize(7)
+        doc.setTextColor(150, 150, 150)
+        doc.text(`Page ${doc.getNumberOfPages()}`, pageWidth / 2, pageHeight - 8, { align: 'center' })
+        doc.addPage()
+        y = 15
+      }
+    }
+
+    // Build PDF
+    await addPageHeader(true)
+    await addEmployeeCard()
+    ensureSpace(15)
+
+    // Basic Info Section
+    addSectionHeader('Employee Information', 'I')
+    addParagraph('Appraiser', entry.form.appraiserName)
+    addParagraph('Time in Position', entry.form.timeInPresentPosition)
+    addParagraph('Service Length', entry.form.lengthOfService)
+    if (entry.returnComment) {
+      setColorFill(colors.warning)
+      doc.rect(10, y, pageWidth - 20, 8, 'F')
+      doc.setFont('helvetica', 'bold')
+      doc.setFontSize(8)
+      doc.setTextColor(255, 255, 255)
+      doc.text('⚠ Admin Note: ' + entry.returnComment, 12, y + 4)
+      y += 10
+    }
+    y += 3
+
+    ensureSpace(15)
 
     // Discussion Points
-    addSectionHeader('Part I: Discussion Points')
+    addSectionHeader('Discussion Points', 'II')
     DISCUSSION_PROMPTS.forEach((prompt, idx) => {
-      addLine(`${idx + 1}. ${prompt}`, 10, true)
-      addLine(entry.form.discussionPoints[idx] || '-', 9, false, 12)
-      addGap(4)
+      ensureSpace(8)
+      addParagraph(`${idx + 1}. ${prompt}`, entry.form.discussionPoints[idx] || '—')
     })
-    addGap()
+    y += 2
+
+    ensureSpace(15)
 
     // Performance Assessment
-    addSectionHeader('Part II: Performance Assessment')
+    addSectionHeader('Performance Assessment', 'III')
     entry.form.objectives.forEach((objective, idx) => {
-      addLine(`Objective ${idx + 1}`, 10, true)
-      addLine(`Objective: ${objective.objective || '-'}`, 9, false, 12)
-      addLine(`Status: ${objective.status || '-'}`, 9, false, 12)
-      addLine(`Comments: ${objective.comments || '-'}`, 9, false, 12)
-      addGap(4)
+      ensureSpace(8)
+      doc.setFont('helvetica', 'bold')
+      doc.setFontSize(8)
+      setColorText(colors.secondary)
+      doc.text(`Objective ${idx + 1}`, 15, y)
+      y += 3.5
+
+      doc.setFont('helvetica', 'normal')
+      doc.setFontSize(7.5)
+      setColorText(colors.dark)
+      const objLines = doc.splitTextToSize(objective.objective || '—', pageWidth - 30)
+      doc.text(objLines, 18, y)
+      y += objLines.length * 2.8 + 2
+
+      const statusColor = objective.status?.includes('achieved') ? colors.success : colors.accent
+      setColorFill(statusColor)
+      doc.rect(18, y, 40, 4, 'F')
+      doc.setFont('helvetica', 'bold')
+      doc.setFontSize(6.5)
+      doc.setTextColor(255, 255, 255)
+      doc.text(objective.status?.toUpperCase() || '—', 20, y + 2.5)
+      y += 6
     })
-    addGap()
+    y += 2
+
+    ensureSpace(15)
 
     // Work Ratings
-    addSectionHeader('Work Ratings by Category')
-    Object.entries(WORK_RATING_CATEGORIES).forEach(([category, areas]) => {
-      addLine(category, 10, true)
+    addSectionHeader('Work Ratings', 'IV')
+    const flatRatings = Object.entries(WORK_RATING_CATEGORIES).reduce((acc, [_, areas]) => {
       areas.forEach((area) => {
-        const rating = entry.form.workRatings[area] || 'good'
-        addLine(`${area}: ${rating}`, 9, false, 12)
+        acc[area] = entry.form.workRatings[area] || 'good'
       })
-      addGap(4)
-    })
-    addGap()
+      return acc
+    }, {} as Record<string, string>)
+    addRatingsTable(flatRatings)
+    y += 3
 
-    // Problems and Feedback
-    addSectionHeader('Performance Insights')
-    addLine('Problems Faced and Resolution:', 10, true)
-    addLine(entry.form.problemsFaced || '-', 9, false, 12)
-    addGap(8)
-    addLine('Feedback on Supervisor Role:', 10, true)
-    addLine(entry.form.supervisorFeedback || '-', 9, false, 12)
-    addGap()
+    ensureSpace(15)
+
+    // Problems & Insights
+    addSectionHeader('Performance Insights', 'V')
+    addParagraph('Challenges', entry.form.problemsFaced || '—')
+    addParagraph('Supervisor Feedback', entry.form.supervisorFeedback || '—')
+    y += 2
+
+    ensureSpace(12)
 
     // Overall Rating
-    addSectionHeader('Overall Rating & Recommendation')
-    addLabelValue('Overall Rating', entry.form.overallRating)
-    addLabelValue('Recommendation', entry.form.recommendation || '-')
-    addGap()
-
-    // Training and Development
-    addSectionHeader('Part IV: Training & Staff Development')
-    addLine('Agreed Development Aims:', 10, true)
-    addLine(entry.form.trainingDevelopmentAims || '-', 9, false, 12)
-    addGap(8)
-    addLine('Training and Development Support:', 10, true)
-    addLine(entry.form.trainingSupport || '-', 9, false, 12)
-    addGap()
-
-    // Performance Plan
-    addSectionHeader('Part V: Performance Plan')
-    entry.form.performancePlan.forEach((plan, idx) => {
-      if (plan.objective || plan.criteria) {
-        addLine(`Plan ${idx + 1}:`, 10, true)
-        addLine(`Objective: ${plan.objective || '-'}`, 9, false, 12)
-        addLine(`Criteria: ${plan.criteria || '-'}`, 9, false, 12)
-        addGap(4)
-      }
-    })
-    addGap()
-
-    // Management Action
-    addSectionHeader('Part VI: Management Action')
-    addLine('Grade, Recommendation, Summary:', 10, true)
-    addLine(entry.form.managementActionSummary || '-', 9, false, 12)
-    addGap(8)
-    addLine('Confidentiality Notes:', 10, true)
-    addLine(entry.form.confidentialityNotes || '-', 9, false, 12)
-    addGap()
-
-    // Signatures Section
-    addSectionHeader('Signatures')
-    const formatSignatureForPdf = (sig: string | undefined): string => {
-      if (!sig) return '-'
-      if (sig.startsWith('http')) return '[e-signature]'
-      return sig
+    addRatingBadge('Overall Performance Rating', entry.form.overallRating)
+    if (entry.form.recommendation) {
+      addParagraph('Recommendation', entry.form.recommendation)
     }
 
-    ensureSpace(40)
-    doc.setFont('helvetica', 'bold')
-    doc.setFontSize(10)
-    doc.setTextColor(darkGray.r, darkGray.g, darkGray.b)
-    doc.text('Appraiser:', left, y)
-    doc.setFont('helvetica', 'normal')
-    doc.setFontSize(9)
-    doc.text(`${formatSignatureForPdf(entry.form.appraiserSignature)} | Signed: ${entry.form.appraiserSignedDate || '-'}`, left + 120, y)
-    y += 20
+    ensureSpace(15)
 
-    doc.setFont('helvetica', 'bold')
-    doc.setFontSize(10)
-    doc.text('Appraisee:', left, y)
-    doc.setFont('helvetica', 'normal')
-    doc.setFontSize(9)
-    doc.text(`${formatSignatureForPdf(entry.form.appraiseeSignature)} | Signed: ${entry.form.appraiseeSignedDate || '-'}`, left + 120, y)
+    // Training & Development
+    addSectionHeader('Development Plan', 'VI')
+    addParagraph('Development Aims', entry.form.trainingDevelopmentAims || '—')
+    addParagraph('Support Required', entry.form.trainingSupport || '—')
+    y += 3
 
-    // Add final footer
+    ensureSpace(15)
+
+    // Performance Plan
+    addSectionHeader('Performance Plan', 'VII')
+    entry.form.performancePlan.forEach((plan, idx) => {
+      if (plan.objective || plan.criteria) {
+        ensureSpace(8)
+        doc.setFont('helvetica', 'bold')
+        doc.setFontSize(8)
+        setColorText(colors.secondary)
+        doc.text(`Plan ${idx + 1}`, 15, y)
+        y += 3.5
+
+        addParagraph('Objective', plan.objective || '—', 8)
+        addParagraph('Criteria', plan.criteria || '—', 8)
+      }
+    })
+    y += 2
+
+    ensureSpace(15)
+
+    // Management Action
+    addSectionHeader('Management Action', 'VIII')
+    addParagraph('Summary', entry.form.managementActionSummary || '—')
+    addParagraph('Confidentiality Notes', entry.form.confidentialityNotes || '—')
+    y += 3
+
+    ensureSpace(20)
+
+    // Signatures Section
+    addSectionHeader('Signatures & Approvals', 'IX')
+    
+    const formatSig = (sig: string | undefined) => (sig?.startsWith('http') ? '[E-Signature]' : sig || '___________________')
+    
+    // Appraiser
+    setColorFill(colors.light)
+    doc.rect(10, y, pageWidth / 2 - 12, 20, 'F')
+    doc.setFont('helvetica', 'bold')
+    doc.setFontSize(9)
+    setColorText(colors.dark)
+    doc.text('Appraiser', 15, y + 4)
+    doc.setFont('helvetica', 'normal')
     doc.setFontSize(8)
+    doc.text(entry.form.appraiserName, 15, y + 9)
+    doc.text('Signature: ' + formatSig(entry.form.appraiserSignature), 15, y + 13)
+    doc.text('Date: ' + (entry.form.appraiserSignedDate || '_________'), 15, y + 17)
+
+    // Appraisee
+    setColorFill(colors.light)
+    doc.rect(pageWidth / 2 + 2, y, pageWidth / 2 - 12, 20, 'F')
+    doc.setFont('helvetica', 'bold')
+    doc.setFontSize(9)
+    setColorText(colors.dark)
+    doc.text('Appraisee', pageWidth / 2 + 7, y + 4)
+    doc.setFont('helvetica', 'normal')
+    doc.setFontSize(8)
+    doc.text(entry.form.appraiseeName, pageWidth / 2 + 7, y + 9)
+    doc.text('Signature: ' + formatSig(entry.form.appraiseeSignature), pageWidth / 2 + 7, y + 13)
+    doc.text('Date: ' + (entry.form.appraiseeSignedDate || '_________'), pageWidth / 2 + 7, y + 17)
+
+    // Footer
+    doc.setFontSize(7)
     doc.setTextColor(150, 150, 150)
-    doc.text(`Page ${pageNum}`, pageWidth / 2, pageHeight - 20, { align: 'center' })
-    doc.text(`Generated on ${new Date().toLocaleDateString()}`, pageWidth / 2, pageHeight - 10, { align: 'center' })
+    doc.text(`Page ${doc.getNumberOfPages()}`, pageWidth / 2, pageHeight - 8, { align: 'center' })
+    doc.text('© IBON International | Confidential', 10, pageHeight - 4)
 
     doc.save(`${entry.filename}.pdf`)
   }
@@ -1158,7 +1357,16 @@ export default function PerformanceAppraisalWorkspace({
                       <div className="flex flex-wrap gap-2">
                         <Button variant="ghost" size="sm" onClick={() => loadEntry(entry)}>Edit</Button>
                         <Button variant="ghost" size="sm" onClick={() => loadEntry(entry)}>View</Button>
-                        <Button variant="ghost" size="sm" onClick={() => downloadEntry(entry)}>
+                        <Button variant="ghost" size="sm" onClick={() => {
+                          toast.promise(
+                            downloadEntry(entry),
+                            {
+                              loading: 'Generating PDF...',
+                              success: 'PDF downloaded successfully',
+                              error: 'Failed to generate PDF'
+                            }
+                          )
+                        }}>
                           <Download className="w-4 h-4" />
                           Download
                         </Button>
