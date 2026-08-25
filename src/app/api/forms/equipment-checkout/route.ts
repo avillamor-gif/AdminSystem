@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { FROM_ADDRESS } from '@/lib/resend'
+import { FROM_ADDRESS, resend } from '@/lib/resend'
 
 /**
  * Simple in-memory rate limiter
@@ -202,10 +202,6 @@ async function sendConfirmationEmail(params: {
   endDate: string
   requestId: string
 }): Promise<void> {
-  const { Resend } = await import('resend')
-
-  const resend = new Resend(process.env.RESEND_API_KEY)
-
   await resend.emails.send({
     from: FROM_ADDRESS,
     to: params.email,

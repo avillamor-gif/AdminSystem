@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { FROM_ADDRESS } from '@/lib/resend'
+import { FROM_ADDRESS, resend } from '@/lib/resend'
 
 /**
  * POST /api/admin/send-equipment-form
@@ -33,10 +33,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Send email using Resend
-    const { Resend } = await import('resend')
-    const resend = new Resend(process.env.RESEND_API_KEY)
-
+    // Verify Resend is configured
     if (!process.env.RESEND_API_KEY) {
       console.error('[send-equipment-form] RESEND_API_KEY not configured')
       return NextResponse.json(
