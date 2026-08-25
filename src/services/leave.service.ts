@@ -321,11 +321,27 @@ export const leaveService = {
   async createRequest(request: LeaveRequestInsert, employeeData?: any): Promise<LeaveRequest> {
     const supabase = createClient()
     
-    // Calculate total_days (inclusive of both start and end dates)
-    const startDate = new Date(request.start_date ?? new Date())
-    const endDate = new Date(request.end_date ?? new Date())
-    const diffTime = Math.abs(endDate.getTime() - startDate.getTime())
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1 // +1 to include both start and end dates
+    // Calculate total_days as working days (exclude weekends + holidays)
+    let workingDays = 0
+    if (request.start_date && request.end_date) {
+      // Fetch holidays for the relevant year(s)
+      const startYear = new Date(request.start_date).getFullYear()
+      const endYear = new Date(request.end_date).getFullYear()
+      const years = startYear === endYear ? [startYear] : [startYear, endYear]
+      let holidayDates = new Set<string>()
+      for (const year of years) {
+        const { data: hols } = await supabase
+          .from('holidays')
+          .select('holiday_date')
+          .eq('year', year)
+          .eq('is_active', true)
+        for (const h of hols ?? []) {
+          if (h.holiday_date) holidayDates.add(h.holiday_date.slice(0, 10))
+        }
+      }
+      const { countWorkingDays } = await import('@/lib/dateUtils')
+      workingDays = countWorkingDays(request.start_date, request.end_date, holidayDates)
+    }
     
     // Use provided employee data or fetch if not provided
     let employee = employeeData
@@ -359,7 +375,7 @@ export const leaveService = {
       .from('leave_requests')
       .insert({
         ...request,
-        total_days: diffDays
+        total_days: workingDays
       } as never)
       .select('*')
       .single()
