@@ -104,17 +104,32 @@ export async function POST(request: NextRequest) {
     `
 
     // Send the email using the verified FROM_ADDRESS
-    const sendResult = await resend.emails.send({
-      from: FROM_ADDRESS,
-      to: recipientEmail,
-      subject: subject,
-      html: htmlBody,
-    })
+    let sendResult
+    try {
+      sendResult = await resend.emails.send({
+        from: FROM_ADDRESS,
+        to: recipientEmail,
+        subject: subject,
+        html: htmlBody,
+      })
+    } catch (sendError) {
+      console.error('[send-equipment-form] Resend exception:', sendError)
+      return NextResponse.json(
+        { 
+          error: 'Failed to send email',
+          details: sendError instanceof Error ? sendError.message : String(sendError)
+        },
+        { status: 500 }
+      )
+    }
 
     if (sendResult.error) {
-      console.error('[send-equipment-form] Resend error:', sendResult.error)
+      console.error('[send-equipment-form] Resend error response:', sendResult.error)
       return NextResponse.json(
-        { error: 'Failed to send email' },
+        { 
+          error: 'Failed to send email',
+          details: sendResult.error.message || String(sendResult.error)
+        },
         { status: 500 }
       )
     }
