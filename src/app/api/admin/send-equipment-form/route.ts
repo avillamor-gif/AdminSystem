@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { FROM_ADDRESS } from '@/lib/resend'
 
 /**
  * POST /api/admin/send-equipment-form
@@ -35,6 +36,14 @@ export async function POST(request: NextRequest) {
     // Send email using Resend
     const { Resend } = await import('resend')
     const resend = new Resend(process.env.RESEND_API_KEY)
+
+    if (!process.env.RESEND_API_KEY) {
+      console.error('[send-equipment-form] RESEND_API_KEY not configured')
+      return NextResponse.json(
+        { error: 'Email service not configured' },
+        { status: 500 }
+      )
+    }
 
     const subject = `Equipment Checkout Form - ${partnerOrg || partnerName}`
 
@@ -97,9 +106,9 @@ export async function POST(request: NextRequest) {
       </div>
     `
 
-    // Send the email
+    // Send the email using the verified FROM_ADDRESS
     const sendResult = await resend.emails.send({
-      from: `IBON Equipment <noreply@iboninternational.org>`,
+      from: FROM_ADDRESS,
       to: recipientEmail,
       subject: subject,
       html: htmlBody,

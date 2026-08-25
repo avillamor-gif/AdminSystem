@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { FROM_ADDRESS } from '@/lib/resend'
 
 /**
  * Simple in-memory rate limiter
@@ -206,7 +207,7 @@ async function sendConfirmationEmail(params: {
   const resend = new Resend(process.env.RESEND_API_KEY)
 
   await resend.emails.send({
-    from: `IBON Equipment <noreply@iboninternational.org>`,
+    from: FROM_ADDRESS,
     to: params.email,
     subject: 'Equipment Checkout Request Received',
     html: `
