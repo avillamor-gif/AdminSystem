@@ -206,14 +206,30 @@ export async function POST(req: NextRequest) {
       try {
         // Collect email addresses for all recipient user IDs
         const recipientList = [...recipientUserIds]
-        const { data: authUsers } = await admin.auth.admin.listUsers()
+        console.log(`[notifications/send] Preparing to send emails to ${recipientList.length} recipient(s)`)
+
+        let authUsers = []
+        try {
+          const result = await admin.auth.admin.listUsers()
+          authUsers = result?.users ?? []
+          console.log(`[notifications/send] Retrieved ${authUsers.length} auth users`)
+        } catch (authErr) {
+          console.error(`[notifications/send] Failed to list auth users:`, authErr)
+          console.warn(`[notifications/send] Email sending skipped due to auth user lookup failure`)
+          // Don't fail - just skip email send if auth lookup fails
+          authUsers = []
+        }
+
         const userEmailMap: Record<string, string> = {}
-        for (const u of authUsers?.users ?? []) {
+        for (const u of authUsers) {
           if (u.email) userEmailMap[u.id] = u.email
         }
+
         const toAddresses = recipientList
           .map((id) => userEmailMap[id])
           .filter(Boolean) as string[]
+
+        console.log(`[notifications/send] Resolved ${toAddresses.length} email address(es) from ${recipientList.length} recipient(s)`)
 
         if (toAddresses.length > 0) {
           let emailPayload: { subject: string; html: string } | null = null
@@ -235,6 +251,7 @@ export async function POST(req: NextRequest) {
               days: lr?.total_days ?? 0,
               reason: lr?.reason ?? undefined,
             })
+            console.log(`[notifications/send] Prepared leave request email for ${leaveTypeName}`)
           } else {
             const requestTypeMap: Record<string, string> = {
               travel_request_notifications: 'Travel',
@@ -250,13 +267,17 @@ export async function POST(req: NextRequest) {
               requestNumber: requestNumber ?? undefined,
               details: message.replace('{name}', name),
             })
+            console.log(`[notifications/send] Prepared ${requestType} request email`)
           }
 
           if (emailPayload) {
             // Send in batches of 50 (Resend batch limit)
+            let successCount = 0
+            let failureCount = 0
+
             for (let i = 0; i < toAddresses.length; i += 50) {
               const batch = toAddresses.slice(i, i + 50)
-              await Promise.allSettled(
+              const results = await Promise.allSettled(
                 batch.map((to) =>
                   resend.emails.send({
                     from: FROM_ADDRESS,
@@ -266,13 +287,33 @@ export async function POST(req: NextRequest) {
                   })
                 )
               )
+
+              // Count successes and failures
+              results.forEach((result) => {
+                if (result.status === 'fulfilled') {
+                  successCount++
+                } else {
+                  failureCount++
+                  console.error(`[notifications/send] Email send failed:`, result.reason)
+                }
+              })
+
+              console.log(`[notifications/send] Batch ${Math.floor(i / 50) + 1}: ${successCount} sent, ${failureCount} failed`)
             }
+
+            console.log(`[notifications/send] Email sending complete: ${successCount} succeeded, ${failureCount} failed`)
+          } else {
+            console.warn(`[notifications/send] Failed to generate email payload for table: ${table}`)
           }
+        } else {
+          console.warn(`[notifications/send] No email addresses found for ${recipientList.length} recipient(s)`)
         }
       } catch (emailErr) {
         // Email failure must never break the notification insert
-        console.warn('[notifications/send] Email send failed:', emailErr)
+        console.error('[notifications/send] Error during email send:',emailErr)
       }
+    } else {
+      console.warn('[notifications/send] RESEND_API_KEY not configured - skipping email send')
     }
 
     return NextResponse.json({ inserted: rows.length })

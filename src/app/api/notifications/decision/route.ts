@@ -144,9 +144,17 @@ export async function POST(req: NextRequest) {
     // ── Fire-and-forget email to the requester ────────────────────────────────
     if (process.env.RESEND_API_KEY) {
       try {
+        console.log(`[notifications/decision] Preparing decision email for user ${ur.user_id}`)
+        
         // Fetch the requester's email via auth
-        const { data: authUser } = await admin.auth.admin.getUserById(ur.user_id)
-        const toEmail = authUser?.user?.email
+        let toEmail = ''
+        try {
+          const { data: authUser } = await admin.auth.admin.getUserById(ur.user_id)
+          toEmail = authUser?.user?.email ?? ''
+          console.log(`[notifications/decision] Retrieved email: ${toEmail ? toEmail.substring(0, 5) + '...' : 'NOT FOUND'}`)
+        } catch (authErr) {
+          console.error(`[notifications/decision] Failed to get auth user:`, authErr)
+        }
 
         // Fetch the requester's full name
         const { data: empRow } = await admin
@@ -178,6 +186,7 @@ export async function POST(req: NextRequest) {
                 endDate: lr?.end_date ?? '',
                 days: lr?.total_days ?? 0,
               })
+              console.log(`[notifications/decision] Prepared leave ${decision} email`)
             }
           } else {
             const requestTypeMap: Record<string, string> = {
@@ -195,21 +204,31 @@ export async function POST(req: NextRequest) {
               requestNumber: requestNumber ?? undefined,
               details: message,
             })
+            console.log(`[notifications/decision] Prepared ${requestType} ${decision} email`)
           }
 
           if (emailPayload) {
-            await resend.emails.send({
-              from: FROM_ADDRESS,
-              to: toEmail,
-              subject: emailPayload.subject,
-              html: emailPayload.html,
-            })
+            try {
+              const sendResult = await resend.emails.send({
+                from: FROM_ADDRESS,
+                to: toEmail,
+                subject: emailPayload.subject,
+                html: emailPayload.html,
+              })
+              console.log(`[notifications/decision] Email sent successfully to ${toEmail}: ${sendResult?.id ?? 'no ID'}`)
+            } catch (sendErr) {
+              console.error(`[notifications/decision] Failed to send email to ${toEmail}:`, sendErr)
+            }
           }
+        } else {
+          console.warn(`[notifications/decision] No email address found or decision type not supported. toEmail="${toEmail}" decision="${decision}"`)
         }
       } catch (emailErr) {
         // Email failure must never break the notification insert
-        console.warn('[notifications/decision] Email send failed:', emailErr)
+        console.error('[notifications/decision] Error during email send:', emailErr)
       }
+    } else {
+      console.warn('[notifications/decision] RESEND_API_KEY not configured - skipping email send')
     }
 
     return NextResponse.json({ inserted: rows.length })
