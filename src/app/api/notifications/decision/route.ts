@@ -215,7 +215,11 @@ export async function POST(req: NextRequest) {
                 subject: emailPayload.subject,
                 html: emailPayload.html,
               })
-              console.log(`[notifications/decision] Email sent successfully to ${toEmail}: ${sendResult?.id ?? 'no ID'}`)
+              if (sendResult.error) {
+                console.error(`[notifications/decision] Resend API error for ${toEmail}:`, sendResult.error)
+              } else {
+                console.log(`[notifications/decision] Email sent successfully to ${toEmail}: ${sendResult.data?.id ?? 'no ID'}`)
+              }
             } catch (sendErr) {
               console.error(`[notifications/decision] Failed to send email to ${toEmail}:`, sendErr)
             }
