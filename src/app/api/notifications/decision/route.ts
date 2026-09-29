@@ -69,7 +69,13 @@ export async function POST(req: NextRequest) {
         .eq('is_active', true)
         .maybeSingle()
 
-      const ccSlugs: string[] = Array.isArray(wfConfig?.notify_on_decision) ? wfConfig.notify_on_decision as string[] : []
+      // notify_on_decision can be either a comma-separated string or a JSON array
+      let ccSlugs: string[] = []
+      if (typeof wfConfig?.notify_on_decision === 'string') {
+        ccSlugs = wfConfig.notify_on_decision.split(',').map((s: string) => s.trim()).filter(Boolean)
+      } else if (Array.isArray(wfConfig?.notify_on_decision)) {
+        ccSlugs = wfConfig.notify_on_decision as string[]
+      }
 
       // Legacy support: if notifyManagers === 'travel_managers' and config is empty, fall back
       const effectiveSlugs =

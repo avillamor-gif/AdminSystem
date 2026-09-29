@@ -143,7 +143,14 @@ export async function POST(req: NextRequest) {
       .eq('is_active', true)
       .maybeSingle()
 
-    const slugs: string[] = Array.isArray(wfConfig?.notify_on_submit) ? wfConfig.notify_on_submit as string[] : []
+    // notify_on_submit can be either a comma-separated string or a JSON array
+    let slugs: string[] = []
+    if (typeof wfConfig?.notify_on_submit === 'string') {
+      slugs = wfConfig.notify_on_submit.split(',').map((s: string) => s.trim()).filter(Boolean)
+    } else if (Array.isArray(wfConfig?.notify_on_submit)) {
+      slugs = wfConfig.notify_on_submit as string[]
+    }
+    console.log(`[notifications/send] Workflow config for '${resolvedRequestType}': notify_on_submit=${slugs.join(', ')}`)
 
     for (const slug of slugs) {
       const ids = await resolveRoleSlug(slug, admin, emp)
@@ -208,28 +215,50 @@ export async function POST(req: NextRequest) {
         const recipientList = [...recipientUserIds]
         console.log(`[notifications/send] Preparing to send emails to ${recipientList.length} recipient(s)`)
 
-        let authUsers = []
+        // Map user_id -> email by looking up employees via user_roles
+        let userEmailMap: Record<string, string> = {}
         try {
-          const result = await admin.auth.admin.listUsers()
-          authUsers = result?.users ?? []
-          console.log(`[notifications/send] Retrieved ${authUsers.length} auth users`)
-        } catch (authErr) {
-          console.error(`[notifications/send] Failed to list auth users:`, authErr)
-          console.warn(`[notifications/send] Email sending skipped due to auth user lookup failure`)
-          // Don't fail - just skip email send if auth lookup fails
-          authUsers = []
-        }
+          const { data: userRoleEntries } = await admin
+            .from('user_roles')
+            .select('user_id, employee_id')
+            .in('user_id', recipientList)
 
-        const userEmailMap: Record<string, string> = {}
-        for (const u of authUsers) {
-          if (u.email) userEmailMap[u.id] = u.email
+          if (userRoleEntries && userRoleEntries.length > 0) {
+            const empIds = userRoleEntries.map((ur: any) => ur.employee_id).filter(Boolean)
+            console.log(`[notifications/send] Looked up ${empIds.length} employee IDs from user_roles`)
+
+            if (empIds.length > 0) {
+              const { data: emps } = await admin
+                .from('employees')
+                .select('id, email')
+                .in('id', empIds)
+
+              if (emps && emps.length > 0) {
+                // Build map: employee_id -> email first
+                const empEmailMap: Record<string, string> = {}
+                for (const e of emps) {
+                  if (e.email) empEmailMap[e.id] = e.email
+                }
+
+                // Then map: user_id -> email via user_roles lookup
+                for (const ur of userRoleEntries) {
+                  if (empEmailMap[ur.employee_id]) {
+                    userEmailMap[ur.user_id] = empEmailMap[ur.employee_id]
+                  }
+                }
+              }
+            }
+          }
+          console.log(`[notifications/send] Resolved ${Object.keys(userEmailMap).length} email addresses from user_roles lookup`)
+        } catch (lookupErr) {
+          console.error(`[notifications/send] Failed to lookup email addresses:`, lookupErr)
         }
 
         const toAddresses = recipientList
           .map((id) => userEmailMap[id])
           .filter(Boolean) as string[]
 
-        console.log(`[notifications/send] Resolved ${toAddresses.length} email address(es) from ${recipientList.length} recipient(s)`)
+        console.log(`[notifications/send] Final email list: ${toAddresses.length} address(es) from ${recipientList.length} recipient(s)`)
 
         if (toAddresses.length > 0) {
           let emailPayload: { subject: string; html: string } | null = null
@@ -277,6 +306,7 @@ export async function POST(req: NextRequest) {
 
             for (let i = 0; i < toAddresses.length; i += 50) {
               const batch = toAddresses.slice(i, i + 50)
+              console.log(`[notifications/send] Sending batch ${Math.floor(i / 50) + 1} to: ${batch.join(', ')}`)
               const results = await Promise.allSettled(
                 batch.map((to) =>
                   resend.emails.send({
@@ -289,12 +319,15 @@ export async function POST(req: NextRequest) {
               )
 
               // Count successes and failures
-              results.forEach((result) => {
+              results.forEach((result, idx) => {
                 if (result.status === 'fulfilled') {
                   successCount++
+                  if (result.value.data?.id) {
+                    console.log(`[notifications/send] Email sent to ${batch[idx]}: ${result.value.data.id}`)
+                  }
                 } else {
                   failureCount++
-                  console.error(`[notifications/send] Email send failed:`, result.reason)
+                  console.error(`[notifications/send] Email send failed to ${batch[idx]}:`, result.reason)
                 }
               })
 
