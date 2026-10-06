@@ -190,6 +190,24 @@ export default function EmployeeRBACPage() {
         </Card>
       )}
 
+      {/* Info Box: Prerequisites */}
+      <Card className="p-4 bg-amber-50 border-amber-200">
+        <div className="flex gap-3">
+          <AlertCircle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+          <div className="flex-1">
+            <p className="text-sm font-medium text-amber-900">How to assign roles:</p>
+            <ol className="text-sm text-amber-800 mt-2 space-y-1 ml-4 list-decimal">
+              <li>Employee must be <strong>onboarded</strong> first (auth account created)</li>
+              <li>Select the role from the dropdown below</li>
+              <li>Click "Save Changes" to apply</li>
+            </ol>
+            <p className="text-xs text-amber-700 mt-2">
+              ❓ <strong>Missing an employee?</strong> Go to Employee Data → Employees to onboard them first, then return here to assign their role.
+            </p>
+          </div>
+        </div>
+      </Card>
+
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
