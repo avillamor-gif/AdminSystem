@@ -98,23 +98,35 @@ export async function POST(request: NextRequest) {
 
         console.log(`Updating user ${userId} to role ${roleId} (${role.name})`)
 
-        // Step 4: Upsert into user_roles with role_id
-        const { data, error: upsertError } = await supabase
+        // Step 4: Upsert into user_roles
+        // First: upsert the basic fields (avoid schema cache issues with role_id)
+        const { error: upsertError } = await supabase
           .from('user_roles')
           .upsert(
             {
               user_id: userId,
               employee_id: employeeId,
-              role_id: roleId,
               updated_at: new Date().toISOString()
             },
             { onConflict: 'user_id' }
           )
-          .select()
+          .select('*')
 
         if (upsertError) {
           console.error(`Error upserting for employee ${employeeId}:`, upsertError)
           errors.push(`Failed to update ${employee.first_name} ${employee.last_name}: ${upsertError.message}`)
+          continue
+        }
+
+        // Step 5: Update role_id separately to avoid schema cache issues
+        const { error: updateError } = await supabase
+          .from('user_roles')
+          .update({ role_id: roleId })
+          .eq('user_id', userId)
+
+        if (updateError) {
+          console.error(`Error updating role_id for employee ${employeeId}:`, updateError)
+          errors.push(`Failed to update role for ${employee.first_name} ${employee.last_name}: ${updateError.message}`)
           continue
         }
 
