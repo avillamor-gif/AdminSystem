@@ -29,30 +29,81 @@ export async function POST(request: NextRequest) {
           continue
         }
 
-        // Upsert into user_roles table
-        // This will insert or update based on employee_id
+        // Step 1: Get employee and email
+        const { data: employee, error: empError } = await supabase
+          .from('employees')
+          .select('id, email, first_name, last_name')
+          .eq('id', employeeId)
+          .single()
+
+        if (empError || !employee) {
+          console.error(`Employee not found: ${employeeId}`, empError)
+          errors.push(`Employee ${employeeId} not found`)
+          continue
+        }
+
+        // Step 2: Get user_id from auth.users by email
+        let userId: string | null = null
+        if (employee.email) {
+          const { data: authUsers, error: authError } = await supabase.auth.admin.listUsers()
+          if (authError) {
+            console.error('Error listing auth users:', authError)
+          } else {
+            const authUser = authUsers?.users?.find((u: any) => u.email === employee.email)
+            userId = authUser?.id || null
+          }
+        }
+
+        if (!userId) {
+          console.error(`No auth user found for employee ${employeeId} (${employee.email})`)
+          errors.push(`No auth user found for ${employee.first_name} ${employee.last_name}`)
+          continue
+        }
+
+        // Step 3: Get role name from roles table
+        const { data: role, error: roleError } = await supabase
+          .from('roles')
+          .select('id, name')
+          .eq('id', roleId)
+          .single()
+
+        if (roleError || !role) {
+          console.error(`Role not found: ${roleId}`, roleError)
+          errors.push(`Role ${roleId} not found`)
+          continue
+        }
+
+        // Convert role name to lowercase with underscores for the enum
+        const roleName = role.name.toLowerCase().replace(/\s+/g, '_')
+
+        // Step 4: Upsert into user_roles table
+        // Using user_id as the unique key (UNIQUE constraint on user_id)
         const { data, error: upsertError } = await supabase
           .from('user_roles')
           .upsert(
             {
+              user_id: userId,
               employee_id: employeeId,
               role_id: roleId,
+              role: roleName,
               updated_at: new Date().toISOString()
             },
-            { onConflict: 'employee_id' }
+            { onConflict: 'user_id' }
           )
           .select()
           .single()
 
         if (upsertError) {
           console.error(`Error updating role for employee ${employeeId}:`, upsertError)
-          errors.push(`Failed to update employee ${employeeId}: ${upsertError.message}`)
+          errors.push(`Failed to update ${employee.first_name} ${employee.last_name}: ${upsertError.message}`)
           continue
         }
 
         results.push({
           employee_id: employeeId,
+          user_id: userId,
           role_id: roleId,
+          role_name: role.name,
           status: 'updated'
         })
       } catch (error) {

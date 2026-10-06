@@ -5,7 +5,7 @@ export async function GET(request: NextRequest) {
   try {
     const supabase = createAdminClient()
 
-    // Fetch all user_roles with employee and role data
+    // Fetch all user_roles with employee_id and role_id
     const { data: userRoles, error } = await supabase
       .from('user_roles')
       .select('id, employee_id, role_id')
@@ -23,12 +23,14 @@ export async function GET(request: NextRequest) {
       }
     })
 
+    console.log('Loaded assignments:', assignments)
+
     return NextResponse.json({
       success: true,
       assignments
     })
   } catch (error) {
-    console.error('Error in GET /api/admin/employee-roles:', error)
+    console.error('Error in GET /api/admin/employee-roles/get:', error)
     return NextResponse.json(
       { error: error instanceof Error ? error.message : 'Failed to fetch employee roles' },
       { status: 500 }
