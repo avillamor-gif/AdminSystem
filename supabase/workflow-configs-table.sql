@@ -68,10 +68,10 @@ VALUES
   (
     'leave',
     'Leave Request',
-    'Standard employee leave requests (vacation, sick, etc.)',
+    'Standard employee leave requests (vacation, sick, etc.). Notifies direct manager and all admin users.',
     'leave_request_notifications',
-    '["direct_manager"]',
-    '[]',
+    '["direct_manager", "admin"]',
+    '["admin"]',
     '[{"level":1,"approver_role":"direct_manager","label":"Direct Manager","timeout_days":3,"escalation_role":"hr"}]'
   ),
   (
