@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
+import { checkUserPermission } from '@/lib/supabase/permissions'
 
 export async function GET(_req: NextRequest) {
   try {
@@ -13,10 +14,10 @@ export async function GET(_req: NextRequest) {
 
     const admin = createAdminClient()
 
-    // Get the manager's employee_id and role from user_roles
+    // Get the manager's employee_id from user_roles
     const { data: managerRole } = await admin
       .from('user_roles')
-      .select('employee_id, role')
+      .select('employee_id')
       .eq('user_id', user.id)
       .maybeSingle()
 
@@ -24,16 +25,16 @@ export async function GET(_req: NextRequest) {
       return NextResponse.json({ data: [] })
     }
 
-    const adminRoles = ['admin', 'Admin', 'super_admin', 'Super Admin', 'hr', 'HR Manager']
-    const isAdmin = adminRoles.includes(managerRole.role ?? '')
+    // Check if user has leave.approve permission via RBAC system
+    const hasApprovePermission = await checkUserPermission(user.id, 'leave.approve')
 
     // Determine which employee IDs to fetch requests for
     let targetEmployeeIds: string[] = []
 
-    if (isAdmin) {
-      // Admins/HR see ALL pending — no employee filter needed; we'll query without .in()
+    if (hasApprovePermission) {
+      // Users with leave.approve permission see ALL pending requests
     } else {
-      // Managers see only their direct reports
+      // Users without permission see only their direct reports
       const { data: reports } = await admin
         .from('employees')
         .select('id')
@@ -52,7 +53,7 @@ export async function GET(_req: NextRequest) {
       .eq('status', 'pending')
       .order('created_at', { ascending: false })
 
-    if (!isAdmin) {
+    if (!hasApprovePermission) {
       query = query.in('employee_id', targetEmployeeIds)
     }
 

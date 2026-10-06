@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
+import { checkUserPermission } from '@/lib/supabase/permissions'
 
 // Maps user_roles.role values → the approver_role label used in workflow_steps
 const ROLE_TO_STEP_LABEL: Record<string, string> = {
@@ -71,10 +72,10 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Leave request is no longer pending' }, { status: 409 })
     }
 
-    // Get the approver's employee record + role from user_roles
+    // Get the approver's employee record from user_roles
     const { data: approverRole } = await admin
       .from('user_roles')
-      .select('employee_id, role')
+      .select('employee_id')
       .eq('user_id', user.id)
       .maybeSingle()
 
@@ -82,7 +83,10 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Approver employee record not found' }, { status: 403 })
     }
 
-    // Check if approver is the direct manager or has an elevated role
+    // Check if approver has leave.approve permission via RBAC
+    const hasApprovePermission = await checkUserPermission(user.id, 'leave.approve')
+
+    // Check if approver is the direct manager
     const { data: emp } = await admin
       .from('employees')
       .select('manager_id')
@@ -90,10 +94,9 @@ export async function POST(req: NextRequest) {
       .single()
 
     const isDirectManager = emp?.manager_id === approverRole.employee_id
-    const elevatedRoles = ['admin', 'super admin', 'hr', 'hr manager', 'manager', 'manager/department head', 'ed', 'executive director']
-    const isElevatedRole = elevatedRoles.includes((approverRole.role ?? '').toLowerCase())
 
-    if (!isDirectManager && !isElevatedRole) {
+    // Authorization: must be either direct manager OR have leave.approve permission
+    if (!isDirectManager && !hasApprovePermission) {
       return NextResponse.json({ error: 'Not authorized to approve this request' }, { status: 403 })
     }
 
