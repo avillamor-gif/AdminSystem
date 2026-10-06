@@ -1,6 +1,7 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { Card, Button, Badge, Modal, ModalHeader, ModalBody, ModalFooter, Input, ConfirmModal } from '@/components/ui'
 import { useRoles, usePermissions, useCreateRole, useUpdateRole, useDeleteRole, useAssignPermissions } from '@/hooks'
 import { Shield, Plus, Edit2, Trash2, Users, CheckCircle } from 'lucide-react'
@@ -251,6 +252,10 @@ function PermissionPanel({
 }
 
 export default function RBACPage() {
+  const router = useRouter()
+  const searchParams = useSearchParams()
+  const editRoleIdParam = searchParams.get('editRoleId')
+  
   const { data: roles = [], isLoading: rolesLoading } = useRoles()
   const { data: permissions = [], isLoading: permissionsLoading } = usePermissions()
   const createRole = useCreateRole()
@@ -272,6 +277,22 @@ export default function RBACPage() {
 
   // Delete state
   const [deletingRole, setDeletingRole] = useState<RoleWithPermissions | null>(null)
+
+  // Auto-open edit modal if editRoleId param is present
+  useEffect(() => {
+    if (editRoleIdParam && roles.length > 0) {
+      const roleToEdit = roles.find(r => r.id === editRoleIdParam)
+      if (roleToEdit) {
+        // Directly set edit state
+        setEditingRole(roleToEdit)
+        setEditName(roleToEdit.name)
+        setEditDescription(roleToEdit.description || '')
+        setSelectedPermissionIds(new Set(roleToEdit.permissions.map(p => p.id)))
+        // Clean up URL param after opening
+        router.replace('/admin/user-access-security/rbac')
+      }
+    }
+  }, [editRoleIdParam, roles, router])
 
   const visiblePermissions = permissions.filter((permission) => !DEPRECATED_PERMISSION_CODES.has(permission.code))
 
@@ -614,6 +635,19 @@ export default function RBACPage() {
             >
               Cancel
             </Button>
+            {editingRole && (
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={() => {
+                  router.push(`/admin/user-access-security/employee-roles?roleId=${editingRole.id}`)
+                  setEditingRole(null)
+                }}
+              >
+                <Users className="w-4 h-4 mr-2" />
+                Show Employees
+              </Button>
+            )}
             <Button type="submit" disabled={isSavingEdit || !editName.trim()}>
               {isSavingEdit ? 'Saving…' : 'Save Changes'}
             </Button>

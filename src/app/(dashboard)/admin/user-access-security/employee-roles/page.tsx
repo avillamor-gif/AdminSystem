@@ -1,11 +1,12 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { useEmployees } from '@/hooks/useEmployees'
 import { useRoles } from '@/hooks/useRBAC'
 import { useCurrentUserPermissions } from '@/hooks/usePermissions'
 import { Card, Button, Input, Select, Badge } from '@/components/ui'
-import { Search, Save, Loader2, AlertCircle } from 'lucide-react'
+import { Search, Save, Loader2, AlertCircle, ChevronLeft, Edit3 } from 'lucide-react'
 import { rbacService } from '@/services/rbac.service'
 import toast from 'react-hot-toast'
 
@@ -19,15 +20,27 @@ interface EmployeeRoleAssignment {
 }
 
 export default function EmployeeRBACPage() {
+  const router = useRouter()
+  const searchParams = useSearchParams()
+  const roleIdParam = searchParams.get('roleId')
+  
   const { data: employees = [], isLoading: employeesLoading } = useEmployees()
   const { data: roles = [], isLoading: rolesLoading } = useRoles()
   const { data: userPermissions } = useCurrentUserPermissions()
   
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedDept, setSelectedDept] = useState('all')
+  const [selectedRoleFilter, setSelectedRoleFilter] = useState(roleIdParam || '')
   const [assignments, setAssignments] = useState<Record<string, string>>({})
   const [isSaving, setIsSaving] = useState(false)
   const [unsavedChanges, setUnsavedChanges] = useState<Set<string>>(new Set())
+
+  // Set initial role filter from URL param
+  useEffect(() => {
+    if (roleIdParam) {
+      setSelectedRoleFilter(roleIdParam)
+    }
+  }, [roleIdParam])
 
   // Check if user has permission to manage roles
   const canManageRoles = userPermissions?.permissions.includes('admin.user_access.rbac.manage') || 
@@ -126,6 +139,29 @@ export default function EmployeeRBACPage() {
 
   return (
     <div className="space-y-6">
+      {/* Role Context Card (if coming from RBAC) */}
+      {roleIdParam && (
+        <Card className="p-4 bg-blue-50 border-blue-200">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <ChevronLeft className="w-5 h-5 text-blue-600" />
+              <div>
+                <p className="text-sm font-medium text-blue-900">Viewing employees for role:</p>
+                <p className="text-lg font-semibold text-blue-900">{roles.find(r => r.id === roleIdParam)?.name || 'Unknown Role'}</p>
+              </div>
+            </div>
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => router.push(`/admin/user-access-security/rbac?editRoleId=${roleIdParam}`)}
+            >
+              <Edit3 className="w-4 h-4 mr-2" />
+              Edit Role Permissions
+            </Button>
+          </div>
+        </Card>
+      )}
+
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
