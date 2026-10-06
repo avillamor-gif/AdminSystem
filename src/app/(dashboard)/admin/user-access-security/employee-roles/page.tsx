@@ -33,35 +33,7 @@ export default function EmployeeRBACPage() {
   const [selectedRoleFilter, setSelectedRoleFilter] = useState(roleIdParam || '')
   const [assignments, setAssignments] = useState<Record<string, string>>({})
   const [isSaving, setIsSaving] = useState(false)
-  const [isLoadingRoles, setIsLoadingRoles] = useState(true)
   const [unsavedChanges, setUnsavedChanges] = useState<Set<string>>(new Set())
-
-  // Load current employee roles from user_roles table
-  useEffect(() => {
-    const loadEmployeeRoles = async () => {
-      try {
-        setIsLoadingRoles(true)
-        const response = await fetch('/api/admin/employee-roles/get')
-        if (!response.ok) {
-          console.error('Failed to load employee roles')
-          return
-        }
-        
-        const data = await response.json()
-        if (data.assignments) {
-          setAssignments(data.assignments)
-        }
-      } catch (error) {
-        console.error('Error loading employee roles:', error)
-      } finally {
-        setIsLoadingRoles(false)
-      }
-    }
-
-    if (employees.length > 0) {
-      loadEmployeeRoles()
-    }
-  }, [employees.length])
 
   // Set initial role filter from URL param
   useEffect(() => {
@@ -150,6 +122,8 @@ export default function EmployeeRBACPage() {
         return
       }
 
+      console.log('Sending updates:', validUpdates)
+
       // Call API to update roles
       const response = await fetch('/api/admin/employee-roles', {
         method: 'POST',
@@ -158,9 +132,14 @@ export default function EmployeeRBACPage() {
       })
 
       const result = await response.json()
+      console.log('API Response:', result)
 
       if (!response.ok) {
         console.error('API error response:', result)
+        // Show the first error if available
+        if (result.errors && result.errors.length > 0) {
+          throw new Error(result.errors[0])
+        }
         throw new Error(result.error || result.message || 'Failed to update roles')
       }
 

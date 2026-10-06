@@ -71,41 +71,40 @@ export async function POST(request: NextRequest) {
           continue
         }
 
-        // Step 2: Get user_id from auth.users by email
-        // Use query to auth.users table with admin client
-        const { data: { users }, error: authError } = await supabase.auth.admin.listUsers({
-          perPage: 1000
-        })
+        // Step 2: Try to find existing user_roles entry for this employee
+        // OR query user_roles to see if we already have a user_id for this employee
+        const { data: existingUserRole, error: existingError } = await supabase
+          .from('user_roles')
+          .select('user_id')
+          .eq('employee_id', employeeId)
+          .single()
 
-        if (authError) {
-          console.error('Error fetching auth users:', authError)
-          errors.push(`Failed to fetch auth users: ${authError.message}`)
+        let userId: string | null = null
+
+        if (existingUserRole?.user_id) {
+          // We already have a user_id for this employee
+          userId = existingUserRole.user_id
+          console.log(`Found existing user_id ${userId} for employee ${employeeId}`)
+        } else {
+          // Need to find user by email from auth.users
+          // Fall back to querying auth endpoint or throwing error
+          console.warn(`No existing user_roles entry for employee ${employeeId}`)
+          errors.push(`No existing auth user found for ${employee.first_name} ${employee.last_name}. Please create user first via employee setup.`)
           continue
         }
-
-        const authUser = users?.find((u: any) => u.email === employee.email)
-        if (!authUser) {
-          console.warn(`No auth user found for ${employee.email}`)
-          errors.push(`No auth user found for ${employee.first_name} ${employee.last_name}`)
-          continue
-        }
-
-        const userId = authUser.id
 
         // Step 3: Get role details
         const role = roleMap[roleId]
-        const roleName = role.name.toLowerCase().replace(/\s+/g, '_')
 
-        console.log(`Updating user ${userId} to role ${roleName} (${roleId})`)
+        console.log(`Updating user ${userId} to role ${roleId} (${role.name})`)
 
-        // Step 4: Upsert into user_roles
+        // Step 4: Upsert into user_roles with role_id
         const { data, error: upsertError } = await supabase
           .from('user_roles')
           .upsert(
             {
               user_id: userId,
               employee_id: employeeId,
-              role: roleName,
               role_id: roleId,
               updated_at: new Date().toISOString()
             },
