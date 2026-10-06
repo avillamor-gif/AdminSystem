@@ -33,7 +33,35 @@ export default function EmployeeRBACPage() {
   const [selectedRoleFilter, setSelectedRoleFilter] = useState(roleIdParam || '')
   const [assignments, setAssignments] = useState<Record<string, string>>({})
   const [isSaving, setIsSaving] = useState(false)
+  const [isLoadingRoles, setIsLoadingRoles] = useState(true)
   const [unsavedChanges, setUnsavedChanges] = useState<Set<string>>(new Set())
+
+  // Load current employee roles from user_roles table
+  useEffect(() => {
+    const loadEmployeeRoles = async () => {
+      try {
+        setIsLoadingRoles(true)
+        const response = await fetch('/api/admin/employee-roles/get')
+        if (!response.ok) {
+          console.error('Failed to load employee roles')
+          return
+        }
+        
+        const data = await response.json()
+        if (data.assignments) {
+          setAssignments(data.assignments)
+        }
+      } catch (error) {
+        console.error('Error loading employee roles:', error)
+      } finally {
+        setIsLoadingRoles(false)
+      }
+    }
+
+    if (employees.length > 0) {
+      loadEmployeeRoles()
+    }
+  }, [employees.length])
 
   // Set initial role filter from URL param
   useEffect(() => {
@@ -113,18 +141,39 @@ export default function EmployeeRBACPage() {
         roleId: assignments[employeeId]
       }))
 
+      // Filter out empty role assignments
+      const validUpdates = updates.filter(u => u.roleId)
+
+      if (validUpdates.length === 0) {
+        toast.error('Please select a role for each employee')
+        setIsSaving(false)
+        return
+      }
+
       // Call API to update roles
       const response = await fetch('/api/admin/employee-roles', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ updates })
+        body: JSON.stringify({ updates: validUpdates })
       })
 
-      if (!response.ok) throw new Error('Failed to update roles')
+      const result = await response.json()
 
-      toast.success(`Updated roles for ${unsavedChanges.size} employee(s)`)
+      if (!response.ok) {
+        console.error('API error response:', result)
+        throw new Error(result.error || result.message || 'Failed to update roles')
+      }
+
+      if (result.errors && result.errors.length > 0) {
+        console.error('Update errors:', result.errors)
+        toast.error(`Failed: ${result.errors[0]}`)
+        return
+      }
+
+      toast.success(`Updated roles for ${validUpdates.length} employee(s)`)
       setUnsavedChanges(new Set())
     } catch (error) {
+      console.error('Save error:', error)
       toast.error(error instanceof Error ? error.message : 'Failed to save changes')
     } finally {
       setIsSaving(false)
