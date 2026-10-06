@@ -34,6 +34,24 @@ export default function EmployeeRBACPage() {
   const [assignments, setAssignments] = useState<Record<string, string>>({})
   const [isSaving, setIsSaving] = useState(false)
   const [unsavedChanges, setUnsavedChanges] = useState<Set<string>>(new Set())
+  const [onboardedEmployeeIds, setOnboardedEmployeeIds] = useState<Set<string>>(new Set())
+
+  // Load employee onboarding status
+  useEffect(() => {
+    const loadOnboardingStatus = async () => {
+      try {
+        const response = await fetch('/api/admin/employee-roles/status')
+        if (response.ok) {
+          const data = await response.json()
+          setOnboardedEmployeeIds(new Set(data.onboardedEmployeeIds || []))
+        }
+      } catch (error) {
+        console.error('Error loading onboarding status:', error)
+      }
+    }
+
+    loadOnboardingStatus()
+  }, [])
 
   // Set initial role filter from URL param
   useEffect(() => {
@@ -313,13 +331,17 @@ export default function EmployeeRBACPage() {
                       <td className="px-6 py-3 text-sm text-gray-600">{emp.department?.name || '—'}</td>
                       <td className="px-6 py-3">
                         <select
+                          disabled={!onboardedEmployeeIds.has(emp.id)}
                           value={currentRole}
                           onChange={(e) => handleRoleChange(emp.id, e.target.value)}
                           className={`px-3 py-1.5 border rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 text-sm ${
-                            hasChanged 
-                              ? 'bg-amber-100 border-amber-300' 
-                              : 'bg-white border-gray-300'
+                            !onboardedEmployeeIds.has(emp.id)
+                              ? 'bg-gray-100 border-gray-300 text-gray-500 cursor-not-allowed opacity-50'
+                              : hasChanged 
+                                ? 'bg-amber-100 border-amber-300' 
+                                : 'bg-white border-gray-300'
                           }`}
+                          title={!onboardedEmployeeIds.has(emp.id) ? 'Employee must be onboarded first' : ''}
                         >
                           <option value="">— None —</option>
                           {roles.map((role: any) => (
@@ -330,10 +352,12 @@ export default function EmployeeRBACPage() {
                         </select>
                       </td>
                       <td className="px-6 py-3">
-                        {currentRole ? (
-                          <Badge className="bg-emerald-100 text-emerald-800">Assigned</Badge>
+                        {!onboardedEmployeeIds.has(emp.id) ? (
+                          <Badge className="bg-red-100 text-red-800">⚠️ Not Onboarded</Badge>
+                        ) : currentRole ? (
+                          <Badge className="bg-emerald-100 text-emerald-800">✓ Assigned</Badge>
                         ) : (
-                          <Badge className="bg-gray-100 text-gray-800">Pending</Badge>
+                          <Badge className="bg-yellow-100 text-yellow-800">○ No Role</Badge>
                         )}
                         {hasChanged && (
                           <Badge className="bg-amber-100 text-amber-800 ml-1">Unsaved</Badge>
