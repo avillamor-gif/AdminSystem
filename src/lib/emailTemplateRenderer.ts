@@ -213,3 +213,24 @@ export async function renderMembershipInvitationEmail(opts: {
   return { subject, html }
 }
 
+export async function renderLeaveWithdrawalEmail(opts: {
+  employeeName: string
+  leaveType: string
+  startDate: string
+  endDate: string
+  days: number
+  withdrawnBy: 'employee' | 'admin'
+  adminName?: string
+}): Promise<{ subject: string; html: string } | null> {
+  const templateType = opts.withdrawnBy === 'admin' ? 'leave-deleted' : 'leave-withdrawn'
+  const vars = {
+    employeeName: opts.employeeName,
+    leaveType: opts.leaveType,
+    startDate: opts.startDate,
+    endDate: opts.endDate,
+    days: String(opts.days),
+    adminName: opts.adminName || 'HR Administrator',
+  }
+  return renderEmailTemplate(templateType, vars)
+}
+

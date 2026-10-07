@@ -1,7 +1,7 @@
 import { createClient } from '../lib/supabase/client'
 import type { Tables, InsertTables, UpdateTables } from '../lib/supabase'
 import { workflowService } from './workflow.service'
-import { notifySupervisorsAndAdmins } from './requestNotification.helper'
+import { notifySupervisorsAndAdmins, notifyLeaveWithdrawal } from './requestNotification.helper'
 
 export type LeaveRequest = Tables<'leave_requests'>
 export type LeaveRequestInsert = InsertTables<'leave_requests'>
@@ -556,6 +556,40 @@ export const leaveService = {
       console.warn('Workflow cancellation failed:', workflowError)
     }
 
+    // Send notifications
+    try {
+      const { data: employee } = await supabase
+        .from('employees')
+        .select('first_name, last_name')
+        .eq('id', existing.employee_id)
+        .single()
+
+      const { data: leaveType } = await supabase
+        .from('leave_types')
+        .select('name')
+        .eq('id', existing.leave_type_id)
+        .single()
+
+      const employeeName = employee ? `${employee.first_name} ${employee.last_name}` : 'Employee'
+      const leaveTypeName = leaveType?.name || 'Leave'
+      const startDate = existing.start_date ? new Date(existing.start_date).toLocaleDateString() : ''
+      const endDate = existing.end_date ? new Date(existing.end_date).toLocaleDateString() : ''
+      const days = existing.total_days || 0
+
+      await notifyLeaveWithdrawal(
+        existing.employee_id,
+        id,
+        employeeName,
+        leaveTypeName,
+        startDate,
+        endDate,
+        days,
+        'employee'
+      )
+    } catch (notifError) {
+      console.warn('Failed to send withdrawal notification:', notifError)
+    }
+
     return data as unknown as LeaveRequest
   },
 
@@ -586,6 +620,41 @@ export const leaveService = {
       await workflowService.rejectStep(workflowId, 1, existing.employee_id, 'Deleted by admin')
     } catch (workflowError) {
       console.warn('Workflow cancellation failed:', workflowError)
+    }
+
+    // Send notifications
+    try {
+      const { data: employee } = await supabase
+        .from('employees')
+        .select('first_name, last_name')
+        .eq('id', existing.employee_id)
+        .single()
+
+      const { data: leaveType } = await supabase
+        .from('leave_types')
+        .select('name')
+        .eq('id', existing.leave_type_id)
+        .single()
+
+      const employeeName = employee ? `${employee.first_name} ${employee.last_name}` : 'Employee'
+      const leaveTypeName = leaveType?.name || 'Leave'
+      const startDate = existing.start_date ? new Date(existing.start_date).toLocaleDateString() : ''
+      const endDate = existing.end_date ? new Date(existing.end_date).toLocaleDateString() : ''
+      const days = existing.total_days || 0
+
+      await notifyLeaveWithdrawal(
+        existing.employee_id,
+        id,
+        employeeName,
+        leaveTypeName,
+        startDate,
+        endDate,
+        days,
+        'admin',
+        'HR Administrator'
+      )
+    } catch (notifError) {
+      console.warn('Failed to send deletion notification:', notifError)
     }
   },
 }

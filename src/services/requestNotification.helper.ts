@@ -76,6 +76,52 @@ export async function notifyRequesterOfDecision(
   }
 }
 
+/**
+ * Notify supervisors and admins that a leave request has been withdrawn/cancelled.
+ * Pass withdrawnBy: 'admin' for admin deletions, 'employee' for employee withdrawals.
+ */
+export async function notifyLeaveWithdrawal(
+  employeeId: string,
+  requestId: string,
+  employeeName: string,
+  leaveType: string,
+  startDate: string,
+  endDate: string,
+  days: number,
+  withdrawnBy: 'admin' | 'employee',
+  adminName?: string
+): Promise<void> {
+  try {
+    const title = withdrawnBy === 'admin' 
+      ? `Leave Request Deleted: ${employeeName}`
+      : `Leave Request Withdrawn: ${employeeName}`
+    
+    const message = withdrawnBy === 'admin'
+      ? `${employeeName}'s ${leaveType} leave request (${startDate} to ${endDate}, ${days} days) has been deleted by HR.`
+      : `${employeeName} has withdrawn their ${leaveType} leave request (${startDate} to ${endDate}, ${days} days).`
+
+    await fetch('/api/notifications/leave-withdrawal', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        employeeId,
+        requestId,
+        employeeName,
+        leaveType,
+        startDate,
+        endDate,
+        days,
+        withdrawnBy,
+        adminName,
+        title,
+        message,
+      }),
+    })
+  } catch (err) {
+    console.warn(`[notification] notifyLeaveWithdrawal failed:`, err)
+  }
+}
+
 /** @deprecated Use notifySupervisorsAndAdmins or notifyRequesterOfDecision instead */
 export async function sendRequestNotification(
   table: RequestNotifTable,
