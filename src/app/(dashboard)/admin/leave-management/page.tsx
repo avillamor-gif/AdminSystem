@@ -6,10 +6,11 @@ import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
 import { Input } from '@/components/ui/Input'
 import { Modal, ModalHeader, ModalBody, ModalFooter } from '@/components/ui/Modal'
-import { useLeaveRequests, useAllocateLeaveBalance, useAdminCreateLeave, type LeaveRequest } from '@/hooks/useLeaveRequests'
+import { useLeaveRequests, useAllocateLeaveBalance, useAdminCreateLeave, useDeleteLeaveRequest, type LeaveRequest } from '@/hooks/useLeaveRequests'
 import { useLeaveTypes, useHolidays } from '@/hooks/useLeaveAbsence'
 import { useEmployees } from '@/hooks/useEmployees'
-import { Calendar, Users, Clock, CheckCircle, XCircle, Search, Plus, ClipboardList } from 'lucide-react'
+import { Calendar, Users, Clock, CheckCircle, XCircle, Search, Plus, ClipboardList, Trash2 } from 'lucide-react'
+import { ConfirmModal } from '@/components/ui/ConfirmModal'
 import { format } from 'date-fns'
 import { countWorkingDays } from '@/lib/dateUtils'
 
@@ -30,12 +31,17 @@ export default function HRLeaveManagementPage() {
   const [createEndDate, setCreateEndDate]         = useState('')
   const [createReason, setCreateReason]           = useState('')
 
+  // Delete Leave modal state
+  const [deleteRequestId, setDeleteRequestId] = useState<string | null>(null)
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+
   const { data: allRequests = [], isLoading } = useLeaveRequests()
   const { data: employees = [] } = useEmployees({ status: 'active' })
   const { data: leaveTypes = [] } = useLeaveTypes({ is_active: true })
   const { data: holidays = [] } = useHolidays({ is_active: true })
   const allocateMutation = useAllocateLeaveBalance()
   const adminCreateMutation = useAdminCreateLeave()
+  const deleteMutation = useDeleteLeaveRequest()
 
   const holidayDates = useMemo(
     () => new Set((holidays ?? []).map((h: any) => (h.holiday_date ?? '').slice(0, 10)).filter(Boolean)),
@@ -109,6 +115,13 @@ export default function HRLeaveManagementPage() {
     setSelectedEmployee('')
     setSelectedLeaveType('')
     setAllocationDays('')
+  }
+
+  const handleDelete = async () => {
+    if (!deleteRequestId) return
+    await deleteMutation.mutateAsync(deleteRequestId)
+    setShowDeleteConfirm(false)
+    setDeleteRequestId(null)
   }
 
   const getStatusBadgeVariant = (status: string) => {
@@ -247,6 +260,7 @@ export default function HRLeaveManagementPage() {
                   <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Days</th>
                   <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Status</th>
                   <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Requested</th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
@@ -280,6 +294,18 @@ export default function HRLeaveManagementPage() {
                     </td>
                     <td className="px-4 py-3 text-sm">
                       {format(new Date(request.created_at), 'MMM d, yyyy')}
+                    </td>
+                    <td className="px-4 py-3">
+                      <button
+                        onClick={() => {
+                          setDeleteRequestId(request.id)
+                          setShowDeleteConfirm(true)
+                        }}
+                        className="text-red-600 hover:text-red-900 hover:bg-red-50 p-2 rounded transition-colors"
+                        title="Delete leave request"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
                     </td>
                   </tr>
                 ))}
@@ -466,6 +492,22 @@ export default function HRLeaveManagementPage() {
           </Button>
         </ModalFooter>
       </Modal>
+
+      {/* Delete Confirmation Modal */}
+      <ConfirmModal
+        isOpen={showDeleteConfirm}
+        onClose={() => {
+          setShowDeleteConfirm(false)
+          setDeleteRequestId(null)
+        }}
+        title="Delete Leave Request?"
+        message="Are you sure you want to delete this leave request? This action cannot be undone."
+        confirmText="Delete"
+        cancelText="Cancel"
+        onConfirm={handleDelete}
+        isLoading={deleteMutation.isPending}
+        variant="danger"
+      />
     </div>
   )
 }

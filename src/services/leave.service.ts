@@ -521,4 +521,71 @@ export const leaveService = {
 
     return data as unknown as LeaveRequest
   },
+
+  async cancel(id: string, cancelledBy: string): Promise<LeaveRequest> {
+    const supabase = createClient()
+
+    const { data: existing, error: fetchError } = await supabase
+      .from('leave_requests')
+      .select('*')
+      .eq('id', id)
+      .single()
+
+    if (fetchError || !existing) {
+      throw new Error('Leave request not found')
+    }
+
+    // Update status to cancelled
+    const { data, error } = await supabase
+      .from('leave_requests')
+      .update({
+        status: 'cancelled',
+        updated_at: new Date().toISOString(),
+      } as never)
+      .eq('id', id)
+      .select()
+      .single()
+
+    if (error) throw error
+
+    // Cancel workflow if exists
+    try {
+      const workflowId = `WF_${id}`
+      await workflowService.rejectStep(workflowId, 1, existing.employee_id, `Cancelled by ${cancelledBy}`)
+    } catch (workflowError) {
+      console.warn('Workflow cancellation failed:', workflowError)
+    }
+
+    return data as unknown as LeaveRequest
+  },
+
+  async delete(id: string): Promise<void> {
+    const supabase = createClient()
+
+    const { data: existing, error: fetchError } = await supabase
+      .from('leave_requests')
+      .select('*')
+      .eq('id', id)
+      .single()
+
+    if (fetchError || !existing) {
+      throw new Error('Leave request not found')
+    }
+
+    // Hard delete the record
+    const { error } = await supabase
+      .from('leave_requests')
+      .delete()
+      .eq('id', id)
+
+    if (error) throw error
+
+    // Cancel workflow if exists
+    try {
+      const workflowId = `WF_${id}`
+      await workflowService.rejectStep(workflowId, 1, existing.employee_id, 'Deleted by admin')
+    } catch (workflowError) {
+      console.warn('Workflow cancellation failed:', workflowError)
+    }
+  },
 }
